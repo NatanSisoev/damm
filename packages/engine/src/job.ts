@@ -242,5 +242,6 @@ export function runEngineJob(db: SqlDatabase, opts: JobOptions = {}): JobReport 
   };
 }
 
-export { startEngineScheduler, DEFAULT_INTERVAL_MS } from "./scheduler.ts";
-export type { EngineScheduler, SchedulerOptions } from "./scheduler.ts";
+export { startEngineScheduler, DEFAULT_INTERVAL_MS, DEFAULT_NARRATIVE_EVERY_MS } from "./scheduler.ts";
+export { createComplete, llmConfigFromEnv } from "./llm.ts";
+export type { EngineScheduler, SchedulerOptions, NarrativeSchedule } from "./scheduler.ts";

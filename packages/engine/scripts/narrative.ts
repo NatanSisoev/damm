@@ -18,7 +18,13 @@ if (existsSync(envFile)) {
   }
 }
 
-const path = process.env.DB_PATH ?? resolve(root, "data/app.db");
+// A relative DB_PATH is relative to where you ran the command, else to the repo root. Never creates a new file.
+const given = process.env.DB_PATH ?? "data/app.db";
+const path = [resolve(given), resolve(root, given)].find((p) => existsSync(p));
+if (!path) {
+  console.error(`database not found: ${given}`);
+  process.exit(1);
+}
 const db = new DatabaseSync(path);
 db.exec("PRAGMA foreign_keys = ON");
 const config = llmConfigFromEnv();
