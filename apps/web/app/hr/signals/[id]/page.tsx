@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { MIN_GROUP_SIZE } from "@damm/shared";
-import { getSignalDetail, type SignalTimelineStep } from "@damm/db/hr";
+import { nLabel, getSignalDetail, type SignalTimelineStep } from "@damm/db/hr";
 import { Card, Empty, PageHeader, SuppressedBadge } from "../../ui";
 import { setSignalStatusAction } from "../../actions";
 import { approveFromSignalAction, discardFromSignalAction, followUpFromSignalAction } from "./actions";
@@ -64,7 +64,7 @@ export default async function SignalPage({ params }: { params: Promise<{ id: str
       <div className="mb-6 flex flex-wrap items-center gap-2">
         <SignalBadges tipus={signal.tipus} severity={signal.severity} status={signal.status} />
         <span className="badge num">{signal.periode}</span>
-        <span className="badge num">n={signal.n}</span>
+        <span className="badge num">{nLabel(signal.n, signal.collectiuId !== null || (signal.tornId ?? null) !== null)}</span>
         {signal.confianca !== null && <span className="badge num">confiança {Math.round(signal.confianca <= 1 ? signal.confianca * 100 : signal.confianca)}%</span>}
       </div>
 
