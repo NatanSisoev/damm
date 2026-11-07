@@ -267,6 +267,25 @@ Status changes:
 - **Today:** alarms are written by each job run, at most every 10 minutes. The dashboard picks them up when it reads, so a page load or a 60-second poll of `alarmCounts` for the header badge is enough for the demo.
 - **Planned:** a weekly digest of warnings and an immediate push or email for critical alarms. These will be an `onReport` hook on the scheduler (`report.alarms.opened > 0`). Not built yet.
 
+## Narrative insights
+
+An LLM briefing per collective and company-wide: a 3 to 5 sentence summary, 2 to 4 highlights with their evidence, and 1 to 3 suggested actions, each with a follow-up survey idea. AI proposes, a human decides: actions are written to `recomanacio` as `proposada`.
+
+**When it runs.** After the engine job, on demand or a few times a day at most (`pnpm --filter @damm/engine run narrative`, which reads `LLM_BASE_URL`, `LLM_API_KEY`, `LLM_MODEL` from the environment or the repo root `.env`, and `DB_PATH`). It is **not** part of `runEngineJob` or the scheduler, and the LLM is never called from a dashboard request. From code: `runNarrative(db, { now, complete, periode? })` from `@damm/engine/job`, with `complete` from `createComplete()` in `src/llm.ts` (tests pass a fake).
+
+**Reading it.**
+
+```ts
+const [card] = listInsights(db, viewer, { kind: "narrative", collectiuId: null }); // company-wide
+if (card?.kind === "narrative" && card.detail) card.detail.summary; // typed: highlights, suggestedActions, model, ...
+```
+
+`detail.suggestedActions[i].recommendationId` is the `recomanacio.id` created for it, `alarmId` the open alarm it addresses (or null). Managers only get their own collective, like every insight.
+
+**What the model receives** (per segment, only if at least 10 people answered in the period): domain scores, confidence, consensus, previous score and change (only `agregat` rows with n of at least 10, no shift rows); up to 8 open alarms (id, type, severity, domain, engine description); up to 3 top movers, 2 polarisation and 3 `act_first` insights; and at most 40 redacted comments (300 characters each) with their domain name only, taken round-robin over domains that have a visible aggregate. No account ids, dates, shifts or counts below 10.
+
+**Idempotent and cheap.** The input is hashed (with the model and prompt version). If the stored narrative has the same `inputHash`, the segment is skipped with no LLM call. A changed input replaces the narrative row and deletes only the recommendations it proposed that are still `proposada`; `aprovada` and `descartada` ones are never touched, and an action whose title matches one a human already decided is not proposed again. A failed call (after 2 retries in the client and one re-ask on unusable output) keeps the old row. One run is at most 5 calls, one per segment (company + 4 collectives), more only on retries.
+
 ## Seeded data
 
 The engine works with the seed as it is:

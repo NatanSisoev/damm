@@ -2,7 +2,7 @@
 // Runs after runEngineJob has written `agregat` and `domain_importance`. Reads those plus engine-internal
 // per-account history (`resposta`, `assignment`) which never leaves this module: every row written is an
 // aggregate over at least minGroupSize people, or a suppressed row with value and detail_json NULL.
-import { getConfig, loadConfig, type EngineConfig } from "./config.ts";
+import { getConfig, resolveConfig, type EngineConfig } from "./config.ts";
 import { all, transaction, type SqlDatabase } from "./db.ts";
 import { EMPTY_ITEM, type ItemStats } from "./item-bias.ts";
 import { isClosed, learn, priorLevel } from "./learn.ts";
@@ -20,9 +20,10 @@ export type InsightKind =
   | "importance_gap"
   | "trajectory_mix"
   | "followup_confirmation"
-  | "segment_gap";
+  | "segment_gap"
+  | "narrative";
 
-/** Kinds this module writes (and replaces on every run). `driver` and `action_effect` are not implemented yet. */
+/** Kinds this module writes (and replaces on every run). `narrative` comes from narrative.ts and is not replaced here. `driver` and `action_effect` are not implemented yet. */
 export const INSIGHT_KINDS: readonly InsightKind[] = [
   "domain_state",
   "top_mover",
@@ -373,9 +374,9 @@ function replayHistory(db: SqlDatabase, cfg: EngineConfig): History {
       if (!parsed.ok || parsed.value.score === null) continue;
       score = parsed.value.score;
     }
-    const day = r.data.slice(0, 10);
     const ms = toMs(r.data);
-    const isFollowup = q.isFollowup || fuAssigned.has(`${r.compte_id}|${q.id}|${dayOf(ms, cfg.timezone)}`);
+    const day = dayOf(ms, cfg.timezone); // local day, as live submission uses it
+    const isFollowup = q.isFollowup || fuAssigned.has(`${r.compte_id}|${q.id}|${day}`);
     const pk = `${r.compte_id}|${q.domainId}`;
     const res = learn(
       { person: persons.get(pk) ?? null, item: items.get(q.id) ?? { ...EMPTY_ITEM }, question: q, score, at: r.data, day, isFollowup },
@@ -600,7 +601,7 @@ function loadLabels(db: SqlDatabase): Labels {
  * Call after runEngineJob. Returns the number of rows written and how many of them are suppressed (n < minGroupSize).
  */
 export function runInsights(db: SqlDatabase, opts: InsightOptions): { written: number; suppressed: number } {
-  const cfg: EngineConfig = { ...loadConfig(db), ...opts.config };
+  const cfg: EngineConfig = resolveConfig(db, opts.config);
   const ic = loadInsightConfig(db, opts.insight);
   const L = loadLabels(db);
   const domains = store.domainIds(db);

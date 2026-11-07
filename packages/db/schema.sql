@@ -274,7 +274,7 @@ CREATE TABLE engine_config (
 CREATE TABLE insight (
   id            INTEGER PRIMARY KEY,
   kind          TEXT NOT NULL CHECK (kind IN ('domain_state','top_mover','polarisation','importance_gap','driver',
-                  'trajectory_mix','followup_confirmation','segment_gap','action_effect')),
+                  'trajectory_mix','followup_confirmation','segment_gap','action_effect','narrative')),
   periode       TEXT NOT NULL,
   collectiu_id  INTEGER REFERENCES collectiu(id),
   torn_id       INTEGER REFERENCES torn(id),

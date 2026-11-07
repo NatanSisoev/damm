@@ -2,9 +2,13 @@
 
 const DAY_MS = 86_400_000;
 
+const dayFormats = new Map<string, Intl.DateTimeFormat>();
+
 export function dayOf(ms: number, timeZone: string): string {
-  // en-CA formats as YYYY-MM-DD.
-  return new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" }).format(ms);
+  // en-CA formats as YYYY-MM-DD. Formatters are slow to build, so they are cached per zone (replays call this per answer).
+  let f = dayFormats.get(timeZone);
+  if (!f) dayFormats.set(timeZone, (f = new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" })));
+  return f.format(ms);
 }
 
 export function addDays(day: string, n: number): string {
