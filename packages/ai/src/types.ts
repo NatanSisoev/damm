@@ -10,6 +10,9 @@ export const draftQuestionSchema = z.object({
   type: z.enum(DRAFT_TYPES),
   domain: z.enum(DOMINIS),
   reason: z.string().trim().min(3).max(240),
+  /** Scale end labels (scale5/scale10), for example "Mai" / "Sempre". Optional so older callers and saved drafts stay valid. */
+  low: z.string().trim().min(1).max(30).optional(),
+  high: z.string().trim().min(1).max(30).optional(),
 });
 
 export const draftSurveySchema = z.object({
