@@ -302,6 +302,12 @@ export function listRecommendations(): Recomanacio[] {
     .all() as Recomanacio[];
 }
 
+/** Recommendations still waiting for a human decision (badge in the HR sidebar). */
+export function countPendingRecommendations(): number {
+  const r = getDb().prepare(`SELECT COUNT(*) AS n FROM recomanacio WHERE estat = 'proposada'`).get() as { n: number };
+  return r.n;
+}
+
 // --- Manager view reads (read-only, one collective, aggregates only) -------------------
 
 export interface ManagerSignal {
