@@ -19,6 +19,23 @@ What changed and why.
 
 ---
 
+## C11 · 2026-11-07 · Natan · Listen again: context events, `aprovada_el`, `action_effect`
+
+The deck's cycle ends with "tornar a escoltar". HR is not forced to carry out a recommendation, so there is **no "done" state**: the before/after is anchored on when HR adopted (approved) a recommendation, or on a context event HR records, and always worded "since X", never as proof of cause. Design: [engine.md](engine.md) section 6.
+
+All changes are additive:
+- **`recomanacio`:** new column `aprovada_el` (datetime). `approveRecommendation` in `packages/db/src/hr-repository.ts` now sets it. Any other code that approves a recommendation must set it too. Approved rows without it fall back to the first day of their alarm's period. Existing databases need `ALTER TABLE recomanacio ADD COLUMN aprovada_el TEXT` (or re-run init / the demo).
+- **New table `context_event`:** `event_date` (YYYY-MM-DD), optional `collectiu_id`, `torn_id`, `domini_id`, `label`, `created_at`. HR functions `addContextEvent` and `listContextEvents` in `@damm/db/hr`. Only events with a domain produce an insight.
+- **`insight` kind `action_effect`** (already allowed by the CHECK) is now written by the engine: segment × domain score, confidence and n before vs. after the anchor, `detail.wording` ("Des de <data>, ...") and `detail.limits`. n ≥ 10 in both windows, otherwise suppressed. Rows appear 14 days after the anchor.
+- **`improvement` alarm** now uses the same anchors instead of the `action_linked` status; it no longer reads that status.
+
+Action items:
+- [ ] Jan: show `action_effect` insights and context events on the signal timeline (R-DIFF-6, R-FLOW-8e): "des de <data>" with `detail.wording` and `detail.limits` together, never worded as proof the action worked. No "done" button.
+- [ ] Jan: add a small form on the HR side to record a context event with `addContextEvent` (date, label, optional collective, shift and domain) and list them with `listContextEvents`.
+- [ ] Jan: if anything else approves a recommendation, set `aprovada_el` there too.
+
+---
+
 ## C8 · 2026-11-07 · Natan · Scheduler runs the narrative, engine hardening
 
 - `startEngineScheduler(db, { narrative: { complete: createComplete() } })` runs the LLM narrative after the job, at most every 6 hours (`everyMs`), in the background. It never blocks or breaks the job. Without the option the LLM is never called. `runNarrativeNow()` serves an HR "Regenerate summary" button. `createComplete` and `llmConfigFromEnv` are exported from `@damm/engine/job`.

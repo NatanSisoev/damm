@@ -135,6 +135,7 @@ The guide says "Publicar a Typeform". AGENTS.md decides to ignore Typeform: the 
 | R-FLOW-8a | Proposes **concrete actions** | partial | `recomanacio` seeded. Generation is blocked. |
 | R-FLOW-8b | Proposes a **new follow-up micro-survey** | done | `createDraftedFollowUp`: need for the signal's collective, AI-drafted questions, human review |
 | R-FLOW-8c | Recommendations are proposals, never automatic decisions | done | Approve or discard |
+| R-FLOW-8e | "Tornar a escoltar": how perception evolves after the action | partial | Engine done: `action_effect` insight, anchored on `recomanacio.aprovada_el` or a `context_event`; no "done" state; n≥10 in both windows; worded "since X", correlation not cause. `improvement` alarm uses the same anchors. Open: HR UI (Jan, C11) |
 | R-FLOW-8d | Results go back to the people who answered | done | Employee home lists approved actions for their collective (`approvedActionsForCompte`, n≥10 only) with period and follow-up badge |
 
 ## 4. Acceptance scenarios
@@ -196,7 +197,7 @@ D-S9 and D-S10. Each needs a named mitigation we can point at in the demo. "AI d
 | R-DIFF-3 | Causality | Never present correlations as causes; wording on signals and methodology | partial (needs 18) |
 | R-DIFF-4 | Prioritisation (frequent ≠ most relevant) | Signals ranked by effect and n, not by volume | blocked (signal criteria, Natan) |
 | R-DIFF-5 | Comparability | Same item IDs across periods; change rule only on the same question | done |
-| R-DIFF-6 | Context: what event explains a change? | Need text and recommendations attached to the signal timeline | partial (16 timeline) |
+| R-DIFF-6 | Context: what event explains a change? | Need text and recommendations attached to the signal timeline | partial. Engine done (`context_event`, `addContextEvent`, `action_effect` "des de <data>" with limits note). Open: show events and `action_effect` on the signal timeline (Jan, C11) |
 | R-DIFF-7 | Open text (languages, irony, several themes) | LLM clustering, multi-theme `comentari_tema` | blocked |
 | R-DIFF-8 | Actionability: an insight needs an owner and a plan | Recommendation with an approval, follow-up survey | partial (no owner field) |
 

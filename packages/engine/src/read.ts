@@ -78,7 +78,18 @@ export interface InsightDetails {
     inputHash: string;
   };
   driver: Record<string, unknown>;
-  action_effect: Record<string, unknown>;
+  action_effect: {
+    labels: SegmentLabels;
+    anchor: { kind: "recommendation" | "context_event"; id: number; date: string; label: string };
+    since: string; // YYYY-MM-DD
+    before: { from: string; to: string; score: number; confidence: number; n: number };
+    after: { from: string; to: string; score: number; confidence: number; n: number };
+    delta: number;
+    change: "improved" | "declined" | "no_clear_change" | "low_confidence";
+    windowDays: number;
+    wording: string; // "Des de <date>, ..."; show with `limits`
+    limits: string; // correlation, not cause
+  };
 }
 
 export type InsightView = {

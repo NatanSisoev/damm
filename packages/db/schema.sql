@@ -197,7 +197,21 @@ CREATE TABLE recomanacio (
   text                     TEXT NOT NULL,
   estat                    TEXT NOT NULL DEFAULT 'proposada' CHECK (estat IN ('proposada','aprovada','descartada')),
   seguiment_necessitat_id  INTEGER REFERENCES necessitat(id),  -- follow-up survey
-  creat                    TEXT NOT NULL DEFAULT (datetime('now'))
+  creat                    TEXT NOT NULL DEFAULT (datetime('now')),
+  aprovada_el              TEXT                                 -- when HR adopted it (set with estat = 'aprovada'); anchor of the "listen again" before/after
+);
+
+-- Something that happened in the organisation, recorded by HR (e.g. "new shift system from 1 Oct").
+-- Anchor of the before/after comparison (insight `action_effect`) when it has a domain.
+-- Optional scope: collectiu_id / torn_id NULL = all. Never holds personal data.
+CREATE TABLE context_event (
+  id            INTEGER PRIMARY KEY,
+  event_date    TEXT NOT NULL CHECK (event_date GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]'),
+  collectiu_id  INTEGER REFERENCES collectiu(id),
+  torn_id       INTEGER REFERENCES torn(id),
+  domini_id     INTEGER REFERENCES domini(id),
+  label         TEXT NOT NULL,
+  created_at    TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
 -- Engine (Natan, packages/engine; see docs/engine.md) ------------------------------

@@ -204,3 +204,63 @@ test("runInsights is idempotent", () => {
   assert.deepEqual(again, report);
   assert.equal(all(db, "SELECT 1 FROM insight").length, report.written);
 });
+
+// --- action_effect ("listen again") ---
+
+function withAnchors(accountsPerCollective = 24) {
+  const f = fixture(accountsPerCollective);
+  const { db } = f;
+  // Fàbriques Benestar falls from 8 to 6 in October; the new shift system starts on 30 Sep.
+  db.prepare("INSERT INTO context_event (event_date, collectiu_id, domini_id, label) VALUES ('2026-09-30', 1, 1, 'New shift system')").run();
+  // Oficines Benestar is flat; HR adopts a recommendation for it on 10 Sep.
+  const sig = db
+    .prepare("INSERT INTO senyal (tipus, descripcio, collectiu_id, domini_id, periode, n, status) VALUES ('sustained_decline','x',2,1,'2026-08',24,'action_linked')")
+    .run().lastInsertRowid;
+  db.prepare("INSERT INTO recomanacio (senyal_id, text, estat, aprovada_el) VALUES (?, 'Publish the rota', 'aprovada', '2026-09-10 09:00:00')").run(sig);
+  // Not adopted and no domain: no rows.
+  db.prepare("INSERT INTO recomanacio (senyal_id, text, estat) VALUES (?, 'Proposed only', 'proposada')").run(sig);
+  db.prepare("INSERT INTO context_event (event_date, collectiu_id, label) VALUES ('2026-09-30', 1, 'No domain')").run();
+  runInsights(db, { now: NOW });
+  const rows = all<InsightOut>(db, "SELECT kind, periode, collectiu_id, torn_id, domini_id, n, value, detail_json, suprimit FROM insight WHERE kind = 'action_effect'");
+  return { db, rows };
+}
+
+test("action_effect: score before vs after an adoption date, worded 'des de', with limits and no cause claimed", () => {
+  const { rows } = withAnchors();
+  assert.equal(rows.length, 2, "one per adopted recommendation and per context event with a domain");
+  const ev = rows.find((r) => r.collectiu_id === 1)!;
+  const d = detail(ev);
+  assert.equal(d.anchor.kind, "context_event");
+  assert.equal(d.since, "2026-09-30");
+  assert.equal(d.change, "declined");
+  assert.ok(d.before.score > d.after.score + 1.5, `${d.before.score} -> ${d.after.score}`);
+  assert.equal(ev.value, d.delta);
+  assert.equal(ev.periode, "2026-11");
+  assert.match(d.wording, /^Des de 2026-09-30, Fàbriques · Benestar: la puntuació ha baixat/);
+  assert.match(d.limits, /no que l'acció en sigui la causa/);
+  const rec = detail(rows.find((r) => r.collectiu_id === 2));
+  assert.equal(rec.anchor.kind, "recommendation");
+  assert.equal(rec.change, "no_clear_change");
+  assert.ok(Math.abs(rec.delta) < 0.3);
+  assert.ok(rec.before.n >= 10 && rec.after.n >= 10);
+});
+
+test("action_effect: suppressed when either window has fewer than 10 people; replaced on every run", () => {
+  const { db } = withAnchors(12);
+  // Night shift only: 6 people.
+  db.prepare("INSERT INTO context_event (event_date, collectiu_id, torn_id, domini_id, label) VALUES ('2026-09-30', 1, 2, 1, 'Night only')").run();
+  runInsights(db, { now: NOW });
+  const rows = all<InsightOut>(db, "SELECT * FROM insight WHERE kind = 'action_effect' AND torn_id = 2");
+  assert.equal(rows.length, 1);
+  assert.deepEqual([rows[0]!.suprimit, rows[0]!.value, rows[0]!.detail_json], [1, null, null]);
+  assert.equal(all(db, "SELECT id FROM insight WHERE kind = 'action_effect'").length, 3);
+  runInsights(db, { now: NOW });
+  assert.equal(all(db, "SELECT id FROM insight WHERE kind = 'action_effect'").length, 3, "idempotent");
+});
+
+test("action_effect: nothing until 14 days after the anchor", () => {
+  const { db } = withAnchors();
+  db.prepare("INSERT INTO context_event (event_date, collectiu_id, domini_id, label) VALUES ('2026-10-25', 1, 3, 'Too recent')").run();
+  runInsights(db, { now: Date.UTC(2026, 9, 30, 9) });
+  assert.equal(all(db, "SELECT id FROM insight WHERE kind = 'action_effect' AND domini_id = 3").length, 0);
+});

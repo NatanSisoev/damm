@@ -129,6 +129,8 @@ export function buildDemo(opts: DemoOptions = {}): DemoSummary {
     let x = 0;
     if (d === 2 && clusterAccounts.has(p.accountId!) && t >= t0("2026-10-14")) x -= 0.4;
     if (d === 5 && p.collectiuId === 4 && t >= t0("2026-10-01")) x += p.idx % 2 === 0 ? 0.24 : -0.24;
+    // "Listen again" story: Logística is low on Condicions i organització until HR adopts a recommendation on 15 Sep, then improves.
+    if (d === 6 && p.collectiuId === 2) x += t < t0("2026-09-15") ? -0.08 : t >= t0("2026-09-20") ? 0.08 : 0;
     return x;
   };
   const truth = (p: Person, d: number, t: number) => clamp(world.level(p.idx, d, t) + extra(p, d, t), 0.02, 0.98);
@@ -207,6 +209,24 @@ export function buildDemo(opts: DemoOptions = {}): DemoSummary {
     }
     if (t % 15 === 0) log(`day ${t + 1}/${world.days} (${world.dates[t]}): ${answers} answers so far`);
   }
+
+  // --- listen again: one adoption and one context event ---------------------------------------
+  // HR adopted a recommendation for the Logística alarm on 15 Sep (the alarm is HR-owned, so the engine leaves it alone),
+  // and recorded the new shift system for Fàbriques on 1 Oct. The job turns both into `action_effect` insights.
+  transaction(db, () => {
+    const sig = run(
+      db,
+      `INSERT INTO senyal (tipus, descripcio, collectiu_id, domini_id, periode, n, confianca, severity, status, audience, created_at)
+       VALUES ('sustained_decline', 'Condicions i organització stays low in Logística.', 2, 6, '2026-08', 40, 70, 'warning', 'action_linked', 'hr_manager', '2026-09-10 08:00:00')`,
+    );
+    run(
+      db,
+      "INSERT INTO recomanacio (senyal_id, text, estat, creat, aprovada_el) VALUES (?, ?, 'aprovada', '2026-09-12 09:00:00', '2026-09-15 10:00:00')",
+      Number(sig.lastInsertRowid),
+      "Review the loading-bay rota and publish it two weeks ahead.",
+    );
+    run(db, "INSERT INTO context_event (event_date, collectiu_id, domini_id, label) VALUES ('2026-10-01', 1, 6, 'New shift system in the factories')");
+  });
 
   // --- aggregates, insights, alarms -----------------------------------------------------------
   const report = runEngineJob(db, { now: Date.parse(`${world.dates[world.days - 1]}T22:00:00Z`) });
