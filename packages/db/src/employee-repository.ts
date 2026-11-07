@@ -304,3 +304,88 @@ export function deletePushSubscription(compteId: string): void {
 
 // PII redaction lives in ./pii.ts (ca/es/en); re-exported for the web routes.
 export { redactPii };
+
+// --- Web push ------------------------------------------------------------------------------
+// The subscription lives in its own table keyed by compte_id, is deleted on logout and is never
+// joined to analytics. Only the push sender (apps/web/lib/push.ts) reads targets, and it reports
+// aggregate counts only.
+
+export interface PushTarget {
+  endpoint: string;
+  p256dh: string;
+  auth: string;
+}
+
+/** Stores (or replaces) this account's subscription: one device per account. */
+export function savePushSubscription(compteId: string, sub: PushTarget): void {
+  getDb()
+    .prepare(
+      `INSERT INTO push_subscripcio (compte_id, endpoint, p256dh, auth) VALUES (?, ?, ?, ?)
+       ON CONFLICT(compte_id) DO UPDATE SET endpoint = excluded.endpoint, p256dh = excluded.p256dh,
+       auth = excluded.auth, creat = datetime('now')`,
+    )
+    .run(compteId, sub.endpoint, sub.p256dh, sub.auth);
+}
+
+export function hasPushSubscription(compteId: string): boolean {
+  return getDb().prepare("SELECT 1 FROM push_subscripcio WHERE compte_id = ?").get(compteId) !== undefined;
+}
+
+/**
+ * Subscriptions of every account in the need's collective (all collectives when the need has
+ * none). Returns endpoints and keys only, never the account id.
+ */
+export function listPushTargetsForNecessitat(necessitatId: number): PushTarget[] {
+  const db = getDb();
+  const n = db.prepare("SELECT collectiu_id AS c FROM necessitat WHERE id = ?").get(necessitatId) as { c: number | null } | undefined;
+  if (!n) return [];
+  return db
+    .prepare(
+      `SELECT s.endpoint, s.p256dh, s.auth FROM push_subscripcio s JOIN compte c ON c.id = s.compte_id
+       WHERE ? IS NULL OR c.collectiu_id = ?`,
+    )
+    .all(n.c, n.c) as PushTarget[];
+}
+
+/** The push service said the subscription is gone (404/410). */
+export function deletePushSubscriptionByEndpoint(endpoint: string): void {
+  getDb().prepare("DELETE FROM push_subscripcio WHERE endpoint = ?").run(endpoint);
+}
+
+/**
+ * Adds the unanswered questions of published HR needs for this account's collective to an
+ * existing day's batch, past the daily cap, so a need published after the batch was built shows
+ * up straight away (on login or from the push). Never adds a question the account already
+ * answered or that is already in that day's batch. Returns how many rows were added.
+ * Call it after the engine has built the day (it only appends, it never creates the batch).
+ */
+export function addPublishedNeedsToDay(compteId: string, day: string): number {
+  const db = getDb();
+  return db.transaction(() => {
+    const existing = db
+      .prepare("SELECT COUNT(*) AS n, COALESCE(MAX(slot), -1) AS maxSlot FROM assignment WHERE compte_id = ? AND day = ?")
+      .get(compteId, day) as { n: number; maxSlot: number };
+    if (existing.n === 0) return 0;
+    const missing = db
+      .prepare(
+        `SELECT p.id FROM pregunta p
+           JOIN necessitat n ON n.id = p.necessitat_id
+           JOIN compte c ON c.id = ?
+          WHERE p.estat = 'aprovada' AND p.is_followup = 0 AND n.estat = 'publicada'
+            AND (n.collectiu_id IS NULL OR n.collectiu_id = c.collectiu_id)
+            AND (p.collectiu_id IS NULL OR p.collectiu_id = c.collectiu_id)
+            AND NOT EXISTS (SELECT 1 FROM resposta r WHERE r.compte_id = c.id AND r.pregunta_id = p.id)
+            AND NOT EXISTS (SELECT 1 FROM assignment a WHERE a.compte_id = c.id AND a.day = ? AND a.pregunta_id = p.id)
+          ORDER BY p.prioritat DESC, p.id`,
+      )
+      .all(compteId, day) as { id: number }[];
+    const insert = db.prepare(
+      "INSERT OR IGNORE INTO assignment (compte_id, pregunta_id, day, slot, reason) VALUES (?, ?, ?, ?, 'need')",
+    );
+    let added = 0;
+    missing.forEach((q, i) => {
+      added += insert.run(compteId, q.id, day, existing.maxSlot + 1 + i).changes;
+    });
+    return added;
+  })();
+}

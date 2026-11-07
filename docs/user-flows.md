@@ -24,7 +24,7 @@ How to read this:
 
 Time: "today" for the employee flow is the Europe/Madrid calendar day (`madridDay`). `resposta.data` is stored in UTC. The current date at writing is 2026-11-07.
 
-Wiring status: the engine package (`@damm/engine`) **is wired into the routes**. `apps/web/lib/engine.ts` builds one engine (`createEngine({db, redact})`); `GET /api/pool/next` calls `getDailyBatch` and `POST /api/responses` calls `submitAnswers`. A scheduler runs the engine job every 10 minutes (`instrumentation.ts`). The old stub in `packages/db/src/employee-repository.ts` is no longer on the answer path. Flows below describe the engine behaviour as **Current**. Known mismatches between docs and code are called out where they occur (batch size is 3 per day by default while the app copy says "Dues preguntes"; a closed need still serves its questions, F-HR-9 B1).
+Wiring status: the engine package (`@damm/engine`) **is wired into the routes**. `apps/web/lib/engine.ts` builds one engine (`createEngine({db, redact})`); `GET /api/pool/next` calls `getTodaysBatch` (the engine's `getDailyBatch` plus published-need questions on top) and `POST /api/responses` calls `submitAnswers`. A scheduler runs the engine job every 10 minutes (`instrumentation.ts`). The old stub in `packages/db/src/employee-repository.ts` is no longer on the answer path. Flows below describe the engine behaviour as **Current**. Known mismatches between docs and code are called out where they occur (batch size is 3 per day by default while the app copy says "Dues preguntes"; a closed need still serves its questions, F-HR-9 B1).
 
 ## 1. Personas
 
@@ -94,7 +94,7 @@ Preconditions: an account exists, EMP-OUT.
 | 1 | Open `/` | Redirect to `/login`. |
 | 2 | `/login` | Title "Torna a entrar", lede "Continua on ho vas deixar.", fields "Nom d'usuari" and "Contrasenya", button "Entra", button "He perdut la contrasenya", line "Primera vegada? Obre l'enllaç d'invitació del teu equip.", link "Com tractem les teves dades". |
 | 3 | Enter correct credentials, "Entra". | Redirect to `/`, cookie set, today's questions load (F-EMP-5). |
-| 4 | `/settings` → "Tanca la sessió". | Push subscription row for the account deleted (none exists today), cookie destroyed, redirect to `/login`. `/` redirects to `/login` again. |
+| 4 | `/settings` → "Tanca la sessió". | Push subscription row for the account deleted, cookie destroyed, redirect to `/login`. `/` redirects to `/login` again. |
 
 Branches:
 
@@ -135,7 +135,8 @@ DB effect per answer: one `resposta` row with `compte_id`, `pregunta_id`, `valor
 
 **Current (engine wired):**
 
-- `GET /api/pool/next` calls `getEngine().getDailyBatch(compteId)` and returns `{ preguntes: [{ id, dominiId, text, tipus, options }] }`. The batch for a Madrid day is fixed once built (rows in the `assignment` table, inserted with `INSERT OR IGNORE`): reloading or opening a second tab gives the same questions.
+- `GET /api/pool/next` calls `getTodaysBatch(compteId)` (`apps/web/lib/engine.ts`) and returns `{ preguntes: [{ id, dominiId, text, tipus, options }] }`. The engine's batch for a Madrid day is fixed once built (rows in the `assignment` table, inserted with `INSERT OR IGNORE`): reloading or opening a second tab gives the same questions.
+- **Published needs go past the daily cap.** After the engine builds the day, `addPublishedNeedsToDay` (`@damm/db/employee`) appends every approved question of a `publicada` need for the account's collective that the account never answered and is not already in today's batch, as extra `reason='need'` rows. So an employee who logs in or taps the push after a publish sees that need's questions on `/` straight away, even after answering the day's 3; nothing already answered repeats. `submitAnswers` accepts them because they are today's rows. Native engine support is a Natan item (C10).
 - Order of the batch: one due follow-up, then one approved HR need (`prioritat` descending, `maxNeedsPerDay` = 1), then monitoring questions (domains drawn in proportion to their priority with a boost for outliers, one item per domain, facet rotation, Thompson-sampled format).
 - **Batch size is 3 per day by default** (`questionsPerDay` in `packages/engine/src/config.ts`, overridable via `engine_config.questions_per_day`; no override in the seed or demo). The app copy still says "Dues preguntes breus al dia" on `/join`: a doc and UI mismatch, not a test failure of the engine.
 - **No strict "same question 4 days in a row" rule.** There is a soft cooldown of 28 days per item (`itemCooldownDays`): the picker prefers items not seen in the last 28 days and falls back to any item so a slot is never left empty. An HR need's questions are asked once per person (an already-answered question is not offered again).
@@ -179,7 +180,7 @@ Preconditions: EMP-IN.
 | 1 | `/settings` | h1 "Configuració", subtitle "Les teves respostes són anònimes i només es mostren de forma agregada, en grups de 10 persones o més." In order: card "Privadesa" with link "Llegeix com tractem les dades"; panel "Canvia la contrasenya"; panel "Codi de recuperació"; card "Sessió" with button "Tanca la sessió"; panel "Esborra el compte" (details in F-EMP-10). |
 | 2 | Follow the privacy link or `/privacitat` | Heading "Com tractem les teves dades" with sections "Què recollim", "Què veu Recursos Humans", "Què no fem mai", "Comentaris lliures", "Sessió i compte" (verify the exact headings in the browser). Reachable without a session from `/join/[codi]`, `/onboarding` and `/login` (link "Com tractem les teves dades"). |
 
-Expected gap (not built): the push toggle (R-FLOW-5d, F-EMP-9). Retention beyond account deletion (R-PRIV-8) is not built.
+Push toggle: see F-EMP-9. Retention beyond account deletion (R-PRIV-8) is not built.
 
 ### F-EMP-8 "Has dit, hem fet" (closing the loop for the employee)
 
@@ -192,10 +193,20 @@ Preconditions: EMP-IN, at least one `recomanacio` with `estat = 'aprovada'` for 
 
 Branches: with no approved action the card is **always rendered** with the text "Encara no hi ha accions aprovades per al teu col·lectiu. Quan Recursos Humans en aprovi, les veuràs aquí, amb el període i quantes persones hi havia al darrere." An action for another collective is never shown. Text is the recommendation text, aggregate context only.
 
-### F-EMP-9 Push notifications (expected gap)
+### F-EMP-9 Push notifications
 
 Covers: R-FLOW-5d, N-12, R-CH-5.
-Status: **not built.** No `/api/push/subscribe`, no toggle in `/settings`, no `web-push` send job. `push_subscripcio` exists in the schema; logout already deletes rows from it. A test must expect the absence of any permission prompt and any notification. When built (Jan): permission only after a tap in `/settings`; one row keyed by `compte_id`; generic text "Tens preguntes noves" with no question text; row deleted on logout and account deletion; never joined to analytics; iOS needs the PWA on the home screen (16.4+); public HTTPS needed (tunnel).
+Status: **built for publish**, no daily reminder. Needs `VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY` in `.env`; without them `/settings` shows "Les notificacions no estan activades en aquest servidor." and the home nudge is hidden.
+
+| # | Route and action | Expected result |
+|---|---|---|
+| 1 | `/settings`, card "Notificacions" | Text "Activa-les i t'avisarem quan hi hagi preguntes noves. No veiem qui les rep.", button "Activa les notificacions". No permission prompt before the tap. |
+| 2 | Press "Activa les notificacions", allow | Browser permission prompt, then text "Rebràs un avís en aquest dispositiu…" and button "Desactiva les notificacions". One `push_subscripcio` row keyed by `compte_id` (upsert, one per account). |
+| 3 | `/` with notifications off | A compact "Notificacions" card under the answer flow with the same button; hidden once on, denied or unsupported. |
+| 4 | HR publishes a need for the account's collective (F-HR-4) | Notification "Escolta activa" / "Tens preguntes noves. Només et prendrà un minut." (no question text). Tapping it focuses or opens the app at `/`. |
+| 5 | "Desactiva les notificacions" | Browser unsubscribes, row deleted. |
+
+Branches: permission denied shows "Has bloquejat les notificacions…"; a browser without push (iPhone Safari outside the home screen) shows "Aquest navegador no admet notificacions. A l'iPhone, afegeix l'app a la pantalla d'inici i obre-la des d'allà." The row is deleted on logout and account deletion and when the push service answers 404/410. Never joined to analytics. A real phone needs public HTTPS (tunnel).
 
 ### F-EMP-10 Account management
 
@@ -276,22 +287,22 @@ Preconditions: F-HR-2 done, a need in "Esborrany".
 | 5 | Edit title and introduction, press "Desar títol i introducció" | `necessitat` header updated; empty title is ignored. |
 | 6 | Press "Aprovar" on each remaining question | Each moves to "Preguntes aprovades". `pregunta.estat = 'aprovada'`, `prioritat = 100` (when tied to a need), `aprovada_per = 'hr-demo'`, `aprovada_el` set. When no draft is left and at least one is approved, the need card shows "Llesta per publicar". |
 
-Branches: approving or editing a question that is no longer `draft` does nothing (SQL guards on `estat = 'draft'`). Discarding every question leaves the need in "Esborrany" with no approved question, so "Publicar amb enllaç i QR" must not appear (verify). `approveQuestion` is the only code path that sets `estat = 'aprovada'`.
+Branches: approving or editing a question that is no longer `draft` does nothing (SQL guards on `estat = 'draft'`). Discarding every question leaves the need in "Esborrany" with no approved question, so "Publicar i avisar per notificació" must not appear (verify). `approveQuestion` is the only code path that sets `estat = 'aprovada'`.
 
 Invariant: AI proposes, a human decides. Nothing reaches the pool before step 6.
 
-### F-HR-4 Publish with link and QR
+### F-HR-4 Publish and notify by push
 
-Covers: R-FLOW-4a to 4d, R-PRIV-13, N-1.
+Covers: R-FLOW-4a to 4d, R-FLOW-5d, R-PRIV-13, N-1.
 Preconditions: a need in "Llesta per publicar".
 
 | # | Route and action | Expected result |
 |---|---|---|
-| 1 | On the need card press "Publicar amb enllaç i QR" | State "Publicada". For a need tied to one collective, one `joincode` and one `publicacio` row; for a need for all collectives, one per collective (four). Codes are 8 hex characters (`crypto.randomBytes(4)`), link `<PUBLIC_BASE_URL>/join/<CODE>`. `necessitat.estat = 'publicada'`. |
+| 1 | On the need card press "Publicar i avisar per notificació" | State "Publicada", hint "Les preguntes són al grup de preguntes i el col·lectiu ha rebut una notificació al mòbil." `necessitat.estat = 'publicada'`. No `joincode` or `publicacio` row is created. Every subscribed device in the need's collective (all collectives when it has none) gets a push. A notice above the list reads "S'han enviat notificacions a N dispositius del col·lectiu.", or "…menys de 10 dispositius…" under 10, or says notifications are off when the VAPID keys are missing. HR never sees which accounts. |
 | 2 | `/hr/publish` | Title "Enllaços i QR per col·lectiu". One card per collective with the code, link, QR, a "Copia" button, "Cartell per imprimir" (A4 poster at `/hr/publish/<codi>/poster`), "Publica a Teams" (`/hr/publish/<codi>/teams`, Adaptive Card titled "Escolta activa"), and "comptes al col·lectiu" (count only, `<10` when under 10). |
-| 3 | Open the join link on a phone | F-EMP-1. |
+| 3 | Open a collective's join link on a phone (onboarding) | F-EMP-1. |
 
-Notes: the card text shows the code and the link uses `PUBLIC_BASE_URL` (default `http://localhost:3000`; missing from `.env.example`, a known finding). Approved questions were already in the pool at F-HR-3; publishing only adds access (code, link, QR). The seed codes `DAMM-*` are separate and always active.
+Notes: the card text shows the code and the link uses `PUBLIC_BASE_URL` (default `http://localhost:3000`; missing from `.env.example`, a known finding). Approved questions were already in the pool at F-HR-3 (the engine serves `aprovada` questions whatever the need's state); publishing marks the need and tells the collective. Join codes, links and QR are per collective, for onboarding only; the seed codes `DAMM-*` are always active.
 
 Branches: `/hr/publish` with no code shows "Encara no hi ha cap codi d'accés." and with no need "Encara no hi ha cap necessitat." The Teams card is a copyable payload; sending to Teams is not built (N-1 roadmap in `docs/teams-integration.md`).
 
@@ -351,7 +362,7 @@ Preconditions: an **approved** recommendation with no follow-up yet.
 |---|---|---|
 | 1 | Press "Crear enquesta de seguiment" | Redirect to `/hr/needs`. A new need in "Esborrany", AI drafted, linked via `recomanacio.seguiment_necessitat_id`. Nothing approved. |
 | 2 | Back on `/hr/recommendations` | Badge "Seguiment creat". The button is gone. |
-| 3 | Continue with F-HR-3 and F-HR-4 | Questions enter the pool on approval; link published. |
+| 3 | Continue with F-HR-3 and F-HR-4 | Questions enter the pool on approval; the collective is notified on publish. |
 | 4 | Employee side | The collective's employees see the action in "Has dit, hem fet" with the badge "Enquesta de seguiment en marxa" (F-EMP-8). |
 
 Branches: a recommendation that is not approved, or already has a follow-up, gives no new need. LLM down: draft from templates (F-HR-2 B1).
@@ -450,7 +461,7 @@ Branch: there is no `POST /api/jobs/run` (known finding); only the script exists
 ### F-JOB-2 Daily batch from the engine (wired)
 
 Covers: R-FLOW-5c, R-FLOW-5f, R-TENSION-1.
-`getDailyBatch` gives the same batch all day (stored in `assignment`); order follow-up, HR need (`prioritat`, one per day), monitoring (domains ∝ priority with an outlier boost, 28-day soft item cooldown, Thompson-sampled format); 3 questions a day by default (`questionsPerDay`). `submitAnswers` rejection reasons `not_in_todays_batch`, `already_answered`, `invalid_value`, `missing_comment`. Status: wired into `GET /api/pool/next` and `POST /api/responses` via `apps/web/lib/engine.ts`; a scheduler runs the engine job every 10 minutes (`instrumentation.ts`). Testable from the API and the UI as in F-EMP-5. The "4 days in a row" statement of the older docs is not a rule in the code (see F-EMP-5).
+`getDailyBatch` gives the same batch all day (stored in `assignment`); order follow-up, HR need (`prioritat`, one per day), monitoring (domains ∝ priority with an outlier boost, 28-day soft item cooldown, Thompson-sampled format); 3 questions a day by default (`questionsPerDay`). `submitAnswers` rejection reasons `not_in_todays_batch`, `already_answered`, `invalid_value`, `missing_comment`. Status: wired into `GET /api/pool/next` and `POST /api/responses` via `apps/web/lib/engine.ts` (which tops the day up with published-need questions past the cap, see F-EMP-5); a scheduler runs the engine job every 10 minutes (`instrumentation.ts`). Testable from the API and the UI as in F-EMP-5. The "4 days in a row" statement of the older docs is not a rule in the code (see F-EMP-5).
 
 ### F-JOB-3 Seed and demo builds
 
@@ -461,7 +472,7 @@ Covers: R-DATA-1 to R-DATA-9.
 
 ### F-JOB-4 Daily push send (expected gap)
 
-Covers: R-FLOW-5d. Not built (see F-EMP-9). No job sends anything.
+Covers: R-FLOW-5d. Not built. Pushes are sent only when HR publishes a need (F-HR-4, F-EMP-9); no scheduled job sends reminders.
 
 ## 7. Coverage matrix (requirement → flows)
 

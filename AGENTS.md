@@ -87,7 +87,7 @@ Non-negotiable rules:
 - **Domains (6):** Benestar, Lideratge, Desenvolupament, Cultura i pertinença, Entorn i relacions, Condicions i organització. Each collective gets a different subset of items per domain.
 - **Minimum group size: 10.** Any segment (collective, shift, period, domain) with fewer than 10 respondents is suppressed everywhere, dashboard and exports included.
 - **No time tracking, no clock-in anchor.**
-- **Typeform is ignored.** The app is the only channel. "Publish" means putting approved questions in the survey pool and generating the join link and QR.
+- **Typeform is ignored.** The app is the only channel. "Publish" means putting an approved need's questions in the survey pool and sending a web push notification to the subscribed devices of its collective (all collectives when it has none). Join links and QR codes are per-collective onboarding codes on `/hr/publish`, not per need.
 - **App:** standalone mobile app (PWA). Onboarding: join code (identifies company and collective), then the user picks a username and password. The account maps to an opaque internal ID. No email or phone, no personal data. Credentials are salted-hashed. Recovery uses a one-time code.
 - **Admin sees only counts per collective, never identities.**
 - **Longitudinal tracking** per internal ID is for trajectory clustering only. It is never shown per person and never leaves the analysis layer.
@@ -118,12 +118,12 @@ packages/seed/       synthetic population, responses and comments
 3. **AI:** drafts questions from a need, redacts PII from comments, proposes recommendations and follow-up surveys. Proposals only, a human approves.
 4. **Analysis:** runs as jobs (script or `POST /api/jobs/run`) and writes aggregate tables. Clusters comments, finds emerging themes and weak signals, compares periods, computes representativeness against the synthetic population and suppresses segments below the minimum group size.
 5. **Employee app (PWA):** join code onboarding, answer UI per collective, push notifications, response submission.
-6. **HR dashboard:** need in natural language, review and approve AI drafts, publish (join link and QR), results with representativeness, recommendations, follow-up survey.
+6. **HR dashboard:** need in natural language, review and approve AI drafts, publish (push to the collective; join links and QR per collective for onboarding), results with representativeness, recommendations, follow-up survey.
 
 ### Integration points
 
 - The employee side and the HR side meet only through the DB and two endpoints: `GET /api/pool/next` (questions for an account) and `POST /api/responses` (answers in).
-- Approved questions enter the pool via `pregunta.estat = aprovada`. Publishing creates the join link and QR.
+- Approved questions enter the pool via `pregunta.estat = aprovada`. Publishing marks the need `publicada` and notifies the collective by web push; HR gets back only an aggregate device count (`<10` under the minimum group size).
 - Analysis jobs write `agregat`, `tema`, `comentari_tema`, `senyal`, `recomanacio`. The dashboard reads only these. The LLM is never called in a dashboard request path.
 - The seed makes both sides workable independently: seeded responses feed analysis, seeded approved questions feed the engine.
 

@@ -9,6 +9,7 @@ import {
 } from "@damm/db/hr";
 import { createDraftedFollowUp } from "./follow-up";
 import { changeAlarmStatus, type AlarmStatus } from "@/lib/hr-engine";
+import { notifyNeedPublished } from "@/lib/push";
 
 const HR_USER = "hr-demo"; // no auth in the prototype; approval is still an explicit human action
 
@@ -76,9 +77,19 @@ export async function editQuestionAction(formData: FormData) {
   revalidatePath("/hr/review");
 }
 
+/**
+ * Publish: the approved questions go live in the pool for the need's collective, then every
+ * subscribed device in that collective gets a push notification. HR passes only the need id and
+ * gets back an aggregate count (shown as "<10" under the minimum group size).
+ */
 export async function publishAction(formData: FormData) {
-  publishNecessitat(Number(formData.get("id")), process.env.PUBLIC_BASE_URL ?? "http://localhost:3000");
+  const id = Number(formData.get("id"));
+  if (!publishNecessitat(id)) redirect("/hr/needs");
+  const outcome = await notifyNeedPublished(id);
+  revalidatePath("/hr/needs");
   revalidatePath("/hr/review");
+  const avis = outcome.status === "off" ? "off" : String(outcome.devices);
+  redirect(`/hr/needs?publicada=${id}&avis=${encodeURIComponent(avis)}`);
 }
 
 export async function approveRecommendationAction(formData: FormData) {
