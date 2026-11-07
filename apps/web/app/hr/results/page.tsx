@@ -1,4 +1,6 @@
+import Link from "next/link";
 import { MIN_GROUP_SIZE } from "@damm/shared";
+import { Radar, type RadarSeries } from "./radar";
 import {
   accountCounts,
   getRepresentativeness,
@@ -106,7 +108,46 @@ function TrendTable({ periodes, rows }: { periodes: string[]; rows: { domini: st
   );
 }
 
-export default function ResultsPage() {
+function DomainRadar({ trends, vs }: { trends: ReturnType<typeof getTrends>; vs: string | undefined }) {
+  const [overall, ...perCollective] = trends.series;
+  const last = trends.periodes.length - 1;
+  const latest = trends.periodes[last];
+  const prev = trends.periodes[last - 1];
+  const at = (rows: typeof overall.rows, k: number) => rows.map((r) => r.cells[k]?.mitjana ?? null);
+  const other = perCollective.find((s) => s.scope === vs);
+
+  const series: RadarSeries[] = [{ label: `Tots · ${latest}`, values: at(overall.rows, last), tone: "primary" }];
+  if (other) {
+    const byDomain = new Map(other.rows.map((r) => [r.domini, r.cells[last]?.mitjana ?? null]));
+    series.push({ label: `${other.scope} · ${latest}`, values: overall.rows.map((r) => byDomain.get(r.domini) ?? null), tone: "compare" });
+  } else if (prev) {
+    series.push({ label: `Tots · ${prev}`, values: at(overall.rows, last - 1), tone: "compare" });
+  }
+
+  const options = [{ key: undefined, label: "Període anterior" }, ...perCollective.map((s) => ({ key: s.scope, label: s.scope }))];
+  const active = other ? other.scope : undefined;
+  return (
+    <div className="space-y-3">
+      <div className="flex flex-wrap items-center gap-2 text-sm">
+        <span className="opacity-70">Compara amb:</span>
+        {options.map((o) => (
+          <Link
+            key={o.label}
+            href={o.key ? `?vs=${encodeURIComponent(o.key)}` : "?"}
+            scroll={false}
+            className={`rounded-full border px-3 py-1 ${o.key === active ? "bg-foreground text-background" : "opacity-80 hover:opacity-100"}`}
+          >
+            {o.label}
+          </Link>
+        ))}
+      </div>
+      <Radar axes={overall.rows.map((r) => r.domini)} series={series} />
+    </div>
+  );
+}
+
+export default async function ResultsPage({ searchParams }: { searchParams: Promise<{ vs?: string }> }) {
+  const { vs } = await searchParams;
   const rep = getRepresentativeness();
   const trends = getTrends();
   const themes = listThemes();
@@ -143,6 +184,7 @@ export default function ResultsPage() {
         <h2 className="text-lg font-semibold">Tendències per domini</h2>
         {overall ? (
           <>
+            <DomainRadar trends={trends} vs={vs} />
             <p className="text-sm opacity-70">Mitjana (1–5) per període. Tots els col·lectius.</p>
             <TrendTable periodes={trends.periodes} rows={overall.rows} />
             {perCollective.map((s) => (
