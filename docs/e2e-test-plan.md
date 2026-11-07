@@ -1,10 +1,10 @@
 # End-to-end test plan
 
-A manual runbook for the full loop, to follow after merging `jan/dev` with Natan's `main`, plus a catalogue of smaller scenarios. Written 2026-11-07 against `jan/dev` at `353d3a8`. Routes, Catalan labels, commands and env var names were read from the code. Anything that does not exist yet is marked **pending (owner)**. Re-check the pending marks after every sync: Jan and Natan own the owner column.
+A manual runbook for the full loop, to follow after merging `jan/dev` with Natan's `main`, plus a catalogue of smaller scenarios. Written 2026-11-07, updated after `jan/dev` at `8376d54` (the engine, contracts C2 to C6, is merged). Routes, Catalan labels, commands and env var names were read from the code. Anything that does not exist yet is marked **pending (owner)**. Re-check the pending marks after every sync: Jan and Natan own the owner column.
 
 Requirement IDs (R-FLOW-2a, R-PRIV-3, N-5 and so on) come from `docs/requirements.md`. Cite them in the results log.
 
-Status of the remote when this was written: `git fetch` failed (repository not found), so "after the merge" assumes `origin/main` and `origin/natan/engine-core` as last seen locally. Re-fetch first.
+The engine is in the tree as `@damm/engine` (`packages/engine`). A separate session is wiring it into the app (pool and responses through `createEngine`, `runEngineJob` after seed, scheduler in `apps/web/instrumentation.ts`, insight cards, engine alarms, alarm badge, manager scope). Steps that depend on that work are marked **in progress (engine integration)** and their expected behaviour is the pass criterion. Run them as soon as it lands.
 
 ## How to use this document
 
@@ -18,11 +18,11 @@ Pending items at a glance (as of the date above):
 | Pending | Owner | Where it shows up |
 |---|---|---|
 | Push subscribe and send (`/api/push/*`, service-worker `push` handler, toggle in `/settings`) | Jan (backlog task 4, branch `claude/employee-polish-9c507b`) | M-12, M-13, S-30 to S-32 |
-| Engine behind `GET /api/pool/next` and `POST /api/responses` (`createEngine({db, redact})`) | Jan wires, Natan built it (`origin/natan/engine-core`, contract C2 items 2 and 3 open for Jan) | M-13, M-15, S-40 to S-43 |
-| `runEngineJob(db)` after seeding, engine job in the app (`pnpm --filter @damm/engine run job`) | Jan wires, Natan built it | M-17 |
-| Analysis jobs and `POST /api/jobs/run` (clustering, themes, weak signals, aggregates) | Natan | M-17, M-20 |
-| Alarms and insights shown in the HR UI (read API exists on the engine branch, no UI) | Jan (UI), Natan (API) | M-20 |
-| `/manager` and `/manager/[collective]` | Jan (branch `claude/manager-view-1f02be`, unmerged) | M-21, S-70 to S-72 |
+| Engine behind `GET /api/pool/next` and `POST /api/responses` (`createEngine({db, redact})`, contract C2) | In progress (engine integration session); engine itself is merged | M-13, M-15, S-40 to S-43 |
+| `runEngineJob(db)` after seed, scheduler in `apps/web/instrumentation.ts` (C4, C5) | In progress (engine integration) | M-17 |
+| `POST /api/jobs/run` and the old clustering and theme jobs (the engine job covers scores, insights and alarms; theme clustering of comments is not in the engine) | Open question for Natan | M-17, M-20 |
+| Insight cards on `/hr/results`, engine alarms with ack, action_linked and resolved on the signals pages, alarm badge (C4, C5) | In progress (engine integration) | M-18, M-20, M-20b, S-90 |
+| Manager scope for engine alarms and insights (viewer `{role:"manager", collectiuId}`); the `/manager` pages themselves are merged | In progress (engine integration) | M-23, S-72 |
 | Change password, delete account, regenerate recovery code in `/settings` | Jan (branch `claude/employee-polish-9c507b`) | S-24 to S-26 |
 | Need-AI repair loop and quality evaluation | Jan (branch `claude/need-ai-quality-e5b252`, unmerged) | S-63 |
 | Helper that adds many answers for a new need | Nobody yet (suggest Jan, `packages/seed`) | M-16 |
@@ -52,7 +52,7 @@ Fill `.env` by hand. Never paste values into this document, a ticket or a chat. 
 
 ### 1.2 Database
 
-Two ways, both write `data/app.db` (override with `DB_PATH`). Pick one per run.
+Three ways. A and B write `data/app.db` (override with `DB_PATH`); C writes `data/demo.db` and leaves `app.db` alone. Pick one per run.
 
 ```bash
 # A. Fixture only: populated HR screens, no accounts, no join codes
@@ -61,11 +61,16 @@ pnpm --filter @damm/db run init
 # B. Full seed: about 1,200 synthetic employees, 700 responses, 500 comments, 4 join codes
 pnpm --filter @damm/db run init
 pnpm --filter @damm/seed run seed
+
+# C. Engine demo DB: 92 days of answers, planted stories, takes about 4 minutes. Writes data/demo.db
+source ~/.claude/bin/heavy-gate.sh
+pnpm --filter @damm/engine run demo
+DB_PATH=data/demo.db pnpm dev
 ```
 
-The main scenario needs B. Expected seed output ends with `employees=… accounts=… questions=… responses=… comments=…` and the line `Sub-threshold segments (collective x shift, n<10): 1 -> Logística/nit (n=6)`. Join codes after seed: `DAMM-FAB`, `DAMM-LOG`, `DAMM-COM`, `DAMM-OFI`. Optional: `pnpm --filter @damm/seed run comments` regenerates comments from templates, `-- --llm` uses the LLM (needs `LLM_*`).
+The main scenario needs B. C is only for S-90, and its join codes are `DEMO-FAB`, `DEMO-LOG`, `DEMO-COM`, `DEMO-OFI` (three-letter prefix of each collective name, so check `joincode` if one differs). Expected seed output ends with `employees=… accounts=… questions=… responses=… comments=…` and the line `Sub-threshold segments (collective x shift, n<10): 1 -> Logística/nit (n=6)`. Join codes after seed: `DAMM-FAB`, `DAMM-LOG`, `DAMM-COM`, `DAMM-OFI`. Optional: `pnpm --filter @damm/seed run comments` regenerates comments from templates, `-- --llm` uses the LLM (needs `LLM_*`).
 
-After B the aggregate tables (`agregat`, `tema`, `senyal`, `recomanacio`) are filled by the seed's dashboard fixtures. Whether they are filled by a real job instead is **pending (Natan)**, see M-14.
+After B the aggregate tables (`agregat`, `tema`, `senyal`, `recomanacio`) are filled by the seed's dashboard fixtures. They are rebuilt by the engine job (M-17). For the planted demo stories use the demo DB (path C below, scenario S-90).
 
 ### 1.3 Start the app
 
@@ -120,9 +125,9 @@ Always write the commit (`git rev-parse --short HEAD`) in the log.
 
 ## 2. Main scenario: the full loop
 
-Covers R-FLOW-1 to R-FLOW-8, R-CH-1, R-CH-5, N-7. Preconditions: sections 1.1 to 1.4 done, DB from path B, `HR_ACCESS_CODE` set, phone on the tunnel URL. HR works on desktop, the employee on the phone. 24 steps.
+Covers R-FLOW-1 to R-FLOW-8, R-CH-1, R-CH-5, N-7. Preconditions: sections 1.1 to 1.4 done, DB from path B, `HR_ACCESS_CODE` set, phone on the tunnel URL. HR works on desktop, the employee on the phone. 25 steps.
 
-Alerts, today versus pending. **Employee side:** a push notification for a new question is **pending (Jan)** for subscribe and send, and **pending (Natan, wired by Jan)** for the engine that decides what to send. Today the employee only sees new questions by opening the app. **HR side:** today the alert is the "Senyals" list and the "Nous resultats" strip on `/hr`, fed by the seeded `senyal` rows. Engine alarms with hysteresis and cooldown exist on `origin/natan/engine-core` (`packages/engine/src/alarms.ts`, read API in `read.ts`) but have no HR screen yet: **pending (Jan UI, Natan API)**.
+Alerts. **Employee side:** a push notification for a new question is **pending (Jan)** for subscribe and send. Until then the employee sees new questions by opening the app. **HR side:** the engine writes alarms into `senyal` (types `sharp_drop`, `sustained_decline`, `changepoint_cluster`, `polarisation`, `feble`, `low_confidence`, `improvement`, each with severity, audience and status; 7-day cooldown). The HR screens for them (signals pages with acknowledge, action linked and resolve, header alarm badge, insight cards) are **in progress (engine integration)**; M-18, M-20 and M-20b state the pass criteria. The older seeded "Senyals" list and "Nous resultats" strip on `/hr` exist today.
 
 ### Phase A. HR side
 
@@ -147,17 +152,18 @@ Alerts, today versus pending. **Employee side:** a push notification for a new q
 | M-12 | Enable push (employee settings or install prompt) | **Pending (Jan).** Today `/settings` has only "Privadesa" and "Sessió" ("Tanca la sessió"); there is no push toggle. When built: permission prompt, subscription stored in its own table keyed by account, removed on logout | R-FLOW-5d, N-12 | ☐ N/A |
 | M-13 | Trigger a notification for a new question | **Pending (Jan push, Natan engine).** Expected later: a push arrives within a minute of publish or at the next daily slot; tapping it opens the app at the question. Fallback today: reload the home page | R-FLOW-5d, R-FLOW-5c | ☐ N/A |
 | M-14 | Open the home page and answer the day's questions | Heading "Carregant les preguntes d'avui…", then questions one at a time. Rate, yes/no or ranking as drafted. "Envia" or "Envia i continua". For an open question type a comment containing a fake name and a fake phone (for example "Truqueu al 600123456") | R-FLOW-5a, R-FLOW-6a | ☐ |
-| M-15 | After the last question | "Avui ja has acabat" and "Tornem demà amb un parell de preguntes." Reloading shows no repeats the same day. Note: today `GET /api/pool/next` is a stub, so which questions come and how many is **pending (Natan engine, wired by Jan)**. For this run the newly published need must show up for at least the Logística account; if it does not, log it | R-FLOW-5c, R-FLOW-5f | ☐ |
+| M-15 | After the last question | "Avui ja has acabat" and "Tornem demà amb un parell de preguntes." Reloading gives the same batch all day and no repeats (the engine stores the day's batch in `assignment`). Order inside the batch: follow-up first, then the published HR need, then monitoring. The newly published Logística need must appear for a Logística account. A second `POST /api/responses` for the same question is refused (`already_answered`). **In progress (engine integration)**: the route is still the stub until the wiring lands | R-FLOW-5c, R-FLOW-5f | ☐ |
 
 ### Phase C. Enough answers, analysis, HR reads
 
 | # | Action | Expected | Req | P/F |
 |---|---|---|---|---|
 | M-16 | Reach the minimum group of 10 | The seed already gives groups above 10 for every segment but Logística/nit (6 accounts, by design). So "n at least 10" for the new need has two routes. Route 1 (works today): judge suppression on the seeded periods in `/hr/results`. Route 2 (new need): create 10 accounts by hand with `DAMM-LOG` (private windows) and answer. A script that does this is **pending (nobody, suggest Jan in `packages/seed`)**. Until it exists, the new need's own question will show "Suprimit" in results, which is correct and counts as a pass for S-1 | R-PRIV-2, R-DATA-1 | ☐ |
-| M-17 | Run the analysis | **Pending (Natan).** There is no analysis package and no `POST /api/jobs/run` in the tree today. The engine job exists on `origin/natan/engine-core`: `pnpm --filter @damm/engine run job` (reads `DB_PATH`) and prints a JSON report. After the merge: run it, then reload `/hr/results`. Expected: aggregates update, no error in the server log, the LLM is not called by a dashboard request | R-FLOW-6b to 6e | ☐ N/A |
+| M-17 | Run the engine job | `pnpm --filter @damm/engine run job` (uses `DB_PATH`) prints a JSON report with counts for aggregates, insights and alarms and no error. Once the scheduler is wired (**in progress, engine integration**) it also runs by itself every 10 minutes inside `pnpm dev`; check the server log for a job line and reload `/hr/results`. Expected: `agregat`, `insight` and `senyal` update, segments under 10 stay suppressed, the LLM is not called by any dashboard request. Theme clustering of comments and `POST /api/jobs/run` are not part of the engine: **pending (Natan to confirm)** | R-FLOW-6b to 6e | ☐ |
 | M-18 | Open "Resultats" | Header "Resultats"; KPI "Comptes actius", "Temes detectats", "Temes emergents", "Segments suprimits"; sections "Perfil per domini", "Representativitat", "Temes dels comentaris", "Tendències per domini", "Comptes per col·lectiu". Every figure carries its n. "Compara amb" switches the period (query `?vs=`) | R-FLOW-7a to 7f, R-CH-2 | ☐ |
 | M-19 | Read "Representativitat" | Columns "Respostes", "Població", "Diferència"; "Per torn" shows night under-response; differences of 5 pp or more are marked. The Logística night group reads "Suprimit" | R-DIFF-1, R-BIAS-1, N-2 | ☐ |
-| M-20 | Open `/hr` and "Recomanacions". Check "Senyals": the October emerging theme ("Emergent") and the Logística safety-equipment and heat weak signal. Open "Veure detall →" on one | Signal detail page shows the status "Estat del senyal:", related themes and recommendations. HR-side alarms from the engine: **pending (Jan UI)** | R-FLOW-7e, R-FLOW-6e, R-DIFF-3 | ☐ |
+| M-20 | Open `/hr` and "Recomanacions" (signals pages). Check the signals list. Open "Veure detall →" on one | Seeded signals (October emerging theme, Logística safety equipment and heat) show with "Estat del senyal:". **In progress (engine integration), pass criteria:** engine alarms are listed with severity and audience; HR can move one to acknowledged, action linked or resolved and the new state survives a reload; the engine never overwrites an acknowledged or action-linked alarm on the next job run; the header shows a badge with the open alarm count after a page load; Lideratge alarms are HR only | R-FLOW-7e, R-FLOW-6e, R-DIFF-3 | ☐ |
+| M-20b | Insight cards on "Resultats" | **In progress (engine integration), pass criteria:** cards for domain state, top mover, polarisation, importance gap, trajectory mix, follow-up confirmation and segment gap (shift or manager) read from the `insight` table; a suppressed row shows no value; no card names a person or a group under 10 | R-FLOW-7, R-PRIV-2 | ☐ |
 | M-21 | On a recommendation press "Aprovar" (or "Descartar") | Badge changes. Nothing is executed automatically. | R-FLOW-8a, 8c | ☐ |
 | M-22 | On a signal press "Crear enquesta de seguiment" | Badge "Seguiment creat". You land on `/hr/needs` with a new need in "Esborrany" (AI drafted, nothing approved). Approve and publish it as in M-7 and M-8. On the employee home, the loop list "Has dit, hem fet" shows the approved action and the badge "Enquesta de seguiment en marxa" | R-FLOW-8b, 8d, N-5 | ☐ |
 
@@ -165,10 +171,10 @@ Alerts, today versus pending. **Employee side:** a push notification for a new q
 
 | # | Action | Expected | Req | P/F |
 |---|---|---|---|---|
-| M-23 | Manager opens `/manager` | **Pending (Jan, branch `claude/manager-view-1f02be`).** Expected: "Vista de responsables" listing the collectives; `/manager/<collective>` shows that collective only, with suppression. Same HR gate | R-U-3 | ☐ N/A |
+| M-23 | Manager opens `/manager` | "Vista de responsables" lists the collectives; `/manager/<collective>` shows that collective only, with suppression, behind the same HR gate. **In progress (engine integration), pass criteria:** the engine viewer is `{role:"manager", collectiuId}`, so only that collective's insights and only alarms with audience `hr_manager` appear; HR-only alarms (all Lideratge alarms) never show | R-U-3, N-8 | ☐ |
 | M-24 | In "Necessitats" press "Tanca la necessitat" on the test need | State "Tancada". The employee side no longer receives its questions. Confirm via the "Tancades" filter count | R-FLOW-8c | ☐ |
 
-That makes 24 steps. **M-12, M-13, M-17 and M-23 are fully pending**; M-15, M-16 and M-20 are partly pending.
+That makes 25 steps (M-1 to M-24 plus M-20b). **M-12 and M-13 (push) are pending (Jan)**. **M-15, M-17, M-20, M-20b and M-23 are in progress (engine integration)** and ready to run when it lands. M-16 is partly pending (no helper for many answers).
 
 ## 3. Further scenarios
 
@@ -219,7 +225,7 @@ IDs are `S-n`. Steps are short; expected results are what a pass looks like.
 | S-31 | iPhone, PWA not added to the home screen | A short explanation that push needs "Afegeix a la pantalla d'inici"; nothing breaks |
 | S-32 | Log out | Subscription row deleted; no push after logout |
 
-### 3.5 Question pacing (R-FLOW-5c, R-FLOW-5f, R-TENSION-1): depends on the engine (Natan, wired by Jan)
+### 3.5 Question pacing (R-FLOW-5c, R-FLOW-5f, R-TENSION-1): engine is merged, wiring in progress (engine integration)
 
 | ID | Steps | Expected |
 |---|---|---|
@@ -253,7 +259,7 @@ IDs are `S-n`. Steps are short; expected results are what a pass looks like.
 |---|---|---|
 | S-70 | With `HR_ACCESS_CODE` set, open `/hr/results`, `/hr/publish`, `/hr/needs` with no cookie | Each redirects to `/hr-login?next=<path>`; after login you return to that path |
 | S-71 | Employee session cannot open HR | The HR cookie is separate; an employee login does not unlock `/hr` |
-| S-72 | Manager scope: `/manager/<other collective>` | **Pending (Jan).** Expected: only the manager's own collective; others refused or hidden |
+| S-72 | Manager scope: `/manager/<other collective>` as a manager | **In progress (engine integration).** Expected: a manager sees only their own collective; engine alarms limited to audience `hr_manager`; other collectives refused or hidden |
 | S-73 | With `HR_ACCESS_CODE` empty | The gate is off and `/hr` opens directly. Make sure the demo `.env` has a code |
 | S-74 | PII redaction: submit a comment with a name, an email and a phone (9 to 15 digits) | Stored comment has them replaced; HR never sees the original. If redaction fails the API returns 500 `redaccio_fallida` and nothing is stored (R-PRIV-3). Check the stored text with the demo steps in `docs/security-demo.md` |
 
@@ -266,6 +272,26 @@ IDs are `S-n`. Steps are short; expected results are what a pass looks like.
 | S-82 | Keyboard only through `/join`, `/onboarding`, `/login`, one answer | Visible focus, labels for every field, Enter submits, errors announced (alerts use `role="alert"`) |
 | S-83 | Browser zoom 200 percent, screen reader on the answer screen | Content reflows; each question and option has a readable name |
 | S-84 | Demo-day smoke test, 10 minutes | See below |
+| S-90 | Planted demo stories (below) | Each story shows as the listed alarm or insight on the demo DB |
+
+Planted demo stories (S-90). **In progress (engine integration)**: the HR screens must show what the engine already writes. Setup: build and open the demo DB (path C in 1.2), log in to `/hr`. First confirm the data without the UI:
+
+```bash
+sqlite3 data/demo.db "select tipus, severity, status, audience, collectiu_id, domini_id from senyal order by id desc limit 20"
+```
+
+Then check the pages:
+
+| Story | Where | Expected on screen |
+|---|---|---|
+| Shift changes announced late, from 1 Oct | Fàbriques, Condicions | A critical `sharp_drop` alarm, a `top_mover` card, theme comments about shift changes |
+| Heat and safety equipment, slow decline from mid-August | Logística, Condicions | `sustained_decline` (or `feble`) alarm, comments about heat and equipment |
+| Supervisor view collapses from 14 Oct | Logística morning shift, Lideratge | `changepoint_cluster` (critical, HR only, not visible in `/manager`), `followup_confirmation` card |
+| Team splits, mean unchanged, from 1 Oct | Oficines, Entorn i relacions | `polarisation` alarm and card |
+| Managers answer more positively | everywhere | `segment_gap` card with dimension manager |
+| Few night-shift accounts | Fàbriques and Logística night | Suppressed rows ("Suprimit"), no values, in cards and in the CSV export |
+
+Also check: acknowledge one alarm, run `DB_PATH=data/demo.db pnpm --filter @damm/engine run job`, and confirm it stays acknowledged. The demo is deterministic, so the same seed gives the same database (`--seed` and `--days` change it; use `pnpm --filter @damm/engine run test` for the engine's own `demo.test.ts` check, with `source ~/.claude/bin/heavy-gate.sh` first).
 
 Demo-day smoke test (S-84), in order, stop at the first failure:
 
@@ -306,7 +332,7 @@ Build checks:       lint ☐  check:anonymity ☐  build ☐
 Main scenario       P=pass F=fail N/A=pending
 M-1  ☐  M-2  ☐  M-3  ☐  M-4  ☐  M-5  ☐  M-6  ☐  M-7  ☐  M-8  ☐
 M-9  ☐  M-10 ☐  M-11 ☐  M-12 ☐  M-13 ☐  M-14 ☐  M-15 ☐  M-16 ☐
-M-17 ☐  M-18 ☐  M-19 ☐  M-20 ☐  M-21 ☐  M-22 ☐  M-23 ☐  M-24 ☐
+M-17 ☐  M-18 ☐  M-19 ☐  M-20 ☐  M-20b ☐ M-21 ☐  M-22 ☐  M-23 ☐  M-24 ☐
 
 Further scenarios run: S-__, S-__, ...   (list the IDs with result)
 
@@ -323,8 +349,7 @@ These are things seen in the code or docs while verifying, left as is on purpose
 
 1. `goToJoinAction` (`apps/web/app/join/actions.ts`) says it normalises a code typed without a hyphen, but by code reading it does not: `dammfab` is not turned into `DAMM-FAB`. See S-10.
 2. `/settings` has no push toggle, change password, delete account or recovery-code regeneration. See S-24 to S-26 and M-12.
-3. There is no analysis package, no analysis job and no `POST /api/jobs/run` in the tree. The engine job and alarms live only on `origin/natan/engine-core`. See M-17.
+3. There is still no `POST /api/jobs/run` and no comment-theme clustering job in the tree. The engine job is merged (`pnpm --filter @damm/engine run job`) but covers scores, insights and alarms only. See M-17.
 4. `PUBLIC_BASE_URL` is used by the code and the docs but is missing from `.env.example`.
 5. `docs/demo-script.md` and parts of `docs/requirements.md` still refer to older labels and to work as pending that has since merged, for example the separate "Esborranys pendents" list and `jan/pwa-answer`. The needs page was unified into `/hr/needs` in commit `0373ce2`. Re-read the demo script before using it as a reference for labels; this plan uses the labels from the current code.
-6. `git fetch` failed with "repository not found" for the configured remote, so the sync step in `AGENTS.md` could not be rehearsed.
 7. No helper exists to add many synthetic answers for a newly published need, so reaching n at least 10 for a fresh need needs ten manual accounts. See M-16.
