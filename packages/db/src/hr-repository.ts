@@ -199,7 +199,7 @@ export function listApprovedUnpublishedNeeds(): { id: number; textNl: string; ap
     .prepare(
       `SELECT n.id, n.text_nl AS textNl, COUNT(p.id) AS approved
        FROM necessitat n JOIN pregunta p ON p.necessitat_id = n.id AND p.estat = 'aprovada'
-       WHERE n.estat <> 'publicada' GROUP BY n.id`,
+       WHERE n.estat = 'oberta' GROUP BY n.id`,
     )
     .all() as { id: number; textNl: string; approved: number }[];
 }
@@ -310,6 +310,29 @@ export function discardRecommendation(id: number): void {
   getDb().prepare("UPDATE recomanacio SET estat = 'descartada' WHERE id = ? AND estat = 'proposada'").run(id);
 }
 
+export const SIGNAL_STATUSES = ["open", "acknowledged", "action_linked", "resolved"] as const;
+export type SignalStatus = (typeof SIGNAL_STATUSES)[number];
+
+/** Human action: move a signal through open → acknowledged → action_linked → resolved (any order, schema enum only). */
+export function setSignalStatus(id: number, status: string): boolean {
+  if (!(SIGNAL_STATUSES as readonly string[]).includes(status)) return false;
+  return getDb().prepare("UPDATE senyal SET status = ? WHERE id = ?").run(status, id).changes > 0;
+}
+
+/** Human action: close a need (necessitat.estat = 'tancada'). Its published questions stay in the DB; no new publication. */
+export function closeNecessitat(id: number): boolean {
+  return getDb().prepare("UPDATE necessitat SET estat = 'tancada' WHERE id = ? AND estat <> 'tancada'").run(id).changes > 0;
+}
+
+export function listNeeds(): { id: number; textNl: string; estat: string; collectiu: string | null }[] {
+  return getDb()
+    .prepare(
+      `SELECT n.id, n.text_nl AS textNl, n.estat, c.nom AS collectiu FROM necessitat n
+       LEFT JOIN collectiu c ON c.id = n.collectiu_id ORDER BY (n.estat = 'tancada'), n.id DESC`,
+    )
+    .all() as { id: number; textNl: string; estat: string; collectiu: string | null }[];
+}
+
 export interface FollowUpNeed {
   id: number;
   objective: string;
@@ -345,14 +368,14 @@ export function createFollowUp(recId: number): FollowUpNeed | null {
   return { id, objective, context, collective: r.collectiu, maxSeconds };
 }
 
-/** Admin view: account counts per collective only. */
-export function accountCounts(): { collectiu: string; comptes: number }[] {
-  return getDb()
+/** Admin view: account counts per collective only. `comptes` is null (shown as "<10") under the minimum group size. */
+export function accountCounts(): { collectiu: string; comptes: number | null }[] {
+  return (getDb()
     .prepare(
       `SELECT c.nom AS collectiu, COUNT(k.id) AS comptes FROM collectiu c
        LEFT JOIN compte k ON k.collectiu_id = c.id GROUP BY c.id ORDER BY c.id`,
     )
-    .all() as { collectiu: string; comptes: number }[];
+    .all() as { collectiu: string; comptes: number }[]).map((r) => ({ ...r, comptes: r.comptes < MIN_GROUP_SIZE ? null : r.comptes }));
 }
 
 // --- Results dashboard reads (aggregates + synthetic population only) ------------------
@@ -531,7 +554,7 @@ function csvCell(v: string | number | null): string {
 }
 
 /** CSV of the aggregates behind the results page. Suppressed segments carry no numbers and `suprimit=1`. */
-export function exportResultsCsv(): string {
+export function exportResultsCsv(now: Date = new Date()): string {
   const header = ["tipus", "periode", "collectiu", "torn", "domini", "respondents", "resp_pct", "pop_pct", "diferencia_pp", "mitjana", "suprimit", "n", "precisio", "canvi"];
   const lines: (string | number | null)[][] = [header];
   const pct = (v: number | null) => (v === null ? null : +(v * 100).toFixed(1));
@@ -562,7 +585,14 @@ export function exportResultsCsv(): string {
       });
     }
   }
-  return lines.map((l) => l.map(csvCell).join(",")).join("\r\n") + "\r\n";
+  const meta = [
+    "# Escolta activa · resultats agregats (dades sintètiques)",
+    `# Període: ${rep.periode ?? "–"} (representativitat); tendències: ${trends.periodes.join(", ") || "–"}`,
+    `# Generat: ${now.toISOString()}`,
+    `# Mida mínima de grup: n >= ${MIN_GROUP_SIZE}`,
+    `# Nota: els segments amb menys de ${MIN_GROUP_SIZE} respondents, i els ocults per protegir-los (supressió complementària) no tenen valors i porten suprimit=1. Només dades agregades, mai valors individuals.`,
+  ];
+  return [...meta, ...lines.map((l) => l.map(csvCell).join(","))].join("\r\n") + "\r\n";
 }
 
 // --- HR home overview (aggregates, counts and synthetic population only) ----------------
@@ -577,7 +607,11 @@ export interface HrOverview {
   periode: string | null;
   population: number;
   respondents: number | null; // sum of visible collective segments in the latest period
-  participation: number | null; // 0..1
+  /** Population of the same visible collectives: the denominator of `participation`. */
+  coveredPopulation: number | null;
+  /** Collectives left out of both numerator and denominator (suppressed). */
+  excludedCollectius: number;
+  participation: number | null; // 0..1, respondents / coveredPopulation
   openNeeds: number;
   pendingDrafts: number;
   pendingRecommendations: number;
@@ -593,16 +627,24 @@ export function getHrOverview(): HrOverview {
   const population = count("SELECT COUNT(*) AS c FROM empleat_sintetic");
   const p = db.prepare("SELECT MAX(periode) AS p FROM agregat").get() as { p: string | null };
   let respondents: number | null = null;
+  let coveredPopulation: number | null = null;
+  let excludedCollectius = 0;
   if (p.p) {
     const rows = db
       .prepare(
-        `SELECT n, suprimit FROM agregat
+        `SELECT collectiu_id AS c, n, suprimit FROM agregat
          WHERE periode = ? AND collectiu_id IS NOT NULL AND torn_id IS NULL AND domini_id IS NULL`,
       )
-      .all(p.p) as { n: number; suprimit: number }[];
+      .all(p.p) as { c: number; n: number; suprimit: number }[];
     const hide = complementarySuppression(rows.map((r) => ({ n: r.n, primary: !!r.suprimit })));
     const visible = rows.filter((_, k) => hide[k] === null);
-    respondents = visible.length ? visible.reduce((s, r) => s + r.n, 0) : null;
+    excludedCollectius = listCollectius().length - visible.length;
+    if (visible.length) {
+      // Same population on both sides: only collectives whose respondents are visible count in the denominator too.
+      const popOf = db.prepare("SELECT COUNT(*) AS c FROM empleat_sintetic WHERE collectiu_id = ?");
+      respondents = visible.reduce((s, r) => s + r.n, 0);
+      coveredPopulation = visible.reduce((s, r) => s + (popOf.get(r.c) as { c: number }).c, 0);
+    }
   }
   const signals = listSignals();
   const drafts = listDrafts();
@@ -611,7 +653,9 @@ export function getHrOverview(): HrOverview {
     periode: p.p,
     population,
     respondents,
-    participation: respondents !== null && population > 0 ? respondents / population : null,
+    coveredPopulation,
+    excludedCollectius,
+    participation: respondents !== null && coveredPopulation ? respondents / coveredPopulation : null,
     openNeeds: count("SELECT COUNT(*) AS c FROM necessitat WHERE estat = 'oberta'"),
     pendingDrafts: drafts.length,
     pendingRecommendations: recs.length,
@@ -630,7 +674,12 @@ export interface JoinCodeRow {
   codi: string;
   collectiu: string;
   actiu: boolean;
-  comptes: number;
+  /** Accounts of the whole collective (accounts are not tied to a code). Null: suppressed, or shown on the collective's first code only. */
+  comptes: number | null;
+  /** True when the collective total is under the minimum group size ("<10"). */
+  comptesSuppressed: boolean;
+  /** True on the one code per collective that carries the count. */
+  showsCount: boolean;
 }
 
 export function listJoinCodes(): JoinCodeRow[] {
@@ -641,5 +690,11 @@ export function listJoinCodes(): JoinCodeRow[] {
        FROM joincode j JOIN collectiu c ON c.id = j.collectiu_id ORDER BY c.id, j.codi`,
     )
     .all() as { codi: string; collectiu: string; actiu: number }[];
-  return rows.map((r) => ({ ...r, actiu: r.actiu === 1, comptes: counts.get(r.collectiu) ?? 0 }));
+  const seen = new Set<string>();
+  return rows.map((r) => {
+    const first = !seen.has(r.collectiu);
+    seen.add(r.collectiu);
+    const total = counts.get(r.collectiu) ?? null; // null = under the minimum
+    return { ...r, actiu: r.actiu === 1, comptes: first ? total : null, comptesSuppressed: total === null, showsCount: first };
+  });
 }
