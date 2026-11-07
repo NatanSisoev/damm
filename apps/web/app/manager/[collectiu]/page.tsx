@@ -142,7 +142,7 @@ export default async function ManagerCollectivePage({ params }: { params: Promis
         <div className="grid gap-6 lg:grid-cols-2">
           <Card title="Temes dels comentaris" meta="Tota l'empresa, no només aquest col·lectiu">
             {themes.length === 0 ? (
-              <Empty>Encara no hi ha temes.</Empty>
+              <Empty>Encara no hi ha temes: cal que {MIN_GROUP_SIZE} comentaris o més parlin del mateix a tota l&apos;empresa. S&apos;actualitzen quan s&apos;executa l&apos;anàlisi.</Empty>
             ) : (
               <ul className="-my-1 divide-y divide-line">
                 {themes.map((t) => (

@@ -17,7 +17,7 @@ export function NarrativeCard({ narrative, title = "Resum de l'anàlisi" }: { na
   return (
     <Card title={title} meta={narrative ? <span className="num">{narrative.periode}</span> : undefined}>
       {!d ? (
-        <Empty>Encara no hi ha cap resum de l&apos;anàlisi</Empty>
+        <Empty>Encara no hi ha cap resum de l&apos;anàlisi. Es genera quan s&apos;executa l&apos;anàlisi i hi ha prou respostes (mínim {MIN_GROUP_SIZE}). <Link href="/hr/methodology" className="text-accent-ink hover:underline">Com es calcula?</Link></Empty>
       ) : (
         <div className="space-y-4">
           <p className="text-[15px] leading-relaxed">{d.summary}</p>
@@ -123,7 +123,7 @@ export function HeadlineStrip({ headlines }: { headlines: Headline[] }) {
               <div className="min-w-0 flex-1">
                 <p className="text-[14px] leading-snug">{h.text}</p>
                 <p className="num mt-0.5 text-xs text-subtle">
-                  n={h.n}
+                  n={h.n} <span className="font-sans">(n més petita)</span>
                   {h.confidence !== null && <> · confiança {Math.round(h.confidence)}%</>}
                   {" · "}
                   <Link href={h.href} className="text-accent-ink hover:underline">Veure detall →</Link>
@@ -278,7 +278,7 @@ export function ThemesCard({ groups }: { groups: ThemesByDomain }) {
   return (
     <Card title="Què diuen els comentaris" meta="Temes al costat del domini que expliquen">
       {groups.length === 0 ? (
-        <Empty>Encara no hi ha temes.</Empty>
+        <Empty>Encara no hi ha temes: cal que {MIN_GROUP_SIZE} comentaris o més parlin del mateix. <Link href="/hr/methodology" className="text-accent-ink hover:underline">Com es calcula?</Link></Empty>
       ) : (
         <div className="space-y-5">
           {groups.map((g) => (
@@ -323,7 +323,7 @@ export function ReachCard({ gaps }: { gaps: ReachGap[] }) {
             <li key={g.key} className="py-3">
               <p className="text-[14px]">{g.text}</p>
               <p className="mt-1 text-[13px] text-muted">{g.action}</p>
-              <Link href="/hr/needs" className="btn mt-2 inline-flex">Crea una enquesta de seguiment</Link>
+              <Link href="/hr/needs?nova=1#nova" className="btn mt-2 inline-flex" aria-label={`Crea una enquesta de seguiment per a: ${g.text}`}>Crea una enquesta de seguiment</Link>
             </li>
           ))}
         </ul>
