@@ -348,10 +348,7 @@ function Summary({ brain, c }: { brain: Brain; c: BrainCollective }) {
   return (
     <div className="space-y-6">
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Fact label="Comptes actius" value={c.suppressed ? <SuppressedBadge title={`Menys de ${brain.minGroupSize} comptes`} /> : String(c.accounts)} hint="Només el recompte, mai qui són." />
-        <Fact label="Banc de preguntes" value={String(c.pool.monitoring)} hint={`${c.pool.needs} de necessitats · ${c.pool.followup} de confirmació de canvi`} />
-        <Fact label="Confirmacions pendents" value={c.pendingFollowups === null ? <SuppressedBadge /> : String(c.pendingFollowups)} hint="Canvis que el motor vol confirmar" />
-        <Fact label="Preguntes per dia" value={String(brain.config.find((x) => x.key === "questions_per_day")?.value)} hint="Més les necessitats publicades" />
+        <Fact label="Confirmacions pendents" value={c.pendingFollowups === null ? <SuppressedBadge /> : String(c.pendingFollowups)} hint="Persones a qui el motor tornarà a preguntar en uns dies, perquè una resposta inesperada es confirmi o es descarti" />
       </div>
 
       <Card title="Com es reparteix l'atenció" meta="Prioritat = pes × impuls × (guany d'informació + mínim) × (1 + impuls per canvis bruscos)">
