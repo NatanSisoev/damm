@@ -1,12 +1,16 @@
 "use client";
 
+import { useT } from "@/lib/i18n/client";
+import { employeeDict } from "@/lib/i18n/employee";
+
 export const OPEN_MAX = 500;
 
 export function OpenInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const t = useT(employeeDict);
   return (
     <div>
       <label htmlFor="obert" className="label">
-        La teva resposta
+        {t("open_label")}
       </label>
       <textarea
         id="obert"
@@ -15,10 +19,10 @@ export function OpenInput({ value, onChange }: { value: string; onChange: (v: st
         maxLength={OPEN_MAX}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        placeholder="Escriu amb les teves paraules…"
+        placeholder={t("open_placeholder")}
       />
       <div className="mt-1 flex justify-between text-sm text-muted">
-        <span>Anònim. No hi posis dades personals (noms, telèfons, correus).</span>
+        <span>{t("open_note")}</span>
         <span className="num">
           {value.length}/{OPEN_MAX}
         </span>

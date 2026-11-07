@@ -49,6 +49,7 @@ CREATE TABLE compte (
   centre_tipus_id  INTEGER REFERENCES centre_tipus(id),
   torn_id          INTEGER REFERENCES torn(id),
   es_manager       INTEGER NOT NULL DEFAULT 0 CHECK (es_manager IN (0,1)),
+  lang             TEXT NOT NULL DEFAULT 'ca' CHECK (lang IN ('ca','es','en')), -- C-i18n: UI, question and push language; the only preference stored
   username         TEXT NOT NULL UNIQUE,
   password_hash    TEXT NOT NULL,
   salt             TEXT NOT NULL,
@@ -86,10 +87,11 @@ CREATE TABLE pregunta (
   domini_id      INTEGER NOT NULL REFERENCES domini(id),
   collectiu_id   INTEGER REFERENCES collectiu(id),  -- NULL = all collectives
   text           TEXT NOT NULL,
+  text_i18n      TEXT,                              -- C-i18n: {"ca","es","en"} question text; NULL = only `text` (fallback)
   tipus          TEXT NOT NULL CHECK (tipus IN ('scale5','scale10','yes_no','pair','choice','ranking','open')), -- QuestionType in @damm/shared
   facet          TEXT,                              -- what the item really asks; items with the same facet are interchangeable wordings
   polarity       INTEGER NOT NULL DEFAULT 1 CHECK (polarity IN (1,-1)), -- -1 = negatively worded, score is flipped
-  options_json   TEXT,                              -- pair/choice: [{"label","score"}]; ranking: [{"label","domain_id"}]
+  options_json   TEXT,                              -- pair/choice: [{"label","score","i18n"?}]; ranking: [{"label","domain_id","i18n"?}]; i18n = {"ca","es","en"} label, optional
   is_followup    INTEGER NOT NULL DEFAULT 0 CHECK (is_followup IN (0,1)), -- worded as a follow-up ("has anything changed?")
   necessitat_id  INTEGER REFERENCES necessitat(id), -- NULL = continuous monitoring pool
   estat          TEXT NOT NULL DEFAULT 'draft' CHECK (estat IN ('draft','aprovada','retirada')),

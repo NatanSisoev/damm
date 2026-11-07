@@ -1,6 +1,11 @@
-// Catalan text for signals, built from the structured fields (type, domain, collective, shift) plus the
+// Text for signals, built from the structured fields (type, domain, collective, shift) plus the
 // figures that only exist inside the engine's English `descripcio`. Pure functions, no DB access.
 // Never returns the English string: if the figures cannot be parsed, a sentence without numbers is used.
+// Labels follow the UI language (default Catalan); the figures keep the engine's meaning.
+import type { Lang } from "@damm/shared";
+import { makeT } from "@/lib/i18n/core";
+import { hrResultsDict } from "@/lib/i18n/hr-results";
+import { collectiveLabel, domainLabel, shiftLabel } from "@/lib/i18n/names";
 
 export interface SignalLike {
   tipus: string;
@@ -14,26 +19,21 @@ export interface SignalLike {
 
 const SEV_RANK: Record<string, number> = { critical: 0, warning: 1, info: 2 };
 
-/** "1.2" or "74" to "1,2" / "74". */
-const dec = (x: string) => x.replace(".", ",");
-const WORDS: Record<number, string> = { 2: "dos", 3: "tres", 4: "quatre", 5: "cinc", 6: "sis" };
-const count = (n: number) => WORDS[n] ?? String(n);
-/** "de 0,8" but "d'1,2" (un). */
-const deNum = (x: string) => (/^1([.,]|$)/.test(x) ? `d'${dec(x)}` : `de ${dec(x)}`);
-
-const SHIFT: Record<string, string> = { mati: "matí", tarda: "tarda", nit: "nit" };
-const shiftLabel = (torn: string) => `torn de ${SHIFT[torn] ?? torn}`;
+/** "1.2" or "74" to "1,2" / "74" (ca, es) or "1.2" (en). */
+const dec = (x: string, lang: Lang) => (lang === "en" ? x : x.replace(".", ","));
+const WORD_KEYS = { 2: "sig_w2", 3: "sig_w3", 4: "sig_w4", 5: "sig_w5", 6: "sig_w6" } as const;
 
 /** Segment: "Fàbriques, torn de nit" / "Logística" / "Tota l'empresa". */
-export function signalSegment(s: Pick<SignalLike, "collectiu" | "torn">): string {
-  const col = s.collectiu ?? "Tota l'empresa";
-  return s.torn ? `${col}, ${shiftLabel(s.torn)}` : col;
+export function signalSegment(s: Pick<SignalLike, "collectiu" | "torn">, lang: Lang = "ca"): string {
+  const t = makeT(hrResultsDict, lang);
+  const col = s.collectiu ? collectiveLabel(s.collectiu, lang) : t("sig_all");
+  return s.torn ? `${col}, ${t("sig_shift", { shift: shiftLabel(s.torn, lang) })}` : col;
 }
 
 /** Headline: the domain first (what HR scans for), then who it is about. */
-export function signalHeadline(s: Pick<SignalLike, "domini" | "collectiu" | "torn">): string {
-  const seg = signalSegment(s);
-  return s.domini ? `${s.domini} · ${seg}` : seg;
+export function signalHeadline(s: Pick<SignalLike, "domini" | "collectiu" | "torn">, lang: Lang = "ca"): string {
+  const seg = signalSegment(s, lang);
+  return s.domini ? `${domainLabel(s.domini, lang)} · ${seg}` : seg;
 }
 
 /** Score values written as "(5.8 → 5.7 → 5.3)". */
@@ -42,59 +42,55 @@ function series(d: string): string[] {
   return m ? m[1].split("→").map((v) => v.trim()) : [];
 }
 
-/** What the signal says, in plain Catalan, with the figures when they can be read. */
-export function signalDetail(s: Pick<SignalLike, "tipus" | "descripcio">): string {
+/** What the signal says, in plain language (UI language), with the figures when they can be read. */
+export function signalDetail(s: Pick<SignalLike, "tipus" | "descripcio">, lang: Lang = "ca"): string {
+  const t = makeT(hrResultsDict, lang);
+  const D = (x: string) => dec(x, lang);
+  /** "de 0,8" but "d'1,2" (ca, un). */
+  const deNum = (x: string) => t(/^1([.,]|$)/.test(x) ? "sig_de1" : "sig_de", { x: D(x) });
   const d = s.descripcio;
   const ser = series(d);
-  const range = ser.length >= 2 ? ` (${ser.map(dec).join(" → ")})` : "";
+  const range = ser.length >= 2 ? ` (${ser.map(D).join(" → ")})` : "";
   switch (s.tipus) {
-    case "sustained_decline":
+    case "sustained_decline": {
+      const wk = WORD_KEYS[ser.length as keyof typeof WORD_KEYS];
       return ser.length >= 2
-        ? `Puntuació a la baixa ${count(ser.length)} períodes seguits: ${ser.map(dec).join(" → ")}`
-        : "La puntuació va baixant període rere període";
+        ? t("sig_sd_series", { count: wk ? t(wk) : String(ser.length), series: ser.map(D).join(" → ") })
+        : t("sig_sd_plain");
+    }
     case "sharp_drop": {
       const m = d.match(/fell\s+([\d.]+)\s+points?/i);
-      return m ? `Caiguda ${deNum(m[1])} punts respecte al període anterior${range}` : "La puntuació ha caigut de cop respecte al període anterior";
+      return m ? t("sig_sharp", { de: deNum(m[1]), range }) : t("sig_sharp_plain");
     }
     case "feble": {
       const m = d.match(/decline of\s+([\d.]+)\s+points?\s+over\s+(\d+)\s+periods?/i);
-      return m
-        ? `Descens lent però constant: ${dec(m[1])} punts en ${m[2]} períodes`
-        : "Descens lent però constant en els últims períodes";
+      return m ? t("sig_weak", { x: D(m[1]), p: m[2] }) : t("sig_weak_plain");
     }
     case "polarisation": {
       const m = d.match(/fell\s+(\d+)\s+points?\s*\((\d+)\s*→\s*(\d+)\)/i);
-      return m
-        ? `El consens ha caigut ${m[1]} punts (${m[2]} → ${m[3]}): les opinions es divideixen`
-        : "El consens del grup ha baixat: les opinions es divideixen";
+      return m ? t("sig_polar", { x: m[1], a: m[2], b: m[3] }) : t("sig_polar_plain");
     }
     case "changepoint_cluster": {
       const m = d.match(/^(\d+)\s+people.*?last\s+(\d+)\s+days/i);
-      return m
-        ? `${m[1]} persones han baixat la seva valoració en aquest àmbit els últims ${m[2]} dies`
-        : "Diverses persones han baixat la seva valoració en aquest àmbit en poc temps";
+      return m ? t("sig_cluster", { n: m[1], d: m[2] }) : t("sig_cluster_plain");
     }
     case "low_confidence": {
       const m = d.match(/\((\d+)\s*\/\s*100\)/);
-      return m
-        ? `Confiança baixa (${m[1]} de 100): encara hi ha poques respostes per fiar-se'n`
-        : "Confiança baixa: encara hi ha poques respostes per fiar-se'n";
+      return m ? t("sig_lowconf", { x: m[1] }) : t("sig_lowconf_plain");
     }
     case "improvement": {
       const m = d.match(/rose\s+([\d.]+)\s+points?/i);
-      return m
-        ? `Millora ${deNum(m[1])} punts des que es va vincular una acció${range}`
-        : "La puntuació ha millorat des que es va vincular una acció";
+      return m ? t("sig_improve", { de: deNum(m[1]), range }) : t("sig_improve_plain");
     }
     case "emergent":
-      // Written by the analysis job: the theme label itself (Catalan).
-      return d.trim() ? `Tema nou als comentaris: «${d.trim()}»` : "Tema nou als comentaris";
+      // Written by the analysis job: the theme label itself (data, kept as is).
+      return d.trim() ? t("sig_emergent", { label: d.trim() }) : t("sig_emergent_plain");
     case "baixa_participacio": {
       const m = d.match(/(\d+(?:[.,]\d+)?)\s*%/);
-      return m ? `Participació baixa (${dec(m[1])} %): els resultats poden no representar tot el grup` : "Participació baixa: els resultats poden no representar tot el grup";
+      return m ? t("sig_lowpart", { x: D(m[1]) }) : t("sig_lowpart_plain");
     }
     default:
-      return "Hi ha hagut un canvi que cal revisar";
+      return t("sig_default");
   }
 }
 

@@ -186,6 +186,7 @@ Read these before planning work. Both people's agents keep them current.
 - `docs/user-flows.md`: expected user flow paths per persona (employee, HR, manager, anonymity, jobs) with exact UI copy, branches, invariants and expected gaps; ends with a requirement-to-flow matrix and a flow-to-e2e-case map. Source for reworking the e2e plan.
 - `docs/ai-drafting-eval.md`: how need drafting is evaluated (cases, checks, judge), per-round results, remaining weaknesses and the `options_json` gap (R-FLOW-2a..2g).
 - `docs/copy-guide.md`: Catalan voice rules, glossary and before/after examples for every user-facing string.
+- `docs/i18n/`: multi-language support (N-6): `README.md` (design, storage, how to add a language or key) and `question-bank-translations.json` (ca/es/en text and options for the engine bank, for Natan to adopt).
 
 When you add a doc, list it here with one line on what it is for.
 

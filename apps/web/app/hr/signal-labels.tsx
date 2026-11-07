@@ -1,54 +1,46 @@
-// Catalan labels for senyal type, severity and status (C1: engine alarms add new types and both fields).
+// Labels (ca/es/en) for senyal type, severity and status (C1: engine alarms add new types and both fields).
+import type { Lang } from "@damm/shared";
 import { signalDetail, signalHeadline, type SignalLike } from "@/lib/signal-text";
+import { getLang } from "@/lib/lang";
+import { hrDict, hrLookup } from "@/lib/i18n/hr";
 
-const TIPUS: Record<string, string> = {
-  emergent: "Emergent",
-  feble: "Senyal feble",
-  baixa_participacio: "Baixa participació",
-  sharp_drop: "Caiguda brusca",
-  sustained_decline: "Descens sostingut",
-  changepoint_cluster: "Canvis agrupats",
-  polarisation: "Polarització",
-  low_confidence: "Poca confiança",
-  improvement: "Millora",
-};
+const SEVERITY_CLS: Record<string, string> = { info: "", warning: "badge-warn", critical: "badge-crit" };
 
-const SEVERITY: Record<string, { label: string; cls: string }> = {
-  info: { label: "Info", cls: "" },
-  warning: { label: "Avís", cls: "badge-warn" },
-  critical: { label: "Crítica", cls: "badge-crit" },
-};
-
+/** Catalan labels (compat for callers that do not pass a language yet; prefer `statusLabel`). */
 export const STATUS_LABELS: Record<string, string> = {
-  open: "Oberta",
-  acknowledged: "Revisada",
-  action_linked: "Amb acció",
-  resolved: "Resolta",
+  open: hrDict.ca.sst_open,
+  acknowledged: hrDict.ca.sst_acknowledged,
+  action_linked: hrDict.ca.sst_action_linked,
+  resolved: hrDict.ca.sst_resolved,
 };
+
+export const statusLabel = (status: string, lang: Lang = "ca") => hrLookup("sst_", status, lang);
 
 /** Statuses a person can move a signal to, in order. */
 export const STATUS_ORDER = ["open", "acknowledged", "action_linked", "resolved"] as const;
 
-export const signalTypeLabel = (tipus: string) => TIPUS[tipus] ?? tipus;
+export const signalTypeLabel = (tipus: string, lang: Lang = "ca") => hrLookup("sig_", tipus, lang);
 
 /** Type badge plus severity and status when the engine set them. */
-export function SignalBadges({ tipus, severity, status }: { tipus: string; severity?: string | null; status?: string | null }) {
-  const sev = severity ? SEVERITY[severity] : undefined;
+export async function SignalBadges({ tipus, severity, status }: { tipus: string; severity?: string | null; status?: string | null }) {
+  const lang = await getLang();
+  const sevCls = severity ? SEVERITY_CLS[severity] : undefined;
   return (
     <>
-      <span className={`badge ${tipus === "improvement" ? "badge-good" : "badge-warn"}`}>{signalTypeLabel(tipus)}</span>
-      {sev && <span className={`badge ${sev.cls}`}>{sev.label}</span>}
-      {status && <span className="badge">{STATUS_LABELS[status] ?? status}</span>}
+      <span className={`badge ${tipus === "improvement" ? "badge-good" : "badge-warn"}`}>{signalTypeLabel(tipus, lang)}</span>
+      {severity && sevCls !== undefined && <span className={`badge ${sevCls}`}>{hrLookup("sev_", severity, lang)}</span>}
+      {status && <span className="badge">{statusLabel(status, lang)}</span>}
     </>
   );
 }
 
 /** Headline (domain, who) first, then what moved. Shared by every card that shows a signal. */
-export function SignalText({ s }: { s: SignalLike }) {
+export async function SignalText({ s }: { s: SignalLike }) {
+  const lang = await getLang();
   return (
     <>
-      <p className="text-[14px] font-semibold">{signalHeadline(s)}</p>
-      <p className="mt-0.5 text-[13px] text-muted">{signalDetail(s)}</p>
+      <p className="text-[14px] font-semibold">{signalHeadline(s, lang)}</p>
+      <p className="mt-0.5 text-[13px] text-muted">{signalDetail(s, lang)}</p>
     </>
   );
 }

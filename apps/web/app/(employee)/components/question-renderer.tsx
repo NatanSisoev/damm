@@ -1,6 +1,8 @@
 "use client";
 
 import type { PoolNextResponse } from "@damm/shared";
+import { useT } from "@/lib/i18n/client";
+import { employeeDict } from "@/lib/i18n/employee";
 import { OpenInput } from "./open-input";
 import { parseRanking, RankingInput } from "./ranking-input";
 import { ScaleInput } from "./scale-input";
@@ -37,12 +39,13 @@ export function QuestionRenderer({
   draft: AnswerDraft;
   onChange: (d: AnswerDraft) => void;
 }) {
+  const t = useT(employeeDict);
   const setNum = (v: number | null) => onChange({ ...draft, valorNum: v });
   const labels = optionLabels(question);
 
   switch (question.tipus) {
     case "scale5": {
-      const [low, high] = anchors(labels, "Mínim", "Màxim");
+      const [low, high] = anchors(labels, t("scale_low"), t("scale_high"));
       return (
         <Block text={question.text}>
           <ScaleInput max={5} value={draft.valorNum} onChange={setNum} lowLabel={low} highLabel={high} />
@@ -50,7 +53,7 @@ export function QuestionRenderer({
       );
     }
     case "scale10": {
-      const [low, high] = anchors(labels, "Mínim", "Màxim");
+      const [low, high] = anchors(labels, t("scale_low"), t("scale_high"));
       return (
         <Block text={question.text}>
           <ScaleInput min={0} max={10} value={draft.valorNum} onChange={setNum} lowLabel={low} highLabel={high} />
@@ -74,7 +77,7 @@ export function QuestionRenderer({
         // Free-form wording without a list of options: fall back to a 1-5 priority scale.
         return (
           <Block text={question.text}>
-            <ScaleInput max={5} value={draft.valorNum} onChange={setNum} lowLabel="Màxima prioritat" highLabel="Mínima" />
+            <ScaleInput max={5} value={draft.valorNum} onChange={setNum} lowLabel={t("rank_top")} highLabel={t("rank_bottom")} />
           </Block>
         );
       }

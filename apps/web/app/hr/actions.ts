@@ -73,7 +73,7 @@ export async function discardQuestionAction(formData: FormData) {
 
 export async function editQuestionAction(formData: FormData) {
   const text = String(formData.get("text") ?? "").trim();
-  if (text) updateDraftText(Number(formData.get("id")), text);
+  if (text) updateDraftText(Number(formData.get("id")), text, String(formData.get("text_es") ?? ""), String(formData.get("text_en") ?? ""));
   revalidatePath("/hr/review");
 }
 

@@ -1,6 +1,8 @@
 "use client";
 
 import { useId, useState } from "react";
+import { useT } from "@/lib/i18n/client";
+import { employeeDict } from "@/lib/i18n/employee";
 
 export const MIN_PASSWORD = 8;
 
@@ -18,6 +20,7 @@ export function PasswordField({
   showHint?: boolean;
   minLength?: number;
 }) {
+  const t = useT(employeeDict);
   const id = useId();
   const [shown, setShown] = useState(false);
   const [len, setLen] = useState(0);
@@ -47,13 +50,14 @@ export function PasswordField({
           aria-pressed={shown}
           className="absolute right-1 top-1/2 flex h-11 min-w-20 -translate-y-1/2 items-center justify-center rounded-lg px-3 text-sm font-bold text-muted hover:text-ink"
         >
-          {shown ? "Amaga" : "Mostra"}
-          <span className="sr-only"> la contrasenya</span>
+          {shown ? t("password_hide") : t("password_show")}
+          <span className="sr-only">{t("password_sr_suffix")}</span>
         </button>
       </div>
       {showHint && (
         <p id={`${id}-hint`} className={`mt-1 text-sm ${short ? "text-warn font-semibold" : "text-muted"}`}>
-          Mínim {MIN_PASSWORD} caràcters{len > 0 ? ` (${len}/${MIN_PASSWORD}${len >= MIN_PASSWORD ? " ✓" : ""})` : ""}.
+          {t("password_hint_min", { min: MIN_PASSWORD })}
+          {len > 0 ? ` (${len}/${MIN_PASSWORD}${len >= MIN_PASSWORD ? " ✓" : ""})` : ""}.
         </p>
       )}
     </div>

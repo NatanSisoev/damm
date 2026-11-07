@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useT } from "@/lib/i18n/client";
+import { employeeDict } from "@/lib/i18n/employee";
 import { deletePushSubscriptionAction, savePushSubscriptionAction } from "../../settings/actions";
 
 type State = "loading" | "unsupported" | "denied" | "off" | "on" | "working" | "error";
@@ -23,6 +25,7 @@ const supported = () =>
  * `compact` renders a short nudge for the home screen that hides itself once notifications are on.
  */
 export function PushToggle({ vapidKey, compact = false }: { vapidKey: string; compact?: boolean }) {
+  const t = useT(employeeDict);
   const [state, setState] = useState<State>("loading");
 
   useEffect(() => {
@@ -73,29 +76,29 @@ export function PushToggle({ vapidKey, compact = false }: { vapidKey: string; co
 
   const body = (
     <>
-      <h2 className="section-title">Notificacions</h2>
+      <h2 className="section-title">{t("push_title")}</h2>
       <p className="text-muted">
         {state === "on"
-          ? "Rebràs un avís en aquest dispositiu quan hi hagi preguntes noves per al teu col·lectiu."
+          ? t("push_on")
           : state === "unsupported"
-            ? "Aquest navegador no admet notificacions. A l'iPhone, afegeix l'app a la pantalla d'inici i obre-la des d'allà."
+            ? t("push_unsupported")
             : state === "denied"
-              ? "Has bloquejat les notificacions. Pots tornar-les a permetre a la configuració del navegador."
-              : "Activa-les i t'avisarem quan hi hagi preguntes noves. No veiem qui les rep."}
+              ? t("push_denied")
+              : t("push_off")}
       </p>
       {state === "error" && (
         <p role="alert" className="font-semibold text-warn">
-          No s&apos;han pogut activar les notificacions. Torna-ho a provar.
+          {t("push_error")}
         </p>
       )}
       {(state === "off" || state === "error" || state === "working") && (
         <button type="button" onClick={enable} disabled={state === "working"} className="btn btn-primary h-12 w-full justify-center text-base disabled:opacity-50">
-          Activa les notificacions
+          {t("push_enable")}
         </button>
       )}
       {state === "on" && !compact && (
         <button type="button" onClick={disable} className="btn h-12 w-full justify-center text-base">
-          Desactiva les notificacions
+          {t("push_disable")}
         </button>
       )}
     </>

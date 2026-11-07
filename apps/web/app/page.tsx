@@ -2,6 +2,8 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { approvedActionsForCompte } from "@damm/db/employee";
 import { vapidPublicKey } from "@/lib/push";
+import { employeeDict } from "@/lib/i18n/employee";
+import { getT } from "@/lib/i18n/server";
 import { getCompteId } from "@/lib/session";
 import { ActionsList } from "./(employee)/components/actions-list";
 import { AnswerFlow } from "./(employee)/components/answer-flow";
@@ -15,6 +17,7 @@ export const dynamic = "force-dynamic";
 export default async function Home() {
   const compteId = await getCompteId();
   if (!compteId) redirect("/login");
+  const t = await getT(employeeDict);
   const actions = approvedActionsForCompte(compteId);
   const vapidKey = vapidPublicKey();
   return (
@@ -24,7 +27,7 @@ export default async function Home() {
       <ActionsList actions={actions} />
       <p className="mt-6 text-center text-sm text-subtle">
         <Link href="/privacitat" className="inline-flex h-11 items-center underline underline-offset-2">
-          Com tractem les teves dades
+          {t("privacy_link")}
         </Link>
       </p>
     </EmployeeShell>
