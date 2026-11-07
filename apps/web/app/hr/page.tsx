@@ -97,6 +97,7 @@ export default function HrHome() {
                       <span className="num ml-auto text-xs text-subtle">n={s.n}</span>
                     </div>
                     <p className="text-[13px]">{s.descripcio}</p>
+                    <Link href={`/hr/signals/${s.id}`} className="mt-2 inline-block text-xs text-accent-ink hover:underline">Veure detall →</Link>
                   </li>
                 ))}
               </ul>
