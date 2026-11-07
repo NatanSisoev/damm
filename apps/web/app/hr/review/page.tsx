@@ -3,8 +3,7 @@ import { listApprovedUnpublishedNeeds, listDrafts, listPublications } from "@dam
 import {
   approveQuestionAction, discardQuestionAction, editQuestionAction, publishAction,
 } from "../actions";
-
-const btn = "rounded border px-3 py-1 text-sm";
+import { Card, Empty, PageHeader } from "../ui";
 
 export default async function ReviewPage() {
   const drafts = listDrafts();
@@ -12,58 +11,84 @@ export default async function ReviewPage() {
   const pubs = await Promise.all(
     listPublications().map(async (p) => ({
       ...p,
-      qr: await QRCode.toDataURL(p.url, { margin: 1, width: 160 }),
+      qr: await QRCode.toDataURL(p.url, { margin: 1, width: 192 }),
     })),
   );
   return (
-    <section className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold">Revisa les preguntes proposades</h1>
-        <p className="text-sm opacity-70">Cap pregunta entra al grup fins que una persona l&apos;aprova.</p>
+    <>
+      <PageHeader
+        title="Revisa les preguntes proposades"
+        subtitle="Cap pregunta entra al grup fins que una persona l'aprova. Pots editar el text abans d'aprovar-la."
+      />
+      <div className="space-y-6">
+        <Card title="Esborranys pendents" meta={<span className="num">{drafts.length}</span>} flush={drafts.length > 0}>
+          {drafts.length === 0 ? (
+            <Empty>No hi ha esborranys pendents.</Empty>
+          ) : (
+            <ul className="divide-y divide-line border-t border-line">
+              {drafts.map((q) => (
+                <li key={q.id} className="space-y-3 px-5 py-4">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="badge">{q.domini}</span>
+                    <span className="badge">{q.tipus}</span>
+                    {q.generadaPerIa && <span className="badge badge-accent">Proposta de la IA</span>}
+                  </div>
+                  <div className="flex flex-wrap items-center justify-end gap-2">
+                    <form action={editQuestionAction} className="flex w-full min-w-0 gap-2 lg:w-auto lg:flex-1">
+                      <input type="hidden" name="id" value={q.id} />
+                      <input name="text" defaultValue={q.text} aria-label="Text de la pregunta" className="input min-w-0 flex-1" />
+                      <button className="btn btn-ghost">Desar text</button>
+                    </form>
+                    <form action={discardQuestionAction}>
+                      <input type="hidden" name="id" value={q.id} />
+                      <button className="btn">Descartar</button>
+                    </form>
+                    <form action={approveQuestionAction}>
+                      <input type="hidden" name="id" value={q.id} />
+                      <button className="btn btn-primary">Aprovar</button>
+                    </form>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
+
+        {ready.length > 0 && (
+          <Card title="Llestes per publicar">
+            <ul className="space-y-3">
+              {ready.map((n) => (
+                <li key={n.id}>
+                  <form action={publishAction} className="flex flex-wrap items-center gap-3 rounded-lg border border-line p-3">
+                    <input type="hidden" name="id" value={n.id} />
+                    <span className="min-w-0 flex-1">{n.textNl}</span>
+                    <span className="badge badge-good num">{n.approved} aprovades</span>
+                    <button className="btn btn-primary">Publicar amb enllaç i QR</button>
+                  </form>
+                </li>
+              ))}
+            </ul>
+          </Card>
+        )}
+
+        {pubs.length > 0 && (
+          <Card title="Publicades" meta={<span className="num">{pubs.length}</span>}>
+            <ul className="grid gap-4 sm:grid-cols-2">
+              {pubs.map((p) => (
+                <li key={p.id} className="flex gap-4 rounded-lg border border-line p-4">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={p.qr} alt={`QR de ${p.url}`} width={96} height={96} className="shrink-0 rounded-md border border-line bg-white p-1" />
+                  <div className="min-w-0 space-y-2">
+                    <p className="font-medium">{p.textNl}</p>
+                    <p className="text-xs text-subtle">Codi d&apos;accés <span className="badge num ml-1 font-mono">{p.codi}</span></p>
+                    <a href={p.url} className="block truncate font-mono text-xs text-accent-ink hover:underline">{p.url}</a>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </Card>
+        )}
       </div>
-      {drafts.length === 0 && <p className="text-sm opacity-70">No hi ha esborranys pendents.</p>}
-      <ul className="space-y-3">
-        {drafts.map((q) => (
-          <li key={q.id} className="rounded border p-3">
-            <div className="text-xs opacity-60">{q.domini} · {q.tipus}{q.generadaPerIa ? " · IA" : ""}</div>
-            <form action={editQuestionAction} className="my-2 flex gap-2">
-              <input type="hidden" name="id" value={q.id} />
-              <input name="text" defaultValue={q.text} className="flex-1 rounded border p-1" />
-              <button className={btn}>Desar</button>
-            </form>
-            <div className="flex gap-2">
-              <form action={approveQuestionAction}><input type="hidden" name="id" value={q.id} /><button className={btn}>Aprovar</button></form>
-              <form action={discardQuestionAction}><input type="hidden" name="id" value={q.id} /><button className={btn}>Descartar</button></form>
-            </div>
-          </li>
-        ))}
-      </ul>
-      {ready.length > 0 && (
-        <div className="space-y-2">
-          <h2 className="font-semibold">Llestes per publicar</h2>
-          {ready.map((n) => (
-            <form key={n.id} action={publishAction} className="flex items-center gap-3 rounded border p-3 text-sm">
-              <input type="hidden" name="id" value={n.id} />
-              <span className="flex-1">{n.textNl} ({n.approved} aprovades)</span>
-              <button className="rounded bg-black px-3 py-1 text-white dark:bg-white dark:text-black">Publicar (enllaç i QR)</button>
-            </form>
-          ))}
-        </div>
-      )}
-      {pubs.length > 0 && (
-        <div className="space-y-2">
-          <h2 className="font-semibold">Publicades</h2>
-          <ul className="space-y-1 text-sm">
-            {pubs.map((p) => (
-              <li key={p.id} className="flex items-center gap-3 rounded border p-3">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={p.qr} alt={`QR de ${p.url}`} width={96} height={96} />
-                <div>{p.textNl}<br /><code>{p.url}</code> · codi <b>{p.codi}</b></div>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-    </section>
+    </>
   );
 }

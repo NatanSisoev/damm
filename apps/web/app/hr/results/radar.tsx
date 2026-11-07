@@ -7,10 +7,10 @@ const SIZE = 420;
 const C = SIZE / 2;
 const R = 130;
 const TONES = {
-  primary: "stroke-[#2a78d6] fill-[#2a78d6] dark:stroke-[#3987e5] dark:fill-[#3987e5]",
-  compare: "stroke-[#eb6834] fill-[#eb6834] dark:stroke-[#d95926] dark:fill-[#d95926]",
+  primary: "stroke-chart-1 fill-chart-1",
+  compare: "stroke-chart-2 fill-chart-2",
 };
-const SWATCH = { primary: "bg-[#2a78d6] dark:bg-[#3987e5]", compare: "bg-[#eb6834] dark:bg-[#d95926]" };
+const SWATCH = { primary: "bg-chart-1", compare: "bg-chart-2" };
 
 const angle = (i: number, n: number) => -Math.PI / 2 + (i * 2 * Math.PI) / n;
 const point = (i: number, n: number, v: number) => {
@@ -56,7 +56,7 @@ function Shape({ s, n }: { s: RadarSeries; n: number }) {
       {pts.map((p, i) =>
         p ? (
           <g key={i}>
-            <circle cx={p.x} cy={p.y} r={4.5} className={`${tone} stroke-[var(--background)]`} strokeWidth={2} />
+            <circle cx={p.x} cy={p.y} r={4.5} className={`${tone} stroke-surface`} strokeWidth={2} />
             <circle cx={p.x} cy={p.y} r={12} fill="transparent">
               <title>{`${s.label}: ${s.values[i]!.toFixed(1)}`}</title>
             </circle>
@@ -72,7 +72,7 @@ export function Radar({ axes, series }: { axes: string[]; series: RadarSeries[] 
   const rings = [2, 3, 4, 5];
   return (
     <figure className="space-y-3">
-      <div className="flex flex-wrap gap-4 text-sm">
+      <div className="flex flex-wrap gap-4 text-[13px] text-muted">
         {series.map((s) => (
           <span key={s.label} className="flex items-center gap-2">
             <span
@@ -85,7 +85,7 @@ export function Radar({ axes, series }: { axes: string[]; series: RadarSeries[] 
       </div>
       <svg
         viewBox={`-80 25 ${SIZE + 160} ${SIZE - 30}`}
-        className="w-full max-w-[36rem]"
+        className="mx-auto w-full max-w-[34rem] text-muted"
         role="img"
         aria-label={`Mitjana per domini (1 a 5): ${series.map((s) => s.label).join(" i ")}`}
       >
@@ -139,7 +139,7 @@ export function Radar({ axes, series }: { axes: string[]; series: RadarSeries[] 
           );
         })}
       </svg>
-      <figcaption className="text-xs opacity-60">
+      <figcaption className="text-xs text-subtle">
         Escala fixa de 1 a 5; la línia discontínua marca el 3. Un domini amb menys de 10 respostes queda en blanc, mai com a 0.
       </figcaption>
     </figure>
