@@ -93,7 +93,7 @@ export async function publishAction(formData: FormData) {
 }
 
 export async function approveRecommendationAction(formData: FormData) {
-  approveRecommendation(Number(formData.get("id")));
+  approveRecommendation(Number(formData.get("id")), String(formData.get("approver") ?? ""));
   revalidatePath("/hr", "layout");
 }
 

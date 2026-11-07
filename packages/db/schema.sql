@@ -214,7 +214,8 @@ CREATE TABLE recomanacio (
   justificacio             TEXT,                               -- cites n and confidence
   limits                   TEXT,                               -- honest limits line ("correlació, no causa")
   font                     TEXT CHECK (font IS NULL OR font IN ('llm','template')),
-  aprovada_el              TEXT                                 -- when HR adopted it (set with estat = 'aprovada'); anchor of the "listen again" before/after
+  aprovada_el              TEXT,                                -- when HR adopted it (set with estat = 'aprovada'); anchor of the "listen again" before/after
+  aprovada_per             TEXT                                 -- non-personal label of the approver (HR role or a display name, max 60 chars); never an email
 );
 
 -- Something that happened in the organisation, recorded by HR (e.g. "new shift system from 1 Oct").

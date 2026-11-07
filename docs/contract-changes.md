@@ -312,3 +312,15 @@ Action items:
 - [ ] Natan: when the engine writes `pregunta` rows, set `text_i18n` and option `i18n` from the bank, and keep `compte.lang` out of anything the engine returns.
 - [ ] Natan (optional): translate the engine's insight and alarm texts (`agregat`/`senyal` titles) per language, or store keys instead of sentences.
 
+
+## 2026-11-08: Approver of a recommendation, one comment snippet per theme (R-X-2, R-X-3) (Jan)
+
+Additive and backward compatible.
+
+- `recomanacio.aprovada_per` (new, nullable TEXT): non-personal label of who approved (what HR types in an optional field, max 60 chars, `@` and control characters stripped, default `HR`). Set together with `aprovada_el` by `approveRecommendation(id, approvedBy?)` in `@damm/db/hr`. `getDb` adds the column to existing databases on start (`ensureApprovalColumn`); `schema.sql` has it for new ones. `SignalRecommendation` gains `aprovadaPer`.
+- `getSignalDetail` themes now carry at most 1 verbatim snippet (was 3), and none when the theme has fewer than 10 comments in the signal's scope.
+- The HR gate fails closed in production when `HR_ACCESS_CODE` is empty (`/hr`, `/manager`, `POST /api/jobs/run`). Development stays open.
+
+Action items:
+- [ ] Natan: if the engine or an analysis job writes `recomanacio` rows or approves them, set `aprovada_per` too (never an email or an account id), and keep it out of anything shipped to the employee side.
+- [x] Jan: HR approve forms, recommendation card, signal page, gate. (done 2026-11-08)

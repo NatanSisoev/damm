@@ -32,8 +32,8 @@ G-§9: "Criteris excloents". These outrank everything else.
 | ID | Requirement | Status | Evidence / gap |
 |----|-------------|--------|----------------|
 | R-X-1 | No real personal data anywhere: code, seed, DB, slides, screenshots, LLM prompts | done | Seed is synthetic (`packages/seed`). Re-check slide screenshots before the deck. |
-| R-X-2 | No identifiable individual results on any screen or export | done | n≥10 suppression plus complementary suppression (task 17), CSV export with `suprimit` (task 8). |
-| R-X-3 | Human control: nothing the AI proposes takes effect without a person approving it | done | Questions need `aprovada`; recommendations need approval. Re-verify once Natan's AI calls land. Gap: the approver of a recommendation is not recorded (needs `recomanacio.aprovada_per/aprovada_el`); `/hr/*` now sits behind `HR_ACCESS_CODE`. |
+| R-X-2 | No identifiable individual results on any screen or export | done | n≥10 suppression plus complementary suppression (task 17), CSV export with `suprimit` (task 8). Free text: at most 1 verbatim snippet per theme, only when the theme has ≥10 comments in scope (`hr-signals.ts`); otherwise counts only. Redaction is still regex only (`pii.ts`). |
+| R-X-3 | Human control: nothing the AI proposes takes effect without a person approving it | done | Questions need `aprovada`; recommendations need approval. Re-verify once Natan's AI calls land. Approver recorded: `recomanacio.aprovada_per` (non-personal label HR types, max 60 chars, default "HR") plus `aprovada_el`, shown as "Aprovada per X, data". `/hr/*`, `/manager/*` and `POST /api/jobs/run` sit behind `HR_ACCESS_CODE` and fail closed in production when it is unset. |
 | R-X-4 | No tokens or secrets exposed in code, git history, slides or screenshots | partial | `.env` is gitignored and `.env.example` has empty values. Still to do: a history scan (`git log -p \| grep -iE "key\|token\|secret"`) before the PR, and a check of the slides and screenshots. |
 
 ## 1. Challenge statement and principle

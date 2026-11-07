@@ -16,7 +16,7 @@ function refresh(formData: FormData) {
 }
 
 export async function approveFromSignalAction(formData: FormData) {
-  approveRecommendation(Number(formData.get("id")));
+  approveRecommendation(Number(formData.get("id")), String(formData.get("approver") ?? ""));
   refresh(formData);
 }
 

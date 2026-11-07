@@ -7,7 +7,9 @@ import { RECOMMENDATION_COLUMNS, getShiftTrend, getTrends, type TrendCell } from
 import type { Change } from "./hr-rigour";
 
 // Snippets: stored redacted text only, no metadata returned next to them, never from themes under the minimum size.
-const SNIPPETS_PER_THEME = 3;
+// R-X-2: free text is the riskiest output. At most one verbatim snippet per theme, and only for a theme with
+// at least MIN_GROUP_SIZE comments in scope; below that HR gets counts only.
+const SNIPPETS_PER_THEME = 1;
 const SNIPPET_MAX_CHARS = 280;
 
 export interface SignalHeader {
@@ -57,6 +59,8 @@ export interface SignalRecommendation {
   limits: string | null;
   font: "llm" | "template" | null;
   aprovadaEl: string | null;
+  /** Non-personal label HR typed at approval (max 60 chars), or "HR". Null on older rows. */
+  aprovadaPer: string | null;
 }
 
 
@@ -142,7 +146,7 @@ export function getSignalDetail(id: number): SignalDetail | null {
   for (const t of themeRows) {
     if (t.cn === 0) continue; // unrelated to this collective
     if (t.cn < MIN_GROUP_SIZE || t.tn < MIN_GROUP_SIZE || t.ts) { hiddenThemes++; continue; }
-    const snippets = (db
+    const snippets = t.cn < MIN_GROUP_SIZE ? [] : (db
       .prepare(
         `SELECT v.comentari AS c FROM comentari_tema ct JOIN v_resposta_analitica v ON v.id = ct.resposta_id
          WHERE ct.tema_id = ? AND (? IS NULL OR v.collectiu_id = ?) AND v.comentari IS NOT NULL AND TRIM(v.comentari) <> ''

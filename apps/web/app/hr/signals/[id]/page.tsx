@@ -269,7 +269,7 @@ export default async function SignalPage({ params, searchParams }: { params: Pro
                         {r.estat === "proposada" && (
                           <>
                             <form action={discardFromSignalAction}><input type="hidden" name="id" value={r.id} /><input type="hidden" name="signal" value={signal.id} /><button className="btn">{t("sd_discard")}</button></form>
-                            <form action={approveFromSignalAction}><input type="hidden" name="id" value={r.id} /><input type="hidden" name="signal" value={signal.id} /><button className="btn btn-primary">{t("sd_approve")}</button></form>
+                            <form action={approveFromSignalAction} className="flex gap-2"><input type="hidden" name="id" value={r.id} /><input name="approver" maxLength={60} autoComplete="off" aria-label={t("approver_label")} placeholder={t("approver_label")} className="input w-40 text-[13px]" /><input type="hidden" name="signal" value={signal.id} /><button className="btn btn-primary">{t("sd_approve")}</button></form>
                           </>
                         )}
                         {r.estat === "aprovada" && !r.seguimentNecessitatId && (
