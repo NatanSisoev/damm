@@ -1,54 +1,62 @@
 @import "tailwindcss";
 
 /*
- * Design tokens. Direction adapted from the Magenta Desks system:
- * calm, dense, precise. Neutral zinc surfaces, 1px borders instead of heavy
- * shadows, one accent used sparingly (Estrella Damm red), a black sidebar as on damm.com.
+ * Design tokens: "Paper" identity (docs/visual-identity.md). Ink on paper, thin rules,
+ * red as a signal only (active nav tab, participation bar, critical alarms). One token set
+ * for the employee app, the HR portal and the manager view.
  */
 :root {
-  --gray-0: #ffffff;
-  --gray-50: #fafafa;
-  --gray-100: #f4f4f5;
-  --gray-200: #e4e4e7;
-  --gray-300: #d4d4d8;
-  --gray-400: #a1a1aa;
-  --gray-500: #71717a;
-  --gray-600: #52525b;
-  --gray-700: #3f3f46;
-  --gray-800: #27272a;
-  --gray-900: #18181b;
+  --brand-red: #c8201a;
 
-  --bg: var(--gray-50);
-  --surface: var(--gray-0);
-  --surface-muted: var(--gray-100);
-  --border: var(--gray-200);
-  --border-strong: var(--gray-300);
-  --text: var(--gray-900);
-  --text-muted: var(--gray-600);
-  --text-subtle: var(--gray-500);
+  --bg: #eef0ea;
+  --surface: #fbfcf9;
+  --surface-muted: #e6e9e0;
+  --border: #d3d9cc;
+  --border-strong: #b9c1b0;
+  --line: var(--border);
+  --line-strong: var(--border-strong);
+  /* Border of form controls on touch screens: 3:1 against the surface. */
+  --control-border: #7d8a78;
+  --text: #17211a;
+  --text-muted: #52604f;
+  --text-subtle: #5f6c5c;
 
-  /* Estrella Damm red (damm.com), black nav as on the site */
-  --accent: #eb0505;
-  --accent-hover: #c40404;
-  --accent-soft: rgb(235 5 5 / 0.08);
-  --accent-text: #b80404;
+  /* Ink, not red: primary buttons, focus, selected state. */
+  --accent: #17211a;
+  --accent-hover: #2c3a30;
+  --accent-soft: rgb(23 33 26 / 0.07);
+  --accent-text: #17211a;
+  --on-accent: #fbfcf9;
 
-  --warn: #b45309;
-  --warn-soft: #fffbeb;
-  --good: #15803d;
-  --good-soft: #f0fdf4;
+  --warn: #a3331f;
+  --warn-soft: #f6e7e2;
+  --good: #1d6b34;
+  --good-soft: #e3f0e6;
 
-  --chart-1: #2a78d6;
-  --chart-2: #eb6834;
+  --chart-1: #3d5a6c;
+  --chart-2: #8a6d3b;
 
-  --nav-bg: #0a0a0a;
-  --nav-text: #d4d4d8;
-  --nav-muted: #8e8e98;
-  --nav-active-bg: rgb(255 255 255 / 0.08);
-  --nav-active-text: #ffffff;
+  /* Diverging scale for the heatmap: warm = below company average, cool = above, grey midpoint. */
+  --div-neg: #b8431f;
+  --div-pos: #2a6f97;
+  --div-mid: #e3e5de;
 
-  --shadow-sm: 0 1px 2px rgb(24 24 27 / 0.06);
-  --shadow-md: 0 4px 12px rgb(24 24 27 / 0.08), 0 1px 3px rgb(24 24 27 / 0.06);
+  /* Fixed cohort colours (colour follows the entity). Validated with the dataviz script. */
+  --co-1: #2a78d6;
+  --co-2: #eb6834;
+  --co-3: #1baf7a;
+  --co-4: #eda100;
+  --co-5: #e87ba4;
+
+  /* Domain trend lines (categorical slots 1-6, validated light and dark); no clear change = muted grey. */
+  --dom-1: #2a78d6;
+  --dom-2: #eb6834;
+  --dom-3: #1baf7a;
+  --dom-4: #eda100;
+  --dom-5: #e87ba4;
+  --dom-6: #008300;
+  --dom-muted: #a9b0a3;
+
   --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
 
   /* kept for older components */
@@ -58,31 +66,49 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #121215;
-    --surface: #1a1a1e;
-    --surface-muted: #222226;
-    --border: #2a2a30;
-    --border-strong: #3a3a42;
-    --text: #f4f4f5;
-    --text-muted: #b4b4bc;
-    --text-subtle: #8e8e98;
+    --brand-red: #ff7a6e;
 
-    --accent: #e8201f;
-    --accent-hover: #f23d3c;
-    --accent-soft: rgb(242 61 60 / 0.14);
-    --accent-text: #ff7b7a;
+    --bg: #121512;
+    --surface: #1a1e1a;
+    --surface-muted: #232823;
+    --border: #2f362f;
+    --border-strong: #434c43;
+    --control-border: #6f7b6c;
+    --text: #eef1ea;
+    --text-muted: #b2bcaf;
+    --text-subtle: #97a393;
 
-    --warn: #f59e0b;
-    --warn-soft: rgb(245 158 11 / 0.12);
-    --good: #4ade80;
-    --good-soft: rgb(74 222 128 / 0.12);
+    --accent: #eef1ea;
+    --accent-hover: #ffffff;
+    --accent-soft: rgb(238 241 234 / 0.1);
+    --accent-text: #eef1ea;
+    --on-accent: #121512;
 
-    --chart-1: #3987e5;
-    --chart-2: #d95926;
+    --warn: #ff9a86;
+    --warn-soft: rgb(255 122 110 / 0.12);
+    --good: #7fd194;
+    --good-soft: rgb(127 209 148 / 0.12);
 
-    --nav-bg: #000000;
-    --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4);
-    --shadow-md: 0 4px 12px rgb(0 0 0 / 0.4);
+    --chart-1: #8fb3c8;
+    --chart-2: #d0aa68;
+
+    --div-neg: #e0745a;
+    --div-pos: #5fa3cf;
+    --div-mid: #2f352f;
+
+    --co-1: #3987e5;
+    --co-2: #d95926;
+    --co-3: #199e70;
+    --co-4: #c98500;
+    --co-5: #d55181;
+
+    --dom-1: #3987e5;
+    --dom-2: #d95926;
+    --dom-3: #199e70;
+    --dom-4: #c98500;
+    --dom-5: #d55181;
+    --dom-6: #008300;
+    --dom-muted: #5d675a;
   }
 }
 
@@ -105,13 +131,18 @@
   --color-good-soft: var(--good-soft);
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
-  --color-nav: var(--nav-bg);
-  --color-nav-ink: var(--nav-text);
-  --color-nav-muted: var(--nav-muted);
   --color-background: var(--bg);
   --color-foreground: var(--text);
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+  --font-sans: var(--font-hanken), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  /* Paper: 2px corners everywhere. */
+  --radius-xs: 2px;
+  --radius-sm: 2px;
+  --radius-md: 2px;
+  --radius-lg: 2px;
+  --radius-xl: 2px;
+  --radius-2xl: 2px;
+  --radius-3xl: 2px;
 }
 
 body {
@@ -120,11 +151,10 @@ body {
   font-family: var(--font-sans);
   font-size: 14px;
   line-height: 20px;
-  font-feature-settings: "cv11", "ss01";
 }
 
 :focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--text);
   outline-offset: 2px;
 }
 
@@ -132,19 +162,27 @@ body {
   .page-title {
     font-size: 24px;
     line-height: 32px;
-    font-weight: 600;
-    letter-spacing: -0.02em;
+    font-weight: 800;
+    letter-spacing: -0.01em;
   }
   .section-title {
     font-size: 16px;
     line-height: 24px;
-    font-weight: 600;
+    font-weight: 700;
+  }
+  .eyebrow {
+    font-size: 11px;
+    line-height: 16px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-muted);
   }
 
   .card {
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 12px;
+    border-radius: 2px;
   }
   .card-header {
     display: flex;
@@ -163,13 +201,12 @@ body {
     gap: 6px;
     height: 32px;
     padding: 0 12px;
-    border-radius: 8px;
+    border-radius: 2px;
     border: 1px solid var(--border-strong);
     background: var(--surface);
     color: var(--text);
     font-size: 13px;
     font-weight: 500;
-    box-shadow: var(--shadow-sm);
     transition: background-color 120ms var(--ease), border-color 120ms var(--ease);
     cursor: pointer;
     white-space: nowrap;
@@ -180,7 +217,7 @@ body {
   .btn-primary {
     background: var(--accent);
     border-color: var(--accent);
-    color: #fff;
+    color: var(--on-accent);
   }
   .btn-primary:hover {
     background: var(--accent-hover);
@@ -200,7 +237,7 @@ body {
   .input {
     height: 32px;
     padding: 0 10px;
-    border-radius: 8px;
+    border-radius: 2px;
     border: 1px solid var(--border-strong);
     background: var(--surface);
     color: var(--text);
@@ -213,9 +250,10 @@ body {
     line-height: 20px;
   }
   .input:focus {
-    outline: none;
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px var(--accent-soft);
+    border-color: var(--text);
+    outline: 2px solid var(--text);
+    outline-offset: 1px;
+    box-shadow: none;
   }
   .label {
     display: block;
@@ -232,7 +270,7 @@ body {
     gap: 4px;
     height: 20px;
     padding: 0 8px;
-    border-radius: 999px;
+    border-radius: 2px;
     font-size: 12px;
     line-height: 16px;
     font-weight: 500;
@@ -257,7 +295,7 @@ body {
     display: inline-flex;
     padding: 2px;
     gap: 2px;
-    border-radius: 8px;
+    border-radius: 2px;
     background: var(--surface-muted);
     border: 1px solid var(--border);
   }
@@ -266,7 +304,7 @@ body {
     display: inline-flex;
     align-items: center;
     padding: 0 10px;
-    border-radius: 6px;
+    border-radius: 2px;
     font-size: 13px;
     font-weight: 500;
     color: var(--text-muted);
@@ -278,7 +316,6 @@ body {
   .segmented > a[aria-current="true"] {
     background: var(--surface);
     color: var(--text);
-    box-shadow: var(--shadow-sm);
   }
 
   .table {
@@ -311,4 +348,118 @@ body {
   .num {
     font-variant-numeric: tabular-nums;
   }
+
+  /* Critical alarms read stronger than warnings. */
+  .badge-crit {
+    background: var(--brand-red);
+    color: #fff;
+    font-weight: 600;
+  }
+}
+
+/* ---------- Employee app (scope .emp): touch sizes, 16px text ---------- */
+.emp {
+  background: var(--bg);
+  color: var(--text);
+  font-size: 16px;
+  line-height: 1.5;
+  min-height: 100dvh;
+}
+.emp :focus-visible {
+  outline: 3px solid var(--text);
+  outline-offset: 2px;
+}
+.emp .btn {
+  min-height: 44px;
+  font-size: 15px;
+  font-weight: 700;
+  border-color: var(--control-border);
+  justify-content: center;
+}
+.emp .btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
+}
+.emp .btn-primary:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+.emp .btn-ghost {
+  border-color: transparent;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+.emp .btn[disabled] {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.emp .input {
+  min-height: 48px;
+  font-size: 16px;
+  width: 100%;
+  border-color: var(--control-border);
+}
+.emp textarea.input {
+  min-height: 96px;
+}
+.emp .input:focus {
+  outline: 3px solid var(--text);
+  outline-offset: 2px;
+  border-color: var(--text);
+}
+.emp .label {
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 18px;
+  margin-bottom: 6px;
+  color: var(--text);
+}
+.emp .badge {
+  height: 24px;
+  font-weight: 700;
+}
+.emp .page-title {
+  font-size: 28px;
+  line-height: 1.15;
+}
+.emp .section-title {
+  font-size: 17px;
+  font-weight: 700;
+}
+
+/* Scale input: joined segmented row, 1px borders, selected item filled with ink. */
+.emp .tiles {
+  display: grid;
+  gap: 0;
+  border: 1px solid var(--control-border);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.emp .tiles button {
+  min-height: 64px;
+  margin: 0 -1px -1px 0;
+  border: 1px solid var(--control-border);
+  background: var(--surface);
+  color: var(--text);
+  font-weight: 800;
+  font-size: 22px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.emp .tiles button:hover {
+  background: var(--surface-muted);
+}
+.emp .tiles button[aria-checked="true"] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
+  position: relative;
+}
+.emp .tiles button:focus-visible {
+  position: relative;
+  z-index: 1;
 }

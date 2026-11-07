@@ -64,3 +64,7 @@ Scope: the employee side only (onboarding, answering, push). Anything the HR sid
 ## Done means
 
 Lint and build pass, a new account can onboard from a seeded join code, answer questions on a phone-sized viewport, and the data lands in `resposta` with no personal data. The seed package gives the pool and join codes to test against.
+
+## Visual identity
+
+The employee app follows "Paper" (`docs/visual-identity.md`): ink primary buttons, 2px corners, 1px rules, no shadows, a flat header with a rule under it, Hanken Grotesk only, 44px touch targets and 16px inputs. The scale input is a joined segmented row with the selected value filled in ink. Errors use the warn colour with a one-sentence message. The privacy note uses an outline lock icon, not an emoji. Join and login show "Persones · Estrella Damm" as plain text. Shared pieces live in `app/(employee)/components/frame.tsx`.

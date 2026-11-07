@@ -52,7 +52,7 @@ export function PasswordField({
         </button>
       </div>
       {showHint && (
-        <p id={`${id}-hint`} className={`mt-1 text-sm ${short ? "text-accent-ink font-semibold" : "text-muted"}`}>
+        <p id={`${id}-hint`} className={`mt-1 text-sm ${short ? "text-warn font-semibold" : "text-muted"}`}>
           Mínim {MIN_PASSWORD} caràcters{len > 0 ? ` (${len}/${MIN_PASSWORD}${len >= MIN_PASSWORD ? " ✓" : ""})` : ""}.
         </p>
       )}

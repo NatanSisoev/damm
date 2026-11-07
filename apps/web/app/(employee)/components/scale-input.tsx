@@ -29,7 +29,7 @@ export function ScaleInput({
   };
   return (
     <div>
-      <div role="radiogroup" aria-label="Valoració" className={`tiles grid ${cols} gap-2`}>
+      <div role="radiogroup" aria-label="Valoració" className={`tiles grid ${cols}`}>
         {values.map((v) => {
           const on = value === v;
           return (

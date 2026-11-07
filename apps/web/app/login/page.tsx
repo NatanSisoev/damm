@@ -1,17 +1,18 @@
-import { BrandFrame, BrandHero } from "../(employee)/components/brand";
+import { CompanyLabel, EmployeeFrame, PageHead } from "../(employee)/components/frame";
 import { LoginForm } from "./login-form";
 
 export const dynamic = "force-dynamic";
 
 export default function LoginPage() {
   return (
-    <BrandFrame>
+    <EmployeeFrame>
       <main className="mx-auto flex min-h-dvh w-full max-w-xl flex-col gap-6 md:py-8">
-        <BrandHero title="Torna a entrar" lede="Continua on ho vas deixar." />
+        <PageHead title="Torna a entrar" lede="Continua on ho vas deixar." />
         <div className="px-4 pb-8">
           <LoginForm />
         </div>
+        <CompanyLabel />
       </main>
-    </BrandFrame>
+    </EmployeeFrame>
   );
 }

@@ -1,16 +1,13 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { Hanken_Grotesk } from "next/font/google";
 import { MIN_GROUP_SIZE } from "@damm/shared";
-import { DammLogo } from "./damm-logo";
+import { Wordmark } from "../wordmark";
 import { HrSidebar, type NavBadges } from "./nav";
 import "./hr.css";
 
-const hanken = Hanken_Grotesk({ variable: "--font-hanken", subsets: ["latin"], weight: ["400", "500", "700", "800"] });
-
 /** Theme scope only (no chrome), for pages outside the HR layout such as the login. */
 export function HrScope({ children }: { children: ReactNode }) {
-  return <div className={`hr-shell ${hanken.variable} flex min-h-screen flex-col`}>{children}</div>;
+  return <div className={`hr-shell flex min-h-screen flex-col`}>{children}</div>;
 }
 
 export type { NavBadges };
@@ -30,15 +27,12 @@ const Footer = () => (
 export function HrShell({ children, subtitle = "Portal de persones", manager = false, badges }: { children: ReactNode; subtitle?: string; manager?: boolean; badges?: NavBadges }) {
   if (manager) {
     return (
-      <div className={`hr-shell ${hanken.variable} flex flex-col`}>
+      <div className={`hr-shell flex flex-col`}>
         <header className="hr-bar">
           <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-8 px-4 md:px-8">
             <Link href="/manager" className="flex h-12 items-center gap-3">
-              <DammLogo className="h-5 w-auto shrink-0 text-ink" />
-              <span className="border-l border-line pl-3 leading-tight">
-                <span className="block text-[13px] font-bold">Escolta activa</span>
-                <span className="block text-[11px] text-subtle">{subtitle}</span>
-              </span>
+              <Wordmark className="text-[15px]" />
+              <span className="border-l border-line pl-3 text-[11px] text-subtle">{subtitle}</span>
             </Link>
             <nav aria-label="Seccions" className="ml-auto">
               <Link href="/hr" className="hr-tab">Portal de persones →</Link>
@@ -53,13 +47,13 @@ export function HrShell({ children, subtitle = "Portal de persones", manager = f
     );
   }
   return (
-    <div className={`hr-shell hr-layout ${hanken.variable}`}>
+    <div className={`hr-shell hr-layout`}>
       <HrSidebar
         badges={badges}
         subtitle={subtitle}
         logo={
           <Link href="/hr" aria-label="Escolta activa, inici" className="flex items-center">
-            <DammLogo className="h-5 w-auto shrink-0 text-ink" />
+            <Wordmark className="text-[15px]" />
           </Link>
         }
       />

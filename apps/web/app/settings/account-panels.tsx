@@ -10,7 +10,7 @@ import {
   type SettingsState,
 } from "./actions";
 
-const err = "font-semibold text-accent-ink";
+const err = "font-semibold text-warn";
 
 export function ChangePasswordPanel() {
   const [state, action, pending] = useActionState<SettingsState, FormData>(changePasswordAction, {});
