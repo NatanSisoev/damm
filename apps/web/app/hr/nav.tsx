@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const links = [
+  { href: "/hr", label: "Inici", step: "" },
   { href: "/hr/need", label: "Necessitat", step: "1" },
   { href: "/hr/review", label: "Revisió i publicació", step: "2" },
   { href: "/hr/results", label: "Resultats", step: "3" },
@@ -15,7 +16,7 @@ export function HrNav() {
   return (
     <nav aria-label="Seccions" className="flex gap-1 overflow-x-auto md:flex-col md:overflow-visible">
       {links.map((l) => {
-        const active = path.startsWith(l.href);
+        const active = l.href === "/hr" ? path === "/hr" : path.startsWith(l.href);
         return (
           <Link
             key={l.href}
@@ -30,7 +31,11 @@ export function HrNav() {
                 active ? "bg-accent text-white" : "bg-white/10 text-nav-ink"
               }`}
             >
-              {l.step}
+              {l.step || (
+                <svg aria-hidden viewBox="0 0 16 16" className="size-3" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round">
+                  <path d="M2.5 7.5 8 3l5.5 4.5V13h-3.5V9.5H6V13H2.5z" />
+                </svg>
+              )}
             </span>
             {l.label}
           </Link>

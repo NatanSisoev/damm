@@ -336,3 +336,61 @@ export function exportResultsCsv(): string {
   }
   return lines.map((l) => l.map(csvCell).join(",")).join("\r\n") + "\r\n";
 }
+
+// --- HR home overview (aggregates, counts and synthetic population only) ----------------
+
+export interface PendingItem {
+  kind: "draft" | "recomanacio";
+  id: number;
+  text: string;
+}
+
+export interface HrOverview {
+  periode: string | null;
+  population: number;
+  respondents: number | null; // sum of visible collective segments in the latest period
+  participation: number | null; // 0..1
+  openNeeds: number;
+  pendingDrafts: number;
+  pendingRecommendations: number;
+  signalCount: number;
+  topSignals: ReturnType<typeof listSignals>;
+  pending: PendingItem[];
+}
+
+/** Everything the HR home screen shows. Segments under the minimum group size never enter a sum. */
+export function getHrOverview(): HrOverview {
+  const db = getDb();
+  const count = (sql: string) => (db.prepare(sql).get() as { c: number }).c;
+  const population = count("SELECT COUNT(*) AS c FROM empleat_sintetic");
+  const p = db.prepare("SELECT MAX(periode) AS p FROM agregat").get() as { p: string | null };
+  let respondents: number | null = null;
+  if (p.p) {
+    const rows = db
+      .prepare(
+        `SELECT n, suprimit FROM agregat
+         WHERE periode = ? AND collectiu_id IS NOT NULL AND torn_id IS NULL AND domini_id IS NULL`,
+      )
+      .all(p.p) as { n: number; suprimit: number }[];
+    const visible = rows.filter((r) => r.n >= MIN_GROUP_SIZE && !r.suprimit);
+    respondents = visible.length ? visible.reduce((s, r) => s + r.n, 0) : null;
+  }
+  const signals = listSignals();
+  const drafts = listDrafts();
+  const recs = listRecommendations().filter((r) => r.estat === "proposada");
+  return {
+    periode: p.p,
+    population,
+    respondents,
+    participation: respondents !== null && population > 0 ? respondents / population : null,
+    openNeeds: count("SELECT COUNT(*) AS c FROM necessitat WHERE estat = 'oberta'"),
+    pendingDrafts: drafts.length,
+    pendingRecommendations: recs.length,
+    signalCount: signals.length,
+    topSignals: signals.slice(0, 3),
+    pending: [
+      ...drafts.map((d): PendingItem => ({ kind: "draft", id: d.id, text: d.text })),
+      ...recs.map((r): PendingItem => ({ kind: "recomanacio", id: r.id, text: r.text })),
+    ],
+  };
+}
