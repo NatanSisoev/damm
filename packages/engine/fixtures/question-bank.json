@@ -1,0 +1,1819 @@
+[
+ {
+  "domainId": 1,
+  "facet": "workload",
+  "type": "scale5",
+  "text": "My workload is manageable.",
+  "polarity": 1
+ },
+ {
+  "domainId": 1,
+  "facet": "workload",
+  "type": "scale5",
+  "text": "I often feel overloaded at work.",
+  "polarity": -1
+ },
+ {
+  "domainId": 1,
+  "facet": "workload",
+  "type": "scale10",
+  "text": "From 0 to 10, how manageable is your workload this week?",
+  "polarity": 1
+ },
+ {
+  "domainId": 1,
+  "facet": "workload",
+  "type": "yes_no",
+  "text": "This week, did you finish your tasks without rushing?",
+  "polarity": 1
+ },
+ {
+  "domainId": 1,
+  "facet": "workload",
+  "type": "pair",
+  "text": "Which is closer to your week?",
+  "polarity": 1,
+  "options": [
+   {
+    "label": "I can keep up with my work",
+    "score": 0.9
+   },
+   {
+    "label": "There is more work than I can handle",
+    "score": 0.1
+   }
+  ]
+ },
+ {
+  "domainId": 1,
+  "facet": "workload",
+  "type": "scale10",
+  "text": "A few days ago you told us your workload was heavy. From 0 to 10, how manageable is it now?",
+  "polarity": 1,
+  "isFollowup": true
+ },
+ {
+  "domainId": 1,
+  "facet": "stress_level",
+  "type": "scale5",
+  "text": "I feel under constant pressure at work.",
+  "polarity": -1
+ },
+ {
+  "domainId": 1,
+  "facet": "stress_level",
+  "type": "scale10",
+  "text": "From 0 to 10, how calm are your work days lately?",
+  "polarity": 1
+ },
+ {
+  "domainId": 1,
+  "facet": "stress_level",
+  "type": "yes_no",
+  "text": "Did work stress follow you home this week?",
+  "polarity": -1
+ },
+ {
+  "domainId": 1,
+  "facet": "stress_level",
+  "type": "choice",
+  "text": "How would you describe stress at work lately?",
+  "polarity": 1,
+  "options": [
+   {
+    "label": "Low, I feel relaxed",
+    "score": 1
+   },
+   {
+    "label": "Some, but I handle it",
+    "score": 0.65
+   },
+   {
+    "label": "High, most days",
+    "score": 0.3
+   },
+   {
+    "label": "Too much to cope with",
+    "score": 0
+   }
+  ]
+ },
+ {
+  "domainId": 1,
+  "facet": "stress_level",
+  "type": "scale10",
+  "text": "A few days ago you told us work felt stressful. From 0 to 10, how calm do you feel now?",
+  "polarity": 1,
+  "isFollowup": true
+ },
+ {
+  "domainId": 1,
+  "facet": "energy_after_work",
+  "type": "scale5",
+  "text": "I have enough energy left after work for my own life.",
+  "polarity": 1
+ },
+ {
+  "domainId": 1,
+  "facet": "energy_after_work",
+  "type": "scale10",
+  "text": "From 0 to 10, how much energy do you have at the end of a work day?",
+  "polarity": 1
+ },
+ {
+  "domainId": 1,
+  "facet": "energy_after_work",
+  "type": "yes_no",
+  "text": "Do you usually finish your work day feeling exhausted?",
+  "polarity": -1
+ },
+ {
+  "domainId": 1,
+  "facet": "energy_after_work",
+  "type": "pair",
+  "text": "At the end of the day, I mostly feel…",
+  "polarity": 1,
+  "options": [
+   {
+    "label": "Tired but fine",
+    "score": 0.9
+   },
+   {
+    "label": "Completely drained",
+    "score": 0.1
+   }
+  ]
+ },
+ {
+  "domainId": 1,
+  "facet": "energy_after_work",
+  "type": "scale5",
+  "text": "A few days ago you told us you felt drained after work. Do you have enough energy now?",
+  "polarity": 1,
+  "isFollowup": true
+ },
+ {
+  "domainId": 1,
+  "facet": "field_travel",
+  "type": "scale5",
+  "text": "The amount of travel in my job is reasonable.",
+  "polarity": 1,
+  "collectiuId": 3
+ },
+ {
+  "domainId": 1,
+  "facet": "field_travel",
+  "type": "scale10",
+  "text": "From 0 to 10, how tiring is the travel in your job?",
+  "polarity": -1,
+  "collectiuId": 3
+ },
+ {
+  "domainId": 1,
+  "facet": "field_travel",
+  "type": "yes_no",
+  "text": "This week, did driving or travelling leave you too tired to work well?",
+  "polarity": -1,
+  "collectiuId": 3
+ },
+ {
+  "domainId": 1,
+  "facet": "field_travel",
+  "type": "choice",
+  "text": "How is the time you spend on the road?",
+  "polarity": 1,
+  "options": [
+   {
+    "label": "Fine, it fits my work",
+    "score": 1
+   },
+   {
+    "label": "Long, but acceptable",
+    "score": 0.65
+   },
+   {
+    "label": "Too long most weeks",
+    "score": 0.3
+   },
+   {
+    "label": "It is wearing me out",
+    "score": 0
+   }
+  ],
+  "collectiuId": 3
+ },
+ {
+  "domainId": 1,
+  "facet": "field_travel",
+  "type": "yes_no",
+  "text": "A few days ago you told us travel was wearing you out. Has it eased?",
+  "polarity": 1,
+  "isFollowup": true,
+  "collectiuId": 3
+ },
+ {
+  "domainId": 1,
+  "facet": "priorities",
+  "type": "ranking",
+  "text": "Order what would most improve your well-being at work (most important first).",
+  "polarity": 1,
+  "options": [
+   {
+    "label": "Less time pressure",
+    "domain_id": 1
+   },
+   {
+    "label": "A manager who supports me",
+    "domain_id": 2
+   },
+   {
+    "label": "More chances to learn",
+    "domain_id": 3
+   },
+   {
+    "label": "Better equipment and conditions",
+    "domain_id": 6
+   }
+  ]
+ },
+ {
+  "domainId": 1,
+  "facet": "priorities",
+  "type": "ranking",
+  "text": "Which would help you feel better at work? Order from most to least helpful.",
+  "polarity": 1,
+  "options": [
+   {
+    "label": "A lighter workload",
+    "domain_id": 1
+   },
+   {
+    "label": "Feeling part of the team",
+    "domain_id": 4
+   },
+   {
+    "label": "Easier relations with colleagues",
+    "domain_id": 5
+   },
+   {
+    "label": "A more predictable schedule",
+    "domain_id": 6
+   }
+  ]
+ },
+ {
+  "domainId": 1,
+  "facet": "priorities",
+  "type": "ranking",
+  "text": "Order these by how much they affect your energy.",
+  "polarity": 1,
+  "options": [
+   {
+    "label": "Amount of work",
+    "domain_id": 1
+   },
+   {
+    "label": "Support from my manager",
+    "domain_id": 2
+   },
+   {
+    "label": "Worries about my future here",
+    "domain_id": 3
+   },
+   {
+    "label": "Working hours",
+    "domain_id": 6
+   }
+  ]
+ },
+ {
+  "domainId": 1,
+  "facet": "open_feedback",
+  "type": "open",
+  "text": "What is one thing that would make your work days less tiring?",
+  "polarity": 1
+ },
+ {
+  "domainId": 1,
+  "facet": "open_feedback",
+  "type": "open",
+  "text": "Is there anything that adds avoidable stress to your job?",
+  "polarity": 1
+ },
+ {
+  "domainId": 1,
+  "facet": "open_feedback",
+  "type": "open",
+  "text": "What helps you stay well at work?",
+  "polarity": 1
+ },
+ {
+  "domainId": 2,
+  "facet": "manager_listens",
+  "type": "scale10",
+  "text": "From 0 to 10, how much does your manager listen to you?",
+  "polarity": 1
+ },
+ {
+  "domainId": 2,
+  "facet": "manager_listens",
+  "type": "scale5",
+  "text": "My manager takes into account what I tell them.",
+  "polarity": 1
+ },
+ {
+  "domainId": 2,
+  "facet": "manager_listens",
+  "type": "yes_no",
+  "text": "When you raised a problem, did your manager act on it?",
+  "polarity": 1
+ },
+ {
+  "domainId": 2,
+  "facet": "manager_listens",
+  "type": "pair",
+  "text": "Which is closer to your experience?",
+  "polarity": 1,
+  "options": [
+   {
+    "label": "My manager listens to me",
+    "score": 0.9
+   },
+   {
+    "label": "Talking to my manager is pointless",
+    "score": 0.1
+   }
+  ]
+ },
+ {
+  "domainId": 2,
+  "facet": "manager_listens",
+  "type": "scale5",
+  "text": "My manager rarely pays attention to my opinion.",
+  "polarity": -1
+ },
+ {
+  "domainId": 2,
+  "facet": "manager_listens",
+  "type": "scale10",
+  "text": "A few days ago you told us you did not feel listened to. From 0 to 10, how do you see it now?",
+  "polarity": 1,
+  "isFollowup": true
+ },
+ {
+  "domainId": 2,
+  "facet": "feedback_quality",
+  "type": "scale5",
+  "text": "I get useful feedback on my work.",
+  "polarity": 1
+ },
+ {
+  "domainId": 2,
+  "facet": "feedback_quality",
+  "type": "scale10",
+  "text": "From 0 to 10, how useful is the feedback you get from your manager?",
+  "polarity": 1
+ },
+ {
+  "domainId": 2,
+  "facet": "feedback_quality",
+  "type": "yes_no",
+  "text": "In the last month, did you get feedback that helped you improve?",
+  "polarity": 1
+ },
+ {
+  "domainId": 2,
+  "facet": "feedback_quality",
+  "type": "choice",
+  "text": "How often do you hear how you are doing?",
+  "polarity": 1,
+  "options": [
+   {
+    "label": "Regularly, and it helps",
+    "score": 1
+   },
+   {
+    "label": "Sometimes",
+    "score": 0.65
+   },
+   {
+    "label": "Rarely",
+    "score": 0.3
+   },
+   {
+    "label": "Never",
+    "score": 0
+   }
+  ]
+ },
+ {
+  "domainId": 2,
+  "facet": "feedback_quality",
+  "type": "yes_no",
+  "text": "A few days ago you told us you rarely got feedback. Have you received any since?",
+  "polarity": 1,
+  "isFollowup": true
+ },
+ {
+  "domainId": 2,
+  "facet": "fair_treatment",
+  "type": "scale5",
+  "text": "My manager treats everyone on the team fairly.",
+  "polarity": 1
+ },
+ {
+  "domainId": 2,
+  "facet": "fair_treatment",
+  "type": "scale5",
+  "text": "Some people on my team get favours that others do not.",
+  "polarity": -1
+ },
+ {
+  "domainId": 2,
+  "facet": "fair_treatment",
+  "type": "scale10",
+  "text": "From 0 to 10, how fairly are tasks and shifts shared out in your team?",
+  "polarity": 1
+ },
+ {
+  "domainId": 2,
+  "facet": "fair_treatment",
+  "type": "pair",
+  "text": "Which is closer to your team?",
+  "polarity": 1,
+  "options": [
+   {
+    "label": "Decisions feel fair",
+    "score": 0.9
+   },
+   {
+    "label": "Decisions feel arbitrary",
+    "score": 0.1
+   }
+  ]
+ },
+ {
+  "domainId": 2,
+  "facet": "fair_treatment",
+  "type": "scale10",
+  "text": "A few days ago you told us decisions did not feel fair. From 0 to 10, how fair do they feel now?",
+  "polarity": 1,
+  "isFollowup": true
+ },
+ {
+  "domainId": 2,
+  "facet": "trust_leadership",
+  "type": "scale5",
+  "text": "I trust the people who lead this company.",
+  "polarity": 1
+ },
+ {
+  "domainId": 2,
+  "facet": "trust_leadership",
+  "type": "scale10",
+  "text": "From 0 to 10, how much do you trust the decisions made above your manager?",
+  "polarity": 1
+ },
+ {
+  "domainId": 2,
+  "facet": "trust_leadership",
+  "type": "yes_no",
+  "text": "Do you understand why important decisions are made here?",
+  "polarity": 1
+ },
+ {
+  "domainId": 2,
+  "facet": "trust_leadership",
+  "type": "choice",
+  "text": "How well does leadership explain its decisions?",
+  "polarity": 1,
+  "options": [
+   {
+    "label": "Clearly, I understand",
+    "score": 1
+   },
+   {
+    "label": "Partly",
+    "score": 0.65
+   },
+   {
+    "label": "Rarely",
+    "score": 0.3
+   },
+   {
+    "label": "Not at all",
+    "score": 0
+   }
+  ]
+ },
+ {
+  "domainId": 2,
+  "facet": "trust_leadership",
+  "type": "scale5",
+  "text": "A few days ago you told us decisions were hard to understand. Is that clearer now?",
+  "polarity": 1,
+  "isFollowup": true
+ },
+ {
+  "domainId": 2,
+  "facet": "priorities",
+  "type": "ranking",
+  "text": "Order what you most want from your manager (most important first).",
+  "polarity": 1,
+  "options": [
+   {
+    "label": "Listening to me",
+    "domain_id": 2
+   },
+   {
+    "label": "Clear feedback",
+    "domain_id": 2
+   },
+   {
+    "label": "Chances to grow",
+    "domain_id": 3
+   },
+   {
+    "label": "Protecting my time off",
+    "domain_id": 1
+   }
+  ]
+ },
+ {
+  "domainId": 2,
+  "facet": "priorities",
+  "type": "ranking",
+  "text": "What would make your manager more helpful? Order by importance.",
+  "polarity": 1,
+  "options": [
+   {
+    "label": "More time with the team",
+    "domain_id": 5
+   },
+   {
+    "label": "Clearer priorities",
+    "domain_id": 6
+   },
+   {
+    "label": "Recognising good work",
+    "domain_id": 4
+   },
+   {
+    "label": "Supporting my development",
+    "domain_id": 3
+   }
+  ]
+ },
+ {
+  "domainId": 2,
+  "facet": "priorities",
+  "type": "ranking",
+  "text": "Order what builds your trust in leaders.",
+  "polarity": 1,
+  "options": [
+   {
+    "label": "Honest communication",
+    "domain_id": 5
+   },
+   {
+    "label": "Fair decisions",
+    "domain_id": 2
+   },
+   {
+    "label": "Keeping promises",
+    "domain_id": 2
+   },
+   {
+    "label": "Visible presence on site",
+    "domain_id": 4
+   }
+  ]
+ },
+ {
+  "domainId": 2,
+  "facet": "open_feedback",
+  "type": "open",
+  "text": "What is one thing your manager could do differently?",
+  "polarity": 1
+ },
+ {
+  "domainId": 2,
+  "facet": "open_feedback",
+  "type": "open",
+  "text": "Tell us about a time a manager really helped you. No names, please.",
+  "polarity": 1
+ },
+ {
+  "domainId": 2,
+  "facet": "open_feedback",
+  "type": "open",
+  "text": "What would you like leaders to explain better?",
+  "polarity": 1
+ },
+ {
+  "domainId": 3,
+  "facet": "growth_path",
+  "type": "choice",
+  "text": "Which sentence best describes your growth here?",
+  "polarity": 1,
+  "options": [
+   {
+    "label": "I have a clear path and get help with it",
+    "score": 1
+   },
+   {
+    "label": "There are opportunities, but I must find them myself",
+    "score": 0.65
+   },
+   {
+    "label": "I do not know how I could grow",
+    "score": 0.3
+   },
+   {
+    "label": "There is no way to grow here",
+    "score": 0
+   }
+  ]
+ },
+ {
+  "domainId": 3,
+  "facet": "growth_path",
+  "type": "scale5",
+  "text": "I can see a future for myself in this company.",
+  "polarity": 1
+ },
+ {
+  "domainId": 3,
+  "facet": "growth_path",
+  "type": "scale10",
+  "text": "From 0 to 10, how clear is your next step in the company?",
+  "polarity": 1
+ },
+ {
+  "domainId": 3,
+  "facet": "growth_path",
+  "type": "yes_no",
+  "text": "Do you know what you would need to do to move up or change role?",
+  "polarity": 1
+ },
+ {
+  "domainId": 3,
+  "facet": "growth_path",
+  "type": "pair",
+  "text": "Which is closer to how you feel?",
+  "polarity": 1,
+  "options": [
+   {
+    "label": "I can grow here",
+    "score": 0.9
+   },
+   {
+    "label": "I am stuck in my role",
+    "score": 0.1
+   }
+  ]
+ },
+ {
+  "domainId": 3,
+  "facet": "growth_path",
+  "type": "scale10",
+  "text": "A few days ago you told us your next step was unclear. From 0 to 10, how clear is it now?",
+  "polarity": 1,
+  "isFollowup": true
+ },
+ {
+  "domainId": 3,
+  "facet": "training_access",
+  "type": "scale5",
+  "text": "I get the training I need to do my job well.",
+  "polarity": 1
+ },
+ {
+  "domainId": 3,
+  "facet": "training_access",
+  "type": "yes_no",
+  "text": "In the last six months, did you have the chance to attend any training?",
+  "polarity": 1
+ },
+ {
+  "domainId": 3,
+  "facet": "training_access",
+  "type": "scale10",
+  "text": "From 0 to 10, how easy is it to get training when you ask?",
+  "polarity": 1
+ },
+ {
+  "domainId": 3,
+  "facet": "training_access",
+  "type": "scale5",
+  "text": "It is hard to find time for training.",
+  "polarity": -1
+ },
+ {
+  "domainId": 3,
+  "facet": "training_access",
+  "type": "yes_no",
+  "text": "A few days ago you told us training was hard to get. Have you had any chance since?",
+  "polarity": 1,
+  "isFollowup": true
+ },
+ {
+  "domainId": 3,
+  "facet": "skill_use",
+  "type": "scale5",
+  "text": "My job lets me use my skills.",
+  "polarity": 1
+ },
+ {
+  "domainId": 3,
+  "facet": "skill_use",
+  "type": "scale10",
+  "text": "From 0 to 10, how much of your ability does your job use?",
+  "polarity": 1
+ },
+ {
+  "domainId": 3,
+  "facet": "skill_use",
+  "type": "pair",
+  "text": "My work is mostly…",
+  "polarity": 1,
+  "options": [
+   {
+    "label": "Interesting and varied",
+    "score": 0.9
+   },
+   {
+    "label": "Repetitive and dull",
+    "score": 0.1
+   }
+  ]
+ },
+ {
+  "domainId": 3,
+  "facet": "skill_use",
+  "type": "yes_no",
+  "text": "Do you feel you do work below your abilities?",
+  "polarity": -1
+ },
+ {
+  "domainId": 3,
+  "facet": "skill_use",
+  "type": "scale5",
+  "text": "A few days ago you told us your skills were not being used. Has that changed?",
+  "polarity": 1,
+  "isFollowup": true
+ },
+ {
+  "domainId": 3,
+  "facet": "learning_support",
+  "type": "scale5",
+  "text": "Colleagues here share what they know with me.",
+  "polarity": 1
+ },
+ {
+  "domainId": 3,
+  "facet": "learning_support",
+  "type": "scale10",
+  "text": "From 0 to 10, how supported do you feel when learning something new?",
+  "polarity": 1
+ },
+ {
+  "domainId": 3,
+  "facet": "learning_support",
+  "type": "yes_no",
+  "text": "When you started a new task, did someone show you how?",
+  "polarity": 1
+ },
+ {
+  "domainId": 3,
+  "facet": "learning_support",
+  "type": "choice",
+  "text": "When I learn something new at work…",
+  "polarity": 1,
+  "options": [
+   {
+    "label": "I get time and help",
+    "score": 1
+   },
+   {
+    "label": "I get help, but little time",
+    "score": 0.65
+   },
+   {
+    "label": "I mostly learn alone",
+    "score": 0.3
+   },
+   {
+    "label": "I get no support",
+    "score": 0
+   }
+  ]
+ },
+ {
+  "domainId": 3,
+  "facet": "learning_support",
+  "type": "scale10",
+  "text": "A few days ago you told us learning new things was a struggle. How supported do you feel now, from 0 to 10?",
+  "polarity": 1,
+  "isFollowup": true
+ },
+ {
+  "domainId": 3,
+  "facet": "priorities",
+  "type": "ranking",
+  "text": "Order what would help your development most (most important first).",
+  "polarity": 1,
+  "options": [
+   {
+    "label": "Paid training",
+    "domain_id": 3
+   },
+   {
+    "label": "A mentor",
+    "domain_id": 3
+   },
+   {
+    "label": "Time to learn during work",
+    "domain_id": 6
+   },
+   {
+    "label": "Chances to change role",
+    "domain_id": 3
+   }
+  ]
+ },
+ {
+  "domainId": 3,
+  "facet": "priorities",
+  "type": "ranking",
+  "text": "Which would help you grow most? Order by importance.",
+  "polarity": 1,
+  "options": [
+   {
+    "label": "Feedback from my manager",
+    "domain_id": 2
+   },
+   {
+    "label": "New responsibilities",
+    "domain_id": 3
+   },
+   {
+    "label": "Learning from colleagues",
+    "domain_id": 5
+   },
+   {
+    "label": "Clear promotion criteria",
+    "domain_id": 6
+   }
+  ]
+ },
+ {
+  "domainId": 3,
+  "facet": "priorities",
+  "type": "ranking",
+  "text": "Order what makes a job worth staying in.",
+  "polarity": 1,
+  "options": [
+   {
+    "label": "Learning something new",
+    "domain_id": 3
+   },
+   {
+    "label": "Good team",
+    "domain_id": 5
+   },
+   {
+    "label": "Fair pay and conditions",
+    "domain_id": 6
+   },
+   {
+    "label": "A manager who cares",
+    "domain_id": 2
+   }
+  ]
+ },
+ {
+  "domainId": 3,
+  "facet": "open_feedback",
+  "type": "open",
+  "text": "What skill would you like to learn in the next year?",
+  "polarity": 1
+ },
+ {
+  "domainId": 3,
+  "facet": "open_feedback",
+  "type": "open",
+  "text": "What gets in the way of your development here?",
+  "polarity": 1
+ },
+ {
+  "domainId": 3,
+  "facet": "open_feedback",
+  "type": "open",
+  "text": "What training would make your daily work easier?",
+  "polarity": 1
+ },
+ {
+  "domainId": 4,
+  "facet": "belonging",
+  "type": "scale5",
+  "text": "I feel I belong in this company.",
+  "polarity": 1
+ },
+ {
+  "domainId": 4,
+  "facet": "belonging",
+  "type": "scale10",
+  "text": "From 0 to 10, how much do you feel part of the company?",
+  "polarity": 1
+ },
+ {
+  "domainId": 4,
+  "facet": "belonging",
+  "type": "pair",
+  "text": "Which is closer to how you feel?",
+  "polarity": 1,
+  "options": [
+   {
+    "label": "I feel part of the team",
+    "score": 0.9
+   },
+   {
+    "label": "I feel like an outsider",
+    "score": 0.1
+   }
+  ]
+ },
+ {
+  "domainId": 4,
+  "facet": "belonging",
+  "type": "yes_no",
+  "text": "Do you feel like an outsider at work?",
+  "polarity": -1
+ },
+ {
+  "domainId": 4,
+  "facet": "belonging",
+  "type": "scale10",
+  "text": "A few days ago you told us you did not feel part of the team. From 0 to 10, how do you feel now?",
+  "polarity": 1,
+  "isFollowup": true
+ },
+ {
+  "domainId": 4,
+  "facet": "recognition",
+  "type": "pair",
+  "text": "Which sentence is closer to how you feel?",
+  "polarity": 1,
+  "options": [
+   {
+    "label": "My work is valued",
+    "score": 0.9
+   },
+   {
+    "label": "My work goes unnoticed",
+    "score": 0.1
+   }
+  ]
+ },
+ {
+  "domainId": 4,
+  "facet": "recognition",
+  "type": "scale5",
+  "text": "My efforts are recognised here.",
+  "polarity": 1
+ },
+ {
+  "domainId": 4,
+  "facet": "recognition",
+  "type": "scale10",
+  "text": "From 0 to 10, how valued do you feel for what you do?",
+  "polarity": 1
+ },
+ {
+  "domainId": 4,
+  "facet": "recognition",
+  "type": "yes_no",
+  "text": "In the last month, did anyone thank you for your work?",
+  "polarity": 1
+ },
+ {
+  "domainId": 4,
+  "facet": "recognition",
+  "type": "scale5",
+  "text": "Nobody notices when I do a good job.",
+  "polarity": -1
+ },
+ {
+  "domainId": 4,
+  "facet": "recognition",
+  "type": "yes_no",
+  "text": "A few days ago you told us your work went unnoticed. Has anyone recognised it since?",
+  "polarity": 1,
+  "isFollowup": true
+ },
+ {
+  "domainId": 4,
+  "facet": "values_fit",
+  "type": "scale5",
+  "text": "The company values are visible in how we work day to day.",
+  "polarity": 1
+ },
+ {
+  "domainId": 4,
+  "facet": "values_fit",
+  "type": "scale10",
+  "text": "From 0 to 10, how closely does daily life here match what the company says it stands for?",
+  "polarity": 1
+ },
+ {
+  "domainId": 4,
+  "facet": "values_fit",
+  "type": "yes_no",
+  "text": "Do you feel the way we work matches the company values?",
+  "polarity": 1
+ },
+ {
+  "domainId": 4,
+  "facet": "values_fit",
+  "type": "choice",
+  "text": "What the company says and what happens day to day…",
+  "polarity": 1,
+  "options": [
+   {
+    "label": "Match well",
+    "score": 1
+   },
+   {
+    "label": "Match mostly",
+    "score": 0.65
+   },
+   {
+    "label": "Often differ",
+    "score": 0.3
+   },
+   {
+    "label": "Rarely match",
+    "score": 0
+   }
+  ]
+ },
+ {
+  "domainId": 4,
+  "facet": "values_fit",
+  "type": "scale10",
+  "text": "A few days ago you told us words and actions did not match. From 0 to 10, how well do they match now?",
+  "polarity": 1,
+  "isFollowup": true
+ },
+ {
+  "domainId": 4,
+  "facet": "pride",
+  "type": "scale5",
+  "text": "I am proud to work for this company.",
+  "polarity": 1
+ },
+ {
+  "domainId": 4,
+  "facet": "pride",
+  "type": "scale10",
+  "text": "From 0 to 10, how likely are you to recommend working here to a friend?",
+  "polarity": 1
+ },
+ {
+  "domainId": 4,
+  "facet": "pride",
+  "type": "yes_no",
+  "text": "Would you tell friends this is a good place to work?",
+  "polarity": 1
+ },
+ {
+  "domainId": 4,
+  "facet": "pride",
+  "type": "pair",
+  "text": "Telling people where I work, I feel…",
+  "polarity": 1,
+  "options": [
+   {
+    "label": "Proud",
+    "score": 0.9
+   },
+   {
+    "label": "Indifferent",
+    "score": 0.1
+   }
+  ]
+ },
+ {
+  "domainId": 4,
+  "facet": "pride",
+  "type": "scale10",
+  "text": "A few days ago you told us you were not that proud of working here. From 0 to 10, how do you feel now?",
+  "polarity": 1,
+  "isFollowup": true
+ },
+ {
+  "domainId": 4,
+  "facet": "priorities",
+  "type": "ranking",
+  "text": "Order what makes you feel most part of the company (most important first).",
+  "polarity": 1,
+  "options": [
+   {
+    "label": "Being recognised",
+    "domain_id": 4
+   },
+   {
+    "label": "Good relations with colleagues",
+    "domain_id": 5
+   },
+   {
+    "label": "A manager who values me",
+    "domain_id": 2
+   },
+   {
+    "label": "Stable, fair conditions",
+    "domain_id": 6
+   }
+  ]
+ },
+ {
+  "domainId": 4,
+  "facet": "priorities",
+  "type": "ranking",
+  "text": "Which would strengthen team spirit most? Order by importance.",
+  "polarity": 1,
+  "options": [
+   {
+    "label": "Team moments together",
+    "domain_id": 5
+   },
+   {
+    "label": "Shared goals",
+    "domain_id": 4
+   },
+   {
+    "label": "Learning together",
+    "domain_id": 3
+   },
+   {
+    "label": "Fair shift and task rotation",
+    "domain_id": 6
+   }
+  ]
+ },
+ {
+  "domainId": 4,
+  "facet": "priorities",
+  "type": "ranking",
+  "text": "Order what you value most about working here.",
+  "polarity": 1,
+  "options": [
+   {
+    "label": "The people",
+    "domain_id": 5
+   },
+   {
+    "label": "Job security",
+    "domain_id": 6
+   },
+   {
+    "label": "The brand",
+    "domain_id": 4
+   },
+   {
+    "label": "Chances to grow",
+    "domain_id": 3
+   }
+  ]
+ },
+ {
+  "domainId": 4,
+  "facet": "open_feedback",
+  "type": "open",
+  "text": "What makes you proud of working here?",
+  "polarity": 1
+ },
+ {
+  "domainId": 4,
+  "facet": "open_feedback",
+  "type": "open",
+  "text": "What would make you feel more part of the company?",
+  "polarity": 1
+ },
+ {
+  "domainId": 4,
+  "facet": "open_feedback",
+  "type": "open",
+  "text": "Is there something we say we value that you do not see in practice?",
+  "polarity": 1
+ },
+ {
+  "domainId": 5,
+  "facet": "team_cooperation",
+  "type": "scale5",
+  "text": "People on my team help each other out.",
+  "polarity": 1
+ },
+ {
+  "domainId": 5,
+  "facet": "team_cooperation",
+  "type": "scale10",
+  "text": "From 0 to 10, how well does your team work together?",
+  "polarity": 1
+ },
+ {
+  "domainId": 5,
+  "facet": "team_cooperation",
+  "type": "yes_no",
+  "text": "This week, did a colleague help you when you needed it?",
+  "polarity": 1
+ },
+ {
+  "domainId": 5,
+  "facet": "team_cooperation",
+  "type": "pair",
+  "text": "My team is mostly…",
+  "polarity": 1,
+  "options": [
+   {
+    "label": "Cooperative",
+    "score": 0.9
+   },
+   {
+    "label": "Everyone for themselves",
+    "score": 0.1
+   }
+  ]
+ },
+ {
+  "domainId": 5,
+  "facet": "team_cooperation",
+  "type": "scale10",
+  "text": "A few days ago you told us your team was not working well together. From 0 to 10, how is it now?",
+  "polarity": 1,
+  "isFollowup": true
+ },
+ {
+  "domainId": 5,
+  "facet": "communication_flow",
+  "type": "scale5",
+  "text": "I get the information I need to do my job on time.",
+  "polarity": 1
+ },
+ {
+  "domainId": 5,
+  "facet": "communication_flow",
+  "type": "scale5",
+  "text": "I often find out about changes at the last minute.",
+  "polarity": -1
+ },
+ {
+  "domainId": 5,
+  "facet": "communication_flow",
+  "type": "scale10",
+  "text": "From 0 to 10, how well informed do you feel about what is going on?",
+  "polarity": 1
+ },
+ {
+  "domainId": 5,
+  "facet": "communication_flow",
+  "type": "choice",
+  "text": "How do you usually find out about changes that affect you?",
+  "polarity": 1,
+  "options": [
+   {
+    "label": "In good time, directly",
+    "score": 1
+   },
+   {
+    "label": "In time, but through colleagues",
+    "score": 0.65
+   },
+   {
+    "label": "Late",
+    "score": 0.3
+   },
+   {
+    "label": "I often do not find out",
+    "score": 0
+   }
+  ]
+ },
+ {
+  "domainId": 5,
+  "facet": "communication_flow",
+  "type": "scale10",
+  "text": "A few days ago you told us you were poorly informed. From 0 to 10, how well informed do you feel now?",
+  "polarity": 1,
+  "isFollowup": true
+ },
+ {
+  "domainId": 5,
+  "facet": "safe_to_speak",
+  "type": "scale5",
+  "text": "I can raise a concern without fear of consequences.",
+  "polarity": 1
+ },
+ {
+  "domainId": 5,
+  "facet": "safe_to_speak",
+  "type": "yes_no",
+  "text": "If something was wrong, would you feel safe saying so?",
+  "polarity": 1
+ },
+ {
+  "domainId": 5,
+  "facet": "safe_to_speak",
+  "type": "scale10",
+  "text": "From 0 to 10, how safe do you feel speaking up at work?",
+  "polarity": 1
+ },
+ {
+  "domainId": 5,
+  "facet": "safe_to_speak",
+  "type": "pair",
+  "text": "If I see a problem, I feel…",
+  "polarity": 1,
+  "options": [
+   {
+    "label": "I can say it openly",
+    "score": 0.9
+   },
+   {
+    "label": "It is safer to keep quiet",
+    "score": 0.1
+   }
+  ]
+ },
+ {
+  "domainId": 5,
+  "facet": "safe_to_speak",
+  "type": "scale5",
+  "text": "A few days ago you told us it was hard to speak up. Do you feel safer saying what you think now?",
+  "polarity": 1,
+  "isFollowup": true
+ },
+ {
+  "domainId": 5,
+  "facet": "respect_colleagues",
+  "type": "scale5",
+  "text": "People here treat each other with respect.",
+  "polarity": 1
+ },
+ {
+  "domainId": 5,
+  "facet": "respect_colleagues",
+  "type": "scale5",
+  "text": "I have seen disrespectful behaviour at work recently.",
+  "polarity": -1
+ },
+ {
+  "domainId": 5,
+  "facet": "respect_colleagues",
+  "type": "scale10",
+  "text": "From 0 to 10, how respectful is the atmosphere among colleagues?",
+  "polarity": 1
+ },
+ {
+  "domainId": 5,
+  "facet": "respect_colleagues",
+  "type": "yes_no",
+  "text": "Is the atmosphere at work pleasant most days?",
+  "polarity": 1
+ },
+ {
+  "domainId": 5,
+  "facet": "respect_colleagues",
+  "type": "scale10",
+  "text": "A few days ago you told us the atmosphere was not respectful. From 0 to 10, how is it now?",
+  "polarity": 1,
+  "isFollowup": true
+ },
+ {
+  "domainId": 5,
+  "facet": "priorities",
+  "type": "ranking",
+  "text": "Order what would improve working relationships most (most important first).",
+  "polarity": 1,
+  "options": [
+   {
+    "label": "Clearer communication",
+    "domain_id": 5
+   },
+   {
+    "label": "More cooperation",
+    "domain_id": 5
+   },
+   {
+    "label": "A manager who steps in early",
+    "domain_id": 2
+   },
+   {
+    "label": "Fairer workload sharing",
+    "domain_id": 1
+   }
+  ]
+ },
+ {
+  "domainId": 5,
+  "facet": "priorities",
+  "type": "ranking",
+  "text": "Which would improve your work environment most? Order by importance.",
+  "polarity": 1,
+  "options": [
+   {
+    "label": "Respect between colleagues",
+    "domain_id": 5
+   },
+   {
+    "label": "Better meeting and break spaces",
+    "domain_id": 6
+   },
+   {
+    "label": "Team activities",
+    "domain_id": 4
+   },
+   {
+    "label": "Quicker information",
+    "domain_id": 5
+   }
+  ]
+ },
+ {
+  "domainId": 5,
+  "facet": "priorities",
+  "type": "ranking",
+  "text": "Order what matters most for speaking up.",
+  "polarity": 1,
+  "options": [
+   {
+    "label": "Being listened to",
+    "domain_id": 2
+   },
+   {
+    "label": "Anonymous channels",
+    "domain_id": 5
+   },
+   {
+    "label": "Seeing action taken",
+    "domain_id": 2
+   },
+   {
+    "label": "Feeling no one will be blamed",
+    "domain_id": 4
+   }
+  ]
+ },
+ {
+  "domainId": 5,
+  "facet": "open_feedback",
+  "type": "open",
+  "text": "What would improve communication in your team?",
+  "polarity": 1
+ },
+ {
+  "domainId": 5,
+  "facet": "open_feedback",
+  "type": "open",
+  "text": "Is there anything about how we treat each other that should change?",
+  "polarity": 1
+ },
+ {
+  "domainId": 5,
+  "facet": "open_feedback",
+  "type": "open",
+  "text": "What works well between colleagues here?",
+  "polarity": 1
+ },
+ {
+  "domainId": 6,
+  "facet": "equipment_tools",
+  "type": "scale5",
+  "text": "I have the equipment and tools I need to do my job well.",
+  "polarity": 1
+ },
+ {
+  "domainId": 6,
+  "facet": "equipment_tools",
+  "type": "scale10",
+  "text": "From 0 to 10, how good are the tools and equipment you work with?",
+  "polarity": 1
+ },
+ {
+  "domainId": 6,
+  "facet": "equipment_tools",
+  "type": "yes_no",
+  "text": "This week, did faulty or missing equipment slow you down?",
+  "polarity": -1
+ },
+ {
+  "domainId": 6,
+  "facet": "equipment_tools",
+  "type": "choice",
+  "text": "The equipment I work with is…",
+  "polarity": 1,
+  "options": [
+   {
+    "label": "Good and well maintained",
+    "score": 1
+   },
+   {
+    "label": "Adequate",
+    "score": 0.65
+   },
+   {
+    "label": "Often worn or lacking",
+    "score": 0.3
+   },
+   {
+    "label": "A problem every day",
+    "score": 0
+   }
+  ]
+ },
+ {
+  "domainId": 6,
+  "facet": "equipment_tools",
+  "type": "yes_no",
+  "text": "A few days ago you told us your equipment was a problem. Has it been fixed or improved?",
+  "polarity": 1,
+  "isFollowup": true
+ },
+ {
+  "domainId": 6,
+  "facet": "schedule_predictability",
+  "type": "scale5",
+  "text": "I know my schedule far enough in advance to plan my life.",
+  "polarity": 1
+ },
+ {
+  "domainId": 6,
+  "facet": "schedule_predictability",
+  "type": "scale5",
+  "text": "My schedule changes at short notice too often.",
+  "polarity": -1
+ },
+ {
+  "domainId": 6,
+  "facet": "schedule_predictability",
+  "type": "scale10",
+  "text": "From 0 to 10, how predictable is your work schedule?",
+  "polarity": 1
+ },
+ {
+  "domainId": 6,
+  "facet": "schedule_predictability",
+  "type": "yes_no",
+  "text": "Were you told in good time about your schedule for next week?",
+  "polarity": 1
+ },
+ {
+  "domainId": 6,
+  "facet": "schedule_predictability",
+  "type": "pair",
+  "text": "About my schedule…",
+  "polarity": 1,
+  "options": [
+   {
+    "label": "I can plan ahead",
+    "score": 0.9
+   },
+   {
+    "label": "I never know what comes next",
+    "score": 0.1
+   }
+  ]
+ },
+ {
+  "domainId": 6,
+  "facet": "schedule_predictability",
+  "type": "scale10",
+  "text": "A few days ago you told us schedule changes came too late. From 0 to 10, how predictable is it now?",
+  "polarity": 1,
+  "isFollowup": true
+ },
+ {
+  "domainId": 6,
+  "facet": "shift_breaks",
+  "collectiuId": 1,
+  "type": "yes_no",
+  "text": "This week, were you able to take all the breaks you are entitled to?",
+  "polarity": 1
+ },
+ {
+  "domainId": 6,
+  "facet": "shift_breaks",
+  "collectiuId": 1,
+  "type": "scale5",
+  "text": "My breaks are long enough to actually rest.",
+  "polarity": 1
+ },
+ {
+  "domainId": 6,
+  "facet": "shift_breaks",
+  "collectiuId": 2,
+  "type": "yes_no",
+  "text": "This week, were you able to take your breaks between loading and unloading?",
+  "polarity": 1
+ },
+ {
+  "domainId": 6,
+  "facet": "shift_breaks",
+  "collectiuId": 2,
+  "type": "scale5",
+  "text": "I often have to skip my break because of deadlines.",
+  "polarity": -1
+ },
+ {
+  "domainId": 6,
+  "facet": "shift_breaks",
+  "collectiuId": 2,
+  "type": "choice",
+  "text": "On a busy shift, taking my break is…",
+  "polarity": 1,
+  "options": [
+   {
+    "label": "Normal, no problem",
+    "score": 1
+   },
+   {
+    "label": "Usually possible",
+    "score": 0.65
+   },
+   {
+    "label": "Often difficult",
+    "score": 0.3
+   },
+   {
+    "label": "Rarely possible",
+    "score": 0
+   }
+  ]
+ },
+ {
+  "domainId": 6,
+  "facet": "shift_breaks",
+  "collectiuId": 1,
+  "type": "scale10",
+  "text": "A few days ago you told us you could not always take your breaks. From 0 to 10, how well can you rest during your shift now?",
+  "polarity": 1,
+  "isFollowup": true
+ },
+ {
+  "domainId": 6,
+  "facet": "shift_breaks",
+  "collectiuId": 2,
+  "type": "yes_no",
+  "text": "A few days ago you told us breaks were hard to take. Is that better now?",
+  "polarity": 1,
+  "isFollowup": true
+ },
+ {
+  "domainId": 6,
+  "facet": "remote_work",
+  "type": "scale5",
+  "text": "The balance between working from home and the office works for me.",
+  "polarity": 1,
+  "collectiuId": 4
+ },
+ {
+  "domainId": 6,
+  "facet": "remote_work",
+  "type": "scale10",
+  "text": "From 0 to 10, how well does remote working work for you?",
+  "polarity": 1,
+  "collectiuId": 4
+ },
+ {
+  "domainId": 6,
+  "facet": "remote_work",
+  "type": "yes_no",
+  "text": "Do you have what you need to work well from home?",
+  "polarity": 1,
+  "collectiuId": 4
+ },
+ {
+  "domainId": 6,
+  "facet": "remote_work",
+  "type": "pair",
+  "text": "About remote working…",
+  "polarity": 1,
+  "options": [
+   {
+    "label": "The arrangement suits me",
+    "score": 0.9
+   },
+   {
+    "label": "The arrangement does not suit me",
+    "score": 0.1
+   }
+  ],
+  "collectiuId": 4
+ },
+ {
+  "domainId": 6,
+  "facet": "remote_work",
+  "type": "scale10",
+  "text": "A few days ago you told us remote work was not working well. From 0 to 10, how is it now?",
+  "polarity": 1,
+  "isFollowup": true,
+  "collectiuId": 4
+ },
+ {
+  "domainId": 6,
+  "facet": "priorities",
+  "type": "ranking",
+  "text": "Order what would improve your working conditions most (most important first).",
+  "polarity": 1,
+  "options": [
+   {
+    "label": "Better equipment",
+    "domain_id": 6
+   },
+   {
+    "label": "Predictable schedules",
+    "domain_id": 6
+   },
+   {
+    "label": "Fair pay",
+    "domain_id": 6
+   },
+   {
+    "label": "Feeling safe at work",
+    "domain_id": 1
+   }
+  ]
+ },
+ {
+  "domainId": 6,
+  "facet": "priorities",
+  "type": "ranking",
+  "text": "Which would improve organisation most? Order by importance.",
+  "polarity": 1,
+  "options": [
+   {
+    "label": "Clearer priorities",
+    "domain_id": 2
+   },
+   {
+    "label": "Fewer last-minute changes",
+    "domain_id": 5
+   },
+   {
+    "label": "Enough staff",
+    "domain_id": 1
+   },
+   {
+    "label": "Better break spaces",
+    "domain_id": 6
+   }
+  ]
+ },
+ {
+  "domainId": 6,
+  "facet": "priorities",
+  "type": "ranking",
+  "text": "Order what you would fix first.",
+  "polarity": 1,
+  "options": [
+   {
+    "label": "Shift and break system",
+    "domain_id": 6
+   },
+   {
+    "label": "Tools and equipment",
+    "domain_id": 6
+   },
+   {
+    "label": "Workload",
+    "domain_id": 1
+   },
+   {
+    "label": "Information about changes",
+    "domain_id": 5
+   }
+  ]
+ },
+ {
+  "domainId": 6,
+  "facet": "open_feedback",
+  "type": "open",
+  "text": "Is there anything about your schedule or shifts that you would change?",
+  "polarity": 1
+ },
+ {
+  "domainId": 6,
+  "facet": "open_feedback",
+  "type": "open",
+  "text": "What equipment or tool would make your job easier?",
+  "polarity": 1
+ },
+ {
+  "domainId": 6,
+  "facet": "open_feedback",
+  "type": "open",
+  "text": "What is the main thing that slows your work down?",
+  "polarity": 1
+ }
+]
