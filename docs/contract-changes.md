@@ -69,9 +69,9 @@ All changes are additive:
 - **`improvement` alarm** now uses the same anchors instead of the `action_linked` status; it no longer reads that status.
 
 Action items:
-- [ ] Jan: show `action_effect` insights and context events on the signal timeline (R-DIFF-6, R-FLOW-8e): "des de <data>" with `detail.wording` and `detail.limits` together, never worded as proof the action worked. No "done" button.
-- [ ] Jan: add a small form on the HR side to record a context event with `addContextEvent` (date, label, optional collective, shift and domain) and list them with `listContextEvents`.
-- [ ] Jan: if anything else approves a recommendation, set `aprovada_el` there too.
+- [x] Jan: show `action_effect` insights and context events on the signal timeline (R-DIFF-6, R-FLOW-8e): "des de <data>" with `detail.wording` and `detail.limits` together, never worded as proof the action worked. No "done" button. (done 2026-11-07, 51458d3)
+- [x] Jan: add a small form on the HR side to record a context event with `addContextEvent` (date, label, optional collective, shift and domain) and list them with `listContextEvents`. (done 2026-11-07, 51458d3)
+- [x] Jan: if anything else approves a recommendation, set `aprovada_el` there too. (done 2026-11-07, 51458d3)
 
 ---
 
@@ -80,14 +80,14 @@ Action items:
 New table `probe` in `packages/db/schema.sql` (additive; rebuild existing databases with `pnpm --filter @damm/db run init` or the demo builder). New in `@damm/engine/hr`: `startProbe`, `listProbes`, `stopProbe` and the types `ProbeView`, `ProbeProgress`. A probe makes the scheduler ask one domain more often for one segment (collective, optionally one shift) for a number of days, optionally tied to an alarm (`senyalId`). It targets segments, never accounts; segments under 10 people are refused with a `ProbeError`. The engine job refreshes each probe's progress (extra answers, confidence before and now) from aggregates, hidden when fewer than 10 people answered. Details: [engine.md](engine.md), "Probes", and [engine-integration.md](engine-integration.md), "Probes (Indagar)".
 
 Action items:
-- [ ] Jan: rebuild existing databases (new `probe` table).
-- [ ] Jan: on the signal page, next to the recommendations, add an "Indagar" button. HR-only route that calls `startProbe(db, { senyalId, collectiuId, tornId, dominiId, boost, days })` with the alarm's segment and domain (defaults `boost = 2`, `days = 14`). Show `ProbeError.message` if it refuses.
-- [ ] Jan: while a probe exists for the signal (`listProbes(db, { senyalId })`), show its status, days left, extra answers, confidence before and now, and a "Stop" button (`stopProbe`). Show "not enough answers yet" when `progress` is null or `progress.suppressed`.
+- [x] Jan: rebuild existing databases (new `probe` table). (done 2026-11-07, 51458d3)
+- [x] Jan: on the signal page, next to the recommendations, add an "Indagar" button. HR-only route that calls `startProbe(db, { senyalId, collectiuId, tornId, dominiId, boost, days })` with the alarm's segment and domain (defaults `boost = 2`, `days = 14`). Show `ProbeError.message` if it refuses. (done 2026-11-07, 51458d3)
+- [x] Jan: while a probe exists for the signal (`listProbes(db, { senyalId })`), show its status, days left, extra answers, confidence before and now, and a "Stop" button (`stopProbe`). Show "not enough answers yet" when `progress` is null or `progress.suppressed`. (done 2026-11-07, 51458d3)
 
 ## C11 · 2026-11-07 · Natan · Recommendation proposals for open alarms
 
 Additive schema change on `recomanacio`: `titol`, `iniciativa` (Damm initiative), `responsable_suggerit`, `termini_suggerit`, `justificacio` (cites n and confidence), `limits` ("correlació, no causa"), `font` (`llm` | `template`). `text` holds the concrete action. Rows are inserted as `estat = 'proposada'`, linked by `senyal_id`, by `runRecommendations` (`@damm/engine/job`, run with `draftRecommendations` from `@damm/ai`). Owner and timeframe are suggestions only. There is deliberately **no done/completed column**: HR only approves or discards. Old databases need the seven columns added (or a re-init).
-- [ ] Jan: show these fields on the signal page (title, action, initiative, suggested owner and timeframe, justification, limits, source). Keep approve/discard only, with no "done" tick.
+- [x] Jan: show these fields on the signal page (title, action, initiative, suggested owner and timeframe, justification, limits, source). Keep approve/discard only, with no "done" tick. (done 2026-11-07, 51458d3)
 - [ ] Jan: call `runRecommendations` where the job runs (see engine-integration.md, "Recommendations"), never in a request. `createDraftedFollowUp` stays as is.
 
 ## C10 · 2026-11-07 · Natan · Comment analysis: themes, summaries, emergent alarm

@@ -34,6 +34,7 @@ Status: `running`, `ready` (can start now), `blocked` (waiting on a dependency),
 | 22 | HR UI deep audit and polish (`docs/hr-ui-audit.md`): P0/P1/P2 fixes, `/hr/needs` redesign (R-FLOW-4a), trend and signal clarity (R-FLOW-6d, 7e, 7f) | `jan/hr-ui-polish` | done (4bc0db3, c1c7422; deferred items listed in the audit) | light |
 | 23 | Visual identity spec "Paper" (`docs/visual-identity.md`) | `jan/visual-identity` | done (merged 10bf3e4) | light |
 | 24 | Apply the Paper visual identity to employee, HR and manager | `jan/visual-identity-apply` | blocked on Jan's go | heavy |
+| 25 | Signal page: recommendation fields (C11), Indagar probes (C12), context events and "des de" effects (C13); R-DIFF-6, R-FLOW-8e | `jan/signal-actions` | done (51458d3) | light |
 
 Order for the next free slots: 18, 19, then 4. Pitch deck and demo work (14, 15) go last and are not raised before 8 Nov 9:00.
 
