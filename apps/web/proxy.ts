@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { HR_COOKIE, accessToken, gateEnabled } from "./lib/hr-access";
 
-// Access gate for the HR dashboard (and its server actions, which post to /hr paths).
+// Access gate for the HR dashboard and the read-only manager view (same HR_ACCESS_CODE).
 export async function proxy(req: NextRequest) {
   if (!gateEnabled()) return NextResponse.next();
   const token = req.cookies.get(HR_COOKIE)?.value;
@@ -12,4 +12,4 @@ export async function proxy(req: NextRequest) {
   return NextResponse.redirect(url);
 }
 
-export const config = { matcher: ["/hr", "/hr/:path*"] };
+export const config = { matcher: ["/hr", "/hr/:path*", "/manager", "/manager/:path*"] };
