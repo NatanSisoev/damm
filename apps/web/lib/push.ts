@@ -23,13 +23,25 @@ export function pushEnabled(): boolean {
   const priv = process.env.VAPID_PRIVATE_KEY;
   if (!pub || !priv) return (configured = false);
   try {
-    webpush.setVapidDetails(process.env.VAPID_SUBJECT || "mailto:escolta@example.invalid", pub, priv);
+    webpush.setVapidDetails(vapidSubject(), pub, priv);
     configured = true;
   } catch (e) {
     console.warn("[push] invalid VAPID configuration, notifications are off:", (e as Error).message);
     configured = false;
   }
   return configured;
+}
+
+/**
+ * VAPID subject (the sender contact). Apple's push service rejects reserved domains such as
+ * example.invalid with 403 BadJwtToken, so prefer VAPID_SUBJECT, then the public https origin.
+ */
+function vapidSubject(): string {
+  const set = process.env.VAPID_SUBJECT?.trim();
+  if (set && !/\.invalid\b|localhost/i.test(set)) return set;
+  const base = process.env.PUBLIC_BASE_URL?.trim().replace(/\/+$/, "");
+  if (base?.startsWith("https://")) return base;
+  return set || "mailto:escolta@example.com";
 }
 
 const PAYLOAD = JSON.stringify({
