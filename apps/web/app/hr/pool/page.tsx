@@ -2,8 +2,6 @@ import Link from "next/link";
 import { QUESTION_TYPES } from "@damm/shared";
 import { hrPool, type PoolQuestion } from "@/lib/hr-engine";
 import { FoldAll, GroupBody } from "./group-body";
-import { ConfirmButton } from "../confirm-button";
-import { setQuestionActiveAction } from "../actions";
 import { Empty, PageHeader, Stat } from "../ui";
 import { questionTypeLabel } from "../labels";
 import { REASON, STATE } from "./labels";
@@ -261,8 +259,6 @@ function SortTh({ p, k, cur, dir, children, left }: { p: Params; k: SortKey; cur
 
 function QuestionRows({ q, today, minGroup }: { q: PoolQuestion; today: string; minGroup: number }) {
   const st = STATE[q.state];
-  const canRetire = q.dbStatus === "aprovada";
-  const canRestore = q.dbStatus === "retirada";
   return (
     <>
       <tr className="pool-row">
@@ -278,6 +274,7 @@ function QuestionRows({ q, today, minGroup }: { q: PoolQuestion; today: string; 
             {q.polarity === -1 && <span className="badge" title="Redactada en negatiu: la puntuació s'inverteix">Negativa</span>}
             {q.aiGenerated && <span className="badge" title="Proposada per la IA i aprovada per una persona">IA</span>}
           </div>
+          <Link href={`/hr/pool/${q.id}`} className="mt-2 inline-block text-xs">Detall i dades completes →</Link>
         </td>
         <td>
           <span className={`badge ${st.cls}`}>{st.label}</span>
@@ -304,89 +301,6 @@ function QuestionRows({ q, today, minGroup }: { q: PoolQuestion; today: string; 
           {q.pendingAccounts !== null && q.state !== "inactive" && <div className="text-xs text-subtle">{num(q.pendingAccounts)} pendents</div>}
         </td>
       </tr>
-      <tr>
-        <td colSpan={9} className="pool-detail">
-          <details>
-            <summary className="cursor-pointer py-2 text-xs text-subtle">Detall i dades completes</summary>
-            <div className="mt-2 grid gap-x-8 gap-y-6 pb-1 md:grid-cols-3">
-              <dl className="grid grid-cols-[auto_1fr] items-baseline gap-x-4 gap-y-2 text-[13px] leading-snug">
-                <Dt>Format</Dt><dd>{questionTypeLabel(q.type)} ({q.type})</dd>
-                <Dt>Estat a la base de dades</Dt><dd>{q.dbStatus}</dd>
-                <Dt>Prioritat</Dt><dd className="num">{q.priority}</dd>
-                <Dt>Ordre dins la necessitat</Dt><dd className="num">{q.order}</dd>
-                <Dt>Polaritat</Dt><dd>{q.polarity === 1 ? "Positiva" : "Negativa (s'inverteix)"}</dd>
-                <Dt>Faceta</Dt><dd>{q.facet ?? "—"}</dd>
-                <Dt>Aprovada per</Dt><dd>{q.approvedBy ?? "—"}{q.approvedAt ? ` · ${q.approvedAt.slice(0, 16)}` : ""}</dd>
-                <Dt>Origen</Dt><dd>{q.aiGenerated ? "Proposada per la IA" : "Escrita per una persona"}</dd>
-                {q.aiReason && (<><Dt>Motiu de la IA</Dt><dd>{q.aiReason}</dd></>)}
-                {q.needId !== null && (<><Dt>Necessitat</Dt><dd>{q.needTitle} ({q.needStatus})</dd></>)}
-              </dl>
-              <dl className="grid grid-cols-[auto_1fr] items-baseline gap-x-4 gap-y-2 text-[13px] leading-snug">
-                <Dt>Primer lot</Dt><dd>{day(q.firstAskedDay)}</dd>
-                <Dt>Última vegada demanada</Dt><dd>{day(q.lastAskedDay)} ({ago(today, q.lastAskedDay)})</dd>
-                <Dt>Última resposta</Dt><dd>{q.lastAnsweredAt ? q.lastAnsweredAt.slice(0, 16) : "—"}</dd>
-                <Dt>Als lots d&apos;avui</Dt><dd className="num">{q.inTodayBatches}</dd>
-                <Dt>Assignada com a</Dt>
-                <dd className="num">
-                  monitoratge {q.askedByReason.monitor} · necessitat {q.askedByReason.need} · seguiment {q.askedByReason.followup}
-                </dd>
-                <Dt>Assignacions respostes</Dt><dd className="num">{num(q.answeredAssigned)} de {num(q.asked)}</dd>
-                <Dt>Persones que l&apos;han respost</Dt><dd className="num">{num(q.reachedAccounts)} de {num(q.eligibleAccounts)}</dd>
-                <Dt>Ritme (14 dies)</Dt><dd className="num">{q.askedPerDay14} per dia</dd>
-                <Dt>Puntuació mitjana</Dt><dd className="num">{q.avgScore === null ? `Suprimit (<${minGroup} respostes)` : `${(q.avgScore * 10).toFixed(1)} / 10`}</dd>
-                <Dt>Temps de resposta</Dt><dd className="num">{q.avgAnswerMs === null ? "—" : `${(q.avgAnswerMs / 1000).toFixed(1)} s`}{q.carelessShare !== null && ` · ${pct(q.carelessShare)} massa ràpides`}</dd>
-                <Dt>Comentaris</Dt><dd className="num">{q.comments === null ? "—" : q.comments}</dd>
-              </dl>
-              <div className="space-y-4 text-[13px] leading-snug">
-                {q.options && (
-                  <div>
-                    <p className="label mb-1">Opcions</p>
-                    <ol className="list-decimal pl-5">
-                      {q.options.map((o, i) => <li key={i}>{o.label}</li>)}
-                    </ol>
-                  </div>
-                )}
-                <div>
-                  <p className="label mb-1">Per col·lectiu</p>
-                  {q.byCollective.length === 0 ? (
-                    <p className="text-subtle">Encara sense dades.</p>
-                  ) : (
-                    <ul>
-                      {q.byCollective.map((c) => (
-                        <li key={c.collectiuId} className="num">
-                          {c.collective}: {c.asked} demanades · {c.responses} respostes{c.avgScore !== null && ` · ${(c.avgScore * 10).toFixed(1)}/10`}
-                          {c.avgScore === null && c.responses > 0 && ` · puntuació suprimida`}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-                <div>
-                  <p className="label mb-1">Per període</p>
-                  <p className="num">{q.byPeriod.length ? q.byPeriod.map((x) => `${x.periode}: ${x.responses}`).join(" · ") : "—"}</p>
-                </div>
-                {(canRetire || canRestore) && (
-                  <form action={setQuestionActiveAction}>
-                    <input type="hidden" name="id" value={q.id} />
-                    <input type="hidden" name="active" value={canRestore ? "1" : "0"} />
-                    {canRetire ? (
-                      <ConfirmButton message="Retirar aquesta pregunta del banc? Deixarà de sortir als lots; l'historial es conserva." className="btn btn-ghost border border-line-strong px-3 py-1.5">
-                        Retira del banc
-                      </ConfirmButton>
-                    ) : (
-                      <button type="submit" className="btn btn-ghost border border-line-strong px-3 py-1.5">Torna-la al banc</button>
-                    )}
-                  </form>
-                )}
-              </div>
-            </div>
-          </details>
-        </td>
-      </tr>
     </>
   );
-}
-
-function Dt({ children }: { children: React.ReactNode }) {
-  return <dt className="text-subtle">{children}</dt>;
 }
