@@ -1,6 +1,6 @@
 # User flows
 
-Expected paths through the product, written so the e2e runbook (`docs/e2e-test-plan.md`) can be reworked into sharper tests. Scope comes from `docs/requirements.md`. Written 2026-11-07 against the code on `jan/dev` (employee, HR and manager routes read from `apps/web/app`, rules read from `packages/db/src`).
+Expected paths through the product, written so the e2e runbook (`docs/e2e-test-plan.md`) can be reworked into sharper tests. Scope comes from `docs/requirements.md`. Written 2026-11-07 against the code on `jan/dev`; corrected the same day against `jan/dev` at 6474268 (engine wired into the routes, account management built, insight cards and the Alarmes page built). Employee, HR and manager routes read from `apps/web/app`, rules read from `packages/db/src` and `packages/engine/src`.
 
 How to read this:
 
@@ -24,7 +24,7 @@ How to read this:
 
 Time: "today" for the employee flow is the Europe/Madrid calendar day (`madridDay`). `resposta.data` is stored in UTC. The current date at writing is 2026-11-07.
 
-Wiring status that changes many expected results: the engine package (`@damm/engine`) is merged but **not wired into the routes**. `GET /api/pool/next` and `POST /api/responses` still use a stub in `packages/db/src/employee-repository.ts`. A separate session (`engine-integration`) is doing the wiring. Flows below describe the stub as **Current** and the engine behaviour as **Target**.
+Wiring status: the engine package (`@damm/engine`) **is wired into the routes**. `apps/web/lib/engine.ts` builds one engine (`createEngine({db, redact})`); `GET /api/pool/next` calls `getDailyBatch` and `POST /api/responses` calls `submitAnswers`. A scheduler runs the engine job every 10 minutes (`instrumentation.ts`). The old stub in `packages/db/src/employee-repository.ts` is no longer on the answer path. Flows below describe the engine behaviour as **Current**. Known mismatches between docs and code are called out where they occur (batch size is 3 per day by default while the app copy says "Dues preguntes"; a closed need still serves its questions, F-HR-9 B1).
 
 ## 1. Personas
 
@@ -45,12 +45,12 @@ Preconditions: DB-seed or DB-demo, EMP-OUT, an active `joincode` row.
 
 | # | Route and action | Expected result |
 |---|---|---|
-| 1 | Open `/join/DAMM-LOG` (link or QR from the publish page). | Heading "Et donem la benvinguda a Demo" (company comes from `joincode.empresa`). A "Col·lectiu" card shows Logística. Text "Les teves respostes són anònimes i només es mostren de forma agregada." A link "Com tractem les teves dades" goes to `/privacitat`. Button "Continua". |
+| 1 | Open `/join/DAMM-LOG` (link or QR from the publish page). | Eyebrow = company (from `joincode.empresa`), title "Benvinguda", lede "Et donem la benvinguda a {empresa}. Les teves respostes són anònimes i només es mostren de forma agregada." A "Col·lectiu" card shows Logística. Privacy note "Anònim de debò. No et demanem nom ni correu. Només veiem grups de 10 persones o més." A link "Com tractem les teves dades" goes to `/privacitat`. Button-link "Continua". |
 | 2 | Press "Continua". | URL becomes `/onboarding?codi=DAMM-LOG`. The code travels in the query, not in the session (the spec says session; the code differs). |
 
 Branches:
 
-- **B1 typed entry.** Open `/join`, heading "Introdueix el teu codi", field "Codi d'accés" (placeholder `DAMM-XXX`), button "Continua". `goToJoinAction` trims, uppercases, turns spaces and underscores into `-` and drops anything outside `A-Z0-9-`. ` damm fab ` and `damm_fab` both give `/join/DAMM-FAB`.
+- **B1 typed entry.** Open `/join`: title "Escoltem la teva veu", lede "Dues preguntes breus al dia. Sense nom, sense rastre.", field "Codi d'unió" (placeholder `DAMM-XXX`, hint "Està al cartell o al missatge del teu equip. Si tens el QR, escaneja'l directament."), button "Entra", the same privacy note as step 1. `goToJoinAction` trims, uppercases, turns spaces and underscores into `-` and drops anything outside `A-Z0-9-`. ` damm fab ` and `damm_fab` both give `/join/DAMM-FAB`.
 - **B2 missing hyphen.** `dammfab` goes to `/join/DAMMFAB` and shows "Codi no vàlid". The form does not insert the hyphen. This is a known finding, not a bug in the test.
 - **B3 empty field.** Submit with nothing: redirected back to `/join`.
 - **B4 lowercase URL.** `/join/damm-fab` works (code uppercased).
@@ -67,9 +67,9 @@ Preconditions: F-EMP-1 reached step 2 with a valid code.
 
 | # | Route and action | Expected result |
 |---|---|---|
-| 1 | `/onboarding?codi=DAMM-LOG` | Heading "Crea el teu compte", line "Demo · Logística". Fields "Nom d'usuari", "Contrasenya", "Repeteix la contrasenya". Button "Crea el compte". Link "Ja tens compte? Inicia la sessió". No centre, shift or manager question (expected gap vs the spec: R-DOM-5, N-8). |
-| 2 | Fill `usuari.prova`, a password of 8+ characters twice, press "Crea el compte". | A session cookie `damm_session` is set. The screen shows "Compte creat" and a one-time recovery code (groups of 4 characters, alphabet without 0/O/1/I/L). Checkbox "L'he desat". Button "Continua" is disabled. |
-| 3 | Tick "L'he desat", press "Continua". | Redirect to `/`. |
+| 1 | `/onboarding?codi=DAMM-LOG` | Eyebrow "{empresa} · Logística", title "Crea el teu compte", intro "Tria un nom d'usuari i una contrasenya. No et demanem correu, telèfon ni nom: les teves respostes són anònimes." Fields "Nom d'usuari" (hint "No facis servir el teu nom real."), "Contrasenya" (hint "Mínim 8 caràcters (n/8 ✓)."), "Repeteix la contrasenya"; the password toggle reads "Mostra" / "Amaga". Button "Crea el compte". Link "Ja tens compte? Inicia la sessió". No centre, shift or manager question (expected gap vs the spec: R-DOM-5, N-8). |
+| 2 | Fill `usuari.prova`, a password of 8+ characters twice, press "Crea el compte". | A session cookie `damm_session` is set. The screen shows the title "Compte creat" and a one-time recovery code (groups of 4 characters, alphabet without 0/O/1/I/L) with the text "Desa'l ara. Aquest codi només el veuràs una vegada." Button "Copia el codi" (status "Copiat." or "No s'ha pogut copiar: selecciona'l i copia'l a mà."). Checkbox "L'he desat en un lloc segur". The continue button is disabled. |
+| 3 | Tick "L'he desat en un lloc segur", press the continue button. | Redirect to `/`. |
 
 DB effect after step 2: one `compte` row with `id` = random UUID, `collectiu_id` = Logística, `username` = `usuari.prova`, `password_hash`, `salt`, `recovery_hash` all hex scrypt. No email, phone or name column. The recovery code itself is not stored.
 
@@ -80,7 +80,7 @@ Branches (exact errors):
 - **B3** password under 8: "La contrasenya ha de tenir almenys 8 caràcters."
 - **B4** username taken: "Aquest nom d'usuari ja existeix. Prova'n un altre." (SQLite unique constraint.)
 - **B5** code became inactive between pages: "Aquest codi no és vàlid o ja no està actiu."
-- **B6** reload of the recovery screen after leaving: the code is not shown again (it is only returned once). Expected gap: no regenerate control (S-26).
+- **B6** reload of the recovery screen after leaving: the code is not shown again (it is only returned once). A new code can be generated from `/settings` ("Codi de recuperació" → "Genera un codi nou", F-EMP-10); the old code stops working.
 
 Invariants: `compte.id` is not derived from username or code. Password and recovery code are salted-hashed. HR cannot read `compte`.
 
@@ -92,7 +92,7 @@ Preconditions: an account exists, EMP-OUT.
 | # | Route and action | Expected result |
 |---|---|---|
 | 1 | Open `/` | Redirect to `/login`. |
-| 2 | `/login` | Heading "Inicia la sessió", fields "Nom d'usuari" and "Contrasenya", button "Entra", button-link "He perdut la contrasenya", line "Primera vegada? Obre l'enllaç d'invitació del teu equip." |
+| 2 | `/login` | Title "Torna a entrar", lede "Continua on ho vas deixar.", fields "Nom d'usuari" and "Contrasenya", button "Entra", button "He perdut la contrasenya", line "Primera vegada? Obre l'enllaç d'invitació del teu equip.", link "Com tractem les teves dades". |
 | 3 | Enter correct credentials, "Entra". | Redirect to `/`, cookie set, today's questions load (F-EMP-5). |
 | 4 | `/settings` → "Tanca la sessió". | Push subscription row for the account deleted (none exists today), cookie destroyed, redirect to `/login`. `/` redirects to `/login` again. |
 
@@ -112,8 +112,8 @@ Preconditions: account exists, recovery code known.
 
 | # | Route and action | Expected result |
 |---|---|---|
-| 1 | `/login` → "He perdut la contrasenya". | Form "Recupera el compte": "Nom d'usuari", "Codi de recuperació", "Contrasenya nova", button "Canvia la contrasenya". Link "Torna a l'inici de sessió". |
-| 2 | Enter username, code (dashes and case ignored), a new password of 8+. | Password changes, the user is logged in, screen "Contrasenya canviada" with a **new** recovery code and the "L'he desat" checkbox. |
+| 1 | `/login` → "He perdut la contrasenya". | h2 "Recupera el compte" with the text "Introdueix el teu usuari, el codi de recuperació que vas desar i una contrasenya nova. El codi només serveix una vegada; te'n donarem un de nou." Fields "Nom d'usuari", "Codi de recuperació", "Contrasenya nova", button "Canvia la contrasenya". Button "Torna a l'inici de sessió". |
+| 2 | Enter username, code (dashes and case ignored), a new password of 8+. | Password changes, the user is logged in, title "Contrasenya canviada" with a **new** recovery code and the "L'he desat en un lloc segur" checkbox. |
 | 3 | Try the old password. | "Usuari o contrasenya incorrectes." |
 | 4 | Try the **old** recovery code again. | "Usuari o codi de recuperació incorrectes." (compare-and-set on `recovery_hash`: a used code never works twice.) |
 
@@ -129,26 +129,26 @@ Preconditions: EMP-IN, DB-seed or DB-demo, approved questions visible to the acc
 | 1 | Open `/` | While loading: "Carregant les preguntes d'avui…" (screen-reader text over a skeleton). `GET /api/pool/next` returns `{ preguntes: [...] }` with `Cache-Control: no-store`. |
 | 2 | First question shows | "Pregunta 1 de N", a badge "Anònim", a progress bar, the renderer for the type (`scale5`, `scale10`, `yes_no`, `pair`, `choice`, `ranking`, `open`; swipe for pair). Submit button disabled until the draft is answerable. |
 | 3 | Answer and press "Envia i continua" (last question: "Envia") | Button reads "Enviant…". `POST /api/responses` returns 204. Next question appears. |
-| 4 | After the last answer | Card "Avui ja has acabat", text "Tornem demà amb un parell de preguntes.", and "Gràcies! Les teves respostes són anònimes. Mai et farem més de 2 preguntes al dia." |
+| 4 | After the last answer | h2 "Gràcies", lede "Has respost la pregunta d'avui. Demà en tens de noves." (one question) or "Has respost les {n} preguntes d'avui. Demà en tens de noves." (n questions), note "🔒 Anònim de debò. No et demanem nom ni correu. Només veiem grups de 10 persones o més." Below it the "Has dit, hem fet" card (F-EMP-8). |
 
 DB effect per answer: one `resposta` row with `compte_id`, `pregunta_id`, `valor_num` (scale 1–5 for `scale5`, 0–10 for `scale10`, 0–1 for `yes_no`, option index for `pair`/`choice`), `value_json` (ranking order, best first), `comentari` (open only, redacted), `canal = 'app'`, `periode` = server month `YYYY-MM`, `answer_ms`, `data` UTC.
 
-**Current (stub):**
+**Current (engine wired):**
 
-- Pool = approved questions (`pregunta.estat = 'aprovada'`) with `collectiu_id` NULL or equal to the account's collective, not answered today, ordered by `prioritat` descending then id, capped so the account never has more than 2 answered plus offered in the Madrid day.
-- No 4-day repeat rule. The same question can return tomorrow. Expected gap vs R-FLOW-5f until the engine is wired.
-- No follow-up, outlier sampling, format or timing per collective or shift (R-FLOW-5c).
-- The stub does not filter by `necessitat.estat`, so questions of a closed need stay in the pool (see F-HR-9 B1, suspected gap, verify).
-
-**Target (engine wired):** `getDailyBatch` returns the same batch all day, ordered follow-up, then approved HR need, then monitoring; about 2 a day; no same question 4 days in a row; more sampling on outliers. `submitAnswers` rejects with `not_in_todays_batch`, `already_answered`, `invalid_value`, `missing_comment`.
+- `GET /api/pool/next` calls `getEngine().getDailyBatch(compteId)` and returns `{ preguntes: [{ id, dominiId, text, tipus, options }] }`. The batch for a Madrid day is fixed once built (rows in the `assignment` table, inserted with `INSERT OR IGNORE`): reloading or opening a second tab gives the same questions.
+- Order of the batch: one due follow-up, then one approved HR need (`prioritat` descending, `maxNeedsPerDay` = 1), then monitoring questions (domains drawn in proportion to their priority with a boost for outliers, one item per domain, facet rotation, Thompson-sampled format).
+- **Batch size is 3 per day by default** (`questionsPerDay` in `packages/engine/src/config.ts`, overridable via `engine_config.questions_per_day`; no override in the seed or demo). The app copy still says "Dues preguntes breus al dia" on `/join`: a doc and UI mismatch, not a test failure of the engine.
+- **No strict "same question 4 days in a row" rule.** There is a soft cooldown of 28 days per item (`itemCooldownDays`): the picker prefers items not seen in the last 28 days and falls back to any item so a slot is never left empty. An HR need's questions are asked once per person (an already-answered question is not offered again).
+- The pool only holds questions with `pregunta.estat = 'aprovada'` and `collectiu_id` NULL or equal to the account's collective. It does **not** look at `necessitat.estat`, so questions of a closed need are still served to people who have not answered them (F-HR-9 B1, confirmed gap).
+- `POST /api/responses` calls `submitAnswers`. Body `{ respostes: [{ preguntaId, valueNum?, valueJson?, comentari? }], canal? }`: 1 to 10 items, `comentari` up to 1000 characters, `valueJson` up to 20 entries, `canal` `app` or `mobil_qr`. Success is 204 with no body. Rejections carry `{ error: <reason>, preguntaId }`: `not_in_todays_batch` 400, `invalid_value` 400, `missing_comment` 400, `already_answered` 409. Other errors: `json_invalid` 400, `peticio_invalida` 400, `no_autenticat` 401.
 
 Branches:
 
-- **B1 empty pool** (no approved question for the collective, or 2 already answered): step 4 screen shown at once, no question.
-- **B2 repeat answer** (second tab): `POST` returns 409 `ja_respost`; the UI treats 409 as done and moves on. No second row.
-- **B3 invalid payload via API** (logged in): 400 `pregunta_invalida` (unknown, not approved, or other collective's question), 400 `valor_invalid` (out of range, wrong type, bad ranking permutation), 400 `comentari_obligatori` (open question without text), 400 `peticio_invalida` (zod shape, comentari over 1000), 400 `json_invalid`. All-or-nothing: a batch with one bad item stores nothing.
+- **B1 empty pool** (no approved question for the collective, or everything already answered): the done screen at once with lede "Avui ja has acabat. Demà en tens de noves." and no question.
+- **B2 repeat answer** (second tab, or replaying the POST): `POST` returns 409 `already_answered` with the `preguntaId`; the UI treats 409 as done and moves on. No second row.
+- **B3 invalid payload via API** (logged in): 400 `not_in_todays_batch` (unknown, not approved, other collective's question, or a valid question not in today's batch), 400 `invalid_value` (out of range, wrong type, bad ranking permutation), 400 `missing_comment` (open question without text), 400 `peticio_invalida` (zod shape: 0 or more than 10 items, comentari over 1000), 400 `json_invalid` (body not JSON). The batch is atomic by contract: a request with one bad item must store nothing (check the DB after a mixed batch).
 - **B4 not logged in:** `GET /api/pool/next` and `POST /api/responses` return 401 `no_autenticat`; the UI goes to `/login`.
-- **B5 open question with PII:** a comment with a name ("Em dic Anna Puig"), an email, a phone (9 to 15 digits), a DNI/NIE or an IBAN is stored with `[nom]`, `[correu]`, `[telèfon]`, `[DNI]`, `[compte]`. If redaction throws, 500-class `redaccio_fallida` and nothing is stored. Redaction is regex, best effort.
+- **B5 open question with PII:** a comment with a name ("Em dic Anna Puig"), an email, a phone (9 to 15 digits), a DNI/NIE or an IBAN is stored with `[nom]`, `[correu]`, `[telèfon]`, `[DNI]`, `[compte]`. The engine requires a `redact` function (`redactPii`) and never stores raw text; no `redaccio_fallida` code exists in the current code (the old statement is stale). Redaction is regex, best effort. The open question shows the note "Anònim. No hi posis dades personals (noms, telèfons, correus)."
 - **B6 Madrid day rollover:** a new batch starts at 00:00 Europe/Madrid, not UTC, including both DST changes. Check with `pnpm --filter @damm/db run madrid-check`.
 - **B7 careless answers:** `answer_ms` stored for non-open questions (R-BIAS, C1 data only; no UI use).
 
@@ -176,10 +176,10 @@ Preconditions: EMP-IN.
 
 | # | Route and action | Expected result |
 |---|---|---|
-| 1 | `/settings` | Heading "Configuració". Card "Privadesa" with link "Llegeix com tractem les dades". Card "Sessió" with button "Tanca la sessió". |
-| 2 | Follow the privacy link or `/privacitat` | Heading "Com tractem les teves dades" with sections "Què recollim", "Què veu Recursos Humans", "Què no fem mai", "Comentaris lliures", "Sessió i compte". Reachable without a session from `/join/[codi]`. |
+| 1 | `/settings` | h1 "Configuració", subtitle "Les teves respostes són anònimes i només es mostren de forma agregada, en grups de 10 persones o més." In order: card "Privadesa" with link "Llegeix com tractem les dades"; panel "Canvia la contrasenya"; panel "Codi de recuperació"; card "Sessió" with button "Tanca la sessió"; panel "Esborra el compte" (details in F-EMP-10). |
+| 2 | Follow the privacy link or `/privacitat` | Heading "Com tractem les teves dades" with sections "Què recollim", "Què veu Recursos Humans", "Què no fem mai", "Comentaris lliures", "Sessió i compte" (verify the exact headings in the browser). Reachable without a session from `/join/[codi]`, `/onboarding` and `/login` (link "Com tractem les teves dades"). |
 
-Expected gaps (not built, the spec lists them): push toggle (R-FLOW-5d, F-EMP-9), change password (S-24), delete account (S-25, R-PRIV-8 retention), regenerate recovery code (S-26).
+Expected gap (not built): the push toggle (R-FLOW-5d, F-EMP-9). Retention beyond account deletion (R-PRIV-8) is not built.
 
 ### F-EMP-8 "Has dit, hem fet" (closing the loop for the employee)
 
@@ -188,19 +188,30 @@ Preconditions: EMP-IN, at least one `recomanacio` with `estat = 'aprovada'` for 
 
 | # | Action | Expected result |
 |---|---|---|
-| 1 | Open `/` | Below the answer flow, section "Has dit, hem fet" lists approved actions for the collective only (`approvedActionsForCompte`). If the action has a follow-up need, the badge "Enquesta de seguiment en marxa" is shown. |
+| 1 | Open `/` | Below the answer flow a card with h2 "Has dit, hem fet" lists approved actions for the collective only (`approvedActionsForCompte`: `recomanacio.estat = 'aprovada'`, signal not suppressed, `n >= 10`, collective NULL or the account's, at most 20). Each item shows the action text, a badge with the period, "a partir de les respostes de {n} persones", and, while the follow-up need is published, the badge "Enquesta de seguiment en marxa". |
 
-Branches: no approved action for that collective means the section is absent or empty (verify in the browser which). An action for another collective is never shown. Text is the recommendation text, aggregate context only.
+Branches: with no approved action the card is **always rendered** with the text "Encara no hi ha accions aprovades per al teu col·lectiu. Quan Recursos Humans en aprovi, les veuràs aquí, amb el període i quantes persones hi havia al darrere." An action for another collective is never shown. Text is the recommendation text, aggregate context only.
 
 ### F-EMP-9 Push notifications (expected gap)
 
 Covers: R-FLOW-5d, N-12, R-CH-5.
 Status: **not built.** No `/api/push/subscribe`, no toggle in `/settings`, no `web-push` send job. `push_subscripcio` exists in the schema; logout already deletes rows from it. A test must expect the absence of any permission prompt and any notification. When built (Jan): permission only after a tap in `/settings`; one row keyed by `compte_id`; generic text "Tens preguntes noves" with no question text; row deleted on logout and account deletion; never joined to analytics; iOS needs the PWA on the home screen (16.4+); public HTTPS needed (tunnel).
 
-### F-EMP-10 Account management (expected gap)
+### F-EMP-10 Account management
 
 Covers: R-PRIV-8, R-PRIV-13.
-Status: **not built** in `/settings`: change password, delete account ("Esborra el meu compte" in the spec), regenerate recovery code. Expected on delete: account and push subscription removed; past `resposta` rows stay and cannot be traced to a person. Today the only way to remove an account is directly in the DB, which also makes F-EMP-3 B3 testable.
+Preconditions: EMP-IN, on `/settings`.
+
+| # | Action | Expected result |
+|---|---|---|
+| 1 | Panel "Canvia la contrasenya": fill "Contrasenya actual", "Contrasenya nova", "Repeteix la contrasenya nova", press "Canvia la contrasenya". | role=status "Contrasenya canviada." The old password no longer logs in; the new one does. |
+| 2 | Panel "Codi de recuperació" (text "Si has perdut el codi que et vam donar, en pots generar un de nou. El vell deixarà de servir i el nou només el veuràs una vegada."): fill "Contrasenya actual", press "Genera un codi nou". | Screen "Codi de recuperació nou" with a code and the note "El codi anterior ja no funciona."; button "Fet" goes to `/settings`. The old code fails in F-EMP-4 with "Usuari o codi de recuperació incorrectes." |
+| 3 | Panel "Esborra el compte": press "Vull esborrar el compte". | Confirmation "Segur que vols esborrar-lo? Escriu la contrasenya per confirmar." with buttons "Sí, esborra el compte" and "Cancel·la". |
+| 4 | Enter the password, press "Sí, esborra el compte". | Account and push subscription rows removed, cookie destroyed, redirect to `/join?compte=esborrat` with role=status "Compte esborrat. Les respostes que vas donar es queden com a dades anònimes." Past `resposta` rows stay (`compte_id` has no cascade) and cannot be traced to a person. Logging in with the old credentials fails. |
+
+Branches (exact errors in the panels): wrong current password "La contrasenya actual no és correcta."; new password under 8 "La contrasenya nova ha de tenir almenys 8 caràcters."; mismatch "Les contrasenyes noves no coincideixen."; rate limit "Massa intents. Espera uns minuts i torna-ho a provar." "Cancel·la" returns to the closed panel and deletes nothing. A deleted account with a still-valid cookie is treated as logged out (F-EMP-3 B3).
+
+Expected gap: retention of old responses is not configurable (R-PRIV-8 is only the delete-account behaviour above).
 
 ## 3. HR flows
 
@@ -213,11 +224,11 @@ Preconditions: GATE-ON.
 |---|---|---|
 | 1 | Open `/hr` with no cookie | Redirect to `/hr-login?next=/hr`. Page "Portal de persones", "Accés restringit a l'equip de persones. Introdueix el codi d'accés de la demo.", field "Codi d'accés", button "Entra". |
 | 2 | Wrong code, "Entra" | Stays on the page with the alert "Codi incorrecte." No cookie. |
-| 3 | Right code, "Entra" | Cookie `hr_access` set, redirect to the `next` path (`/hr` here). Nav: "Inici", "Necessitats", "Enllaços i QR", "Resultats", "Recomanacions", "Com es calcula?". |
+| 3 | Right code, "Entra" | Cookie `hr_access` set, redirect to the `next` path (`/hr` here). Nav: "Inici", "Necessitats", "Enllaços i QR", "Resultats", "Alarmes" (with a count badge), "Recomanacions", "Com es calcula?", "Vista de responsables". |
 
 Branches:
 
-- **B1** every gated path redirects with its own `next`: `/hr/results`, `/hr/publish`, `/hr/needs`, `/hr/recommendations`, `/hr/methodology`, `/hr/signals/<id>`, `/manager`, `/manager/<collective>`, and `/hr/results/export` (no CSV without the cookie).
+- **B1** every gated path redirects with its own `next`: `/hr/results`, `/hr/publish`, `/hr/needs`, `/hr/signals`, `/hr/recommendations`, `/hr/methodology`, `/hr/signals/<id>`, `/manager`, `/manager/<collective>`, and `/hr/results/export` (no CSV without the cookie).
 - **B2** an employee login does not unlock HR.
 - **B3** GATE-OFF: `/hr` opens directly. The demo `.env` must set a code.
 - **B4** `/hr/need` and `/hr/review` redirect to `/hr/needs`.
@@ -296,7 +307,7 @@ Preconditions: GATE-ON logged in, DB-demo (richer) or DB-seed, analysis tables f
 | 3 | Choose a period in "Compara amb" (`?vs=`) | Comparison view for two periods. |
 | 4 | Look at the Logística night segment (6 accounts in the seed) | "Suprimit" with hint "Menys de 10 respondents" everywhere (profile, representativity, trends, signals). Themes with under 10 comments show "Suprimit" with "Menys de 10 comentaris". |
 
-Branches: no data gives "Encara no hi ha dades." / "Encara no hi ha temes." (empty states, no crash). Complementary suppression: if one hidden segment could be recovered by subtracting from a total, a second segment is also hidden. Direct reads never expose a comment tied to a person; only anonymised snippets of themes with 10 or more comments are shown. Insight cards from the engine (domain state, top mover, polarisation, importance gap, trajectories) are **in progress** (engine integration, M-20b).
+Branches: no data gives "Encara no hi ha dades." / "Encara no hi ha temes." (empty states, no crash). Complementary suppression: if one hidden segment could be recovered by subtracting from a total, a second segment is also hidden. Direct reads never expose a comment tied to a person; only anonymised snippets of themes with 10 or more comments are shown. Engine insight cards are **built** (`hr/insight-cards.tsx`). Card titles: "Estat del domini", "Canvi destacat", "Polarització", "Importància i puntuació" (quadrants "Actua primer", "Mantén", "Vigila", "Prioritat baixa"), "Trajectòries", "Confirmació del seguiment", "Diferència entre grups". Bodies read like "Puntuació x/10 … confiança … consens …", "↑ Puja" / "↓ Baixa", each with a badge `n=`; suppressed rows are never shown. They need DB-demo (or a run of the engine job on DB-seed) to have content; the empty text depends on the page that embeds them.
 
 Invariants: min group size 10 everywhere; no individual answer; no `compte_id`, username or single comment; HR pages import only `@damm/db/hr` and `@damm/shared`.
 
@@ -324,6 +335,8 @@ Preconditions: GATE-ON logged in, DB with `senyal` and `recomanacio` rows (seed 
 | 3 | Press "Veure detall →" on a signal | `/hr/signals/<id>` shows badges (type, severity, status, collective, period, `n=`, confidence), the status buttons under "Estat del senyal:", the timeline "Del senyal a l'acció", the trend table with "Relacionat" rows, "Temes relacionats" (only themes with 10+ comments; hidden ones counted in a note) and "Recomanacions". |
 | 4 | Change the signal status | `senyal.status` changes. |
 | 5 | On a recommendation press "Aprovar" or "Descartar" | `recomanacio.estat` goes `proposada` → `aprovada` or `descartada`. Nothing is executed. |
+
+Engine alarms have their own page, `/hr/signals` ("Alarmes", nav tab with a count badge): PageHeader title "Alarmes", subtitle "Senyals que detecta el motor a partir dels agregats. Cap és individual; cada una és revisada per una persona.", button "Recalcula ara"; card "Alarmes" with a count, empty text "Cap alarma activa."; each item has type and severity badges, a "Només RH" badge when the audience is HR only, "{periode} · n={n}", the description, status transition buttons and a link "Veure detall →" to `/hr/signals/<id>`. Alarm types: `sharp_drop`, `sustained_decline`, `changepoint_cluster`, `polarisation`, `feble`, `low_confidence`, `improvement`. Statuses: open, acknowledged, action_linked, resolved. A 7-day cooldown stops the same alarm being re-raised. The detail page `/hr/signals/<id>` has the title of the signal type, the description, a button "← Recomanacions", "Estat del senyal:" status buttons and the card "Del senyal a l'acció" (4-step timeline, each step "Fet" or "Pendent"). Managers only see alarms of audience `hr_manager`.
 
 Branches: `/hr/signals/abc` or an unknown id gives 404. A decided recommendation cannot be decided again (SQL guard on `estat = 'proposada'`). A signal with a hidden group shows `Suprimit`, never a number under 10.
 
@@ -355,7 +368,7 @@ Preconditions: a need in any state except "Tancada".
 
 Branches:
 
-- **B1 (suspected gap, verify first).** `closeNecessitat` only updates `necessitat.estat`. The stub pool query (`nextQuestionsForToday`) filters on `pregunta.estat = 'aprovada'` and does not look at `necessitat.estat`. So an employee probably still receives the questions of a closed need today. M-24 expects the opposite. Test it before relying on M-24.
+- **B1 (confirmed gap).** `closeNecessitat` (`packages/db/src/hr-repository.ts`) only sets `necessitat.estat = 'tancada'`. The engine's `approvedQuestionsFor` filters on `pregunta.estat = 'aprovada'` and collective, and never looks at `necessitat.estat`. So an employee who has not yet answered a closed need's question still receives it. The earlier expectation "questions stop after closing" is wrong for the current code: test the actual behaviour (the question is still served) and record it as a known gap, not a regression.
 - **B2** closing twice is a no-op.
 - **B3** the join code stays active (it may serve other needs).
 
@@ -373,7 +386,7 @@ Preconditions: GATE-ON logged in (the manager uses the HR gate; there is no sepa
 
 | # | Action | Expected result |
 |---|---|---|
-| 1 | `/manager` | Title "Vista de responsables", subtitle "Tria el col·lectiu del qual vols veure els resultats." Note: "Vista de només lectura amb dades agregades. No hi ha respostes ni comentaris individuals, i els grups de menys de 10 persones es mostren com a Suprimit. Només es mostren les recomanacions que l'equip de persones ha aprovat." Four collective links. |
+| 1 | `/manager` | Title "Vista de responsables", subtitle "Tria el col·lectiu del qual vols veure els resultats." Card "Col·lectius" with the note "Vista de només lectura amb dades agregades. No hi ha respostes ni comentaris individuals, i els grups de menys de 10 persones es mostren com a Suprimit. Només es mostren les recomanacions que l'equip de persones ha aprovat." and four collective links (`listCollectius()`). |
 | 2 | Press a collective | `/manager/<name>` (URL-encoded). |
 
 ### F-MGR-2 Manager reads one collective
@@ -381,12 +394,12 @@ Preconditions: GATE-ON logged in (the manager uses the HR gate; there is no sepa
 Covers: R-FLOW-6, R-FLOW-7, N-8.
 | # | Action | Expected result |
 |---|---|---|
-| 1 | `/manager/Logística` | Title = collective name, latest period badge, link "Canvia de col·lectiu". Cards: "Perfil per domini" (radar, latest and previous period), "Recomanacions aprovades" (only `aprovada`, only this collective, badge "Enquesta de seguiment en marxa" when a follow-up exists), "Tendència per domini" with the precision legend, representativity rows for this collective and its shifts, themes (non-suppressed), signals visible to managers (`audience = 'hr_manager'`, `n >= 10`, `suprimit = 0`). |
+| 1 | `/manager/Logística` | Title = collective name, subtitle "Resultats del col·lectiu: perfil per domini, tendència, temes i recomanacions aprovades.", latest period badge, button "Canvia de col·lectiu". Cards: "Perfil per domini" (radar, latest and previous period), "Recomanacions aprovades" (only `aprovada`, only this collective, badge "Enquesta de seguiment en marxa" when a follow-up exists), "Què destaca el motor" (engine insights of kinds top mover, polarisation, importance gap, trajectory mix, follow-up confirmation, segment gap, at most 8, scoped to this collective; empty text "Encara no hi ha prou respostes per destacar res (cal n ≥ 10)."), "Tendència per domini" with the precision legend, "Representativitat" (link "Com es calcula?"), "Temes dels comentaris" (labelled "Tota l'empresa, no només aquest col·lectiu"), "Senyals del col·lectiu" (audience `hr_manager`, `n >= 10`, `suprimit = 0`; empty "Cap senyal per a aquest col·lectiu."). |
 | 2 | `/manager/Inexistent` | 404. |
 
-Branch: no data gives "Encara no hi ha dades visibles per a aquest col·lectiu." and "Encara no hi ha recomanacions aprovades per a aquest col·lectiu."
+Branch: empty states "Encara no hi ha recomanacions aprovades per a aquest col·lectiu." and "Cap senyal per a aquest col·lectiu."
 
-Expected gaps (N-8, S-72): a manager is not bound to one collective. Anyone past the HR gate can open any collective. There is no manager role, no segment by centre or manager flag, no per-manager login. The test must expect all four collectives to be reachable, not a 403.
+Expected gaps (N-8, S-72): a manager is not bound to one collective. Anyone past the HR gate can open any collective (the manager layout is the HR shell behind the same gate). There is no manager role, no segment by centre or manager flag, no per-manager login. The engine data on the page is scoped to the opened collective (viewer `{role: "manager", collectiuId}`), but nothing restricts which collective a person may open. The test must expect all four collectives to be reachable, not a 403.
 
 ## 5. Anonymity and security viewpoint
 
@@ -434,10 +447,10 @@ Preconditions: a DB (dev or demo), `DB_PATH` set if not the default.
 3. The job is the only reader of per-account history (trajectories). It writes aggregates only, nothing per person.
 Branch: there is no `POST /api/jobs/run` (known finding); only the script exists.
 
-### F-JOB-2 Daily batch from the engine (target, not wired)
+### F-JOB-2 Daily batch from the engine (wired)
 
 Covers: R-FLOW-5c, R-FLOW-5f, R-TENSION-1.
-`getDailyBatch` gives the same batch all day; order follow-up, HR need, monitoring; about 2 a day; no same question 4 days in a row; approved needs first (`prioritat`); more sampling on outliers; format and timing per collective and shift. `submitAnswers` rejection reasons `not_in_todays_batch`, `already_answered`, `invalid_value`, `missing_comment`. Status: package merged, routes still use the stub. Tests for this flow must wait for the wiring session. Until then F-EMP-5 describes the stub.
+`getDailyBatch` gives the same batch all day (stored in `assignment`); order follow-up, HR need (`prioritat`, one per day), monitoring (domains ∝ priority with an outlier boost, 28-day soft item cooldown, Thompson-sampled format); 3 questions a day by default (`questionsPerDay`). `submitAnswers` rejection reasons `not_in_todays_batch`, `already_answered`, `invalid_value`, `missing_comment`. Status: wired into `GET /api/pool/next` and `POST /api/responses` via `apps/web/lib/engine.ts`; a scheduler runs the engine job every 10 minutes (`instrumentation.ts`). Testable from the API and the UI as in F-EMP-5. The "4 days in a row" statement of the older docs is not a rule in the code (see F-EMP-5).
 
 ### F-JOB-3 Seed and demo builds
 
@@ -472,10 +485,10 @@ Only requirements that a flow here touches are listed with their flows. Statuses
 | R-FLOW-4a to 4d | F-HR-4 |
 | R-FLOW-5a | F-EMP-5, F-EMP-6 |
 | R-FLOW-5b | F-EMP-1, F-EMP-2 |
-| R-FLOW-5c, 5f | F-EMP-5 (stub), F-JOB-2 (target) |
+| R-FLOW-5c, 5f | F-EMP-5, F-JOB-2 (engine wired) |
 | R-FLOW-5d | F-EMP-9, F-JOB-4 (gap) |
 | R-FLOW-6a to 6f | F-HR-5, F-HR-6, F-MGR-2 (6b, 6c, 6e partial) |
-| R-FLOW-7a to 7f | F-HR-5, F-HR-7, F-JOB-1 |
+| R-FLOW-7a to 7f | F-HR-5, F-HR-7 (incl. Alarmes page), F-JOB-1 |
 | R-FLOW-8a to 8d | F-HR-7, F-HR-8, F-HR-9, F-EMP-8 |
 | R-SC-A | F-HR-5, F-HR-7 |
 | R-BIAS-1 to 8 | F-HR-5, F-HR-10, F-JOB-3 |
@@ -485,7 +498,7 @@ Only requirements that a flow here touches are listed with their flows. Statuses
 | R-PRIV-3 | F-PRIV-1, F-PRIV-3, F-PRIV-4, F-MGR-1 |
 | R-PRIV-4 | F-EMP-2, F-EMP-4, F-PRIV-5 |
 | R-PRIV-6 | F-PRIV-5 |
-| R-PRIV-8 | F-EMP-10 (gap) |
+| R-PRIV-8 | F-EMP-10 (partial: the person can delete their own account; no retention policy) |
 | R-PRIV-9 | F-PRIV-1, F-PRIV-2, F-HR-1 |
 | R-PRIV-10 | F-HR-1, F-HR-3 (partial) |
 | R-PRIV-13 | F-EMP-1 to F-EMP-4, F-EMP-7, F-HR-4 |
@@ -504,55 +517,22 @@ Only requirements that a flow here touches are listed with their flows. Statuses
 
 ## 8. Mapping to e2e cases (`docs/e2e-test-plan.md`)
 
-| Flow | Existing cases | Notes |
-|---|---|---|
-| F-EMP-1 | M-10, S-10, S-11, S-12, S-13, S-14 | B3 (empty field), B6 (inactive code), B7 (direct onboarding with bad code) not covered. |
-| F-EMP-2 | M-11, S-15 | B5 (code turned inactive mid-flow) and B6 (recovery screen shown once) not covered. |
-| F-EMP-3 | S-20, S-21, S-22, S-27 | B3 (deleted account with valid cookie) and B4 (username case) not covered. |
-| F-EMP-4 | S-23 | "Old recovery code fails a second time" and the shared rate limiter not covered. |
-| F-EMP-5 | M-14, M-15, S-40, S-41, S-42, S-43, S-54, S-74 | Empty pool (B1), unknown/other-collective question (B3, partly S-54), all-or-nothing batch, day cap of 2, Madrid rollover as an app test (S-41 is a script check) not covered. S-40 and S-42 assume the engine, which is not wired. |
-| F-EMP-6 | S-50, S-51, S-52, S-53 | Complete. Blocked `localStorage` not covered. |
-| F-EMP-7 | none directly (M-12 notes the settings content) | `/privacitat` content and the link from settings not covered. |
-| F-EMP-8 | none | "Has dit, hem fet" is not tested anywhere. |
-| F-EMP-9 | M-12, M-13, S-30, S-31, S-32 | All pending; they assert absence today. |
-| F-EMP-10 | S-24, S-25, S-26 | All pending. |
-| F-HR-1 | M-1, M-2, M-3, S-4, S-70, S-71, S-73 | `next` return path for all paths covered by S-70; `/hr/need` and `/hr/review` redirects not covered. |
-| F-HR-2 | M-4, M-5, S-60, S-61, S-62, S-63 | Form validation errors (B2 to B4, B5) and duration warning (B6) not covered. |
-| F-HR-3 | M-6, M-7 | Guards on non-draft rows and "all discarded" state not covered. `aprovada_per` / `aprovada_el` not checked. |
-| F-HR-4 | M-8, M-9, S-8 | One code per collective for an all-collectives need not checked. Empty states not covered. |
-| F-HR-5 | M-16, M-18, M-19, S-1, S-3, S-7 | `?vs=` comparison and empty-state pages not covered. M-20b (insights) is in progress. |
-| F-HR-6 | S-2, S-4, S-6 | Header and BOM / filename not asserted. |
-| F-HR-7 | M-20, M-21 | Signal status buttons, 404 on bad id, and manager-visible signal filter not covered. |
-| F-HR-8 | M-22 | Not-approved recommendation case and the employee-side badge not covered. |
-| F-HR-9 | M-24, S-14 | B1 (stub keeps serving a closed need's questions) is a likely failing case. |
-| F-HR-10 | none | "Com es calcula?" not tested. |
-| F-MGR-1, F-MGR-2 | M-23, S-72 | S-72 expects scoping that is not built. 404 on unknown collective and the approved-only recommendation rule not covered. |
-| F-PRIV-1 | S-5, S-6 | |
-| F-PRIV-2 | S-1, S-2, S-3, S-6, S-7 | |
-| F-PRIV-3 | S-8 | |
-| F-PRIV-4 | S-71 | Deleted-account cookie covered only by F-EMP-3 B3 (not tested). |
-| F-PRIV-5 | S-6 (e) | Log content not checked anywhere. |
-| F-PRIV-6 | none | A repo scan for real data or secrets is not in the plan. |
-| F-JOB-1 | M-17 | Idempotence (second run, same counts) not covered. |
-| F-JOB-2 | S-40, S-42, M-20b | Blocked on wiring. |
-| F-JOB-3 | section 1.2 setup | Demo stories checked by S-90. |
-| F-JOB-4 | M-13 | Pending. |
+The plan was reworked against this file (2026-11-07). Every M-* and S-* case now cites its F-* flow and requirement IDs; section 4 of the plan holds the flow-to-case map. The gap list below is kept as the record of what the rework had to cover.
 
-### Gap list for the rework (flows or branches the plan does not cover)
+### Gap list for the rework (all items now have a case in the plan)
 
-Highest value first:
-
-1. **Closed need still served (F-HR-9 B1).** M-24 asserts the questions stop. The stub does not filter on `necessitat.estat`. Likely a real failure, and a candidate bug to hand to Jan.
-2. **"Has dit, hem fet" (F-EMP-8)** has no case, though it is the employee half of closing the loop (R-FLOW-8, R-U-3).
-3. **Form validation in HR (F-HR-2 B2 to B6)** has no case: three exact error strings and the duration warning.
-4. **Empty pool and day cap (F-EMP-5 B1, 2 a day).** Needed to prove "never more than 2 questions a day" before the engine arrives, then again after.
-5. **Deleted account with live cookie (F-EMP-3 B3)**, **second use of a recovery code (F-EMP-4 step 4)**, **inactive code mid-flow (F-EMP-2 B5)**.
-6. **Approver recording (F-HR-3).** Check `pregunta.aprovada_per` and `aprovada_el` after "Aprovar". The value is the constant `hr-demo`, so R-PRIV-10 stays partial; the requirements file says "not recorded", which is stale.
-7. **Manager scope (S-72)** expects a restriction that does not exist. Mark as expected gap and test the actual behaviour (all collectives open) so the run does not report a false regression.
-8. **Atomic batch in `POST /api/responses`**: a batch with one invalid item stores nothing.
-9. **PII redaction forms** beyond one name, email and phone: DNI/NIE, IBAN, and the `redaccio_fallida` branch.
-10. **`/privacitat` content** and the links to it from `/join/[codi]` and `/settings`.
+1. **Closed need still served (F-HR-9 B1).** Confirmed gap in the engine's `approvedQuestionsFor`. The plan tests the actual behaviour and records it as a known gap.
+2. **"Has dit, hem fet" (F-EMP-8).**
+3. **Form validation in HR (F-HR-2 B2 to B6).**
+4. **Empty pool and day cap (F-EMP-5 B1; 3 a day by default).**
+5. **Deleted account with live cookie (F-EMP-3 B3), second use of a recovery code (F-EMP-4), inactive code mid-flow (F-EMP-2 B5).**
+6. **Approver recording (F-HR-3).** `aprovada_per = 'hr-demo'` and `aprovada_el`; R-PRIV-10 stays partial.
+7. **Manager scope (S-72).** All collectives open is the expected current behaviour (N-8 gap), not a failure.
+8. **Atomic batch in `POST /api/responses`.**
+9. **PII redaction forms** beyond one name, email and phone: DNI/NIE and IBAN.
+10. **`/privacitat` content** and its links from `/join/[codi]` and `/settings`.
 11. **Methodology page (F-HR-10)** and the CSV header, BOM and filename (F-HR-6).
 12. **Repo scan for secrets and real data (F-PRIV-6).**
+13. **Account management (F-EMP-10)**, **Alarmes page and insight cards (F-HR-5, F-HR-7)**.
 
-Stale statements found while writing this file (not fixed here, outside the brief): `docs/requirements.md` says the approver is not recorded (it is stored as `hr-demo`); `docs/employee-pwa-spec.md` says the join code travels in the session (it travels in `?codi=`) and lists an empty state "Res més per avui" and a push toggle that do not exist (the shipped copy is "Avui ja has acabat"); `docs/e2e-test-plan.md` M-24 assumes closing a need removes its questions from the pool.
+Stale statements found in other docs (outside this brief, not fixed here): `docs/requirements.md` says the approver is not recorded (it is stored as `hr-demo`); `docs/employee-pwa-spec.md` says the join code travels in the session (it travels in `?codi=`) and lists an empty state "Res més per avui" and a push toggle that do not exist. The `/join` copy says "Dues preguntes breus al dia" while the engine default is 3 a day.
