@@ -132,6 +132,8 @@ Routing:
 - **Lideratge alarms go to HR only**, never to the manager being assessed.
 - Safety or harassment content in comments never becomes an alarm that exposes the comment. The app points the person to the official confidential reporting channel (Ley 2/2023). HR only sees aggregate theme trends.
 
+**Implemented** in `packages/engine/src/alarms.ts` (`runAlarms(db, { now })`, run after `runEngineJob`), all types above except `emergent` and `baixa_participacio`. Thresholds live in `ALARM_DEFAULTS` (overridable via `opts.thresholds`). Because `agregat` is per month, "within 14 days" for `sharp_drop` and `polarisation` is read as "vs. the previous period"; `low_confidence` needs two low periods or 14 days into the current one. Clear levels: `sharp_drop` drop < 0.5, `sustained_decline` slope ≥ 0, `changepoint_cluster` < 5 people, `polarisation` fall < 7.5, `feble` fall < 0.15, `low_confidence` ≥ 50, `improvement` rise < 0.25. Cooldown counts from the last alarm's `created_at` (there is no resolved-at column). `changepoint_cluster` is evaluated on non-nesting segments only (collective × shift where the collective has shifts, else the collective) so counts cannot be differenced. Company-wide and Lideratge alarms go to `hr`. Open alarms whose segment falls below n = 10 get `suprimit = 1` until it recovers.
+
 ## 8. Configuration
 
 `engine_config` (key → value), defaults:
