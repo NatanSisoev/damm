@@ -13,15 +13,19 @@ export interface ChatOptions {
   maxTokens?: number;
   timeoutMs?: number;
   /** Earlier turns, used to ask the model to repair its previous reply. */
+  /** Use the JUDGE_* endpoint (eval only, e.g. a stronger model via OpenRouter). Falls back to LLM_*. */
+  endpoint?: "judge";
   history?: { role: "assistant" | "user"; content: string }[];
 }
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 export async function chatJson(system: string, user: string, opts: ChatOptions = {}): Promise<unknown> {
-  const base = process.env.LLM_BASE_URL;
-  const key = process.env.LLM_API_KEY;
-  const model = process.env.LLM_MODEL || "ornith";
+  const alt = opts.endpoint === "judge" || process.env.AI_EVAL_DRAFT_ON_JUDGE === "1";
+  const j = alt && !!process.env.JUDGE_BASE_URL && !!process.env.JUDGE_API_KEY;
+  const base = j ? process.env.JUDGE_BASE_URL : process.env.LLM_BASE_URL;
+  const key = j ? process.env.JUDGE_API_KEY : process.env.LLM_API_KEY;
+  const model = (j ? process.env.JUDGE_MODEL : process.env.LLM_MODEL) || "ornith";
   if (!base || !key) throw new LlmUnavailable("LLM_BASE_URL or LLM_API_KEY not set");
   const body = JSON.stringify({
     model,
@@ -29,7 +33,7 @@ export async function chatJson(system: string, user: string, opts: ChatOptions =
     max_tokens: opts.maxTokens ?? 2000,
     messages: [{ role: "system", content: system }, { role: "user", content: user }, ...(opts.history ?? [])],
     // DCC guide: skip the reasoning pass (main latency cost) and force a JSON object reply.
-    chat_template_kwargs: { enable_thinking: opts.thinking ?? false },
+    ...(j ? {} : { chat_template_kwargs: { enable_thinking: opts.thinking ?? false } }),
     response_format: { type: "json_object" },
   });
   let res: Response | null = null;
