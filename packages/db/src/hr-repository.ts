@@ -30,8 +30,9 @@ export function createNecessitat(input: {
 
 // TEMPORARY (C3): question types in the DB are still the Catalan ones. Natan's branch renames them to English
 // (scale5, scale10, yes_no, pair, choice, ranking, open). Delete these two maps and use the type names directly after the sync.
-const TIPUS_FROM_AI: Record<string, string> = { scale5: "escala5", scale10: "escala10", yes_no: "swipe", open: "obert", ranking: "ranking" };
-const TIPUS_TO_AI: Record<string, string> = { escala5: "scale5", escala10: "scale10", swipe: "yes_no", obert: "open", ranking: "ranking" };
+// The DB stores the same English types the AI uses (C2); these maps only reject types the AI may not draft.
+const TIPUS_FROM_AI: Record<string, string> = { scale5: "scale5", scale10: "scale10", yes_no: "yes_no", open: "open", ranking: "ranking" };
+const TIPUS_TO_AI: Record<string, string> = TIPUS_FROM_AI;
 
 export interface DraftInput {
   text: string;
@@ -203,30 +204,40 @@ export function listApprovedUnpublishedNeeds(): { id: number; textNl: string; ap
     .all() as { id: number; textNl: string; approved: number }[];
 }
 
-/** Publish = approved questions are already in the pool; create the join code and link. */
-export function publishNecessitat(necessitatId: number, baseUrl: string) {
+/**
+ * Publish = approved questions are already in the pool; create the join code and link.
+ * A join code identifies one collective, so a need for all collectives gets one code per collective.
+ */
+export function publishNecessitat(necessitatId: number, baseUrl: string): { codi: string; url: string; collectiuId: number }[] {
   const db = getDb();
   const n = db.prepare("SELECT collectiu_id AS c FROM necessitat WHERE id = ?").get(necessitatId) as { c: number | null } | undefined;
   if (!n) throw new Error("Necessitat not found");
-  const codi = crypto.randomBytes(4).toString("hex").toUpperCase();
-  const tx = db.transaction(() => {
-    db.prepare("INSERT INTO joincode (codi, empresa, collectiu_id) VALUES (?, 'Demo', ?)").run(codi, n.c ?? 1);
-    db.prepare("INSERT INTO publicacio (necessitat_id, codi_join, qr_url) VALUES (?, ?, ?)").run(
-      necessitatId, codi, `${baseUrl}/join/${codi}`,
-    );
-    db.prepare("UPDATE necessitat SET estat = 'publicada' WHERE id = ?").run(necessitatId);
+  const targets = n.c != null
+    ? [n.c]
+    : (db.prepare("SELECT id FROM collectiu ORDER BY id").all() as { id: number }[]).map((r) => r.id);
+  const out = targets.map((collectiuId) => {
+    const codi = crypto.randomBytes(4).toString("hex").toUpperCase();
+    return { codi, url: `${baseUrl}/join/${codi}`, collectiuId };
   });
-  tx();
-  return { codi, url: `${baseUrl}/join/${codi}` };
+  db.transaction(() => {
+    for (const p of out) {
+      db.prepare("INSERT INTO joincode (codi, empresa, collectiu_id) VALUES (?, 'Demo', ?)").run(p.codi, p.collectiuId);
+      db.prepare("INSERT INTO publicacio (necessitat_id, codi_join, qr_url) VALUES (?, ?, ?)").run(necessitatId, p.codi, p.url);
+    }
+    db.prepare("UPDATE necessitat SET estat = 'publicada' WHERE id = ?").run(necessitatId);
+  })();
+  return out;
 }
 
 export function listPublications() {
   return getDb()
     .prepare(
-      `SELECT pu.id, pu.codi_join AS codi, pu.qr_url AS url, n.text_nl AS textNl
-       FROM publicacio pu JOIN necessitat n ON n.id = pu.necessitat_id ORDER BY pu.id DESC`,
+      `SELECT pu.id, pu.codi_join AS codi, pu.qr_url AS url, n.text_nl AS textNl, c.nom AS collectiu
+       FROM publicacio pu JOIN necessitat n ON n.id = pu.necessitat_id
+       JOIN joincode j ON j.codi = pu.codi_join JOIN collectiu c ON c.id = j.collectiu_id
+       ORDER BY pu.id DESC`,
     )
-    .all() as { id: number; codi: string; url: string; textNl: string }[];
+    .all() as { id: number; codi: string; url: string; textNl: string; collectiu: string }[];
 }
 
 export interface AggregateRow extends Omit<Agregat, "collectiuId" | "tornId" | "dominiId" | "n" | "mitjana"> {
@@ -299,15 +310,39 @@ export function discardRecommendation(id: number): void {
   getDb().prepare("UPDATE recomanacio SET estat = 'descartada' WHERE id = ? AND estat = 'proposada'").run(id);
 }
 
-/** Follow-up survey: a new open need linked to an approved recommendation. Questions come from the AI layer. */
-export function createFollowUp(recId: number): number | null {
+export interface FollowUpNeed {
+  id: number;
+  objective: string;
+  context: string;
+  collective: string | null;
+  maxSeconds: number;
+}
+
+/**
+ * Follow-up survey: a new open need linked to an approved recommendation, scoped to the signal's collective.
+ * Returns the need only when it was created now, so the caller drafts its questions once (the AI layer drafts them).
+ */
+export function createFollowUp(recId: number): FollowUpNeed | null {
   const db = getDb();
-  const r = db.prepare("SELECT text, estat, seguiment_necessitat_id AS s FROM recomanacio WHERE id = ?").get(recId) as
-    | { text: string; estat: string; s: number | null } | undefined;
-  if (!r || r.estat !== "aprovada" || r.s) return r?.s ?? null;
-  const id = createNecessitat({ textNl: `Seguiment: ${r.text}`, collectiuId: null, duradaMaxS: 60 });
-  db.prepare("UPDATE recomanacio SET seguiment_necessitat_id = ? WHERE id = ?").run(id, recId);
-  return id;
+  const r = db
+    .prepare(
+      `SELECT r.text, r.estat, r.seguiment_necessitat_id AS s, s.descripcio, s.collectiu_id AS c, c.nom AS collectiu
+       FROM recomanacio r LEFT JOIN senyal s ON s.id = r.senyal_id LEFT JOIN collectiu c ON c.id = s.collectiu_id
+       WHERE r.id = ?`,
+    )
+    .get(recId) as
+    | { text: string; estat: string; s: number | null; descripcio: string | null; c: number | null; collectiu: string | null }
+    | undefined;
+  if (!r || r.estat !== "aprovada" || r.s) return null;
+  const objective = `Seguiment: comprovar si l'acció aprovada ha funcionat. Acció: ${r.text}`;
+  const context = r.descripcio ? `Senyal d'origen: ${r.descripcio}` : "";
+  const maxSeconds = 60;
+  const id = db.transaction(() => {
+    const nid = createNecessitat({ textNl: `Seguiment: ${r.text}`, collectiuId: r.c, duradaMaxS: maxSeconds, context });
+    db.prepare("UPDATE recomanacio SET seguiment_necessitat_id = ? WHERE id = ?").run(nid, recId);
+    return nid;
+  })();
+  return { id, objective, context, collective: r.collectiu, maxSeconds };
 }
 
 /** Admin view: account counts per collective only. */

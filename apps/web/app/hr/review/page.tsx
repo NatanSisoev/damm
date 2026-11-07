@@ -131,6 +131,7 @@ export default async function ReviewPage() {
                   <img src={p.qr} alt={`QR de ${p.url}`} width={96} height={96} className="shrink-0 rounded-md border border-line bg-white p-1" />
                   <div className="min-w-0 space-y-2">
                     <p className="font-medium">{p.textNl}</p>
+                    <span className="badge">{p.collectiu}</span>
                     <p className="text-xs text-subtle">Codi d&apos;accés <span className="badge num ml-1 font-mono">{p.codi}</span></p>
                     <a href={p.url} className="block truncate font-mono text-xs text-accent-ink hover:underline">{p.url}</a>
                   </div>

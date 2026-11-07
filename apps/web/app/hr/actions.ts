@@ -4,9 +4,10 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { draftSurvey, redraftQuestion } from "@damm/ai";
 import {
-  approveQuestion, getRedraftContext, listCollectius, moveDraft, replaceDraft, saveDraftSurvey, updateNeedHeader, approveRecommendation, createFollowUp, createNecessitat, discardQuestion,
+  approveQuestion, getRedraftContext, listCollectius, moveDraft, replaceDraft, saveDraftSurvey, updateNeedHeader, approveRecommendation, createNecessitat, discardQuestion,
   discardRecommendation, publishNecessitat, updateDraftText,
 } from "@damm/db/hr";
+import { createDraftedFollowUp } from "./follow-up";
 
 const HR_USER = "hr-demo"; // no auth in the prototype; approval is still an explicit human action
 
@@ -80,7 +81,7 @@ export async function discardRecommendationAction(formData: FormData) {
 }
 
 export async function followUpAction(formData: FormData) {
-  createFollowUp(Number(formData.get("id")));
+  await createDraftedFollowUp(Number(formData.get("id")));
   revalidatePath("/hr/recommendations");
   redirect("/hr/review");
 }
