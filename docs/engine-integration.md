@@ -158,6 +158,18 @@ Run it:
 
 The job is idempotent: it recomputes and replaces its own rows for the periods it covers.
 
+## Comment analysis
+
+```ts
+import { runCommentAnalysis, runCommentAnalysisSync } from "@damm/engine/job";
+runCommentAnalysisSync(db, { now: Date.now() });                        // lexicon + templates, no network
+await runCommentAnalysis(db, { now: Date.now(), classify, summarise }); // optional LLM, functions from @damm/ai
+```
+
+Run it after `runEngineJob`. It is called by `scripts/job.ts` (deterministic), by the demo build, and by `pnpm --filter @damm/engine run comments`, which uses the LLM when `LLM_BASE_URL` and `LLM_API_KEY` are set (`--no-llm` to skip) and falls back to the rules otherwise. `runEngineJob` itself is unchanged. `POST /api/jobs/run` should call `runCommentAnalysisSync` right after `runEngineJob` (it needs no key).
+
+It rewrites `tema` and `comentari_tema` (replacing the seeded rows) and opens `emergent` alarms in `senyal`. `tema` has one row per theme x period x collective (`collectiu_id`, NULL = company), with `clau`, `share` and `font`. Suppressed rows (`suprimit = 1`) have no `resum`, `share` or comment links: show nothing for them. Sensitive themes have no comment links. The LLM helpers are `classifyCommentsLlm` and `summariseThemeLlm` in `@damm/ai`. Design, accuracy and limits: [engine.md](engine.md) section 12.
+
 ## Running the engine on the server
 
 The engine is a library inside the Next.js server process, not a separate service:

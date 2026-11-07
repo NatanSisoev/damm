@@ -132,7 +132,7 @@ Routing:
 - **Lideratge alarms go to HR only**, never to the manager being assessed.
 - Safety or harassment content in comments never becomes an alarm that exposes the comment. The app points the person to the official confidential reporting channel (Ley 2/2023). HR only sees aggregate theme trends.
 
-**Implemented** in `packages/engine/src/alarms.ts` (`runAlarms(db, { now })`, run after `runEngineJob`), all types above except `emergent` and `baixa_participacio`. Thresholds live in `ALARM_DEFAULTS` (overridable via `opts.thresholds`). Because `agregat` is per month, "within 14 days" for `sharp_drop` and `polarisation` is read as "vs. the previous period"; `low_confidence` needs two low periods or 14 days into the current one. Clear levels: `sharp_drop` drop < 0.5, `sustained_decline` slope ≥ 0, `changepoint_cluster` < 5 people, `polarisation` fall < 7.5, `feble` fall < 0.15, `low_confidence` ≥ 50, `improvement` rise < 0.25. Cooldown counts from the last alarm's `created_at` (there is no resolved-at column). `changepoint_cluster` is evaluated on non-nesting segments only (collective × shift where the collective has shifts, else the collective) so counts cannot be differenced. Company-wide and Lideratge alarms go to `hr`. Open alarms whose segment falls below n = 10 get `suprimit = 1` until it recovers.
+**Implemented** in `packages/engine/src/alarms.ts` (`runAlarms(db, { now })`, run after `runEngineJob`), all types above except `emergent` (implemented by the comment analysis, section 12) and `baixa_participacio`. Thresholds live in `ALARM_DEFAULTS` (overridable via `opts.thresholds`). Because `agregat` is per month, "within 14 days" for `sharp_drop` and `polarisation` is read as "vs. the previous period"; `low_confidence` needs two low periods or 14 days into the current one. Clear levels: `sharp_drop` drop < 0.5, `sustained_decline` slope ≥ 0, `changepoint_cluster` < 5 people, `polarisation` fall < 7.5, `feble` fall < 0.15, `low_confidence` ≥ 50, `improvement` rise < 0.25. Cooldown counts from the last alarm's `created_at` (there is no resolved-at column). `changepoint_cluster` is evaluated on non-nesting segments only (collective × shift where the collective has shifts, else the collective) so counts cannot be differenced. Company-wide and Lideratge alarms go to `hr`. Open alarms whose segment falls below n = 10 get `suprimit = 1` until it recovers.
 
 ## 8. Configuration
 
@@ -200,3 +200,47 @@ Why this design rather than a big pre-trained model:
 - and the engine has to adapt to each company and collective from its own answers.
 
 A neural or gradient-boosted model can later replace any single component behind the same interfaces (for example a learned answer-propensity model in the Thompson step) without changing the rest.
+
+## 12. Comment analysis (`comments.ts`)
+
+Guide scenario C: HR has about 500 open comments and needs them grouped, summarised, compared with the previous period and turned into areas for action, with the limits of the analysis stated. `runCommentAnalysisSync(db, { now })` (deterministic) and `runCommentAnalysis(db, { now, classify?, summarise? })` (async, optional LLM) live in `packages/engine/src/comments.ts`; the lexicon is `comments-lexicon.ts`. `runEngineJob` does not call them; the job script (`scripts/job.ts`), the demo build and `pnpm --filter @damm/engine run comments` call them after the job.
+
+**Input.** Redacted comments from `v_resposta_analitica` (no account id), all periods up to now.
+
+**Themes.** A fixed taxonomy of 15 themes (`THEMES`): the 12 general themes of the seed (workload, tiredness and rest, relation with the direct manager, direction and vision, training, career and promotion, recognition, internal communication, team atmosphere, collaboration between departments, tools and systems, work-life balance and schedules), the *shift system and breaks* theme, *heat and protective equipment (EPI)*, and one sensitive theme (harassment, accidents). Each has a `key` (the same ids as the seed's hidden labels), a Catalan label and a domain.
+
+**Deterministic classifier.** Text is normalised (lowercase, no accents, no punctuation) and matched against a lexicon of stems, exact words and phrases in Catalan, Spanish and English. Evidence is weighted (strong entries count 2, shift and break words 3); stems of 8+ letters tolerate one typo. A comment gets every theme whose evidence is more than half of the best one's, at most three (`comentari_tema.confianca = score / (score + 1.5)`). Ties go to the more specific theme.
+
+**Rows.** One `tema` row per theme x period x collective, plus one company-wide row (`collectiu_id` NULL): `n` (comments), `share` (n / comments of that collective in that period), `resum`, `emergent`, `suprimit`, `font` (`rules` or `llm`), `clau`. A row is suppressed (`suprimit = 1`, `share` and `resum` NULL, no `comentari_tema` links) when `n < 10` or the collective has fewer than 10 comments that period. `comentari_tema` links are written only for shown, non-sensitive, per-collective rows, because the HR drill-down reads comments through them.
+
+**Summaries.** Template-based by default, in Catalan: count, share, change in points against the previous period, themes that co-occur. Built from counts only; it never quotes a comment. If an LLM `summarise` is injected it receives up to eight redacted comments of the group (never sensitive ones) and is told not to quote; the answer is discarded when it copies a run of five words from any of them, and the template is used. At most 40 summaries per run go to the LLM (emergent and latest period first).
+
+**Emerging themes.** Compared with the previous period, per collective: the theme's share rose by at least 10 points (`emergentTrigger`), the theme has at least 10 comments now, and both collective-periods have at least 10 comments. The previous *theme* count may be small (that is what emerging means). This sets `tema.emergent` and opens an `emergent` alarm in `senyal` for the latest period: severity `warning`, audience `hr`, domain of the theme, wording from counts only. Clear level: the rise falls below 5 points. Hysteresis, a 7-day cooldown and "a human-owned alarm is never touched" work as in section 7. An open alarm resolves when its theme drops below 10 comments, and is hidden (`suprimit`) when the collective falls below 10 comments. A seeded placeholder `emergent` row for the same collective and theme is adopted (text and numbers replaced), not duplicated.
+
+**Safety and harassment (section 7).** Sensitive comments are counted in aggregate only: a fixed summary text, no `comentari_tema` links (so HR drill-downs cannot show them), no alarm, no LLM summary.
+
+**Optional LLM** (`packages/ai/src/comments.ts`): `classifyCommentsLlm` assigns theme keys in batches of 40 (local ids, no response or account ids) and `summariseThemeLlm` writes the summary. Both go through `chatJson` and return null without a key or on a bad answer; the engine then keeps the lexicon result for that batch and the template for that summary. The LLM is only used in jobs, never in a dashboard request.
+
+### Accuracy
+
+`pnpm --filter @damm/engine run comments:eval` (needs the seeded `data/app.db`) compares the assignments with the hidden label `resposta_seed.tema_real` of the 500 synthetic comments:
+
+| Measure | Value |
+|---|---|
+| Top-1 accuracy (best theme equals the true theme) | **91.2 %** |
+| Recall (true theme is among the assigned themes) | **97.4 %** |
+| Precision of all assigned themes (extra themes of a multi-theme comment count as errors) | 84.8 % |
+| Coverage (at least one theme) | 100 % |
+
+The weakest themes are conciliation, tiredness and the shift theme (extra assignments next to neighbouring themes, and comments that mention shifts in another context). The first lexicon version scored 72.6 % top-1; one review round of its misses on this data brought it to 91.2 %. **Caveat for the pitch:** the seed comments come from a template bank with a limited set of phrasings and the lexicon was tuned on them, so this figure measures coverage of *these* phrasings, not of free human text. Expect lower accuracy on real comments; the LLM path (`classify`) exists for that and is not part of the figure.
+
+### Limits of the analysis (for the methodology page)
+
+- **Lexicon coverage.** Unknown words, slang and rare phrasings are missed; a comment with no match gets no theme (it still counts in the denominator of the shares). The lexicon covers Catalan, Spanish and English; other languages and code-switching only match the words they share.
+- **Irony, negation and tone.** The classifier finds *what* a comment is about, not whether it is positive or negative: "the schedule is great" and "the schedule is awful" land in the same theme. Irony and sarcasm are not detected.
+- **Several themes, one comment.** A comment can carry up to three themes; counts and shares are per theme and do not add up to 100 %. Neighbouring themes (communication vs shift system, workload vs tiredness) overlap.
+- **Small groups.** Themes with fewer than 10 comments, and collectives with fewer than 10 comments, are hidden, so signals below the threshold are not shown; this is the price of anonymity. Shares are shares of *commenters*, who are not a random sample (people write more when unhappy) and are not weighted to the population.
+- **Volume is not importance.** A frequent theme is not necessarily the most relevant one; the emergent alarm looks at change, not size.
+- **Correlation, not cause.** A rise in a theme is not evidence of what caused it.
+- **Summaries are automatic.** Template summaries describe counts only. LLM summaries are checked against copying but can still be wrong or generic. AI proposes, a human decides.
+- **Redaction.** Names and contact details are redacted before storage by a pattern scrubber, which can miss unusual identifiers.

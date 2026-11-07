@@ -19,6 +19,22 @@ What changed and why.
 
 ---
 
+## C8 · 2026-11-07 · Natan · Comment analysis: themes, summaries, emergent alarm
+
+Design: [engine.md](engine.md) section 12. `runCommentAnalysis` fills `tema` and `comentari_tema` from the redacted comments (no LLM key needed) and opens `emergent` alarms in `senyal` (`warning`, audience `hr`). It replaces the seeded `tema` rows.
+
+- **`tema`:** new columns `collectiu_id` (NULL = company-wide), `clau` (stable theme key), `share` (0..1, NULL when suppressed) and `font` (`seed` | `rules` | `llm`). Rows are now per theme x period x collective, so a theme appears once per collective. Existing databases get the columns from `ensureThemeColumns` (called by the analysis); fresh ones from `schema.sql`.
+- **`comentari_tema`:** written only for shown (`suprimit = 0`), non-sensitive, per-collective rows. A comment can have up to three themes.
+- **`senyal`:** `emergent` rows have `domini_id` set and a description starting with the theme label. A seeded placeholder for the same collective and theme is adopted, not duplicated.
+- **Entry points:** `runCommentAnalysisSync` / `runCommentAnalysis` from `@damm/engine/job`; script `pnpm --filter @damm/engine run comments`; `scripts/job.ts` and the demo build call it. `runEngineJob` is unchanged.
+
+Action items:
+- [ ] Jan: show `tema.resum` and `emergent` on the HR results and signals pages, filtered by collective (`tema.collectiu_id`; the company row, `collectiu_id IS NULL`, for "all"), and show only "not enough data" for `suprimit = 1`. `listThemes` in `hr-repository.ts` currently lists every row without the collective.
+- [ ] Jan: stop relying on the seeded `tema` rows (`init.ts`, `dashboard-fixtures.ts`): call `runCommentAnalysisSync(db, { now })` after `runEngineJob` in `POST /api/jobs/run` and after seeding, and let the `emergent` alarm come from there instead of the hand-written `senyal` row.
+- [ ] Jan (optional): a "limits of the analysis" note on the themes view, from the list in engine.md section 12.
+
+---
+
 ## C6 · 2026-11-07 · Natan · Demo database, question bank, simulator
 
 No schema or API change.
