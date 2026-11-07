@@ -13,10 +13,15 @@ const H = 300;
 const PAD = { top: 14, bottom: 30, left: 34 };
 
 type Pt = { x: number; y: number; v: number; n: number | null; precisio: string | null; pi: number; lo: number | null; hi: number | null };
-const bandOf = (v: number, sd: number | null) => (sd === null ? { lo: null, hi: null } : { lo: Math.max(1, v - sd), hi: Math.min(5, v + sd) });
+export type TrendScale = "1-5" | "0-10";
+// Values arrive on 1-5 (agregat.mitjana, SD of 1-5 answers). On the 0-10 scale (same as the signal headline, score = (mean - 1) x 2.5) both are rescaled.
+const scaleOf = (scale: TrendScale) => (scale === "0-10" ? { min: 0, max: 10, k: 2.5 } : { min: 1, max: 5, k: 1 });
 
 // `highlight`: domain names to emphasise (coloured, thicker); all others muted. Without it, domains with a clear change are coloured.
-export function TrendChart({ periodes, rows, highlight }: { periodes: string[]; rows: TrendRow[]; highlight?: string[] }) {
+export function TrendChart({ periodes, rows, highlight, scale = "1-5" }: { periodes: string[]; rows: TrendRow[]; highlight?: string[]; scale?: TrendScale }) {
+  const sc = scaleOf(scale);
+  const tv = (v: number) => scale === "0-10" ? (v - 1) * 2.5 : v;
+  const bandOf = (v: number, sd: number | null) => (sd === null ? { lo: null, hi: null } : { lo: Math.max(sc.min, tv(v) - sd * sc.k), hi: Math.min(sc.max, tv(v) + sd * sc.k) });
   const wrapRef = useRef<HTMLDivElement>(null);
   const [w, setW] = useState(640);
   const [active, setActive] = useState<{ ri: number; pi: number } | null>(null);
@@ -30,7 +35,7 @@ export function TrendChart({ periodes, rows, highlight }: { periodes: string[]; 
     return () => ro.disconnect();
   }, []);
 
-  const values = rows.flatMap((r) => r.cells.map((c) => (c.suprimit ? null : c.mitjana))).filter((v): v is number => v !== null);
+  const values = rows.flatMap((r) => r.cells.map((c) => (c.suprimit || c.mitjana === null ? null : tv(c.mitjana)))).filter((v): v is number => v !== null);
   if (values.length === 0) return null;
   // The axis must contain every band that can be shown (stable: it does not jump on hover).
   const extents = rows.flatMap((r) =>
@@ -44,9 +49,11 @@ export function TrendChart({ periodes, rows, highlight }: { periodes: string[]; 
   let lo = Math.floor(Math.min(...values) * 2) / 2;
   let hi = Math.ceil(Math.max(...values) * 2) / 2;
   if (hi - lo < 1) hi = lo + 1;
-  if (hi > 5) { hi = 5; lo = Math.min(lo, 4); }
+  if (hi > sc.max) { hi = sc.max; lo = Math.min(lo, sc.max - 1); }
+  if (lo < sc.min) { lo = sc.min; hi = Math.max(hi, sc.min + 1); }
   const ticks: number[] = [];
-  for (let t = lo; t <= hi + 1e-9; t += 0.5) ticks.push(t);
+  const step = hi - lo > 4 ? 1 : 0.5;
+  for (let t = lo; t <= hi + 1e-9; t += step) ticks.push(t);
 
   const narrow = w < 520;
   const right = narrow ? 112 : 190;
@@ -58,7 +65,7 @@ export function TrendChart({ periodes, rows, highlight }: { periodes: string[]; 
 
   const series = rows.map((r, ri) => {
     const pts: (Pt | null)[] = r.cells.map((c, pi) =>
-      c.suprimit || c.mitjana === null ? null : { x: xOf(pi), y: yOf(c.mitjana), v: c.mitjana, n: c.n, precisio: c.precisio, pi, ...bandOf(c.mitjana, c.sd) },
+      c.suprimit || c.mitjana === null ? null : { x: xOf(pi), y: yOf(tv(c.mitjana)), v: tv(c.mitjana), n: c.n, precisio: c.precisio, pi, ...bandOf(c.mitjana, c.sd) },
     );
     return { r, ri, pts, changed: highlight ? highlight.includes(r.domini) : r.canvi.label !== "sense canvi clar" };
   });
@@ -102,7 +109,7 @@ export function TrendChart({ periodes, rows, highlight }: { periodes: string[]; 
   return (
     <div className="px-5 py-4">
       <div ref={wrapRef} className="relative w-full min-w-0 overflow-hidden" onMouseLeave={() => setActive(null)}>
-        <svg width={w} height={H} role="img" aria-label="Mitjana per domini i període. Els dominis amb canvi clar van en color, la resta en gris." className="block max-w-full">
+        <svg width={w} height={H} role="img" aria-label={`${scale === "0-10" ? "Puntuació" : "Mitjana"} per domini i període. Els dominis amb canvi clar van en color, la resta en gris.`} className="block max-w-full">
           {ticks.map((t) => (
             <g key={t}>
               <line x1={plotL} x2={plotR} y1={yOf(t)} y2={yOf(t)} stroke="var(--border)" strokeWidth="1" />
@@ -163,7 +170,7 @@ export function TrendChart({ periodes, rows, highlight }: { periodes: string[]; 
                   r="14"
                   fill="transparent"
                   tabIndex={0}
-                  aria-label={`${s.r.domini}, ${periodes[pi]}: ${f1(p.v)}, n=${p.n}, ${p.precisio}${s.r.cells[pi].sd !== null ? `, dispersió ±${f1(s.r.cells[pi].sd!)}` : ""}${s.r.cells[pi].consensus !== null ? `, consens ${f0(s.r.cells[pi].consensus!)}%` : ""}`}
+                  aria-label={`${s.r.domini}, ${periodes[pi]}: ${f1(p.v)}, n=${p.n}, ${p.precisio}${s.r.cells[pi].sd !== null ? `, dispersió ±${f1(s.r.cells[pi].sd! * sc.k)}` : ""}${s.r.cells[pi].consensus !== null ? `, consens ${f0(s.r.cells[pi].consensus!)}%` : ""}`}
                   onMouseEnter={() => setActive({ ri: s.ri, pi })}
                   onFocus={() => setActive({ ri: s.ri, pi })}
                   onBlur={() => setActive(null)}
@@ -182,8 +189,8 @@ export function TrendChart({ periodes, rows, highlight }: { periodes: string[]; 
           >
             <div className="font-semibold">{act.r.domini}</div>
             <div className="num text-subtle">{periodes[active.pi]}</div>
-            <div className="num mt-1">Mitjana {f1(actPt.v)} / 5</div>
-            {actCell.sd !== null && <div className="num">Dispersió ±{f1(actCell.sd)}</div>}
+            <div className="num mt-1">{scale === "0-10" ? "Puntuació" : "Mitjana"} {f1(actPt.v)} / {sc.max}</div>
+            {actCell.sd !== null && <div className="num">Dispersió ±{f1(actCell.sd * sc.k)}</div>}
             {actCell.consensus !== null && <div className="num">Consens {f0(actCell.consensus)}%</div>}
             <div className="num text-subtle">n = {actCell.n} · {actCell.precisio}</div>
           </div>
@@ -205,7 +212,7 @@ export function TrendChart({ periodes, rows, highlight }: { periodes: string[]; 
         {highlight
           ? "En color: domini relacionat amb el senyal. En gris: la resta de dominis."
           : hasChange ? "En color: dominis amb canvi clar entre períodes. En gris: sense canvi clar." : "Cap domini té un canvi clar: tots en gris."}{" "}
-        Els períodes suprimits (menys de 10 respondents) no es dibuixen. Banda: ±1 desviació típica de les respostes (1-5). Consens: 0-100, més alt = respostes més semblants.{!highlight && " Passa el cursor per un punt per veure'n la banda."}
+        Els períodes suprimits (menys de 10 respondents) no es dibuixen. Banda: ±1 desviació típica de les respostes ({scale}). Consens: 0-100, més alt = respostes més semblants.{!highlight && " Passa el cursor per un punt per veure'n la banda."}
       </p>
     </div>
   );

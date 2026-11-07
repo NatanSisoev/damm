@@ -3,7 +3,7 @@
 // Every figure re-applies the minimum group size on read.
 import { MIN_GROUP_SIZE } from "@damm/shared";
 import { getDb } from "./connection";
-import { getTrends, type TrendCell } from "./hr-repository";
+import { getShiftTrend, getTrends, type TrendCell } from "./hr-repository";
 import type { Change } from "./hr-rigour";
 
 // Snippets: stored redacted text only, no metadata returned next to them, never from themes under the minimum size.
@@ -16,6 +16,7 @@ export interface SignalHeader {
   descripcio: string;
   collectiu: string | null;
   collectiuId: number | null;
+  tornId: number | null;
   domini: string | null;
   torn: string | null;
   periode: string;
@@ -69,6 +70,7 @@ export interface SignalDetail {
   signal: SignalHeader;
   periodes: string[];
   trend: SignalTrendRow[];
+  trendScope: string; // segment the trend plots, e.g. "Fàbriques · mati" (same as the headline's)
   themes: SignalTheme[];
   hiddenThemes: number; // themes related to the collective but under the minimum group size
   recommendations: SignalRecommendation[];
@@ -83,7 +85,7 @@ export function getSignalDetail(id: number): SignalDetail | null {
   const db = getDb();
   const row = db
     .prepare(
-      `SELECT s.id, s.tipus, s.descripcio, s.collectiu_id AS collectiuId, c.nom AS collectiu,
+      `SELECT s.id, s.tipus, s.descripcio, s.collectiu_id AS collectiuId, s.torn_id AS tornId, c.nom AS collectiu,
               d.nom AS domini, t.nom AS torn,
               s.periode, s.n, s.confianca, s.suprimit, s.severity, s.status
        FROM senyal s
@@ -99,7 +101,10 @@ export function getSignalDetail(id: number): SignalDetail | null {
   // --- Trend: the rigour trend (complementary suppression, precision, change rule) for the signal's scope.
   const all = getTrends();
   const periodes = all.periodes;
-  const scope = all.series.find((x) => x.scope === (signal.collectiu ?? "Tots"));
+  // The signal's own segment: the shift inside its collective when it has one, else the collective (or everyone).
+  const shiftTrend = signal.collectiuId !== null && signal.tornId !== null ? getShiftTrend(signal.collectiuId, signal.tornId) : null;
+  const scope = shiftTrend ?? all.series.find((x) => x.scope === (signal.collectiu ?? "Tots"));
+  const trendScope = [signal.collectiu ?? "Tots", shiftTrend ? signal.torn : null].filter(Boolean).join(" · ");
   const desc = norm(signal.descripcio);
   const trend: SignalTrendRow[] = (scope?.rows ?? [])
     .map((r) => ({
@@ -189,5 +194,5 @@ export function getSignalDetail(id: number): SignalDetail | null {
     },
   ];
 
-  return { signal, periodes, trend, themes, hiddenThemes, recommendations, followUps, timeline };
+  return { signal, periodes, trend, trendScope, themes, hiddenThemes, recommendations, followUps, timeline };
 }

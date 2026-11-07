@@ -657,6 +657,60 @@ export function getTrends(): Trends {
   return { periodes, series };
 }
 
+/** Population SD of 1-5 scale answers per `periode|torn id|domini id` for one collective (analytics view, no account ids). */
+function shiftSpread(collectiuId: number): Map<string, number> {
+  const rows = getDb()
+    .prepare(
+      `SELECT v.periode AS per, v.torn_id AS t, v.domini_id AS d, AVG(v.valor_num) AS m, AVG(v.valor_num * v.valor_num) AS m2
+       FROM v_resposta_analitica v JOIN pregunta p ON p.id = v.pregunta_id
+       WHERE v.valor_num IS NOT NULL AND p.tipus = 'scale5' AND v.collectiu_id = ? AND v.torn_id IS NOT NULL
+       GROUP BY v.periode, v.torn_id, v.domini_id`,
+    )
+    .all(collectiuId) as { per: string; t: number; d: number; m: number; m2: number }[];
+  return new Map(rows.map((r) => [`${r.per}|${r.t}|${r.d}`, Math.sqrt(Math.max(0, r.m2 - r.m * r.m))]));
+}
+
+/**
+ * Trend of one shift inside one collective (same rigour as getTrends: n < 10 hides, complementary suppression across
+ * the collective's shifts). Null when the shift has no aggregate rows.
+ */
+export function getShiftTrend(collectiuId: number, tornId: number): { periodes: string[]; rows: TrendRow[] } | null {
+  const db = getDb();
+  const periodes = (db.prepare("SELECT DISTINCT periode FROM agregat ORDER BY periode").all() as { periode: string }[]).map((r) => r.periode);
+  const doms = db.prepare("SELECT id, nom FROM domini ORDER BY id").all() as { id: number; nom: string }[];
+  const rows = db
+    .prepare(
+      `SELECT periode, torn_id AS t, domini_id AS d, n, mitjana, consensus, suprimit FROM agregat
+       WHERE collectiu_id = ? AND torn_id IS NOT NULL AND domini_id IS NOT NULL`,
+    )
+    .all(collectiuId) as { periode: string; t: number; d: number; n: number; mitjana: number | null; consensus: number | null; suprimit: number }[];
+  if (!rows.some((r) => r.t === tornId)) return null;
+  const shifts = [...new Set(rows.map((r) => r.t))];
+  const find = (per: string, t: number, d: number) => rows.find((x) => x.periode === per && x.t === t && x.d === d);
+  const spread = shiftSpread(collectiuId);
+  const trendRows = doms.map((d): TrendRow => {
+    const cells = periodes.map((per): TrendCell => {
+      const r = find(per, tornId, d.id);
+      if (!r) return { mitjana: null, n: null, precisio: null, suprimit: false, motiu: null, consensus: null, sd: null };
+      const present = shifts.filter((t) => find(per, t, d.id));
+      const res = complementarySuppression(present.map((t) => {
+        const x = find(per, t, d.id)!;
+        return { n: x.n, primary: !!x.suprimit };
+      }));
+      const motiu = res[present.indexOf(tornId)] ?? null;
+      if (motiu) return { mitjana: null, n: null, precisio: null, suprimit: true, motiu, consensus: null, sd: null };
+      const sd = spread.get(`${per}|${tornId}|${d.id}`);
+      return {
+        mitjana: r.mitjana, n: r.n, precisio: precisionBand(r.n), suprimit: false, motiu: null,
+        consensus: r.consensus, sd: sd === undefined || r.n < MIN_GROUP_SIZE ? null : +sd.toFixed(2),
+      };
+    });
+    const last = cells.length - 1;
+    return { domini: d.nom, cells, canvi: classifyChange(cells[last - 1], cells[last]) };
+  });
+  return { periodes, rows: trendRows };
+}
+
 export interface ThemeRow {
   id: number;
   etiqueta: string | null; // null when suppressed

@@ -187,8 +187,8 @@ Action items:
 - `consensus`: `agregat.consensus` (0-100, engine formula, higher = answers more alike);
 - `sd`: population standard deviation of the 1-5 (`scale5`) answers, computed from `v_resposta_analitica` per period, collective and domain (all collectives for "Tots").
 
-Both are `null` whenever the cell is suppressed (primary or complementary) or n is under the minimum group size. The HR trend chart draws a mean ± 1 SD band and shows both in the tooltip and tables. No schema change, `packages/engine` untouched.
+Both are `null` whenever the cell is suppressed (primary or complementary) or n is under the minimum group size. The HR trend chart draws a mean ± 1 SD band and shows both in the tooltip and tables. The signal detail page now plots the signal's own segment: `SignalHeader` gains `tornId`, `SignalDetail` gains `trendScope` (for example "Fàbriques · matí"), and `getShiftTrend(collectiuId, tornId)` in `hr-repository.ts` builds the per-shift series (same suppression, complementary suppression across the collective's shifts, SD from the analytics view filtered on shift). `TrendChart` takes `scale` (`"1-5"` default, `"0-10"` on the signal page). No schema change, `packages/engine` untouched.
 
 Action items:
-- [x] Jan: trend chart, signal table and results table show SD and consensus. (done 2026-11-07)
+- [x] Jan: trend chart, signal table and results table show SD and consensus; signal page plots its own segment on 0-10. (done 2026-11-07)
 - [ ] Natan: aware: `TrendCell` gains `consensus` and `sd`.
