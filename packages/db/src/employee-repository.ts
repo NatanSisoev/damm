@@ -181,6 +181,81 @@ export async function recoverAccount(input: {
   return { ok: true, compteId: row.id, recoveryCode };
 }
 
+export type ChangePasswordError = "credencials" | "password_curta" | "massa_intents";
+export type AccountActionError = "credencials" | "massa_intents";
+
+async function checkCurrentPassword(
+  compteId: string,
+  password: string,
+): Promise<{ ok: true; row: CompteRow & { username: string } } | { ok: false; error: AccountActionError }> {
+  const row = getDb()
+    .prepare("SELECT id, username, password_hash, salt, recovery_hash FROM compte WHERE id = ?")
+    .get(compteId) as (CompteRow & { username: string }) | undefined;
+  if (!row) return { ok: false, error: "credencials" };
+  const key = row.username;
+  if (blocked(key)) return { ok: false, error: "massa_intents" };
+  if (!(await matches(password, row.salt, row.password_hash))) {
+    fail(key);
+    return { ok: false, error: "credencials" };
+  }
+  attempts.delete(key);
+  return { ok: true, row };
+}
+
+// Changes the password after checking the current one. The salt is kept (it is shared with the
+// recovery hash, so the recovery code stays valid); only the password hash changes.
+export async function changePassword(input: {
+  compteId: string;
+  currentPassword: string;
+  newPassword: string;
+}): Promise<{ ok: true } | { ok: false; error: ChangePasswordError }> {
+  if (input.newPassword.length < MIN_PASSWORD_LENGTH) return { ok: false, error: "password_curta" };
+  const check = await checkCurrentPassword(input.compteId, input.currentPassword);
+  if (!check.ok) return check;
+  const passwordHash = (await hashSecret(input.newPassword, check.row.salt)).toString("hex");
+  getDb().prepare("UPDATE compte SET password_hash = ? WHERE id = ?").run(passwordHash, check.row.id);
+  return { ok: true };
+}
+
+// Replaces the recovery code with a new one (the old one stops working). Needs the password.
+// Returns the new code once; only its hash is stored.
+export async function regenerateRecoveryCode(input: {
+  compteId: string;
+  currentPassword: string;
+}): Promise<{ ok: true; recoveryCode: string } | { ok: false; error: AccountActionError }> {
+  const check = await checkCurrentPassword(input.compteId, input.currentPassword);
+  if (!check.ok) return check;
+  const recoveryCode = newRecoveryCode();
+  const recoveryHash = (await hashSecret(normalizeRecoveryCode(recoveryCode), check.row.salt)).toString("hex");
+  getDb().prepare("UPDATE compte SET recovery_hash = ? WHERE id = ?").run(recoveryHash, check.row.id);
+  return { ok: true, recoveryCode };
+}
+
+// Deletes the account (and its push subscription, assignments and per-person state by cascade).
+// Answers already given stay as anonymous data: `resposta.compte_id` has no cascade and the
+// analytics view joins `compte`, so they are re-pointed to an anonymous tombstone row with the
+// same collective / centre / shift / manager flag. The tombstone has no usable username
+// or password and is excluded from the admin account counts (ids start with 'deleted:').
+export async function deleteAccount(input: {
+  compteId: string;
+  currentPassword: string;
+}): Promise<{ ok: true } | { ok: false; error: AccountActionError }> {
+  const check = await checkCurrentPassword(input.compteId, input.currentPassword);
+  if (!check.ok) return check;
+  const db = getDb();
+  const tombId = `deleted:${randomUUID()}`;
+  db.transaction(() => {
+    db.prepare(
+      `INSERT INTO compte (id, collectiu_id, centre_tipus_id, torn_id, es_manager, username, password_hash, salt, recovery_hash)
+       SELECT ?, collectiu_id, centre_tipus_id, torn_id, es_manager, ?, '', '', NULL FROM compte WHERE id = ?`,
+    ).run(tombId, `~${tombId}`, input.compteId);
+    db.prepare("UPDATE resposta SET compte_id = ? WHERE compte_id = ?").run(tombId, input.compteId);
+    db.prepare("DELETE FROM push_subscripcio WHERE compte_id = ?").run(input.compteId);
+    db.prepare("DELETE FROM compte WHERE id = ?").run(input.compteId);
+  })();
+  return { ok: true };
+}
+
 export function compteExists(compteId: string): boolean {
   return getDb().prepare("SELECT 1 FROM compte WHERE id = ?").get(compteId) !== undefined;
 }
