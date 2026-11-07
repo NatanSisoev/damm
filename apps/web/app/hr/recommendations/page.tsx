@@ -16,12 +16,12 @@ export default function RecommendationsPage() {
     <>
       <PageHeader
         title="Recomanacions"
-        subtitle="Senyals detectats a l'anàlisi i accions proposades per la IA. Una persona decideix quines tirar endavant."
+        subtitle="Alarmes detectades per l'anàlisi i accions proposades per la IA. Una persona decideix quines tirar endavant."
       />
       <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
-        <Card title="Senyals" meta={<span className="num">{signals.length}</span>}>
+        <Card title="Alarmes" meta={<span className="num">{signals.length}</span>}>
           {signals.length === 0 ? (
-            <Empty>Encara no hi ha senyals.</Empty>
+            <Empty>Encara no hi ha alarmes. <Link href="/hr/results" className="underline">Mira els resultats</Link> o torna més tard.</Empty>
           ) : (
             <ul className="space-y-3">
               {signals.map((s) => (
@@ -39,7 +39,7 @@ export default function RecommendationsPage() {
         </Card>
         <Card title="Recomanacions" meta={<span className="num">{recs.length}</span>}>
           {recs.length === 0 ? (
-            <Empty>Encara no hi ha recomanacions.</Empty>
+            <Empty>Encara no hi ha recomanacions. Obre una alarma i demana-ne una, o <Link href="/hr/needs" className="underline">crea una necessitat</Link>.</Empty>
           ) : (
             <ul className="space-y-3">
               {recs.map((r) => (

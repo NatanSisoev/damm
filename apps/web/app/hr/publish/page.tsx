@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { MIN_GROUP_SIZE } from "@damm/shared";
 import { listJoinCodes, listNeeds } from "@damm/db/hr";
+import { ConfirmButton } from "../confirm-button";
 import { closeNeedAction } from "../actions";
 import { Card, Empty, PageHeader } from "../ui";
 import { needStatus } from "../labels";
@@ -28,7 +29,7 @@ export default async function PublishPage() {
       ) : (
         <div className="grid gap-4 xl:grid-cols-2">
           {items.map((c) => (
-            <Card key={c.codi} title={c.collectiu} meta={
+            <Card key={c.codi} className="scroll-mt-20" id={c.codi} title={c.collectiu} meta={
               c.showsCount ? (
                 <span className="num" title={c.comptesSuppressed ? `Menys de ${MIN_GROUP_SIZE} comptes` : undefined}>
                   {c.comptesSuppressed ? `<${MIN_GROUP_SIZE}` : c.comptes} comptes al col·lectiu
@@ -77,7 +78,7 @@ export default async function PublishPage() {
                 <span className={`badge ${needStatus(n.estat).cls}`}>{needStatus(n.estat).label}</span>
                 <span className="min-w-0 flex-1 text-[13px]">{n.textNl}{n.collectiu ? ` · ${n.collectiu}` : ""}</span>
                 {n.estat !== "tancada" && (
-                  <form action={closeNeedAction}><input type="hidden" name="id" value={n.id} /><button className="btn">Tanca la necessitat</button></form>
+                  <form action={closeNeedAction}><input type="hidden" name="id" value={n.id} /><ConfirmButton className="btn" message="Tanquem la necessitat? Deixa de rebre respostes i no es pot tornar a obrir.">Tanca la necessitat</ConfirmButton></form>
                 )}
               </li>
             ))}

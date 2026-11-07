@@ -203,7 +203,7 @@ export function TrendChart({ periodes, rows, highlight, scale = "1-5" }: { perio
             <span aria-hidden className="inline-block h-0.5 w-4" style={{ background: s.changed ? `var(--dom-${(s.ri % 6) + 1})` : "var(--dom-muted)" }} />
             <span className={s.changed ? "font-semibold" : "text-subtle"}>
               {s.r.domini}
-              {s.changed && s.r.canvi.delta !== null && s.r.canvi.label !== "sense canvi clar" && <span className="num"> · {s.r.canvi.label === "puja" ? "↑" : "↓"} {s.r.canvi.delta! >= 0 ? "+" : "−"}{f1(Math.abs(s.r.canvi.delta!))}</span>}
+              {s.changed && s.r.canvi.delta !== null && s.r.canvi.label !== "sense canvi clar" && <span className="num"> · {s.r.canvi.label === "puja" ? "↑" : "↓"} {s.r.canvi.delta! >= 0 ? "+" : "−"}{Math.abs(s.r.canvi.delta!).toLocaleString("ca-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>}
             </span>
           </li>
         ))}
@@ -212,7 +212,7 @@ export function TrendChart({ periodes, rows, highlight, scale = "1-5" }: { perio
         {highlight
           ? "En color: domini relacionat amb el senyal. En gris: la resta de dominis."
           : hasChange ? "En color: dominis amb canvi clar entre períodes. En gris: sense canvi clar." : "Cap domini té un canvi clar: tots en gris."}{" "}
-        Els períodes suprimits (menys de 10 respondents) no es dibuixen. Banda: ±1 desviació típica de les respostes ({scale}). Consens: 0-100, més alt = respostes més semblants.{!highlight && " Passa el cursor per un punt per veure'n la banda."}
+        {scale === "0-10" ? "Escala 0-10 (la mitjana d'1 a 5 convertida)." : "Escala 1-5 (mitjana de les respostes)."} Els períodes suprimits (menys de 10 respondents) no es dibuixen. Banda: ±1 desviació típica de les respostes ({scale}). Consens: 0-100, més alt = respostes més semblants.{!highlight && " Passa el cursor per un punt per veure'n la banda."}
       </p>
     </div>
   );

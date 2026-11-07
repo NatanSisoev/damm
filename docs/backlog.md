@@ -31,6 +31,9 @@ Status: `running`, `ready` (can start now), `blocked` (waiting on a dependency),
 | 19 | Question-quality checker on drafts | `jan/draft-check` | ready | light |
 | 20 | "Has dit, hem fet": results back to employees | `jan/closing-loop` | done | light |
 | 21 | Decision audit log and AI provenance | `jan/audit-log` | blocked on schema (Natan) | light |
+| 22 | HR UI deep audit and polish (`docs/hr-ui-audit.md`): P0/P1/P2 fixes, `/hr/needs` redesign (R-FLOW-4a), trend and signal clarity (R-FLOW-6d, 7e, 7f) | `jan/hr-ui-polish` | done (4bc0db3, c1c7422; deferred items listed in the audit) | light |
+| 23 | Visual identity spec "Paper" (`docs/visual-identity.md`) | `jan/visual-identity` | done (merged 10bf3e4) | light |
+| 24 | Apply the Paper visual identity to employee, HR and manager | `jan/visual-identity-apply` | blocked on Jan's go | heavy |
 
 Order for the next free slots: 18, 19, then 4. Pitch deck and demo work (14, 15) go last and are not raised before 8 Nov 9:00.
 
@@ -159,3 +162,6 @@ New read functions for 16 to 20 go in new files under `packages/db/src/` (for ex
 | Complementary suppression in the analysis job too, so stored aggregates are already safe | defence in depth for 17 | 17 |
 | `decisio` table and `font` provenance fields | audit trail of human decisions over AI proposals | 21 |
 | Signals carry a minimum effect size and n in their criteria | signals are not noise | 16, 18 |
+| Catalan seed text in `packages/engine/demo/build-demo.ts` and `comments.ts` (NEEDS-DECISION HR-X-8, HR-NEED-1) | demo copy matches `docs/copy-guide.md` | 22, demo |
+| Wording of 'punts' for scores (NEEDS-DECISION HR-X-9) | one consistent unit on the 1-5 scale | 22 |
+| All-domain `agregat` rows in `job.ts` (NEEDS-DECISION HR-ENG-1; with C11 company-level rows) | representativeness and trends without the HR fallback | 22, 17 |

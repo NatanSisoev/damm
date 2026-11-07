@@ -22,6 +22,7 @@ import { RepTable, TrendTable } from "../../hr/results/tables";
 import { Card, Empty, PageHeader, SuppressedBadge } from "../../hr/ui";
 import { SignalBadges, SignalText } from "../../hr/signal-labels";
 import { compareSignals } from "@/lib/signal-text";
+import { num1 } from "@/lib/format";
 import { AggregateNote } from "../note";
 
 export default async function ManagerCollectivePage({ params }: { params: Promise<{ collectiu: string }> }) {
@@ -99,17 +100,17 @@ export default async function ManagerCollectivePage({ params }: { params: Promis
       </div>
 
       <div className="mt-6 space-y-6">
-        <Card title="Què destaca el motor" meta={<span className="num">{insights.length}</span>}>
-          <InsightCards insights={insights} empty="Encara no hi ha prou respostes per destacar res (cal n ≥ 10)." />
+        <Card title="Què destaca l'anàlisi" meta={<span className="num">{insights.length}</span>}>
+          <InsightCards insights={insights} empty={`Encara no hi ha prou respostes per destacar res (cal n ≥ ${MIN_GROUP_SIZE}).`} />
         </Card>
 
-        <Card title="Tendència per domini" meta="Mitjana 1–5 per període" flush={!!series}>
+        <Card title="Tendència per domini" meta="Mitjana en escala 1–5, per període" flush={!!series}>
           {series ? (
             <>
               <p className="border-b border-line px-5 py-3 text-xs text-subtle">
                 Cada mitjana mostra la seva n i una precisió: <span className="font-medium">indicativa</span> (n &lt; {PRECISION_MODERADA_MIN_N}),{" "}
                 <span className="font-medium">moderada</span> ({PRECISION_MODERADA_MIN_N}–{PRECISION_SOLIDA_MIN_N - 1}) o{" "}
-                <span className="font-medium">sòlida</span> (n ≥ {PRECISION_SOLIDA_MIN_N}). Un canvi només és «puja» o «baixa» si |Δ| ≥ {CHANGE_MIN_DELTA} i els dos períodes tenen n ≥ {CHANGE_MIN_N}.
+                <span className="font-medium">sòlida</span> (n ≥ {PRECISION_SOLIDA_MIN_N}). Un canvi només és «puja» o «baixa» si |Δ| ≥ {num1(CHANGE_MIN_DELTA)} i els dos períodes tenen n ≥ {CHANGE_MIN_N}.
               </p>
               <TrendTable periodes={trends.periodes} rows={series.rows} />
             </>
@@ -141,7 +142,7 @@ export default async function ManagerCollectivePage({ params }: { params: Promis
         <div className="grid gap-6 lg:grid-cols-2">
           <Card title="Temes dels comentaris" meta="Tota l'empresa, no només aquest col·lectiu">
             {themes.length === 0 ? (
-              <Empty>Encara no hi ha temes.</Empty>
+              <Empty>Encara no hi ha temes: cal que {MIN_GROUP_SIZE} comentaris o més parlin del mateix a tota l&apos;empresa. S&apos;actualitzen quan s&apos;executa l&apos;anàlisi.</Empty>
             ) : (
               <ul className="-my-1 divide-y divide-line">
                 {themes.map((t) => (
@@ -159,7 +160,7 @@ export default async function ManagerCollectivePage({ params }: { params: Promis
             <p className="mt-3 text-xs text-subtle">Els temes s&apos;extreuen de tots els comentaris. Els que tenen menys de {MIN_GROUP_SIZE} comentaris no es mostren.</p>
           </Card>
 
-          <Card title="Senyals del col·lectiu" meta={<span className="num">{signals.length}</span>}>
+          <Card title="Senyals del col·lectiu" meta={<span className="num">{cards.length}</span>}>
             {signals.length === 0 && alarms.length === 0 ? (
               <Empty>Cap senyal per a aquest col·lectiu.</Empty>
             ) : (

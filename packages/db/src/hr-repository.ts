@@ -397,8 +397,14 @@ export interface NeedCard {
   /** Card state shown on the Necessitats page, derived from necessitat.estat and the question states. */
   state: NeedState;
   nDraft: number;
-  approved: { id: number; domini: string; tipus: string; text: string }[];
-  publications: { id: number; codi: string; url: string; collectiu: string }[];
+  approved: { id: number; domini: string; tipus: string; text: string; /** Answers so far; null when under the minimum group size. */ answers: number | null }[];
+  publications: { id: number; codi: string; url: string; collectiu: string; creat: string }[];
+  /** Date of the first publication (join code) row; null when none was recorded. */
+  publicat: string | null;
+  /** Most answers any one question has, i.e. a lower bound of respondents. Null when under the minimum group size. */
+  responses: number | null;
+  /** Synthetic population of the target collective (whole company when the need has none). */
+  population: number;
 }
 
 /**
@@ -416,21 +422,37 @@ export function listNeedCards(): NeedCard[] {
        FROM necessitat n LEFT JOIN collectiu c ON c.id = n.collectiu_id
        ORDER BY n.id DESC`,
     )
-    .all() as (Omit<NeedCard, "state" | "approved" | "publications"> & { estat: string })[];
+    .all() as (Omit<NeedCard, "state" | "approved" | "publications" | "publicat" | "responses" | "population"> & { estat: string })[];
   const approved = db.prepare(
     `SELECT p.id, d.nom AS domini, p.tipus, p.text FROM pregunta p JOIN domini d ON d.id = p.domini_id
      WHERE p.necessitat_id = ? AND p.estat = 'aprovada' ORDER BY p.ordre, p.id`,
   );
+  const answerCount = db.prepare("SELECT COUNT(*) AS n FROM v_resposta_analitica WHERE pregunta_id = ?");
+  const popAll = (db.prepare("SELECT COUNT(*) AS n FROM empleat_sintetic").get() as { n: number }).n;
+  const popOf = db.prepare("SELECT COUNT(*) AS n FROM empleat_sintetic es JOIN collectiu c ON c.id = es.collectiu_id WHERE c.nom = ?");
   const pubs = db.prepare(
-    `SELECT pu.id, pu.codi_join AS codi, pu.qr_url AS url, c.nom AS collectiu
+    `SELECT pu.id, pu.codi_join AS codi, pu.qr_url AS url, c.nom AS collectiu, pu.creat
      FROM publicacio pu JOIN joincode j ON j.codi = pu.codi_join JOIN collectiu c ON c.id = j.collectiu_id
      WHERE pu.necessitat_id = ? ORDER BY pu.id`,
   );
   return needs.map(({ estat, ...n }) => {
-    const ap = approved.all(n.id) as NeedCard["approved"];
+    const ap = (approved.all(n.id) as Omit<NeedCard["approved"][number], "answers">[]).map((q) => {
+      const c = (answerCount.get(q.id) as { n: number }).n;
+      return { ...q, answers: c >= MIN_GROUP_SIZE ? c : null };
+    });
+    const most = Math.max(0, ...ap.map((q) => (answerCount.get(q.id) as { n: number }).n));
+    const pubList = pubs.all(n.id) as NeedCard["publications"];
     const state: NeedState =
       estat === "tancada" ? "tancada" : estat === "publicada" ? "publicada" : n.nDraft === 0 && ap.length > 0 ? "llesta" : "esborrany";
-    return { ...n, state, approved: ap, publications: pubs.all(n.id) as NeedCard["publications"] };
+    return {
+      ...n,
+      state,
+      approved: ap,
+      publications: pubList,
+      publicat: pubList[0]?.creat ?? null,
+      responses: most >= MIN_GROUP_SIZE ? most : null,
+      population: n.collectiu ? (popOf.get(n.collectiu) as { n: number }).n : popAll,
+    };
   });
 }
 
@@ -519,6 +541,28 @@ function buildRep(items: RepItem[]): RepRow[] {
   });
 }
 
+/**
+ * Respondent counts per (collective, shift) for one period.
+ * Prefers the all-domains rows (domini_id NULL). The engine writes per-domain rows only, so otherwise the largest
+ * per-domain n of the segment is used: a lower bound of the distinct respondents, never an over-count.
+ */
+function segmentCounts(db: ReturnType<typeof getDb>, periode: string): { c: number; t: number | null; n: number; suprimit: number }[] {
+  const all = db
+    .prepare(
+      `SELECT collectiu_id AS c, torn_id AS t, domini_id AS d, n FROM agregat
+       WHERE periode = ? AND collectiu_id IS NOT NULL`,
+    )
+    .all(periode) as { c: number; t: number | null; d: number | null; n: number }[];
+  const best = new Map<string, { c: number; t: number | null; n: number; whole: boolean }>();
+  for (const r of all) {
+    const k = `${r.c}|${r.t}`;
+    const cur = best.get(k);
+    const whole = r.d === null;
+    if (!cur || (whole && !cur.whole) || (whole === cur.whole && r.n > cur.n)) best.set(k, { c: r.c, t: r.t, n: r.n, whole });
+  }
+  return [...best.values()].map((b) => ({ c: b.c, t: b.t, n: b.n, suprimit: b.n < MIN_GROUP_SIZE ? 1 : 0 }));
+}
+
 /** Response share vs synthetic population share for the latest period. Shares are computed among visible segments only, so suppressed counts cannot be recovered by subtraction. */
 export function getRepresentativeness(): Representativeness {
   const db = getDb();
@@ -529,12 +573,7 @@ export function getRepresentativeness(): Representativeness {
   const pop = db
     .prepare("SELECT collectiu_id AS c, torn_id AS t, COUNT(*) AS n FROM empleat_sintetic GROUP BY collectiu_id, torn_id")
     .all() as { c: number; t: number | null; n: number }[];
-  const resp = db
-    .prepare(
-      `SELECT collectiu_id AS c, torn_id AS t, n, suprimit FROM agregat
-       WHERE periode = ? AND collectiu_id IS NOT NULL AND domini_id IS NULL`,
-    )
-    .all(p.p) as { c: number; t: number | null; n: number; suprimit: number }[];
+  const resp = segmentCounts(db, p.p);
 
   const popC = (c: number) => pop.filter((x) => x.c === c).reduce((s, x) => s + x.n, 0);
   const collectius = buildRep(
@@ -818,12 +857,7 @@ export function getHrOverview(): HrOverview {
   let coveredPopulation: number | null = null;
   let excludedCollectius = 0;
   if (p.p) {
-    const rows = db
-      .prepare(
-        `SELECT collectiu_id AS c, n, suprimit FROM agregat
-         WHERE periode = ? AND collectiu_id IS NOT NULL AND torn_id IS NULL AND domini_id IS NULL`,
-      )
-      .all(p.p) as { c: number; n: number; suprimit: number }[];
+    const rows = segmentCounts(db, p.p).filter((r) => r.t === null);
     const hide = complementarySuppression(rows.map((r) => ({ n: r.n, primary: !!r.suprimit })));
     const visible = rows.filter((_, k) => hide[k] === null);
     excludedCollectius = listCollectius().length - visible.length;

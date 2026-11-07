@@ -18,7 +18,7 @@ const TABS = [
 ] as const;
 
 const SEV_RANK: Record<string, number> = { critical: 0, warning: 1, info: 2 };
-const SEV_LABEL: Record<string, string> = { critical: "Crític", warning: "Avís", info: "Info" };
+const SEV_LABEL: Record<string, string> = { critical: "Crítica", warning: "Avís", info: "Info" };
 
 type Row = AlarmView & { segment: string; domain: string | null; drop: number; detail: string };
 
@@ -102,14 +102,14 @@ export default async function AlarmsPage({ searchParams }: { searchParams: Promi
           ) : (
             <>
               <strong>{actionable.length} {actionable.length === 1 ? "alarma requereix" : "alarmes requereixen"} acció</strong>
-              {severe > 0 && <span className="text-subtle"> · {severe} d&apos;avís o crítiques</span>}
+              {severe > 0 && severe < actionable.length && <span className="text-subtle"> · {severe} {severe === 1 ? "és d'avís o crítica" : "són d'avís o crítiques"}</span>}
             </>
           )}
         </p>
       </div>
 
       {all.length === 0 ? (
-        <Empty>Cap alarma. Prem «Recalcula ara» perquè el motor torni a mirar els agregats.</Empty>
+        <Empty>Cap alarma. Prem «Recalcula ara» perquè l&apos;anàlisi torni a mirar les dades.</Empty>
       ) : (
         <div className="space-y-6">
           {grouped.map(([segment, items]) => (
@@ -170,7 +170,7 @@ function AlarmItem({ r, spark, rec }: { r: Row; spark: number[] | null; rec?: { 
       <div className="flex flex-wrap items-start gap-x-4 gap-y-2">
         <div className="min-w-0 flex-1 basis-64">
           <div className="mb-1 flex flex-wrap items-center gap-1.5">
-            <span className={`badge ${r.severity === "info" ? "" : "badge-warn"}`}>{SEV_LABEL[r.severity]}</span>
+            <span className={`badge ${r.severity === "critical" ? "badge-crit" : r.severity === "info" ? "" : "badge-warn"}`}>{SEV_LABEL[r.severity]}</span>
             <span className="badge">{signalTypeLabel(r.type)}</span>
             {r.status !== "open" && <span className="badge">{STATUS_LABELS[r.status]}</span>}
             {r.audience === "hr_manager" && <span className="badge" title="L'alarma també arriba al responsable del col·lectiu">Visible al responsable</span>}
@@ -185,7 +185,7 @@ function AlarmItem({ r, spark, rec }: { r: Row; spark: number[] | null; rec?: { 
         {spark && (
           <div className="shrink-0 text-right" title="Mitjana del domini per període (escala 1–5)">
             <Sparkline values={spark} />
-            <div className="text-[11px] text-subtle">1–5</div>
+            <div className="text-[11px] text-subtle">mitjana 1–5</div>
           </div>
         )}
       </div>
@@ -198,7 +198,7 @@ function AlarmItem({ r, spark, rec }: { r: Row; spark: number[] | null; rec?: { 
         ) : rec ? (
           <Link href={`/hr/signals/${r.id}`} className="btn">Seguiment creat →</Link>
         ) : (
-          <Link href={`/hr/signals/${r.id}`} className="btn btn-primary">Veure temes i decidir l&apos;acció →</Link>
+          <Link href={`/hr/signals/${r.id}`} className="btn btn-primary">Revisa l&apos;alarma i decideix →</Link>
         )}
         {next.length > 0 && (
           <details className="alarm-status">

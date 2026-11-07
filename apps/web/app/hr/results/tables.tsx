@@ -1,5 +1,6 @@
 import { MIN_GROUP_SIZE } from "@damm/shared";
 import { SuppressedBadge } from "../ui";
+import { num1, tornLabel } from "@/lib/format";
 import { ChangeBadge, Sparkline } from "../trend";
 import {
   REP_GAP_FLAG,
@@ -7,8 +8,8 @@ import {
   type TrendRow,
 } from "@damm/db/hr";
 
-const pct = (v: number) => `${(v * 100).toFixed(1)}%`;
-const gapLabel = (g: number) => `${g >= 0 ? "+" : "−"}${Math.abs(g * 100).toFixed(1)} pp`;
+const pct = (v: number) => `${num1(v * 100)}%`;
+const gapLabel = (g: number) => `${g >= 0 ? "+" : "−"}${num1(Math.abs(g * 100))} pp`;
 export const suppressedHint = `Menys de ${MIN_GROUP_SIZE} persones han respost`;
 const complementaryHint = "Ocult per protegir un grup petit: no es pot deduir per resta";
 const hintFor = (motiu: "primari" | "complementari" | null) => (motiu === "complementari" ? complementaryHint : suppressedHint);
@@ -36,7 +37,7 @@ export function RepTable({ rows, byShift }: { rows: RepRow[]; byShift: boolean }
       <tbody>
         {rows.map((r, i) => (
           <tr key={i}>
-            <td className="font-medium">{byShift ? `${r.collectiu} · ${r.torn}` : r.collectiu}</td>
+            <td className="font-medium">{byShift ? `${r.collectiu} · ${r.torn ? tornLabel(r.torn) : ""}` : r.collectiu}</td>
             {r.suprimit ? (
               <td colSpan={3}>
                 <span className="flex items-center gap-2">
@@ -97,7 +98,7 @@ export function TrendTable({ periodes, rows }: { periodes: string[]; rows: Trend
                   <span className="text-subtle">–</span>
                 ) : (
                   <div>
-                    <div>{c.mitjana.toFixed(1)}</div>
+                    <div>{num1(c.mitjana)}</div>
                     <div className={`text-[11px] whitespace-nowrap ${c.precisio === "indicativa" ? "text-warn" : "text-subtle"}`}>
                       n={c.n} · {c.precisio}
                     </div>

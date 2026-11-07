@@ -264,3 +264,36 @@
 .hr-chip[aria-pressed="true"] { border-color: var(--text); background: var(--surface-muted); font-weight: 600; }
 .hr-chip[aria-disabled="true"] { opacity: 0.5; pointer-events: none; }
 .hr-chip-dot { width: 10px; height: 10px; border-radius: 9999px; flex: none; }
+
+/* Critical alarms read stronger than warnings. */
+.hr-shell .badge-crit { background: var(--brand-red); border-color: var(--brand-red); color: #fff; font-weight: 600; }
+
+/* Touch targets: 44px on phones. */
+@media (max-width: 767px) {
+  .hr-shell .btn,
+  .hr-shell .hr-chip,
+  .hr-shell summary { min-height: 44px; }
+  .hr-shell .btn { display: inline-flex; align-items: center; justify-content: center; }
+}
+
+/* Necessitats: segmented status filter, need rows and compact question list */
+.hr-seg { display: inline-flex; flex-wrap: wrap; border: 1px solid var(--line-strong); border-radius: 4px; overflow: hidden; background: var(--surface); }
+.hr-seg a { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 14px; font-size: 0.875rem; border-right: 1px solid var(--line); color: var(--text); }
+.hr-seg a:last-child { border-right: 0; }
+.hr-seg a:hover { background: var(--surface-muted); }
+.hr-seg a[aria-current="page"] { background: var(--text); color: var(--bg); font-weight: 600; }
+.hr-seg a[aria-disabled="true"] { opacity: 0.45; pointer-events: none; }
+.hr-seg .num { font-size: 0.75rem; opacity: 0.75; }
+.hr-qlist { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line); border-radius: 4px; }
+.hr-qlist li { display: flex; align-items: flex-start; gap: 10px; padding: 8px 12px; border-bottom: 1px solid var(--line); font-size: 0.875rem; }
+.hr-qlist li:last-child { border-bottom: 0; }
+.hr-qmeta { margin-left: auto; flex: none; text-align: right; font-size: 0.75rem; color: var(--text-subtle); }
+.hr-bar { height: 6px; background: var(--surface-muted); border-radius: 0; overflow: hidden; }
+.hr-bar > span { display: block; height: 100%; background: var(--brand-red); }
+@media (max-width: 767px) {
+  .hr-seg { display: flex; width: 100%; }
+  .hr-seg a { flex: 1 1 45%; min-height: 44px; justify-content: center; }
+  .hr-qlist li { flex-wrap: wrap; }
+  .hr-qmeta { margin-left: 0; text-align: left; width: 100%; }
+  .hr-actions > * , .hr-actions form, .hr-actions .btn { width: 100%; }
+}

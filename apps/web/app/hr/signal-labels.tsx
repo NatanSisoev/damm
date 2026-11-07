@@ -16,7 +16,7 @@ const TIPUS: Record<string, string> = {
 const SEVERITY: Record<string, { label: string; cls: string }> = {
   info: { label: "Info", cls: "" },
   warning: { label: "Avís", cls: "badge-warn" },
-  critical: { label: "Crític", cls: "badge-warn" },
+  critical: { label: "Crítica", cls: "badge-crit" },
 };
 
 export const STATUS_LABELS: Record<string, string> = {

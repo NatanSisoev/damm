@@ -13,6 +13,12 @@ import { STATUS_LABELS, STATUS_ORDER, SignalBadges } from "../../signal-labels";
 import { signalDetail, signalHeadline } from "@/lib/signal-text";
 const suppressedHint = `Menys de ${MIN_GROUP_SIZE} persones han respost`;
 
+const NEXT: Partial<Record<SignalTimelineStep["key"], { href: string; label: string }>> = {
+  recomanacio: { href: "#recomanacions", label: "Decideix la recomanació" },
+  seguiment: { href: "#seguiment", label: "Crea l'enquesta de seguiment" },
+  resultats: { href: "#seguiment", label: "Mira el seguiment" },
+};
+
 function Timeline({ steps }: { steps: SignalTimelineStep[] }) {
   return (
     <ol className="grid gap-4 sm:grid-cols-4">
@@ -31,6 +37,9 @@ function Timeline({ steps }: { steps: SignalTimelineStep[] }) {
             <div className="text-xs text-subtle">
               {s.state === "done" ? "Fet" : "Pendent"} · {s.detail}
             </div>
+            {s.state !== "done" && NEXT[s.key] && (
+              <Link href={NEXT[s.key]!.href} className="mt-1 inline-block text-xs text-accent-ink hover:underline">{NEXT[s.key]!.label} →</Link>
+            )}
           </div>
         </li>
       ))}
@@ -49,7 +58,7 @@ export default async function SignalPage({ params }: { params: Promise<{ id: str
       <PageHeader
         title={signalHeadline(signal)}
         subtitle={signalDetail(signal)}
-        actions={<Link href="/hr/recommendations" className="btn">← Recomanacions</Link>}
+        actions={<Link href="/hr/signals" className="btn">← Alarmes</Link>}
       />
 
       <div className="mb-6 flex flex-wrap items-center gap-2">
@@ -168,7 +177,7 @@ export default async function SignalPage({ params }: { params: Promise<{ id: str
         </div>
 
         <div className="space-y-6">
-          <Card title="Recomanacions" meta={<span className="num">{recommendations.length}</span>}>
+          <Card id="recomanacions" title="Recomanacions" meta={<span className="num">{recommendations.length}</span>}>
             {recommendations.length === 0 ? (
               <Empty>Encara no hi ha recomanacions per a aquest senyal.</Empty>
             ) : (
@@ -199,7 +208,7 @@ export default async function SignalPage({ params }: { params: Promise<{ id: str
             )}
           </Card>
 
-          <Card title="Seguiment">
+          <Card id="seguiment" title="Seguiment">
             {followUps.length === 0 ? (
               <Empty>Encara no hi ha cap enquesta de seguiment. Apareixerà quan s&apos;aprovi una recomanació i es creï.</Empty>
             ) : (
