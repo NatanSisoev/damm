@@ -384,6 +384,63 @@ Notes (timings, odd behaviour, ideas):
 -
 ```
 
+### Run 2026-11-07 (agent run, partial)
+
+```
+Run date:           2026-11-07 ~19:00-20:30 (Europe/Madrid)
+Commit:             b39c355   branch: jan/e2e-run
+Tester:             Claude (agent session)
+Devices:            built-in browser pane, mobile 375x812 and desktop / no phone
+DB:                 demo (data/demo.db)   Join codes: DEMO-FÀB, DEMO-LOG, DEMO-COM, DEMO-OFI, E2AC187B (new Logística need)
+LLM:                fallback (no key; badge "Plantilla de reserva")   HR gate: on for M-1..M-3 and S-4, then OFF (HR_ACCESS_CODE emptied) for the rest of the HR browser cases, because the 12 h cookie expired and the code cannot be typed without echoing it
+Build checks:       check:anonymity P (also via S-5)  lint not run  build not run
+Server:             port 3001 (3000 was taken), so join links and QR show 3000; substitute 3001
+
+Main scenario
+M-1..M-8 P | M-9 P (Teams send ABS) | M-10 P (phone QR SKIP-P) | M-11 P | M-12 ABS (no push toggle)
+M-13 ABS (/api/push/* return 404) | M-14 P (batch of 3, no open question served) | M-15 P
+M-16 not run | M-17 P (see plan bug 1) | M-18 F (F5) | M-19 P | M-20 P (F2, F3) | M-20b P (12 "Confirmació del seguiment" cards, only skimmed)
+M-21 ABS (recomanacio has 0 rows, no generate button) | M-22 ABS (needs a recommendation) | M-23 P (4 collectives 200, /manager/Inexistent 404)
+M-24 P for the UI (closed without a confirm dialog); the KG that a new account still gets the closed need's questions was not re-checked
+
+Further scenarios run
+S-4 P | S-5 P | S-6(d) P | S-9 P | S-12 P | S-13 P | S-17 P | S-43 P | S-44 P | S-46 partial P (unknown id, 0/11 items, long comment, non-JSON all rejected;
+invalid_value and missing_comment not tried) | S-74 N/A (no open question was served) | S-30 inconclusive (Notification.permission is "denied" in the pane)
+Not run (time and memory budget): every other S-case, including S-1..S-3, S-6 (c, e), S-7, S-8, S-10, S-11, S-14..S-16, S-18..S-29, S-31, S-32, S-40..S-42, S-45, S-47, S-48,
+S-50..S-55, S-60..S-65, S-70..S-73, S-75..S-90. Engine `pnpm test` and lint/build were not run either.
+
+Failures (ID, URL, observed vs docs/user-flows.md, guessed file), ranked by demo impact:
+F1 HIGH  M-14/M-17/M-20. One live answer in a new month blanks the dashboard. My answer created period 2026-11; the 10-minute job wrote 66 all-suppressed
+         agregat rows and 78 insight rows for 2026-11 (1 respondent). /hr/results (latest period = 2026-11) then showed everything "Suprimit" with 0 themes, HR home
+         "Participació" showed "—", and 23 of 24 senyal rows got suprimit=1, so /hr/signals went empty. There is no period selector (only ?vs=). Deleting the answers
+         did not restore it, because the job never prunes stale agregat/insight rows (I had to delete them by hand and rerun). Expected: a month with n < 10 must not
+         become the "current" period for the dashboard and alarms. Files: packages/db/src/hr-repository.ts (latest period = MAX(periode) FROM agregat, also in
+         getRepresentativeness), packages/engine/src/alarms.ts (current at ~293, apply() ~359-380), packages/engine/src/job.ts, apps/web/app/hr/results/page.tsx.
+         Demo risk: the first live answer on stage in a new month, or after the demo DB date rolls over.
+F5 HIGH  M-18. /hr/results, section "Representativitat" (by collective and by shift) is entirely "Suprimit · Menys de 10 respondents", and "Temes dels comentaris" says
+         "Encara no hi ha temes" (Temes detectats 0), on the 2026-10 baseline. Cause: getRepresentativeness (packages/db/src/hr-repository.ts:508) reads agregat rows with
+         domini_id NULL and collectiu_id NOT NULL; the demo DB has none (checked on a backup taken before my changes too), the engine job only writes per-domain rows, and
+         packages/analysis does not exist. tema and comentari_tema have 0 rows (theme job absent, see section 6 item 3). Expected: R-FLOW-7 representativity vs the
+         synthetic population visible. Fix idea: write collective and shift totals in the job (or compute them in the HR repository from the analytics view).
+F2 MED   M-20. /hr/signals/1 shows "confiança 8011%" and /hr/signals/3 "confiança 6311%": confidence is multiplied by 100 twice. File: apps/web/app/hr/signals/[id]/page.tsx.
+F3 MINOR M-20. Alarm descriptions are English inside the Catalan UI ("Score fell 1.2 points (5.8 → 4.6) since the previous period.", "Confidence is low (35/100)...")
+         and the numbers (5.8, 4.6) are on a 0-10 score scale while the radar and trends use the 1-5 mean (about 3.x), which looks contradictory. File: packages/engine/src/alarms.ts.
+F6 MINOR M-18. Trends show n=344 and identical means in all three periods for five of six domains (for example 3.4, 3.4, 3.4), so the planted October theme and the "up/down"
+         labels never appear ("sense canvi clar" everywhere); on /manager/<collectiu> the radar point labels read "<collectiu> · 2026-09" for what looks like both series. Files: seed/demo generator, apps/web/app/manager.
+F7 MINOR M-24. "Tanca la necessitat" closes at once with no confirm dialog (irreversible-looking action). File: apps/web/app/hr/needs.
+Minor copy: M-11 heading "Crea el teu compte" stays above "Compte creat"; M-12 delete-account text mentions "la subscripció a les notificacions" although there is no push toggle;
+the need's join-code card shows no account count; `/join` says "Dues preguntes" (known S-48).
+
+Notes:
+- Plan bug 1: the M-17 command `DB_PATH=data/demo.db pnpm --filter @damm/engine run job` fails with "unable to open database file", because the relative path is resolved from
+  packages/engine. Use `DB_PATH=$PWD/data/demo.db`.
+- Plan bug 2: the plan says "Copia" where the app says "Còpia".
+- Plan note: `.env` does not exist in a fresh worktree; generate it from .env.example (HR_ACCESS_CODE and the session secret). session.ts has a dev-only fallback secret string.
+- Login throttle (5 per 15 min per username and IP) is in memory and is cleared by a restart.
+- Run-order lesson: run M-17/M-18 before any live answer, or reset 2026-11 rows afterwards (see F1).
+- State left behind: demo.db has a test account `usuari.prova`, a closed Logística need (join code E2AC187B) and alarm 3 set to "Resolta".
+```
+
 ## 6. Findings while writing this plan
 
 None of these has been fixed here.
