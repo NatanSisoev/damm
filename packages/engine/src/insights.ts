@@ -6,6 +6,7 @@ import { getConfig, resolveConfig, type EngineConfig } from "./config.ts";
 import { all, transaction, type SqlDatabase } from "./db.ts";
 import { EMPTY_ITEM, type ItemStats } from "./item-bias.ts";
 import { isClosed, learn, priorLevel } from "./learn.ts";
+import { loadAnchors, type Anchor } from "./listen-again.ts";
 import { parseAnswer } from "./normalize.ts";
 import type { PersonDomainState } from "./person.ts";
 import { createRng } from "./rng.ts";
@@ -21,9 +22,10 @@ export type InsightKind =
   | "trajectory_mix"
   | "followup_confirmation"
   | "segment_gap"
+  | "action_effect"
   | "narrative";
 
-/** Kinds this module writes (and replaces on every run). `narrative` comes from narrative.ts and is not replaced here. `driver` and `action_effect` are not implemented yet. */
+/** Kinds this module writes (and replaces on every run). `narrative` comes from narrative.ts and is not replaced here. `driver` is not implemented yet. */
 export const INSIGHT_KINDS: readonly InsightKind[] = [
   "domain_state",
   "top_mover",
@@ -32,6 +34,7 @@ export const INSIGHT_KINDS: readonly InsightKind[] = [
   "trajectory_mix",
   "followup_confirmation",
   "segment_gap",
+  "action_effect",
 ];
 
 export interface InsightConfig {
@@ -49,6 +52,10 @@ export interface InsightConfig {
   trajectoryDays: number;
   /** trajectory_mix: change (0..10) over the window that counts as improving / declining. */
   trajectoryThreshold: number;
+  /** action_effect: days compared before and after the anchor. */
+  effectWindowDays: number;
+  /** action_effect: no row until this many days have passed since the anchor. */
+  effectMinAfterDays: number;
 }
 
 export const DEFAULT_INSIGHT_CONFIG: InsightConfig = {
@@ -59,6 +66,8 @@ export const DEFAULT_INSIGHT_CONFIG: InsightConfig = {
   polarisationMaxScoreMove: 0.5,
   trajectoryDays: 30,
   trajectoryThreshold: 0.5,
+  effectWindowDays: 30,
+  effectMinAfterDays: 14,
 };
 
 export interface InsightOptions {
@@ -581,6 +590,100 @@ export function historyInsights(
   return out;
 }
 
+// --- action_effect ("listen again") ---------------------------------------------------------
+
+export const ACTION_EFFECT_LIMITS =
+  "Això mostra què ha passat amb la puntuació des d'aquesta data, no que l'acció en sigui la causa: l'estacionalitat, altres canvis o accions i qui respon en cada moment també hi poden influir.";
+
+/**
+ * For each anchor (adopted recommendation, context event with a domain): the segment × domain score in the window before vs after it.
+ * Before = each person's last level before the anchor, among people who answered in the `effectWindowDays` before it.
+ * After = their last level up to anchor + window (or now), among people who answered after the anchor.
+ * Both windows need at least `minGroupSize` people, or the row is suppressed. Change rule as top_mover: |Δ| ≥ topMoverMinDelta and
+ * confidence ≥ minConfidence in both windows. Nothing is written until `effectMinAfterDays` have passed since the anchor.
+ */
+export function actionEffectInsights(
+  h: History,
+  anchors: Anchor[],
+  L: Labels,
+  cfg: EngineConfig,
+  ic: InsightConfig,
+  nowMs: number,
+  populationOf: (c: number | null, t: number | null) => number,
+): InsightRow[] {
+  const out: InsightRow[] = [];
+  const DAY = 86_400_000;
+  const nowPeriod = dayOf(nowMs, cfg.timezone).slice(0, 7);
+  for (const a of anchors) {
+    const afterEnd = Math.min(nowMs, a.ms + ic.effectWindowDays * DAY);
+    if (afterEnd - a.ms < ic.effectMinAfterDays * DAY) continue;
+    const scope: Scope = { c: a.collectiuId, t: a.tornId === null ? "any" : a.tornId };
+    const before: PersonPoint[] = [];
+    const after: PersonPoint[] = [];
+    for (const [acct, who] of h.accounts) {
+      if (!inScope(scope, who)) continue;
+      const tr = h.traces.get(`${acct}|${a.domainId}`);
+      if (!tr) continue;
+      const ib = lastAtOrBefore(tr, a.ms - 1);
+      if (ib >= 0 && tr.ms[ib]! >= a.ms - ic.effectWindowDays * DAY)
+        before.push({ level: tr.level[ib]!, variance: tr.variance[ib]!, daysSince: (a.ms - tr.ms[ib]!) / DAY });
+      const ia = lastAtOrBefore(tr, afterEnd);
+      if (ia >= 0 && tr.ms[ia]! >= a.ms) after.push({ level: tr.level[ia]!, variance: tr.variance[ia]!, daysSince: (afterEnd - tr.ms[ia]!) / DAY });
+    }
+    if (before.length === 0 && after.length === 0) continue;
+    const t = a.tornId;
+    const n = Math.min(before.length, after.length);
+    if (n < cfg.minGroupSize) {
+      out.push(suppressedRow("action_effect", nowPeriod, a.collectiuId, t, a.domainId, n));
+      continue;
+    }
+    const N = populationOf(a.collectiuId, t);
+    const prior = priorLevel(cfg, a.domainId);
+    const b = segmentStats(before, N, cfg, prior);
+    const f = segmentStats(after, N, cfg, prior);
+    const delta = r2(f.score - b.score);
+    const confident = b.confidence >= ic.minConfidence && f.confidence >= ic.minConfidence;
+    const change = !confident ? "low_confidence" : Math.abs(delta) >= ic.topMoverMinDelta ? (delta > 0 ? "improved" : "declined") : "no_clear_change";
+    const lbl = labelsFor(L, a.collectiuId, t, a.domainId);
+    const seg = [lbl.collective, lbl.shift, lbl.domain].filter(Boolean).join(" · ");
+    const span = `${b.score} → ${f.score}, n ${before.length} → ${after.length}`;
+    const wording =
+      change === "improved" ? `Des de ${a.date}, ${seg}: la puntuació ha pujat (${span}).`
+      : change === "declined" ? `Des de ${a.date}, ${seg}: la puntuació ha baixat (${span}).`
+      : change === "no_clear_change" ? `Des de ${a.date}, ${seg}: sense canvi clar (${span}).`
+      : `Des de ${a.date}, ${seg}: encara no hi ha prou confiança per comparar (${span}).`;
+    const win = (from: number, to: number, s: typeof b, cnt: number) => ({
+      from: toSqlDatetime(from).slice(0, 10),
+      to: toSqlDatetime(to).slice(0, 10),
+      score: s.score,
+      confidence: s.confidence,
+      n: cnt,
+    });
+    out.push({
+      kind: "action_effect",
+      periode: nowPeriod,
+      collectiuId: a.collectiuId,
+      tornId: t,
+      domainId: a.domainId,
+      n,
+      value: delta,
+      detail: {
+        labels: lbl,
+        anchor: { kind: a.kind, id: a.id, date: a.date, label: a.label },
+        since: a.date,
+        before: win(a.ms - ic.effectWindowDays * DAY, a.ms, b, before.length),
+        after: win(a.ms, afterEnd, f, after.length),
+        delta,
+        change,
+        windowDays: ic.effectWindowDays,
+        wording,
+        limits: ACTION_EFFECT_LIMITS,
+      },
+    });
+  }
+  return out;
+}
+
 // --- IO -------------------------------------------------------------------------------------
 
 function loadInsightConfig(db: SqlDatabase, override: Partial<InsightConfig> | undefined): InsightConfig {
@@ -645,11 +748,16 @@ export function runInsights(db: SqlDatabase, opts: InsightOptions): { written: n
     ...aggregateInsights(agg, L, ic),
     ...importanceGapInsights(imp, agg, L),
     ...historyInsights(history, domains, L, cfg, ic, opts.now, managerPopulation),
+    ...actionEffectInsights(history, loadAnchors(db, cfg.timezone), L, cfg, ic, opts.now, (c, t) =>
+      store.population(db).filter((r) => (c === null || r.collectiuId === c) && (t === null || r.tornId === t)).reduce((s, r) => s + r.n, 0),
+    ),
   ];
   const periods = [...new Set([...agg.map((a) => a.periode), ...imp.map((i) => i.periode), ...history.periods])].sort();
 
   let suppressed = 0;
   transaction(db, () => {
+    // Keyed by the current period, which may not be in `periods`: always replace the whole kind.
+    db.prepare("DELETE FROM insight WHERE kind = 'action_effect'").run();
     if (periods.length) {
       db.prepare(
         `DELETE FROM insight WHERE periode IN (${periods.map(() => "?").join(",")}) AND kind IN (${INSIGHT_KINDS.map(() => "?").join(",")})`,

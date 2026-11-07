@@ -4,6 +4,7 @@ import { selectBatch, type DomainSignal } from "./batch.ts";
 import { resolveConfig, type EngineConfig } from "./config.ts";
 import { run, transaction, type SqlDatabase } from "./db.ts";
 import { isClosed, learn } from "./learn.ts";
+import { activeProbeBoosts } from "./probe.ts";
 import { parseAnswer, type QuestionDef } from "./normalize.ts";
 import { createRng } from "./rng.ts";
 import { infoGain, type PersonPoint } from "./segment.ts";
@@ -86,7 +87,8 @@ export function createEngine(opts: EngineOptions): Engine {
   // scans every person in the collective (quadratic in headcount over a day). HR weights stay live.
   const signalCache = new Map<string, Omit<DomainSignal, "weight">[]>();
 
-  function domainSignals(cfg: EngineConfig, collectiuId: number, nowMs: number): DomainSignal[] {
+  function domainSignals(cfg: EngineConfig, collectiuId: number, tornId: number | null, nowMs: number): DomainSignal[] {
+    const probes = activeProbeBoosts(db, collectiuId, tornId, nowMs); // per shift and live, so outside the daily cache
     const weight = store.domainWeights(db, collectiuId);
     const key = `${collectiuId}|${dayOf(nowMs, cfg.timezone)}`;
     let base = signalCache.get(key);
@@ -95,7 +97,7 @@ export function createEngine(opts: EngineOptions): Engine {
       base = computeSignals(cfg, collectiuId, nowMs);
       signalCache.set(key, base);
     }
-    return base.map((s) => ({ ...s, weight: weight(s.domainId) }));
+    return base.map((s) => ({ ...s, weight: weight(s.domainId), probeBoost: probes.get(s.domainId) ?? 1 }));
   }
 
   function computeSignals(cfg: EngineConfig, collectiuId: number, nowMs: number): Omit<DomainSignal, "weight">[] {
@@ -145,7 +147,7 @@ export function createEngine(opts: EngineOptions): Engine {
           lastSeen: store.lastSeenByItem(db, accountId),
           answered: store.answeredQuestionIds(db, accountId),
           dueFollowups: store.dueFollowupDomains(db, accountId, day),
-          domains: domainSignals(cfg, acc.collectiuId, nowMs),
+          domains: domainSignals(cfg, acc.collectiuId, acc.tornId, nowMs),
           formatPref: store.formatPrefs(db, acc.collectiuId),
           formatStats: store.formatStatsFor(db, cfg, acc.collectiuId, acc.tornId),
         });

@@ -338,7 +338,36 @@ export function listManagerRecommendations(collectiuId: number): { id: number; t
 }
 
 export function approveRecommendation(id: number): void {
-  getDb().prepare("UPDATE recomanacio SET estat = 'aprovada' WHERE id = ? AND estat = 'proposada'").run(id);
+  getDb().prepare("UPDATE recomanacio SET estat = 'aprovada', aprovada_el = datetime('now') WHERE id = ? AND estat = 'proposada'").run(id);
+}
+
+export interface ContextEvent {
+  id: number;
+  date: string; // YYYY-MM-DD
+  collectiuId: number | null;
+  tornId: number | null;
+  dominiId: number | null;
+  label: string;
+  createdAt: string;
+}
+
+/** Records something that happened (a new shift system, a reorganisation). With a domain it anchors a "since" before/after comparison. */
+export function addContextEvent(e: { date: string; label: string; collectiuId?: number | null; tornId?: number | null; dominiId?: number | null }): number {
+  const label = e.label.trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(e.date) || Number.isNaN(Date.parse(`${e.date}T00:00:00Z`))) throw new Error("date must be YYYY-MM-DD");
+  if (!label) throw new Error("label is required");
+  const res = getDb()
+    .prepare("INSERT INTO context_event (event_date, collectiu_id, torn_id, domini_id, label) VALUES (?,?,?,?,?)")
+    .run(e.date, e.collectiuId ?? null, e.tornId ?? null, e.dominiId ?? null, label);
+  return Number(res.lastInsertRowid);
+}
+
+export function listContextEvents(): ContextEvent[] {
+  return (
+    getDb()
+      .prepare("SELECT id, event_date, collectiu_id, torn_id, domini_id, label, created_at FROM context_event ORDER BY event_date DESC, id DESC")
+      .all() as { id: number; event_date: string; collectiu_id: number | null; torn_id: number | null; domini_id: number | null; label: string; created_at: string }[]
+  ).map((r) => ({ id: r.id, date: r.event_date, collectiuId: r.collectiu_id, tornId: r.torn_id, dominiId: r.domini_id, label: r.label, createdAt: r.created_at }));
 }
 
 export function discardRecommendation(id: number): void {

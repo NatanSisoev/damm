@@ -2,7 +2,7 @@
 
 How `@damm/engine` plugs into the employee app, the HR dashboard and the jobs. The model itself is described in [engine.md](engine.md). Question types are in [question-types.md](question-types.md).
 
-Status (2026-11-07): implemented on `natan/engine-core`: the daily batch, answer submission, the job (aggregates, insights and alarms), HR config and question validation. Not yet: the `driver` and `action_effect` insights, alarm notifications (digest and push), and non-response handling.
+Status (2026-11-07): implemented on `natan/engine-core`: the daily batch, answer submission, the job (aggregates, insights and alarms), HR config and question validation. Not yet: the `driver` insight, alarm notifications (digest and push), and non-response handling.
 
 ## Big picture
 
@@ -33,7 +33,7 @@ Rules that do not change:
 |---|---|---|
 | `@damm/engine` | employee API routes | `createEngine`, `getDailyBatch`, `submitAnswers` |
 | `@damm/engine/job` | server startup, job route, script | `runEngineJob`, `startEngineScheduler` |
-| `@damm/engine/hr` | HR routes and pages | `listInsights`, `listAlarms`, `alarmCounts`, `setAlarmStatus`, `validateQuestion`, `setDomainWeight`, `setFormatPreference`, `getConfig`, `setConfig` |
+| `@damm/engine/hr` | HR routes and pages | `listInsights`, `listAlarms`, `alarmCounts`, `setAlarmStatus`, `validateQuestion`, `setDomainWeight`, `setFormatPreference`, `startProbe`, `listProbes`, `stopProbe`, `getConfig`, `setConfig` |
 | `@damm/engine/core` | tests, simulations | pure functions (normalise, Kalman, segment stats, Thompson) |
 
 ## Employee app
@@ -158,6 +158,18 @@ Run it:
 
 The job is idempotent: it recomputes and replaces its own rows for the periods it covers.
 
+## Comment analysis
+
+```ts
+import { runCommentAnalysis, runCommentAnalysisSync } from "@damm/engine/job";
+runCommentAnalysisSync(db, { now: Date.now() });                        // lexicon + templates, no network
+await runCommentAnalysis(db, { now: Date.now(), classify, summarise }); // optional LLM, functions from @damm/ai
+```
+
+Run it after `runEngineJob`. It is called by `scripts/job.ts` (deterministic), by the demo build, and by `pnpm --filter @damm/engine run comments`, which uses the LLM when `LLM_BASE_URL` and `LLM_API_KEY` are set (`--no-llm` to skip) and falls back to the rules otherwise. `runEngineJob` itself is unchanged. `POST /api/jobs/run` should call `runCommentAnalysisSync` right after `runEngineJob` (it needs no key).
+
+It rewrites `tema` and `comentari_tema` (replacing the seeded rows) and opens `emergent` alarms in `senyal`. `tema` has one row per theme x period x collective (`collectiu_id`, NULL = company), with `clau`, `share` and `font`. Suppressed rows (`suprimit = 1`) have no `resum`, `share` or comment links: show nothing for them. Sensitive themes have no comment links. The LLM helpers are `classifyCommentsLlm` and `summariseThemeLlm` in `@damm/ai`. Design, accuracy and limits: [engine.md](engine.md) section 12.
+
 ## Running the engine on the server
 
 The engine is a library inside the Next.js server process, not a separate service:
@@ -226,8 +238,13 @@ Each `InsightView` has `id`, `kind`, `periode`, `collectiuId`, `tornId`, `domain
 | `trajectory_mix` | % declining | `improving`, `stable`, `declining` (%), `windowDays`, `n` | stacked bar |
 | `followup_confirmation` | % confirmed | `resolved`, `confirmed`, `confirmedDown`, `confirmedUp`, `rate`, `n` | "real change or noise?" |
 | `segment_gap` | gap in score | `dimension: "shift"`: `lowest`, `highest`, `groups[]`, `gap`. `dimension: "manager"`: `managers`, `others`, `gap`, `asOf` | side-by-side bars |
+| `action_effect` | score change (after − before) | `anchor` (`kind` recommendation / context_event, `id`, `date`, `label`), `since`, `before` and `after` (`from`, `to`, `score`, `confidence`, `n`), `delta`, `change` (`improved`, `declined`, `no_clear_change`, `low_confidence`), `windowDays`, `wording`, `limits` | "since 15 Sep" card on the signal timeline |
 
-`driver` and `action_effect` are reserved but not produced yet.
+`driver` is reserved but not produced yet.
+
+### Listen again (`action_effect`)
+
+No completion state: HR adopts a recommendation (`approveRecommendation` sets `recomanacio.aprovada_el`) or records a context event, and the engine reports what the scores did since. HR records events with `addContextEvent({ date, label, collectiuId?, tornId?, dominiId? })` and lists them with `listContextEvents()` (`@damm/db/hr`). Only events with a domain produce an insight. Always show `detail.wording` together with `detail.limits` ("correlation, not cause"); never say the action worked. Rows appear 14 days after the anchor and are suppressed below 10 people in either window.
 
 ### Alarms
 
@@ -240,7 +257,7 @@ setAlarmStatus(db, id, "acknowledged"); // HR route only
 
 `AlarmView` fields:
 - `id`, `type`;
-- `description`: an English sentence ready to display;
+- `description`: a sentence ready to display (English; Catalan for `baixa_participacio`);
 - `collectiuId`, `tornId`, `domainId`, `periode`, `n`, `confidence`;
 - `severity`, `status`, `audience`, `createdAt`.
 
@@ -261,6 +278,24 @@ Status changes:
 
 - **HR** makes these changes. `setAlarmStatus` throws `AlarmTransitionError` on any other move.
 - **The engine** only opens alarms and auto-resolves alarms that are still `open`. It never changes one a human has moved.
+
+### Probes (Indagar)
+
+An "Indagar" button on the signal page, next to the recommendations, asks the engine to sample that alarm's domain more in its segment for a while.
+
+```ts
+import { startProbe, listProbes, stopProbe, ProbeError } from "@damm/engine/hr";
+// HR-only route. Segment and domain come from the alarm.
+const probe = startProbe(db, { senyalId: alarm.id, collectiuId: alarm.collectiuId, tornId: alarm.tornId, dominiId: alarm.domainId, boost: 2, days: 14 });
+const probes = listProbes(db, { senyalId: alarm.id }); // newest first, with status and progress
+stopProbe(db, probe.id);
+```
+
+- `startProbe` needs a collective (an alarm with no collective cannot be probed). It throws `ProbeError` for a segment under 10 people, a second active probe on the same segment and domain, or a bad boost or number of days: show `error.message`.
+- `ProbeView`: `id`, `senyalId`, `collectiuId`, `tornId`, `dominiId`, `boost`, `startsAt`, `endsAt`, `stoppedAt`, `status` (`active`, `expired`, `stopped`), `daysLeft`, `progress`.
+- `progress` is `null` until the next engine job run (at most 10 minutes). Then: `answers`, `answersBefore`, `extraAnswers`, `people`, `confidenceBefore`, `confidenceNow`, `scoreBefore`, `scoreNow`, `updatedAt`. If `progress.suppressed`, every number is null: show "not enough answers yet (fewer than 10 people)".
+- Suggested UI: a "Digging deeper" card with days left, "+N answers", "confidence 42 → 61" and a Stop button. Never show anything per person.
+- Employee side: nothing changes. `GET /api/pool/next` already picks questions through the scheduler.
 
 ### Getting alarms to the screen
 
@@ -285,6 +320,19 @@ if (card?.kind === "narrative" && card.detail) card.detail.summary; // typed: hi
 **What the model receives** (per segment, only if at least 10 people answered in the period): domain scores, confidence, consensus, previous score and change (only `agregat` rows with n of at least 10, no shift rows); up to 8 open alarms (id, type, severity, domain, engine description); up to 3 top movers, 2 polarisation and 3 `act_first` insights; and at most 40 redacted comments (300 characters each) with their domain name only, taken round-robin over domains that have a visible aggregate. No account ids, dates, shifts or counts below 10.
 
 **Idempotent and cheap.** The input is hashed (with the model and prompt version). If the stored narrative has the same `inputHash`, the segment is skipped with no LLM call. A changed input replaces the narrative row and deletes only the recommendations it proposed that are still `proposada`; `aprovada` and `descartada` ones are never touched, and an action whose title matches one a human already decided is not proposed again. A failed call (after 2 retries in the client and one re-ask on unusable output) keeps the old row. One run is at most 5 calls, one per segment (company + 4 collectives), more only on retries.
+## Recommendations
+
+Job code only, never a request handler:
+
+```ts
+import { runEngineJob, runRecommendations } from "@damm/engine/job";
+import { draftRecommendations } from "@damm/ai";
+
+runEngineJob(db);
+await runRecommendations(db, { now: Date.now(), draft: (ctx) => draftRecommendations(ctx) });
+```
+
+It inserts `recomanacio` rows (`estat = 'proposada'`, `senyal_id`, `titol`, `iniciativa`, `responsable_suggerit`, `termini_suggerit`, `justificacio`, `limits`, `font`) for open alarms that have none. Safe to re-run. `pnpm --filter @damm/engine run job` and the demo builder already do this (template mode unless an LLM key is set). Show the fields on the signal page; HR only approves or discards, there is no "done" state. See contract change C11.
 
 ## Seeded data
 
@@ -319,6 +367,6 @@ Planted stories and what they produce:
 | A group of people whose view of their supervisor collapses, from 14 Oct | Logística morning shift, Lideratge | follow-ups, `changepoint_cluster` (critical, HR only), `followup_confirmation` |
 | The team splits in two, average unchanged, from 1 Oct | Oficines, Entorn i relacions | `polarisation` alarm and insight |
 | Managers answer more positively | everywhere | `segment_gap` (manager) |
-| Few night-shift accounts | Fàbriques and Logística night | suppressed segments (n < 10) |
+| Few night-shift accounts | Fàbriques and Logística night | suppressed segments (n < 10), `baixa_participacio` warning on the night shifts with at least 10 respondents (the demo uses `participationScale` 1.6 so the other shifts sit above the 40% rate) |
 
 The run is deterministic: the same seed gives the same database. `--seed` changes it, and `--days` makes it shorter.

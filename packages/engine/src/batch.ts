@@ -15,6 +15,8 @@ export interface DomainSignal {
   outlierShare: number;
   /** HR weight for this collective × domain. */
   weight: number;
+  /** Active "Indagar" probe multiplier for this person's segment and domain (absent or 1 = none). */
+  probeBoost?: number;
 }
 
 export interface BatchInput {
@@ -44,10 +46,13 @@ export interface BatchPick {
 /** Share of |z| ≥ 2 expected under a normal model. Outlier boost uses the excess over this. */
 const EXPECTED_OUTLIER_SHARE = 0.0455;
 
+/** Extra format preference for `open` items in a probed domain. */
+export const PROBE_OPEN_PREF = 2;
+
 export function domainPriority(d: DomainSignal, maxGain: number, cfg: EngineConfig): number {
   const gain = maxGain > 0 ? d.infoGain / maxGain : 0;
   const excess = Math.min(3, Math.max(0, d.outlierShare / EXPECTED_OUTLIER_SHARE - 1));
-  return d.weight * (gain + cfg.domainFloor) * (1 + cfg.outlierBoost * excess);
+  return d.weight * (d.probeBoost ?? 1) * (gain + cfg.domainFloor) * (1 + cfg.outlierBoost * excess);
 }
 
 export function selectBatch(input: BatchInput): BatchPick[] {
@@ -116,7 +121,9 @@ function pickInDomain(candidates: QuestionDef[], input: BatchInput, cooldownStar
   const facet = pick(input.rng, tied.sort())!;
   const items = pool.filter((q) => q.facet === facet);
   const types = [...new Set(items.map((q) => q.type))].sort();
-  const arms: FormatArm[] = types.map((t) => ({ type: t, ...input.formatStats(t), pref: input.formatPref(t) }));
+  // Probed domain: lean towards formats that carry an open comment prompt, since the point is to hear why.
+  const probed = (input.domains.find((d) => d.domainId === candidates[0]!.domainId)?.probeBoost ?? 1) > 1;
+  const arms: FormatArm[] = types.map((t) => ({ type: t, ...input.formatStats(t), pref: input.formatPref(t) * (probed && t === "open" ? PROBE_OPEN_PREF : 1) }));
   const type = chooseFormat(input.rng, arms);
   return pick(input.rng, items.filter((q) => q.type === type).sort((a, b) => a.id - b.id));
 }

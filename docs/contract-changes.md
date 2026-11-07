@@ -19,6 +19,66 @@ What changed and why.
 
 ---
 
+## C13 · 2026-11-07 · Natan · Listen again: context events, `aprovada_el`, `action_effect`
+
+The deck's cycle ends with "tornar a escoltar". HR is not forced to carry out a recommendation, so there is **no "done" state**: the before/after is anchored on when HR adopted (approved) a recommendation, or on a context event HR records, and always worded "since X", never as proof of cause. Design: [engine.md](engine.md) section 6.
+
+All changes are additive:
+- **`recomanacio`:** new column `aprovada_el` (datetime). `approveRecommendation` in `packages/db/src/hr-repository.ts` now sets it. Any other code that approves a recommendation must set it too. Approved rows without it fall back to the first day of their alarm's period. Existing databases need `ALTER TABLE recomanacio ADD COLUMN aprovada_el TEXT` (or re-run init / the demo).
+- **New table `context_event`:** `event_date` (YYYY-MM-DD), optional `collectiu_id`, `torn_id`, `domini_id`, `label`, `created_at`. HR functions `addContextEvent` and `listContextEvents` in `@damm/db/hr`. Only events with a domain produce an insight.
+- **`insight` kind `action_effect`** (already allowed by the CHECK) is now written by the engine: segment × domain score, confidence and n before vs. after the anchor, `detail.wording` ("Des de <data>, ...") and `detail.limits`. n ≥ 10 in both windows, otherwise suppressed. Rows appear 14 days after the anchor.
+- **`improvement` alarm** now uses the same anchors instead of the `action_linked` status; it no longer reads that status.
+
+Action items:
+- [ ] Jan: show `action_effect` insights and context events on the signal timeline (R-DIFF-6, R-FLOW-8e): "des de <data>" with `detail.wording` and `detail.limits` together, never worded as proof the action worked. No "done" button.
+- [ ] Jan: add a small form on the HR side to record a context event with `addContextEvent` (date, label, optional collective, shift and domain) and list them with `listContextEvents`.
+- [ ] Jan: if anything else approves a recommendation, set `aprovada_el` there too.
+
+---
+
+## C12 · 2026-11-07 · Natan · "Indagar" probe (time-boxed extra sampling)
+
+New table `probe` in `packages/db/schema.sql` (additive; rebuild existing databases with `pnpm --filter @damm/db run init` or the demo builder). New in `@damm/engine/hr`: `startProbe`, `listProbes`, `stopProbe` and the types `ProbeView`, `ProbeProgress`. A probe makes the scheduler ask one domain more often for one segment (collective, optionally one shift) for a number of days, optionally tied to an alarm (`senyalId`). It targets segments, never accounts; segments under 10 people are refused with a `ProbeError`. The engine job refreshes each probe's progress (extra answers, confidence before and now) from aggregates, hidden when fewer than 10 people answered. Details: [engine.md](engine.md), "Probes", and [engine-integration.md](engine-integration.md), "Probes (Indagar)".
+
+Action items:
+- [ ] Jan: rebuild existing databases (new `probe` table).
+- [ ] Jan: on the signal page, next to the recommendations, add an "Indagar" button. HR-only route that calls `startProbe(db, { senyalId, collectiuId, tornId, dominiId, boost, days })` with the alarm's segment and domain (defaults `boost = 2`, `days = 14`). Show `ProbeError.message` if it refuses.
+- [ ] Jan: while a probe exists for the signal (`listProbes(db, { senyalId })`), show its status, days left, extra answers, confidence before and now, and a "Stop" button (`stopProbe`). Show "not enough answers yet" when `progress` is null or `progress.suppressed`.
+
+## C11 · 2026-11-07 · Natan · Recommendation proposals for open alarms
+
+Additive schema change on `recomanacio`: `titol`, `iniciativa` (Damm initiative), `responsable_suggerit`, `termini_suggerit`, `justificacio` (cites n and confidence), `limits` ("correlació, no causa"), `font` (`llm` | `template`). `text` holds the concrete action. Rows are inserted as `estat = 'proposada'`, linked by `senyal_id`, by `runRecommendations` (`@damm/engine/job`, run with `draftRecommendations` from `@damm/ai`). Owner and timeframe are suggestions only. There is deliberately **no done/completed column**: HR only approves or discards. Old databases need the seven columns added (or a re-init).
+- [ ] Jan: show these fields on the signal page (title, action, initiative, suggested owner and timeframe, justification, limits, source). Keep approve/discard only, with no "done" tick.
+- [ ] Jan: call `runRecommendations` where the job runs (see engine-integration.md, "Recommendations"), never in a request. `createDraftedFollowUp` stays as is.
+
+## C10 · 2026-11-07 · Natan · Comment analysis: themes, summaries, emergent alarm
+
+Design: [engine.md](engine.md) section 12. `runCommentAnalysis` fills `tema` and `comentari_tema` from the redacted comments (no LLM key needed) and opens `emergent` alarms in `senyal` (`warning`, audience `hr`). It replaces the seeded `tema` rows.
+
+- **`tema`:** new columns `collectiu_id` (NULL = company-wide), `clau` (stable theme key), `share` (0..1, NULL when suppressed) and `font` (`seed` | `rules` | `llm`). Rows are now per theme x period x collective, so a theme appears once per collective. Existing databases get the columns from `ensureThemeColumns` (called by the analysis); fresh ones from `schema.sql`.
+- **`comentari_tema`:** written only for shown (`suprimit = 0`), non-sensitive, per-collective rows. A comment can have up to three themes.
+- **`senyal`:** `emergent` rows have `domini_id` set and a description starting with the theme label. A seeded placeholder for the same collective and theme is adopted, not duplicated.
+- **Entry points:** `runCommentAnalysisSync` / `runCommentAnalysis` from `@damm/engine/job`; script `pnpm --filter @damm/engine run comments`; `scripts/job.ts` and the demo build call it. `runEngineJob` is unchanged.
+
+Action items:
+- [ ] Jan: show `tema.resum` and `emergent` on the HR results and signals pages, filtered by collective (`tema.collectiu_id`; the company row, `collectiu_id IS NULL`, for "all"), and show only "not enough data" for `suprimit = 1`. `listThemes` in `hr-repository.ts` currently lists every row without the collective.
+- [ ] Jan: stop relying on the seeded `tema` rows (`init.ts`, `dashboard-fixtures.ts`): call `runCommentAnalysisSync(db, { now })` after `runEngineJob` in `POST /api/jobs/run` and after seeding, and let the `emergent` alarm come from there instead of the hand-written `senyal` row.
+- [ ] Jan (optional): a "limits of the analysis" note on the themes view, from the list in engine.md section 12.
+
+---
+
+## C9 · 2026-11-07 · Natan · `baixa_participacio` alarm is now emitted
+
+No schema or API change. `runAlarms` now writes `senyal` rows with `tipus = 'baixa_participacio'`:
+- one per collective × shift (collective alone where it has no shifts), `domini_id` NULL, severity `warning`, audience `hr`;
+- triggers when the response rate (distinct respondents in the period over the synthetic population) is under 40%, or the segment's share of respondents is under 0.7 × its population share; clears at 45% and 0.8;
+- `descripcio` is a Catalan sentence, e.g. "Participació baixa al torn de nit de Fàbriques: 22% (n=18 de 82). ...", and `n` is the respondent count;
+- segments with a population or respondents under 10 are suppressed like every other alarm type.
+The demo builder now uses `participationScale` 1.6 so only the thin shifts trigger it.
+
+Action items:
+- [ ] Jan: show `baixa_participacio` alarms as an explicit representativeness warning banner on results/need pages (R-SC-A5, R-SC-B3)
+
 ## C8 · 2026-11-07 · Natan · Scheduler runs the narrative, engine hardening
 
 - `startEngineScheduler(db, { narrative: { complete: createComplete() } })` runs the LLM narrative after the job, at most every 6 hours (`everyMs`), in the background. It never blocks or breaks the job. Without the option the LLM is never called. `runNarrativeNow()` serves an HR "Regenerate summary" button. `createComplete` and `llmConfigFromEnv` are exported from `@damm/engine/job`.

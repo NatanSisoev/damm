@@ -18,6 +18,9 @@ import { parseArgs } from "node:util";
 import { COLLECTIUS, DOMINIS } from "@damm/shared";
 import { createEngine, type BatchItem } from "../src/engine.ts";
 import { runEngineJob } from "../src/job.ts";
+import { runCommentAnalysisSync } from "../src/comments.ts";
+import { runRecommendations } from "../src/recommendations.ts";
+import { templateRecommendations } from "../../ai/src/recommendations.ts";
 import { setFormatPreference } from "../src/hr.ts";
 import { all, run, transaction, type SqlDatabase } from "../src/db.ts";
 import { createRng, pick, type Rng } from "../src/rng.ts";
@@ -47,6 +50,8 @@ export interface DemoSummary {
   comments: number;
   alarms: Record<string, number>;
   insights: Record<string, number>;
+  recommendations: number;
+  alarmsWithoutRecommendation: number;
 }
 
 const clamp = (x: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, x));
@@ -54,7 +59,7 @@ const clamp = (x: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, x
 /** Very small PII scrubber for the demo (emails, phone numbers). The real app injects the AI module's redactor. */
 const redact = (s: string) => s.replace(/[\w.+-]+@[\w-]+\.[\w.]+/g, "[email]").replace(/\+?\d[\d\s-]{7,}\d/g, "[phone]");
 
-export function buildDemo(opts: DemoOptions = {}): DemoSummary {
+export async function buildDemo(opts: DemoOptions = {}): Promise<DemoSummary> {
   const log = opts.log ?? (() => {});
   const path = resolve(REPO, opts.out ?? "data/demo.db");
   const seed = opts.seed ?? "damm-demo";
@@ -65,7 +70,7 @@ export function buildDemo(opts: DemoOptions = {}): DemoSummary {
   db.exec("PRAGMA journal_mode = WAL");
   db.exec(readFileSync(resolve(REPO, "packages/db/schema.sql"), "utf8"));
 
-  const world = createWorld({ seed, start: opts.start ?? "2026-08-01", days: opts.days ?? 92, participationScale: 1 });
+  const world = createWorld({ seed, start: opts.start ?? "2026-08-01", days: opts.days ?? 92, participationScale: 1.6 });
   const rng = createRng(`demo|${seed}`);
 
   // --- reference data, population, accounts ------------------------------------------------
@@ -129,6 +134,8 @@ export function buildDemo(opts: DemoOptions = {}): DemoSummary {
     let x = 0;
     if (d === 2 && clusterAccounts.has(p.accountId!) && t >= t0("2026-10-14")) x -= 0.4;
     if (d === 5 && p.collectiuId === 4 && t >= t0("2026-10-01")) x += p.idx % 2 === 0 ? 0.24 : -0.24;
+    // "Listen again" story: Logística is low on Condicions i organització until HR adopts a recommendation on 15 Sep, then improves.
+    if (d === 6 && p.collectiuId === 2) x += t < t0("2026-09-15") ? -0.08 : t >= t0("2026-09-20") ? 0.08 : 0;
     return x;
   };
   const truth = (p: Person, d: number, t: number) => clamp(world.level(p.idx, d, t) + extra(p, d, t), 0.02, 0.98);
@@ -208,9 +215,33 @@ export function buildDemo(opts: DemoOptions = {}): DemoSummary {
     if (t % 15 === 0) log(`day ${t + 1}/${world.days} (${world.dates[t]}): ${answers} answers so far`);
   }
 
+  // --- listen again: one adoption and one context event ---------------------------------------
+  // HR adopted a recommendation for the Logística alarm on 15 Sep (the alarm is HR-owned, so the engine leaves it alone),
+  // and recorded the new shift system for Fàbriques on 1 Oct. The job turns both into `action_effect` insights.
+  transaction(db, () => {
+    const sig = run(
+      db,
+      `INSERT INTO senyal (tipus, descripcio, collectiu_id, domini_id, periode, n, confianca, severity, status, audience, created_at)
+       VALUES ('sustained_decline', 'Condicions i organització stays low in Logística.', 2, 6, '2026-08', 40, 70, 'warning', 'action_linked', 'hr_manager', '2026-09-10 08:00:00')`,
+    );
+    run(
+      db,
+      "INSERT INTO recomanacio (senyal_id, text, estat, creat, aprovada_el) VALUES (?, ?, 'aprovada', '2026-09-12 09:00:00', '2026-09-15 10:00:00')",
+      Number(sig.lastInsertRowid),
+      "Review the loading-bay rota and publish it two weeks ahead.",
+    );
+    run(db, "INSERT INTO context_event (event_date, collectiu_id, domini_id, label) VALUES ('2026-10-01', 1, 6, 'New shift system in the factories')");
+  });
+
   // --- aggregates, insights, alarms -----------------------------------------------------------
   const report = runEngineJob(db, { now: Date.parse(`${world.dates[world.days - 1]}T22:00:00Z`) });
+  // Themes, Catalan summaries and emergent alarms from the comments (deterministic: lexicon and templates).
+  runCommentAnalysisSync(db, { now: Date.parse(`${world.dates[world.days - 1]}T22:00:00Z`) });
   log(`job: ${report.aggregates} aggregates (${report.suppressed} suppressed), ${report.insights.written} insights, ${report.alarms.opened} alarms opened`);
+
+  // Template proposals only (no key needed); the real job can inject the LLM-backed draftRecommendations instead.
+  const recs = await runRecommendations(db, { now: Date.parse(`${world.dates[world.days - 1]}T22:00:00Z`), draft: templateRecommendations });
+  log(`recommendations: ${recs.proposals} proposals for ${recs.alarms} alarms`);
 
   const count = (sql: string) => Object.fromEntries(all<{ k: string; n: number }>(db, sql).map((r) => [r.k, r.n]));
   const summary: DemoSummary = {
@@ -221,6 +252,11 @@ export function buildDemo(opts: DemoOptions = {}): DemoSummary {
     answers,
     comments: all<{ n: number }>(db, "SELECT COUNT(*) AS n FROM resposta WHERE comentari IS NOT NULL")[0]!.n,
     alarms: count("SELECT tipus || ' (' || severity || ', ' || status || ')' AS k, COUNT(*) AS n FROM senyal WHERE suprimit = 0 GROUP BY k ORDER BY k"),
+    recommendations: all<{ n: number }>(db, "SELECT COUNT(*) AS n FROM recomanacio")[0]!.n,
+    alarmsWithoutRecommendation: all<{ n: number }>(
+      db,
+      "SELECT COUNT(*) AS n FROM senyal s WHERE s.status = 'open' AND s.suprimit = 0 AND NOT EXISTS (SELECT 1 FROM recomanacio r WHERE r.senyal_id = s.id)",
+    )[0]!.n,
     insights: count("SELECT kind AS k, COUNT(*) AS n FROM insight WHERE suprimit = 0 GROUP BY kind ORDER BY kind"),
   };
   db.close();
@@ -230,7 +266,7 @@ export function buildDemo(opts: DemoOptions = {}): DemoSummary {
 if (process.argv[1] && resolve(process.argv[1]) === resolve(import.meta.filename)) {
   const { values } = parseArgs({ options: { out: { type: "string" }, seed: { type: "string" }, days: { type: "string" } } });
   const started = Date.now();
-  const s = buildDemo({ out: values.out, seed: values.seed, days: values.days ? Number(values.days) : undefined, log: (m) => console.log(m) });
+  const s = await buildDemo({ out: values.out, seed: values.seed, days: values.days ? Number(values.days) : undefined, log: (m) => console.log(m) });
   console.log(JSON.stringify(s, null, 2));
   console.log(`done in ${((Date.now() - started) / 1000).toFixed(1)} s -> ${s.path}`);
 }

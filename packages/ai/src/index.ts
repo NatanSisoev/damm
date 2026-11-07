@@ -8,6 +8,8 @@ import { draftQuestionSchema, draftSurveySchema, type DraftQuestion, type DraftS
 export { estimateSeconds, DRAFT_TYPES } from "./types";
 export type { DraftQuestion, DraftSurvey, DraftType, NeedInput } from "./types";
 export { violatesExclusions } from "./exclusions";
+export { classifyCommentsLlm, summariseThemeLlm } from "./comments";
+export type { CommentToClassify, SummaryRequest, ThemeOption } from "./comments";
 
 const SYSTEM = `Ets un expert en enquestes breus d'escolta activa per a una empresa cervesera (dades sintètiques). Respon NOMÉS amb un objecte JSON, sense text addicional. Escrius en català.
 Format: {"title": string, "intro": string, "questions": [{"text": string, "type": "scale5"|"scale10"|"yes_no"|"open", "domain": string, "reason": string}]}
@@ -85,3 +87,6 @@ export async function redraftQuestion(need: NeedInput, current: DraftQuestion, o
   const f = fallbackReplacement(need, current, others);
   return f ? { question: f, source: "fallback" } : null;
 }
+
+export { draftRecommendations, templateRecommendations, DAMM_INITIATIVES } from "./recommendations";
+export type { RecommendationContext, RecommendationProposal, RecInsight, DammInitiative, DraftOptions } from "./recommendations";
