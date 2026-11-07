@@ -2,6 +2,22 @@
 
 Two people work on this repo: **Jan** and **Natan**. Goal: move fast, keep `main` always demo-ready, keep merges and PRs under control. Applies to any AI agent working here.
 
+## Docs (read before working on the area)
+
+| Doc | What | Read when |
+|---|---|---|
+| [`docs/contract-changes.md`](docs/contract-changes.md) | checklist log of every shared-contract change | **after every sync or pull** (see Sync rules) |
+| [`docs/engine.md`](docs/engine.md) | engine model: scheduling, scores / confidence / consensus, follow-ups, insights, alarms, learning | working on or with the engine |
+| [`docs/engine-integration.md`](docs/engine-integration.md) | how the employee app, HR dashboard and jobs call `@damm/engine` | wiring routes or pages to the engine |
+| [`docs/question-types.md`](docs/question-types.md) | every question type with an example DB row and answers | writing questions, the seed or the answer UI |
+
+Engine commands (from `packages/engine`, after `pnpm install`; Node 22.5+, no native modules needed):
+- Test: `pnpm test` (Node test runner, in-memory SQLite)
+- Typecheck: `pnpm typecheck`
+- Run the job on the dev DB: `pnpm --filter @damm/engine run job` (`DB_PATH`, default `data/app.db`)
+- Build the demo DB (3 months of synthetic answers with planted alarms and insights, about 4 min): `pnpm --filter @damm/engine run demo`, then run the app with `DB_PATH=data/demo.db`
+- Simulate and tune the engine against known ground truth: `pnpm --filter @damm/engine run sim` / `run tune`
+
 ## Branches
 
 - `main`: protected, always runnable. Nobody commits to it directly.
@@ -31,6 +47,11 @@ Find out who you are working for (Jan or Natan) from `git config user.name` or b
   4. Never edit or tick the other person's items. Never delete entries: the log is the history.
 
 ## Hard rules
+
+- **No traces of AI tooling in git, locally or on the remote.**
+  - Branch names are only `<name>/dev` or `<name>/<task>`: never `claude/*` or other tool-generated names. If a tool creates a branch with such a name, rename it before the first push (`git branch -m`).
+  - No `Co-Authored-By`, "Generated with" or similar lines in commit messages, PR titles or PR descriptions.
+  - Never commit tool folders or files (`.claude/`, worktree folders, agent scratch files).
 
 - Never push or commit to `main`.
 - Never touch the other person's branches.

@@ -2,7 +2,7 @@
 
 How `@damm/engine` plugs into the employee app, the HR dashboard and the jobs. The model itself is described in [engine.md](engine.md). Question types are in [question-types.md](question-types.md).
 
-Status (2026-11-07): API defined. Implementation is in progress on `natan/engine-core`: the daily batch, answer submission, the job (aggregates), HR config and question validation come first. Insights and alarms are specified but not written yet; until then the job reports them as `pending`.
+Status (2026-11-07): implemented on `natan/engine-core`: the daily batch, answer submission, the job (aggregates, insights and alarms), HR config and question validation. Not yet: the `driver` and `action_effect` insights, alarm notifications (digest and push), and non-response handling.
 
 ## Big picture
 
@@ -32,8 +32,8 @@ Rules that do not change:
 | Import | Who uses it | What |
 |---|---|---|
 | `@damm/engine` | employee API routes | `createEngine`, `getDailyBatch`, `submitAnswers` |
-| `@damm/engine/job` | job route and script | `runEngineJob` |
-| `@damm/engine/hr` | HR routes | `validateQuestion`, `setDomainWeight`, `setFormatPreference`, `getConfig`, `setConfig` |
+| `@damm/engine/job` | server startup, job route, script | `runEngineJob`, `startEngineScheduler` |
+| `@damm/engine/hr` | HR routes and pages | `listInsights`, `listAlarms`, `alarmCounts`, `setAlarmStatus`, `validateQuestion`, `setDomainWeight`, `setFormatPreference`, `getConfig`, `setConfig` |
 | `@damm/engine/core` | tests, simulations | pure functions (normalise, Kalman, segment stats, Thompson) |
 
 ## Employee app
@@ -129,8 +129,8 @@ Reads (through `@damm/db/hr`, Jan's repositories), aggregate tables only:
 |---|---|---|
 | `agregat` | per period × collective × shift × domain: `n`, `mitjana` (1..5, legacy scale, kept for the existing pages), `score` (0..10), `confidence` (0..100), `consensus` (0..100), `suprimit` | engine job |
 | `domain_importance` | importance per domain from rankings | engine job |
-| `insight` | insight cards (section 6 of engine.md) | engine job (pending) |
-| `senyal` | alarms with severity, status, audience | engine job (pending) + analysis (themes) |
+| `insight` | insight cards (section 6 of engine.md) | engine job (`runInsights`, called by the job) |
+| `senyal` | alarms with severity, status, audience | engine job (`runAlarms`, called by the job) + analysis (themes) |
 
 Display rules:
 - **Suppressed rows** (`suprimit = 1`) have every value NULL. Show "n < 10" and nothing else.
@@ -148,7 +148,7 @@ Writes (HR routes, through `@damm/engine/hr`):
 ```ts
 import { runEngineJob } from "@damm/engine/job";
 const report = runEngineJob(db, { now: Date.now() });
-// { periods: ["2026-08","2026-09","2026-10"], aggregates: 312, suppressed: 41, insights: "pending", alarms: "pending" }
+// { periods: ["2026-08","2026-09","2026-10"], aggregates: 312, suppressed: 41, insights: { written: 540, suppressed: 96 }, alarms: { opened: 3, resolved: 1, suppressed: 0 } }
 ```
 
 Run it:
@@ -157,6 +157,115 @@ Run it:
 - after seeding, so the dashboard has data.
 
 The job is idempotent: it recomputes and replaces its own rows for the periods it covers.
+
+## Running the engine on the server
+
+The engine is a library inside the Next.js server process, not a separate service:
+
+| Work | When | How |
+|---|---|---|
+| Daily batch | each `GET /api/pool/next` | `getDailyBatch` |
+| Learning from an answer (trajectory, item bias, format stats, follow-up scheduling) | each `POST /api/responses`, immediately | `submitAnswers` |
+| Aggregates, insights, alarms | periodically, and on demand | `startEngineScheduler` runs `runEngineJob` every 10 minutes |
+
+Start the scheduler once per server process, in `apps/web/instrumentation.ts`:
+
+```ts
+export async function register() {
+  if (process.env.NEXT_RUNTIME !== "nodejs") return;
+  const { startEngineScheduler } = await import("@damm/engine/job");
+  const { getDb } = await import("@damm/db"); // the app's shared better-sqlite3 connection
+  const g = globalThis as { __engineScheduler?: unknown };
+  // Dev hot reload re-runs register(): keep a single scheduler.
+  g.__engineScheduler ??= startEngineScheduler(getDb(), {
+    intervalMs: 10 * 60_000,
+    onError: (e) => console.error("[engine] job failed", e),
+  });
+}
+```
+
+Behaviour:
+- **Runs:** once at start (`runOnStart`, default true), then every `intervalMs`. Runs never overlap.
+- **Failures:** a failed run is reported to `onError` and the next tick tries again.
+- **Shutdown:** the timer does not keep the process alive.
+- **On demand:** `scheduler.runNow()` runs immediately, for an HR "Recalculate now" button. It returns `null` if a run is already in progress.
+- **Cost:** the job is synchronous and replays all answers. At the demo's scale (about 1,000 people, a few thousand answers) it takes well under a second. For much larger data, move it to a worker thread or a separate process; the API stays the same.
+
+## Reading insights and alarms (HR dashboard)
+
+HR pages read through `@damm/engine/hr` (or through `@damm/db/hr` wrapping it). Both functions take a **viewer**:
+
+```ts
+type Viewer = { role: "hr" } | { role: "manager"; collectiuId: number };
+```
+
+The route resolves the viewer from the session, never from a request parameter. HR sees everything. A manager sees only their own collective, and only alarms with `audience = 'hr_manager'`, so Lideratge alarms are never shown to managers.
+
+### Insights
+
+```ts
+import { listInsights } from "@damm/engine/hr";
+const cards = listInsights(db, viewer, { kind: ["top_mover", "importance_gap"], collectiuId: 1 });
+```
+
+Query options:
+- `periode`: defaults to the latest; `"all"` returns every period;
+- `kind`: one or several;
+- `collectiuId`: `null` = company-wide rows only;
+- `domainId`;
+- `includeSuppressed`: default false. When true, suppressed rows come back with `value` and `detail` null, so the UI can show "not enough answers (n < 10)".
+
+Each `InsightView` has `id`, `kind`, `periode`, `collectiuId`, `tornId`, `domainId`, `n`, `value`, a typed `detail` and `suppressed`. The `InsightDetails` type in `@damm/engine/hr` gives the exact shape per kind, and every `detail` has `labels: { collective, shift, domain }` for display.
+
+| `kind` | `value` (headline) | `detail` (beyond `labels`) | Card idea |
+|---|---|---|---|
+| `domain_state` | score 0..10 | `current` and `previous` snapshots (score, confidence, consensus, n), `delta` | score tile with a confidence bar and consensus |
+| `top_mover` | change in score | `rank`, `direction` up/down, `current`, `previous`, `delta` | "biggest changes" list |
+| `polarisation` | consensus drop (points) | `current`, `previous`, `consensusDrop`, `scoreDelta` | "the group is splitting" warning |
+| `importance_gap` | priority 0..1 | `importance`, `score`, `priority`, `rank`, `quadrant` (`act_first`, `maintain`, `monitor`, `low_priority`), `importanceN` | importance vs satisfaction quadrant |
+| `trajectory_mix` | % declining | `improving`, `stable`, `declining` (%), `windowDays`, `n` | stacked bar |
+| `followup_confirmation` | % confirmed | `resolved`, `confirmed`, `confirmedDown`, `confirmedUp`, `rate`, `n` | "real change or noise?" |
+| `segment_gap` | gap in score | `dimension: "shift"`: `lowest`, `highest`, `groups[]`, `gap`. `dimension: "manager"`: `managers`, `others`, `gap`, `asOf` | side-by-side bars |
+
+`driver` and `action_effect` are reserved but not produced yet.
+
+### Alarms
+
+```ts
+import { listAlarms, alarmCounts, setAlarmStatus } from "@damm/engine/hr";
+const alarms = listAlarms(db, viewer); // unresolved, visible to this viewer
+const badge = alarmCounts(db, viewer); // { critical, warning, info }
+setAlarmStatus(db, id, "acknowledged"); // HR route only
+```
+
+`AlarmView` fields:
+- `id`, `type`;
+- `description`: an English sentence ready to display;
+- `collectiuId`, `tornId`, `domainId`, `periode`, `n`, `confidence`;
+- `severity`, `status`, `audience`, `createdAt`.
+
+Query options:
+- `status`: defaults to everything except `resolved`;
+- `severity`, `collectiuId`, `domainId`, `limit`.
+
+Suppressed alarms (n < 10) are never returned. Order: open first, then critical before warning before info, then newest first.
+
+Status changes:
+
+| From | Allowed to |
+|---|---|
+| `open` | `acknowledged`, `action_linked`, `resolved` |
+| `acknowledged` | `action_linked`, `resolved` |
+| `action_linked` | `resolved` |
+| `resolved` | none (if the problem returns, the engine opens a new alarm after its 7-day cooldown) |
+
+- **HR** makes these changes. `setAlarmStatus` throws `AlarmTransitionError` on any other move.
+- **The engine** only opens alarms and auto-resolves alarms that are still `open`. It never changes one a human has moved.
+
+### Getting alarms to the screen
+
+- **Today:** alarms are written by each job run, at most every 10 minutes. The dashboard picks them up when it reads, so a page load or a 60-second poll of `alarmCounts` for the header badge is enough for the demo.
+- **Planned:** a weekly digest of warnings and an immediate push or email for critical alarms. These will be an `onReport` hook on the scheduler (`report.alarms.opened > 0`). Not built yet.
 
 ## Seeded data
 
@@ -169,3 +278,28 @@ The engine works with the seed as it is:
 
 - `ENGINE_VERSION` (exported) is written to `engine_config.engine_version` by every job, so a demo can show which model produced the numbers.
 - Changes to this API are logged in [contract-changes.md](contract-changes.md).
+
+## Demo data
+
+`pnpm --filter @damm/engine run demo` builds `data/demo.db` from scratch, in about 4 minutes. It is separate from the seed's `data/app.db`, so nothing of Jan's is overwritten. Run the app on it with `DB_PATH=data/demo.db pnpm dev`.
+
+What it contains (all synthetic):
+- **Population:** 1,200 invented employees across the 4 collectives and 3 shifts, of whom 344 have accounts. Night shifts are deliberately thin.
+- **Questions:** the 163-question sample bank, plus one published HR need ("shift-change communication" for Fàbriques, two questions).
+- **Format preferences per collective:** quick formats for Fàbriques and Logística, reading formats for Oficines.
+- **Answers:** 92 days (1 Aug to 31 Oct 2026) of daily batches, answered through the real engine, about 95,000 answers of every type including rankings.
+- **Comments:** about 20,000 English template comments, with recurring themes (see below).
+- **Results:** at the end it runs `runEngineJob`, so `agregat`, `domain_importance`, `insight` and `senyal` are filled.
+
+Planted stories and what they produce:
+
+| Story | Where | Shows up as |
+|---|---|---|
+| Shift changes announced too late, from 1 Oct | Fàbriques, Condicions | `sharp_drop` (critical), `top_mover`, theme comments |
+| Heat and safety equipment, slow decline from mid-August | Logística, Condicions | `sustained_decline`, theme comments |
+| A group of people whose view of their supervisor collapses, from 14 Oct | Logística morning shift, Lideratge | follow-ups, `changepoint_cluster` (critical, HR only), `followup_confirmation` |
+| The team splits in two, average unchanged, from 1 Oct | Oficines, Entorn i relacions | `polarisation` alarm and insight |
+| Managers answer more positively | everywhere | `segment_gap` (manager) |
+| Few night-shift accounts | Fàbriques and Logística night | suppressed segments (n < 10) |
+
+The run is deterministic: the same seed gives the same database. `--seed` changes it, and `--days` makes it shorter.
