@@ -102,7 +102,7 @@ export default async function AlarmsPage({ searchParams }: { searchParams: Promi
           ) : (
             <>
               <strong>{actionable.length} {actionable.length === 1 ? "alarma requereix" : "alarmes requereixen"} acció</strong>
-              {severe > 0 && <span className="text-subtle"> · {severe} {severe === 1 ? "és d'avís o crítica" : "són d'avís o crítiques"}</span>}
+              {severe > 0 && severe < actionable.length && <span className="text-subtle"> · {severe} {severe === 1 ? "és d'avís o crítica" : "són d'avís o crítiques"}</span>}
             </>
           )}
         </p>

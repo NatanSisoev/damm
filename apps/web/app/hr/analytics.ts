@@ -51,7 +51,7 @@ export type Headline = {
 function headlineOf(i: InsightView): (Headline & { rank: number }) | null {
   if (i.suppressed || !i.detail) return null;
   const where = (l: { collective: string; domain: string | null; shift: string | null }) =>
-    `${l.domain ?? "El clima"} ${l.collective === "All" ? "a tota l'empresa" : `a ${l.collective}`}${l.shift ? ` (${l.shift})` : ""}`;
+    `${l.domain ?? "El clima"} ${l.collective === "All" ? "a tota l'empresa" : `a ${l.collective}`}${l.shift ? ` (${fixShifts(l.shift)})` : ""}`;
   const base = { key: `${i.kind}-${i.id}`, n: i.n };
   switch (i.kind) {
     case "top_mover": {
