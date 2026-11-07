@@ -336,3 +336,23 @@ export function exportResultsCsv(): string {
   }
   return lines.map((l) => l.map(csvCell).join(",")).join("\r\n") + "\r\n";
 }
+
+// --- Publish page reads (join codes + account counts per collective; no identities) ----
+
+export interface JoinCodeRow {
+  codi: string;
+  collectiu: string;
+  actiu: boolean;
+  comptes: number;
+}
+
+export function listJoinCodes(): JoinCodeRow[] {
+  const counts = new Map(accountCounts().map((a) => [a.collectiu, a.comptes]));
+  const rows = getDb()
+    .prepare(
+      `SELECT j.codi AS codi, c.nom AS collectiu, j.actiu AS actiu
+       FROM joincode j JOIN collectiu c ON c.id = j.collectiu_id ORDER BY c.id, j.codi`,
+    )
+    .all() as { codi: string; collectiu: string; actiu: number }[];
+  return rows.map((r) => ({ ...r, actiu: r.actiu === 1, comptes: counts.get(r.collectiu) ?? 0 }));
+}

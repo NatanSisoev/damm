@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 const links = [
   { href: "/hr/need", label: "Necessitat", step: "1" },
   { href: "/hr/review", label: "Revisió i publicació", step: "2" },
+  { href: "/hr/publish", label: "Enllaços i QR", step: "↗" },
   { href: "/hr/results", label: "Resultats", step: "3" },
   { href: "/hr/recommendations", label: "Recomanacions", step: "4" },
 ];
