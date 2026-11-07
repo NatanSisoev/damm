@@ -121,7 +121,16 @@ Web push through the PWA (service worker plus VAPID keys in `.env`, `web-push` o
 
 - TypeScript monorepo, Next.js frontend (PWA), LLM via the endpoint above for question generation and comment clustering, SQLite with a seed script generating synthetic employees (Fàbriques, Logística, Comercial, Oficines).
 
-Install, run, test and build commands: add them here as soon as they exist.
+Commands (run from the repo root, pnpm 10):
+
+- Install: `pnpm install`
+- Create the dev DB: `pnpm --filter @damm/db run init` (writes `data/app.db`; override the path with `DB_PATH`)
+- Run: `pnpm dev`
+- Lint: `pnpm lint`
+- Build: `pnpm build`
+- Test: no test suite yet.
+
+Config: copy `.env.example` to `.env` and fill it in. `PUBLIC_BASE_URL` (default `http://localhost:3000`) is the base for join links.
 
 ## Before the demo
 
