@@ -15,7 +15,7 @@ export type SettingsState = { error?: string; ok?: string; recoveryCode?: string
 const ERRORS = {
   credencials: "La contrasenya actual no és correcta.",
   password_curta: "La contrasenya nova ha de tenir almenys 8 caràcters.",
-  massa_intents: "Massa intents. Espera uns minuts i torna-ho a provar.",
+  massa_intents: "Has fet massa intents. Espera uns minuts i torna-ho a provar.",
 } as const;
 
 export async function logoutAction() {

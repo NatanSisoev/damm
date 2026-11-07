@@ -8,18 +8,18 @@ export default async function JoinEntryPage({ searchParams }: { searchParams: Pr
       <main className="mx-auto flex min-h-dvh w-full max-w-xl flex-col gap-6 md:py-8">
         <BrandHero
           title="Escoltem la teva veu"
-          lede="Dues preguntes breus al dia. Sense nom, sense rastre."
+          lede="Dues preguntes breus al dia. Sense nom ni correu."
           size="lg"
         />
         {compte === "esborrat" && (
           <p role="status" className="mx-4 rounded-xl border border-line bg-surface px-4 py-3 font-semibold">
-            Compte esborrat. Les respostes que vas donar es queden com a dades anònimes.
+            Compte esborrat. Les respostes que vas donar es conserven com a dades anònimes.
           </p>
         )}
         <form action={goToJoinAction} className="space-y-4 px-4">
           <div>
             <label htmlFor="codi" className="label">
-              Codi d&apos;unió
+              Codi d&apos;invitació
             </label>
             <input
               id="codi"

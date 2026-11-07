@@ -14,7 +14,7 @@ export default async function JoinPage({ params }: { params: Promise<{ codi: str
       <main className="mx-auto flex min-h-dvh w-full max-w-xl flex-col gap-6 md:py-8">
         {valid ? (
           <>
-            <BrandHero eyebrow={info.empresa} title="Benvinguda" lede={`Et donem la benvinguda a ${info.empresa}. Les teves respostes són anònimes i només es mostren de forma agregada.`} />
+            <BrandHero eyebrow={info.empresa} title="Et donem la benvinguda" lede={`Les teves respostes a ${info.empresa} són anònimes i només es mostren agregades.`} />
             <div className="space-y-4 px-4">
               <div className="card p-4">
                 <div className="text-sm text-muted">Col·lectiu</div>
