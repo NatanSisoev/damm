@@ -87,7 +87,7 @@ Non-negotiable rules:
 - **Domains (6):** Benestar, Lideratge, Desenvolupament, Cultura i pertinença, Entorn i relacions, Condicions i organització. Each collective gets a different subset of items per domain.
 - **Minimum group size: 10.** Any segment (collective, shift, period, domain) with fewer than 10 respondents is suppressed everywhere, dashboard and exports included.
 - **No time tracking, no clock-in anchor.**
-- **Typeform is ignored.** The app is the only channel. "Publish" means putting approved questions in the survey pool and generating the join link and QR.
+- **Typeform is ignored.** The app is the only channel. "Publish" means putting an approved need's questions in the survey pool and sending a web push notification to the subscribed devices of its collective (all collectives when it has none). Join links and QR codes are per-collective onboarding codes on `/hr/publish`, not per need.
 - **App:** standalone mobile app (PWA). Onboarding: join code (identifies company and collective), then the user picks a username and password. The account maps to an opaque internal ID. No email or phone, no personal data. Credentials are salted-hashed. Recovery uses a one-time code.
 - **Admin sees only counts per collective, never identities.**
 - **Longitudinal tracking** per internal ID is for trajectory clustering only. It is never shown per person and never leaves the analysis layer.
@@ -118,12 +118,12 @@ packages/seed/       synthetic population, responses and comments
 3. **AI:** drafts questions from a need, redacts PII from comments, proposes recommendations and follow-up surveys. Proposals only, a human approves.
 4. **Analysis:** runs as jobs (script or `POST /api/jobs/run`) and writes aggregate tables. Clusters comments, finds emerging themes and weak signals, compares periods, computes representativeness against the synthetic population and suppresses segments below the minimum group size.
 5. **Employee app (PWA):** join code onboarding, answer UI per collective, push notifications, response submission.
-6. **HR dashboard:** need in natural language, review and approve AI drafts, publish (join link and QR), results with representativeness, recommendations, follow-up survey.
+6. **HR dashboard:** need in natural language, review and approve AI drafts, publish (push to the collective; join links and QR per collective for onboarding), results with representativeness, recommendations, follow-up survey.
 
 ### Integration points
 
 - The employee side and the HR side meet only through the DB and two endpoints: `GET /api/pool/next` (questions for an account) and `POST /api/responses` (answers in).
-- Approved questions enter the pool via `pregunta.estat = aprovada`. Publishing creates the join link and QR.
+- Approved questions enter the pool via `pregunta.estat = aprovada`. Publishing marks the need `publicada` and notifies the collective by web push; HR gets back only an aggregate device count (`<10` under the minimum group size).
 - Analysis jobs write `agregat`, `tema`, `comentari_tema`, `senyal`, `recomanacio`. The dashboard reads only these. The LLM is never called in a dashboard request path.
 - The seed makes both sides workable independently: seeded responses feed analysis, seeded approved questions feed the engine.
 
@@ -180,8 +180,12 @@ Read these before planning work. Both people's agents keep them current.
 - `docs/demo-script.md` and `docs/slide-notes.md`: the pitch flow and the slide content.
 - `docs/teams-integration.md`: what the Teams publish card does today and the Graph/bot/Entra roadmap (R-FLOW-4d, N-1).
 - `docs/frontend-audit.md`: employee, HR and manager frontend audit (2026-11-07) with P0/P1/P2 findings and owners.
+- `docs/hr-ui-audit.md`: HR portal and manager view audit (2026-11-07), one table per screen with severity, fix and status.
+- `docs/visual-identity.md`: the chosen visual identity ("Paper": ink on paper, Hanken only, 2px corners, red as signal) for employee, HR and manager, with the code changes needed to apply it.
 - `docs/e2e-test-plan.md`: manual end-to-end runbook for the full loop (setup, main scenario, edge-case scenarios, results log); run it after merging `jan/dev` with `main`.
 - `docs/user-flows.md`: expected user flow paths per persona (employee, HR, manager, anonymity, jobs) with exact UI copy, branches, invariants and expected gaps; ends with a requirement-to-flow matrix and a flow-to-e2e-case map. Source for reworking the e2e plan.
+- `docs/ai-drafting-eval.md`: how need drafting is evaluated (cases, checks, judge), per-round results, remaining weaknesses and the `options_json` gap (R-FLOW-2a..2g).
+- `docs/copy-guide.md`: Catalan voice rules, glossary and before/after examples for every user-facing string.
 
 When you add a doc, list it here with one line on what it is for.
 

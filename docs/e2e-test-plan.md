@@ -17,7 +17,7 @@ A manual runbook for the full loop plus a catalogue of smaller scenarios. Rework
 
 | Feature | Where tested | Flow |
 |---|---|---|
-| Web push (`/api/push/*`, toggle in `/settings`, send job) | M-12, M-13, S-30 to S-32 | F-EMP-9, F-JOB-4 |
+| Web push (toggle in `/settings` and on `/`, send on publish) | M-12, M-13, S-30 to S-33 | F-EMP-9, F-JOB-4 |
 | Named HR users, per-person audit (one shared access code; approver is the constant `hr-demo`) | S-75, S-89 | F-HR-1, F-PRIV-5 |
 | Manager scoping (any collective reachable behind the HR gate), manager role, centre or shift question in onboarding | M-23, S-72, S-89 | F-MGR-1, F-MGR-2, F-EMP-2 |
 | Configurable retention (only delete-account exists) | S-25, S-89 | F-EMP-10, F-PRIV-5 |
@@ -44,7 +44,7 @@ Fill `.env` by hand. Never paste values into this document, a ticket or a chat. 
 | `LLM_BASE_URL`, `LLM_API_KEY`, `LLM_MODEL` | AI drafts (LLM-ON) | Drafts fall back to templates, badge "Plantilla de reserva" (LLM-OFF) |
 | `SESSION_SECRET` | Employee session cookie `damm_session` | Set it, or sessions are not stable across restarts |
 | `PUBLIC_BASE_URL` | Base of join links and QR (default `http://localhost:3000`). Missing from `.env.example`, see Findings | Links point to localhost |
-| `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | Web push | Not built, no effect |
+| `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | Web push (generate with `npx web-push generate-vapid-keys`) | Push off: no toggle, publish says notifications are off |
 | `TEAMS_WEBHOOK_URL` | Real post of the Teams card | Not built, no effect |
 
 ### 1.2 Database
@@ -115,14 +115,14 @@ Covers R-FLOW-1 to R-FLOW-8, R-CH-1, N-7. Preconditions: 1.1 to 1.3 done on the 
 
 | # | Flow | Action | Expected | Req | Result |
 |---|---|---|---|---|---|
-| M-1 | F-HR-1 | [B] Open `/hr` with no cookie | Redirect to `/hr-login?next=/hr`. Page "Portal de persones", text "Accés restringit a l'equip de persones. Introdueix el codi d'accés de la demo.", field "Codi d'accés", button "Entra" | R-X-3 | ☐ |
+| M-1 | F-HR-1 | [B] Open `/hr` with no cookie | Redirect to `/hr-login?next=/hr`. Page "Portal de persones", text "Accés restringit a l'equip de persones. Escriu el codi d'accés de la demo.", field "Codi d'accés", button "Entra" | R-X-3 | ☐ |
 | M-2 | F-HR-1 | [B] Enter a wrong code, press "Entra" | Stays on the page with the alert "Codi incorrecte." No `hr_access` cookie | R-PRIV-3 | ☐ |
 | M-3 | F-HR-1 | [B] Enter the right code (from `.env`), press "Entra" | Cookie `hr_access` set, lands on `/hr`. Nav: "Inici", "Necessitats", "Enllaços i QR", "Resultats", "Alarmes" (with a count badge), "Recomanacions", "Com es calcula?", "Vista de responsables" | R-X-3, R-PRIV-9 | ☐ |
 | M-4 | F-HR-2 | [B] "Necessitats", open "Nova necessitat", press the example "B · Logística des del mòbil" | Fields "Objectiu", "Context", "Què no s'ha de preguntar", "Col·lectiu" (Logística) and "Durada màxima per persona (segons)" (60) are filled | R-FLOW-1a to 1e | ☐ |
-| M-5 | F-HR-2 | [B] Press "Generar esborranys" | Button "Generant…" and text "La IA està redactant les preguntes…". Redirect to `/hr/needs`. A card in state "Esborrany" with badge "Proposta de la IA" (or "Plantilla de reserva" if LLM-OFF), 3 to 6 questions, estimated time "~N s de 60 s". [T] `sqlite3 data/demo.db "select estat, generada_per_ia from pregunta where necessitat_id=(select max(id) from necessitat)"` shows only `draft`, none `aprovada` | R-FLOW-2a to 2g, R-X-3 | ☐ |
-| M-6 | F-HR-3 | [B] In the draft: edit one text and press "Desar text"; move one with the up or down control; press "Regenerar" on one; press "Descartar" on one; edit title and introduction and press "Desar títol i introducció" | Each change survives a reload. A discarded question leaves the draft list (`estat = 'retirada'` in the DB). Order follows the move. An over-long set shows "Atenció: el temps estimat … supera la durada màxima" (see S-65) | R-FLOW-3a to 3c | ☐ |
-| M-7 | F-HR-3 | [B] Press "Aprovar" on every remaining question | Each moves to "Preguntes aprovades"; when none is left to review the need shows "Llesta per publicar". [T] `select estat, prioritat, aprovada_per, aprovada_el from pregunta where necessitat_id=(select max(id) from necessitat)`: `aprovada`, `100`, `hr-demo`, a timestamp | R-FLOW-3d, R-X-3, R-PRIV-7, R-PRIV-10 | ☐ |
-| M-8 | F-HR-4 | [B] Press "Publicar amb enllaç i QR" | State "Publicada". For a Logística need, one new `joincode` (8 hex characters) and one `publicacio` row; link `<PUBLIC_BASE_URL>/join/<CODE>`; a QR on the card | R-FLOW-4a to 4c | ☐ |
+| M-5 | F-HR-2 | [B] Press "Genera els esborranys" | Button "Generant…" and text "La IA està redactant les preguntes…". Redirect to `/hr/needs`. A card in state "Esborrany" with badge "Proposta de la IA" (or "Plantilla de reserva" if LLM-OFF), 3 to 6 questions, estimated time "~N s de 60 s". [T] `sqlite3 data/demo.db "select estat, generada_per_ia from pregunta where necessitat_id=(select max(id) from necessitat)"` shows only `draft`, none `aprovada` | R-FLOW-2a to 2g, R-X-3 | ☐ |
+| M-6 | F-HR-3 | [B] In the draft: edit one text and press "Desa el text"; move one with the up or down control; press "Torna a generar" on one; press "Descarta" on one; edit title and introduction and press "Desa el títol i la introducció" | Each change survives a reload. A discarded question leaves the draft list (`estat = 'retirada'` in the DB). Order follows the move. An over-long set shows "Atenció: el temps estimat … supera la durada màxima" (see S-65) | R-FLOW-3a to 3c | ☐ |
+| M-7 | F-HR-3 | [B] Press "Aprova" on every remaining question | Each moves to "Preguntes aprovades"; when none is left to review the need shows "Llesta per publicar". [T] `select estat, prioritat, aprovada_per, aprovada_el from pregunta where necessitat_id=(select max(id) from necessitat)`: `aprovada`, `100`, `hr-demo`, a timestamp | R-FLOW-3d, R-X-3, R-PRIV-7, R-PRIV-10 | ☐ |
+| M-8 | F-HR-4 | [B] Press "Publica i envia la notificació" | State "Publicada"; a notice "S'han enviat notificacions a … dispositius del col·lectiu." ("menys de 10" under 10; "notificacions desactivades" without VAPID keys). No new `joincode` or `publicacio` row. With M-12 done on a Logística account, that browser shows "Escolta activa" | R-FLOW-4a, R-FLOW-5d | ☐ |
 | M-9 | F-HR-4 | [B] Open "Enllaços i QR" (`/hr/publish`). For Logística press "Copia", open "Cartell per imprimir" (`/hr/publish/<codi>/poster`) and "Publica a Teams" (`/hr/publish/<codi>/teams`) | Title "Enllaços i QR per col·lectiu", one card per collective with code, link, QR, "comptes al col·lectiu" (a count under 10 reads "<10"). The poster is an A4 page. The Teams page shows the Adaptive Card payload titled "Escolta activa"; sending to Teams is not built (ABS, N-1 roadmap in `docs/teams-integration.md`) | R-FLOW-4b to 4d, N-1 | ☐ |
 
 ### Phase B. Employee side
@@ -131,10 +131,10 @@ Use the mobile preset. Create the account with the join code of the need's colle
 
 | # | Flow | Action | Expected | Req | Result |
 |---|---|---|---|---|---|
-| M-10 | F-EMP-1 | [B] Open `/join/<LOG>` with no cookie. [P] Jan also scans the QR on a phone | Eyebrow = company, title "Benvinguda", lede "Et donem la benvinguda a {empresa}. Les teves respostes són anònimes i només es mostren de forma agregada.", "Col·lectiu" card showing Logística, note "Anònim de debò. No et demanem nom ni correu. Només veiem grups de 10 persones o més.", link "Com tractem les teves dades", button "Continua". Press "Continua": URL `/onboarding?codi=<LOG>` | R-FLOW-5b, R-PRIV-13 | ☐ |
+| M-10 | F-EMP-1 | [B] Open `/join/<LOG>` with no cookie. [P] Jan also scans the QR on a phone | Eyebrow = company, title "Et donem la benvinguda", lede "Les teves respostes a {empresa} són anònimes i només es mostren agregades.", "Col·lectiu" card showing Logística, note "Anònim de debò. No et demanem nom ni correu. Només veiem grups de 10 persones o més.", link "Com tractem les teves dades", button "Continua". Press "Continua": URL `/onboarding?codi=<LOG>` | R-FLOW-5b, R-PRIV-13 | ☐ |
 | M-11 | F-EMP-2 | [B] On `/onboarding` fill "Nom d'usuari" `usuari.prova`, "Contrasenya" and "Repeteix la contrasenya" with a test password of 8+ characters, press "Crea el compte" | Cookie `damm_session` set. Title "Compte creat" and a recovery code in groups of 4 with "Desa'l ara. Aquest codi només el veuràs una vegada." The continue button is disabled until "L'he desat en un lloc segur" is ticked; then it goes to `/`. No email, phone or name field anywhere. [T] `compte` has one new row with hex `password_hash`, `salt`, `recovery_hash` and no recovery code in plain text | R-PRIV-4, R-PRIV-13 | ☐ |
-| M-12 | F-EMP-9 | [B] Open `/settings` on the mobile preset | Panels in order: "Privadesa", "Canvia la contrasenya", "Codi de recuperació", "Sessió", "Esborra el compte". **No push toggle and no permission prompt** (ABS). [P] Jan: on a phone, no notification permission is requested anywhere in the app | R-FLOW-5d, N-12 | ☐ ABS |
-| M-13 | F-EMP-9, F-JOB-4 | [T] `curl -i http://localhost:3000/api/push/subscribe` and `/api/push/send` | 404 for both (routes do not exist). [B] Leave the app open on the home page: no notification arrives (ABS) | R-FLOW-5d | ☐ ABS |
+| M-12 | F-EMP-9 | [B] Open `/settings` on the mobile preset (VAPID keys set) and press "Activa les notificacions" | Card "Notificacions"; no prompt before the tap; after allowing, "Desactiva les notificacions" shows. [T] `select count(*) from push_subscripcio` = 1 for this account | R-FLOW-5d, N-12 | ☐ |
+| M-13 | F-EMP-9 | [B] After M-8, click the notification | The app focuses or opens at `/` with today's questions. [P] Jan: on a phone over the HTTPS tunnel, the same notification arrives | R-FLOW-5d | ☐ |
 | M-14 | F-EMP-5 | [B] Open `/` and answer today's questions. For an open question type "Truqueu al 600123456, sóc l'Anna Puig" | "Carregant les preguntes d'avui…", then "Pregunta 1 de N", badge "Anònim", progress bar, submit "Envia i continua" (last: "Envia"), "Enviant…" while sending, `POST /api/responses` answers 204. N is 3 by default. The new Logística need's question is in the batch (HR need comes after any follow-up and before monitoring). [T] the stored `comentari` is `[nom]` and `[telèfon]` in place of the name and the number, no raw text | R-FLOW-5a, R-FLOW-6a, R-PRIV-1 | ☐ |
 | M-15 | F-EMP-5 | [B] After the last answer, then reload `/` | h2 "Gràcies", lede "Has respost les {n} preguntes d'avui. Demà en tens de noves.", note "🔒 Anònim de debò. No et demanem nom ni correu. Només veiem grups de 10 persones o més.", then the card "Has dit, hem fet". Reload gives the same batch, nothing left to answer. A replayed `POST` gives 409 `already_answered` (S-43) | R-FLOW-5c, R-FLOW-5f | ☐ |
 
@@ -144,21 +144,21 @@ Use the mobile preset. Create the account with the join code of the need's colle
 |---|---|---|---|---|---|
 | M-16 | F-HR-5 | [B] In `/hr/results` look for the new need's question after the single answer from M-14 | One respondent is below the minimum group size 10, so nothing about the new need is shown with a value ("Suprimit" or absent). Segments of the demo data with n of 10 or more show values. Optional route to reach n of 10: ten extra accounts by hand (fresh cookie window each) then answer; no helper script exists | R-PRIV-2, R-DATA-1 | ☐ |
 | M-17 | F-JOB-1, F-JOB-2 | [T] `source ~/.claude/bin/heavy-gate.sh` then `DB_PATH=data/demo.db pnpm --filter @damm/engine run job`. [B] reload `/hr/results` | A JSON report with counts for aggregates, insights and alarms, no error. The scheduler also runs it every 10 minutes (server log line). Segments under 10 stay suppressed. The LLM is not called by any dashboard request. Idempotence is S-86 | R-FLOW-6b to 6e, N-2 | ☐ |
-| M-18 | F-HR-5 | [B] Open `/hr/results` and scroll | Header "Resultats", subtitle "Sempre en agregat. Els segments amb menys de 10 respondents es mostren com a Suprimit", KPIs "Comptes actius", "Temes detectats", "Temes emergents", "Segments suprimits". Sections "Perfil per domini" (radar), "Temes dels comentaris", "Representativitat", "Tendències per domini" (mean 1 to 5 with n and precision indicativa, moderada, sòlida), "Comptes per col·lectiu" ("Només recomptes, mai identitats"). Choose a period in "Compara amanb" is `?vs=`: the select reads "Compara amb" and switches the comparison | R-FLOW-7a to 7f, R-CH-2 | ☐ |
-| M-19 | F-HR-5 | [B] Read "Representativitat" per collective and per shift | Columns respostes, població, diferència; differences of 5 pp or more are marked; the night shift shows low response; night rows with n under 10 read "Suprimit" with the hint "Menys de 10 respondents" | R-DIFF-1, R-BIAS-1, N-2 | ☐ |
-| M-20 | F-HR-7 | [B] Open `/hr` (home), then "Alarmes" (`/hr/signals`), then "Veure detall →" on one alarm | Home shows counts, radar, pending items and recent signals. `/hr/signals`: title "Alarmes", subtitle "Senyals que detecta el motor a partir dels agregats. Cap és individual; cada una és revisada per una persona.", button "Recalcula ara", each item with type and severity badges, "Només RH" on HR-only alarms, "{periode} · n={n}", status buttons. Detail `/hr/signals/<id>`: "Estat del senyal:" buttons, card "Del senyal a l'acció" with four steps "Fet" or "Pendent", button "← Recomanacions". Changing the status survives a reload (see S-85 for transitions) | R-FLOW-7e, R-FLOW-6e, R-DIFF-3 | ☐ |
+| M-18 | F-HR-5 | [B] Open `/hr/results` and scroll | Header "Resultats", subtitle "Sempre en agregat. Els segments amb menys de 10 persones que han respost es mostren com a Suprimit", KPIs "Comptes actius", "Temes detectats", "Temes emergents", "Segments suprimits". Sections "Perfil per domini" (radar), "Temes dels comentaris", "Representativitat", "Tendències per domini" (mean 1 to 5 with n and precision indicativa, moderada, sòlida), "Comptes per col·lectiu" ("Només recomptes, mai identitats"). Choose a period in "Compara amanb" is `?vs=`: the select reads "Compara amb" and switches the comparison | R-FLOW-7a to 7f, R-CH-2 | ☐ |
+| M-19 | F-HR-5 | [B] Read "Representativitat" per collective and per shift | Columns respostes, població, diferència; differences of 5 pp or more are marked; the night shift shows low response; night rows with n under 10 read "Suprimit" with the hint "Menys de 10 persones han respost" | R-DIFF-1, R-BIAS-1, N-2 | ☐ |
+| M-20 | F-HR-7 | [B] Open `/hr` (home), then "Alarmes" (`/hr/signals`), then "Veure detall →" on one alarm | Home shows counts, radar, pending items and recent signals. `/hr/signals`: title "Alarmes", subtitle "Senyals que detecta el motor a partir dels agregats. Cap és individual; cada una és revisada per una persona.", button "Recalcula ara", each item with type and severity badges, "Només l'equip de persones" on HR-only alarms, "{periode} · n={n}", status buttons. Detail `/hr/signals/<id>`: "Estat del senyal:" buttons, card "Del senyal a l'acció" with four steps "Fet" or "Pendent", button "← Recomanacions". Changing the status survives a reload (see S-85 for transitions) | R-FLOW-7e, R-FLOW-6e, R-DIFF-3 | ☐ |
 | M-20b | F-HR-5 | [B] Insight cards on `/hr/results` (demo DB) | Cards "Estat del domini", "Canvi destacat", "Polarització", "Importància i puntuació" (quadrants "Actua primer", "Mantén", "Vigila", "Prioritat baixa"), "Trajectòries", "Confirmació del seguiment", "Diferència entre grups". Bodies like "Puntuació x/10 … confiança … consens …", "↑ Puja" or "↓ Baixa", each with a badge `n=`. A suppressed row shows no value; no card names a person or a group under 10 | R-FLOW-7, R-PRIV-2 | ☐ |
-| M-21 | F-HR-7 | [B] `/hr/recommendations` (title "Recomanacions"). On one recommendation of Logística press "Aprovar"; on another press "Descartar" | `recomanacio.estat` goes `proposada` to `aprovada` or `descartada`. Nothing is executed. A decided recommendation has no buttons any more | R-FLOW-8a, 8c, R-X-3 | ☐ |
-| M-22 | F-HR-8, F-EMP-8 | [B] On the approved Logística recommendation press "Crear enquesta de seguiment" | Redirect to `/hr/needs`, a new need in "Esborrany", AI drafted, nothing approved. Back on `/hr/recommendations`: badge "Seguiment creat", button gone. Approve its questions and publish (as M-7, M-8). On the employee tab `/`, the card "Has dit, hem fet" lists the approved action with the period badge, "a partir de les respostes de {n} persones" and the badge "Enquesta de seguiment en marxa" | R-FLOW-8b, 8d, N-5 | ☐ |
+| M-21 | F-HR-7 | [B] `/hr/recommendations` (title "Recomanacions"). On one recommendation of Logística press "Aprova"; on another press "Descarta" | `recomanacio.estat` goes `proposada` to `aprovada` or `descartada`. Nothing is executed. A decided recommendation has no buttons any more | R-FLOW-8a, 8c, R-X-3 | ☐ |
+| M-22 | F-HR-8, F-EMP-8 | [B] On the approved Logística recommendation press "Crea l'enquesta de seguiment" | Redirect to `/hr/needs`, a new need in "Esborrany", AI drafted, nothing approved. Back on `/hr/recommendations`: badge "Seguiment creat", button gone. Approve its questions and publish (as M-7, M-8). On the employee tab `/`, the card "Has dit, hem fet" lists the approved action with the period badge, "a partir de les respostes de {n} persones" and the badge "Enquesta de seguiment en marxa" | R-FLOW-8b, 8d, N-5 | ☐ |
 
 ### Phase D. Manager and close
 
 | # | Flow | Action | Expected | Req | Result |
 |---|---|---|---|---|---|
 | M-23 | F-MGR-1, F-MGR-2 | [B] Open `/manager`, then each of the four collectives, then `/manager/Inexistent` | `/manager`: title "Vista de responsables", subtitle "Tria el col·lectiu del qual vols veure els resultats.", card "Col·lectius" with the read-only note and four links. Each `/manager/<name>` opens (**all four reachable, no 403: ABS of scoping, N-8**) with cards "Perfil per domini", "Recomanacions aprovades" (only `aprovada`, only that collective), "Què destaca el motor" (at most 8; empty text "Encara no hi ha prou respostes per destacar res (cal n ≥ 10)."), "Tendència per domini", "Representativitat", "Temes dels comentaris" (labelled "Tota l'empresa, no només aquest col·lectiu"), "Senyals del col·lectiu" (empty "Cap senyal per a aquest col·lectiu."). HR-only alarms (`audience` HR, for example the Lideratge changepoint of Logística morning) never appear. `/manager/Inexistent`: 404 | R-U-3, N-8, R-FLOW-6, R-FLOW-7 | ☐ |
-| M-24 | F-HR-9, F-EMP-5 | [B] In `/hr/needs` press "Tanca la necessitat" on the test need. Filter `/hr/needs?estat=tancada`. Then open a **new account** of the same collective (fresh cookie window, `<LOG>`) and look at `/` | Card shows "Tancada" and the hint "Decisió de l'equip: no hi entren noves respostes de seguiment."; the filter lists it. **KG (F-HR-9 B1):** the new account still receives the closed need's question, because the pool ignores `necessitat.estat`. Record `KG` when it is served; `F` only if the page crashes. Closing twice is a no-op; the join code stays active (S-14) | R-FLOW-8c, R-DEL | ☐ KG |
+| M-24 | F-HR-9, F-EMP-5 | [B] In `/hr/needs` press "Tanca la necessitat" on the test need. Filter `/hr/needs?estat=tancada`. Then open a **new account** of the same collective (fresh cookie window, `<LOG>`) and look at `/` | Card shows "Tancada" and the hint "L'equip l'ha tancada: ja no recull respostes de seguiment."; the filter lists it. **KG (F-HR-9 B1):** the new account still receives the closed need's question, because the pool ignores `necessitat.estat`. Record `KG` when it is served; `F` only if the page crashes. Closing twice is a no-op; the join code stays active (S-14) | R-FLOW-8c, R-DEL | ☐ KG |
 
-That makes 25 steps (M-1 to M-24 plus M-20b). The old phone-dependent push steps M-12 and M-13 are now absence checks.
+That makes 25 steps (M-1 to M-24 plus M-20b). Push steps M-12 and M-13 need VAPID keys in `.env`; a real phone also needs the HTTPS tunnel.
 
 ## 3. Further scenarios
 
@@ -168,7 +168,7 @@ IDs are `S-n`. Each row has the flow, requirements, mode, steps and the expected
 
 | ID | Flow | Req | Steps | Expected | Result |
 |---|---|---|---|---|---|
-| S-1 | F-HR-5, F-PRIV-2 | R-PRIV-2, R-DIFF-2 | [B] In `/hr/results` look at the night-shift segments (demo DB: Fàbriques and Logística night; seed DB: Logística/nit, 6) in every table and chart | Shown as "Suprimit" with the hint "Menys de 10 respondents" in profile, representativity, trends and signals. Themes with under 10 comments show "Suprimit" with "Menys de 10 comentaris". "Segments suprimits" counts them | ☐ |
+| S-1 | F-HR-5, F-PRIV-2 | R-PRIV-2, R-DIFF-2 | [B] In `/hr/results` look at the night-shift segments (demo DB: Fàbriques and Logística night; seed DB: Logística/nit, 6) in every table and chart | Shown as "Suprimit" with the hint "Menys de 10 persones han respost" in profile, representativity, trends and signals. Themes with under 10 comments show "Suprimit" with "Menys de 10 comentaris". "Segments suprimits" counts them | ☐ |
 | S-2 | F-HR-6, F-PRIV-2 | R-FLOW-6, R-PRIV-1, R-PRIV-2 | [B] Press "Exporta CSV" (or use S-88 for the headers) and read the rows of a sub-10 group | `suprimit=1` and no value on those rows. No account id, username or free text anywhere in the file | ☐ |
 | S-3 | F-HR-5 | R-PRIV-2 | [B] Complementary suppression: where one segment of a total is hidden, check its sibling | A second segment is also hidden, or the total is not shown, so the hidden value cannot be got by subtraction | ☐ |
 | S-4 | F-HR-6, F-HR-1 B1 | R-PRIV-3 | [T] `curl -i http://localhost:3000/hr/results/export` with no cookie (GATE-ON) | Redirect to `/hr-login`, no CSV body | ☐ |
@@ -187,9 +187,9 @@ IDs are `S-n`. Each row has the flow, requirements, mode, steps and the expected
 | S-12 | F-EMP-1 B4 | R-FLOW-5b | [B] Open `/join/` plus the code in lowercase | Works, the code is uppercased | ☐ |
 | S-13 | F-EMP-1 B5 | R-FLOW-5b | [B] Open `/join/XXXX` | "Codi no vàlid", text "Aquest codi no existeix o ja no està actiu. Comprova l'enllaç o demana un codi nou al teu equip.", link "Torna a provar amb un altre codi" to `/join` | ☐ |
 | S-14 | F-HR-9 B3, F-EMP-1 B6 | R-FLOW-8c | [B] Close a need (M-24), then open its join link again | The join code stays active and the welcome page shows. A code with `joincode.actiu = 0` (set with `sqlite3` on a copy) shows the "Codi no vàlid" screen | ☐ |
-| S-15 | F-EMP-2 B1 to B4 | R-PRIV-13 | [B] Onboarding validation, one at a time | Mismatched repeat: "Les contrasenyes no coincideixen." Username of 2 characters or with spaces or accents: "L'usuari ha de tenir entre 3 i 30 caràcters: lletres minúscules, xifres, punt, guió o guió baix." Password under 8: "La contrasenya ha de tenir almenys 8 caràcters." Existing username: "Aquest nom d'usuari ja existeix. Prova'n un altre." Capital letters are lowercased first, so `Prova` is accepted as `prova` | ☐ |
-| S-16 | F-EMP-1 B3 | R-FLOW-5b | [B] On `/join` submit the empty field | Redirected back to `/join` (title "Escoltem la teva veu", field "Codi d'unió", placeholder `DAMM-XXX`, button "Entra") | ☐ |
-| S-17 | F-EMP-1 B7 | R-FLOW-5b | [B] Open `/onboarding?codi=NOPE` directly | "Codi no vàlid" with the link "Introdueix un altre codi" | ☐ |
+| S-15 | F-EMP-2 B1 to B4 | R-PRIV-13 | [B] Onboarding validation, one at a time | Mismatched repeat: "Les contrasenyes no coincideixen." Username of 2 characters or with spaces or accents: "El nom d'usuari té entre 3 i 30 caràcters: lletres minúscules, xifres, punt, guió o guió baix." Password under 8: "La contrasenya ha de tenir almenys 8 caràcters." Existing username: "Aquest nom d'usuari ja existeix. Prova'n un altre." Capital letters are lowercased first, so `Prova` is accepted as `prova` | ☐ |
+| S-16 | F-EMP-1 B3 | R-FLOW-5b | [B] On `/join` submit the empty field | Redirected back to `/join` (title "Escoltem la teva veu", field "Codi d'invitació", placeholder `DAMM-XXX`, button "Entra") | ☐ |
+| S-17 | F-EMP-1 B7 | R-FLOW-5b | [B] Open `/onboarding?codi=NOPE` directly | "Codi no vàlid" with the link "Escriu un altre codi" | ☐ |
 | S-18 | F-EMP-2 B5 | R-PRIV-13 | [T]+[B] Open `/onboarding?codi=<code>`, then set that code inactive in the DB (`update joincode set actiu=0 where codi='<code>'` on a scratch copy of the DB in use, then restart), then press "Crea el compte" | "Aquest codi no és vàlid o ja no està actiu." and no `compte` row is created | ☐ |
 
 ### 3.3 Account lifecycle
@@ -199,22 +199,23 @@ IDs are `S-n`. Each row has the flow, requirements, mode, steps and the expected
 | S-19 | F-EMP-3 B4 | R-PRIV-13 | [B] Log in with `USUARI.PROVA` | Matches `usuari.prova` (lowercased), home loads | ☐ |
 | S-20 | F-EMP-3 | R-PRIV-13, R-FLOW-5a | [B] `/` with no cookie, then `/login` | `/` redirects to `/login`. Title "Torna a entrar", lede "Continua on ho vas deixar.", buttons "Entra" and "He perdut la contrasenya", line "Primera vegada? Obre l'enllaç d'invitació del teu equip.". Right credentials lead to `/` with today's questions | ☐ |
 | S-21 | F-EMP-3 B1 | R-PRIV-13 | [B] Wrong password, then unknown username | Same text both times: "Usuari o contrasenya incorrectes." (no user enumeration) | ☐ |
-| S-22 | F-EMP-3 B2 | R-PRIV-13 | [B] Five wrong attempts for one username, then the right password | From the sixth try: "Massa intents. Torna-ho a provar d'aquí a una estona." even with the right password. The limit is in memory, per process; restarting the server clears it | ☐ |
+| S-22 | F-EMP-3 B2 | R-PRIV-13 | [B] Five wrong attempts for one username, then the right password | From the sixth try: "Has fet massa intents. Torna-ho a provar d'aquí a una estona." even with the right password. The limit is in memory, per process; restarting the server clears it | ☐ |
 | S-23 | F-EMP-4 | R-PRIV-4, R-PRIV-13 | [B] `/login`, "He perdut la contrasenya", fill "Nom d'usuari", "Codi de recuperació" (dashes and case ignored), "Contrasenya nova", press "Canvia la contrasenya" | Title "Contrasenya canviada" with a **new** recovery code and the "L'he desat en un lloc segur" checkbox. The old password gives "Usuari o contrasenya incorrectes." A wrong code or unknown user gives "Usuari o codi de recuperació incorrectes." A short new password gives "La contrasenya ha de tenir almenys 8 caràcters." | ☐ |
 | S-24 | F-EMP-10 step 1 | R-PRIV-13 | [B] `/settings`, panel "Canvia la contrasenya": fill "Contrasenya actual", "Contrasenya nova", "Repeteix la contrasenya nova" | Status "Contrasenya canviada." Old password no longer logs in, new one does. Errors: "La contrasenya actual no és correcta.", "La contrasenya nova ha de tenir almenys 8 caràcters.", "Les contrasenyes noves no coincideixen." | ☐ |
-| S-25 | F-EMP-10 steps 3, 4 | R-PRIV-8, R-PRIV-13 | [B] Panel "Esborra el compte": "Vull esborrar el compte", then with the password "Sí, esborra el compte"; first also try "Cancel·la" | "Segur que vols esborrar-lo? Escriu la contrasenya per confirmar." "Cancel·la" deletes nothing. After confirming: redirect to `/join?compte=esborrat` with "Compte esborrat. Les respostes que vas donar es queden com a dades anònimes." The old credentials fail. [T] the `compte` row is gone and the old `resposta` rows remain (no cascade). Retention beyond this is not configurable (ABS, R-PRIV-8) | ☐ |
+| S-25 | F-EMP-10 steps 3, 4 | R-PRIV-8, R-PRIV-13 | [B] Panel "Esborra el compte": "Vull esborrar el compte", then with the password "Sí, esborra el compte"; first also try "Cancel·la" | "Segur que vols esborrar-lo? Escriu la contrasenya per confirmar." "Cancel·la" deletes nothing. After confirming: redirect to `/join?compte=esborrat` with "Compte esborrat. Les respostes que vas donar es conserven com a dades anònimes." The old credentials fail. [T] the `compte` row is gone and the old `resposta` rows remain (no cascade). Retention beyond this is not configurable (ABS, R-PRIV-8) | ☐ |
 | S-26 | F-EMP-10 step 2, F-EMP-2 B6 | R-PRIV-4 | [B] Panel "Codi de recuperació": fill "Contrasenya actual", press "Genera un codi nou" | Screen "Codi de recuperació nou" with a code and "El codi anterior ja no funciona."; "Fet" goes to `/settings`. The old code then fails in S-23 | ☐ |
 | S-27 | F-EMP-3 step 4 | R-PRIV-13 | [B] `/settings`, "Tanca la sessió" | Cookie destroyed, redirect to `/login`; `/` redirects to `/login` again | ☐ |
 | S-28 | F-EMP-3 B3, F-PRIV-4 | R-PRIV-3 | [B]+[T] Log in, keep the tab, delete that account from another tab (S-25), reload the first tab | The still-valid cookie is treated as logged out: redirect to `/login`; `GET /api/pool/next` returns 401 `no_autenticat` | ☐ |
 | S-29 | F-EMP-4 step 4 | R-PRIV-4 | [B] Use a recovery code once (S-23), then try the same code again | "Usuari o codi de recuperació incorrectes." A used code never works twice | ☐ |
 
-### 3.4 Pushes (not built: tested as absent)
+### 3.4 Pushes
 
 | ID | Flow | Req | Steps | Expected | Result |
 |---|---|---|---|---|---|
-| S-30 | F-EMP-9 | R-FLOW-5d, N-12 | [B] Use the employee app for a full answer cycle on the mobile preset; call `Notification.permission` with `javascript_tool` | No permission prompt appears; the value stays `default`. The app works with no nag | ☐ ABS |
-| S-31 | F-EMP-9 | R-FLOW-5d, N-12 | [P] Jan: iPhone Safari, PWA not added to the home screen, open the app | Nothing breaks; no push explanation is shown (not built); no prompt | ☐ SKIP-P |
-| S-32 | F-EMP-9, F-JOB-4 | R-FLOW-5d | [T] `sqlite3 data/demo.db "select count(*) from push_subscripcio"` after logging in and out | 0 rows, and no job sends anything. Logout would delete a row if one existed | ☐ ABS |
+| S-30 | F-EMP-9 | R-FLOW-5d, N-12 | [B] Use the employee app for a full answer cycle without touching the push button; call `Notification.permission` with `javascript_tool` | No permission prompt appears; the value stays `default`. Only the compact "Notificacions" card offers it | ☐ |
+| S-31 | F-EMP-9 | R-FLOW-5d, N-12 | [P] Jan: iPhone Safari, PWA not added to the home screen, open `/settings` | Nothing breaks; "Aquest navegador no admet notificacions. A l'iPhone, afegeix l'app a la pantalla d'inici…"; no prompt | ☐ SKIP-P |
+| S-32 | F-EMP-9, F-JOB-4 | R-FLOW-5d, R-PRIV-1 | [T] After M-12, log out and run `select count(*) from push_subscripcio` | The account's row is gone. No scheduled job sends anything (F-JOB-4 absent). `/hr/needs` HTML never contains an endpoint or account id | ☐ |
+| S-33 | F-EMP-5, F-HR-4 | R-FLOW-4a, R-FLOW-5d | [B] With a Logística account that already answered today's batch (M-15, "Gràcies"), create a second Logística need with two questions, approve and publish it (M-4 to M-8). On the employee tab reload `/` (or click the notification, M-13) | With no extra tap, "Pregunta 1 de 2" shows the new need's two questions; nothing already answered comes back. Both answers are accepted (204), then "Gràcies". [T] the account's `assignment` rows for today gain two `reason='need'` rows after the original slots (verified 2026-11-07 on a copy of the dev DB) | ☐ |
 
 ### 3.5 Question pacing and answer API
 
@@ -234,10 +235,10 @@ IDs are `S-n`. Each row has the flow, requirements, mode, steps and the expected
 
 | ID | Flow | Req | Steps | Expected | Result |
 |---|---|---|---|---|---|
-| S-50 | F-EMP-6 step 1, 2 | R-FLOW-5a, R-U-1 | [B] Type a comment, set the browser offline (DevTools or a blocked request), press "Envia"; go online, press "Torna-ho a provar" | Alert "Sense connexió. La teva resposta continua aquí: torna-ho a provar quan tornis a tenir xarxa."; button "Torna-ho a provar"; text kept; then sent | ☐ |
+| S-50 | F-EMP-6 step 1, 2 | R-FLOW-5a, R-U-1 | [B] Type a comment, set the browser offline (DevTools or a blocked request), press "Envia"; go online, press "Torna-ho a provar" | Alert "Sense connexió. La teva resposta continua aquí: torna-ho a provar quan tornis a tenir connexió."; button "Torna-ho a provar"; text kept; then sent | ☐ |
 | S-51 | F-EMP-6 step 3 | R-U-1 | [B] Reload during an unsent answer | Draft restored from `localStorage` key `damm:draft:v1:<compteId>:<questionId>`; removed after a successful send; drafts of questions not in today's pool are pruned | ☐ |
 | S-52 | F-EMP-6 B | R-FLOW-5a | [B] Make `POST /api/responses` fail with 500 (stop the server briefly or intercept) | "No s'ha pogut enviar la resposta. La teva resposta continua aquí: torna-ho a provar." and the retry button works. Server unreachable while online: "No hem pogut connectar amb el servidor. …" | ☐ |
-| S-53 | F-EMP-6 B | R-FLOW-5a | [B] Open `/` with the pool request failing | "No s'han pogut carregar les preguntes." with "Torna-ho a provar"; offline variant "Sembla que no tens connexió. Comprova la xarxa i torna-ho a provar." (or the offline page `public/offline.html`) | ☐ |
+| S-53 | F-EMP-6 B | R-FLOW-5a | [B] Open `/` with the pool request failing | "No s'han pogut carregar les preguntes." with "Torna-ho a provar"; offline variant "Sembla que no tens connexió. Comprova la connexió i torna-ho a provar." (or the offline page `public/offline.html`) | ☐ |
 | S-54 | F-EMP-5 B3, B4 | R-FLOW-5a | [B] Direct API checks with `javascript_tool` (the codes are the ones in S-46: `not_in_todays_batch`, `invalid_value`, `missing_comment`, `already_answered`, `peticio_invalida`, `json_invalid`, `no_autenticat`) | The stale codes `ja_respost`, `pregunta_invalida`, `valor_invalid`, `comentari_obligatori`, `redaccio_fallida` never appear | ☐ |
 | S-55 | F-EMP-6 B | R-U-1 | [B] Block `localStorage` (private window with site data blocked, or `javascript_tool` override of `Storage.prototype`), answer a question | The app still works; the draft just does not survive a reload; no crash | ☐ |
 
@@ -247,7 +248,7 @@ IDs are `S-n`. Each row has the flow, requirements, mode, steps and the expected
 |---|---|---|---|---|---|
 | S-60 | F-HR-2 B1 | R-FLOW-2, R-X-3 | [T]+[B] Unset `LLM_API_KEY`, restart, create a need | Drafts appear with the badge "Plantilla de reserva" and tooltip "La IA no ha estat disponible: són preguntes de plantilla" | ☐ |
 | S-61 | F-HR-2 B1 | R-FLOW-2 | [T]+[B] Point `LLM_BASE_URL` at a dead host, create a need; time "Generant…" | Same fallback, no hung page; write the wait in the log | ☐ |
-| S-62 | F-HR-3 | R-X-3, R-PRIV-7 | [B] In either case | Nothing is live until a person presses "Aprovar" on each question (`approveQuestion` is the only path to `aprovada`) | ☐ |
+| S-62 | F-HR-3 | R-X-3, R-PRIV-7 | [B] In either case | Nothing is live until a person presses "Aprova" on each question (`approveQuestion` is the only path to `aprovada`) | ☐ |
 | S-63 | F-HR-2 B7 | R-FLOW-1e | [B] Create a need with the exclusion "Salaris" | No draft question touches pay; excluded topics are dropped before display (R-FLOW-1e is partial: check by reading the drafts). The quality repair loop and bias checker are not in this tree (unmerged branch; R-FLOW-3e, R-BIAS-4, N-10): ABS | ☐ |
 | S-64 | F-HR-2 B2 to B4 | R-FLOW-1a | [B] Form errors: empty objective; objective under 15 characters; duration under 30 or not a number | "Escriu l'objectiu de la consulta abans de generar els esborranys." / "L'objectiu és massa curt perquè la IA el pugui treballar. Explica què vols entendre i de qui." / "La durada màxima ha de ser d'almenys 30 segons." No need row is created | ☐ |
 | S-65 | F-HR-2 B6 | R-FLOW-3e | [B] Create a need with a 30 second maximum and many questions | Warning "Atenció: el temps estimat … supera la durada màxima" on the card. Conditional logic and other quality warnings are ABS (R-FLOW-2e, R-FLOW-3e) | ☐ |
@@ -285,7 +286,7 @@ IDs are `S-n`. Each row has the flow, requirements, mode, steps and the expected
 | S-81 | F-EMP-5, F-HR-5 | R-U-1 | [B] `resize_window` with `colorScheme` dark, then light | Both sides readable, no white flash, badges keep contrast | ☐ |
 | S-82 | F-EMP-1 to F-EMP-5 | R-U-1 | [B] Keyboard only through `/join`, `/onboarding`, `/login` and one answer | Visible focus, a label for every field, Enter submits, errors are `role="alert"` | ☐ |
 | S-83 | F-EMP-5 | R-U-1 | [B] Page at 200 percent zoom (or a narrow viewport) and `read_page` on the answer screen | Content reflows; each question and option has a readable name | ☐ |
-| S-84 | all | all Musts | [T]+[B] Demo-day smoke test, 10 minutes, stop at the first failure: (1) note the commit, rebuild the DB, `pnpm dev`; (2) HR gate M-1 to M-3; (3) `/hr/results` shows the suppressed rows (M-18, M-19); (4) create a need, approve, publish (M-4 to M-8); (5) mobile preset: join, account, recovery code, one answer (M-10 to M-14); (6) `/hr/recommendations`, approve one, press "Crear enquesta de seguiment" (M-21, M-22); (7) `bash scripts/security-demo.sh` ends clean (S-5); (8) stop the dev server | Every step passes and the whole run takes about 10 minutes | ☐ |
+| S-84 | all | all Musts | [T]+[B] Demo-day smoke test, 10 minutes, stop at the first failure: (1) note the commit, rebuild the DB, `pnpm dev`; (2) HR gate M-1 to M-3; (3) `/hr/results` shows the suppressed rows (M-18, M-19); (4) create a need, approve, publish (M-4 to M-8); (5) mobile preset: join, account, recovery code, one answer (M-10 to M-14); (6) `/hr/recommendations`, approve one, press "Crea l'enquesta de seguiment" (M-21, M-22); (7) `bash scripts/security-demo.sh` ends clean (S-5); (8) stop the dev server | Every step passes and the whole run takes about 10 minutes | ☐ |
 | S-90 | F-JOB-3, F-HR-5, F-HR-7 | R-DATA-1 to R-DATA-9, R-BIAS, R-DIFF | [T]+[B] Planted stories on the demo DB. First `sqlite3 data/demo.db "select tipus, severity, status, audience, collectiu_id, domini_id from senyal order by id desc limit 20"`, then the pages as listed below | See the table below | ☐ |
 
 Planted demo stories (S-90), `data/demo.db` is deterministic:
@@ -294,7 +295,7 @@ Planted demo stories (S-90), `data/demo.db` is deterministic:
 |---|---|---|
 | Shift changes announced late, from 1 Oct | Fàbriques, Condicions i organització | A critical `sharp_drop` alarm in "Alarmes", a "Canvi destacat" card, comments about shift changes in the themes |
 | Heat and safety equipment, slow decline from mid-August | Logística, Condicions i organització | `sustained_decline` (or `feble`) alarm, comments about heat and equipment |
-| Supervisor view collapses from 14 Oct | Logística morning shift, Lideratge | `changepoint_cluster` (critical, "Només RH", **not** visible in `/manager/Logística`), a "Confirmació del seguiment" card |
+| Supervisor view collapses from 14 Oct | Logística morning shift, Lideratge | `changepoint_cluster` (critical, "Només l'equip de persones", **not** visible in `/manager/Logística`), a "Confirmació del seguiment" card |
 | Team splits, mean unchanged, from 1 Oct | Oficines, Entorn i relacions | `polarisation` alarm and the "Polarització" card |
 | Managers answer more positively | everywhere | A "Diferència entre grups" card with the manager dimension |
 | Few night-shift accounts | Fàbriques and Logística night | "Suprimit" rows with no values, in cards and in the CSV |
@@ -315,12 +316,12 @@ Every flow in `docs/user-flows.md` has at least one case. Cases cite the flow in
 | F-EMP-6 Failure handling | S-50 to S-53, S-55 |
 | F-EMP-7 Settings and privacy page | M-12, S-76 |
 | F-EMP-8 "Has dit, hem fet" | M-15, M-22, S-87 |
-| F-EMP-9 Push (absent) | M-12, M-13, S-30 to S-32 |
+| F-EMP-9 Push | M-12, M-13, S-30 to S-33 |
 | F-EMP-10 Account management | S-24 to S-26 |
 | F-HR-1 Enter the portal | M-1 to M-3, S-70, S-71, S-73, S-75, S-79, S-89 |
 | F-HR-2 Need and AI drafts | M-4, M-5, S-60 to S-61, S-63 to S-65 |
 | F-HR-3 Review and approve | M-6, M-7, S-42, S-62, S-75 |
-| F-HR-4 Publish | M-8, M-9, S-8 |
+| F-HR-4 Publish | M-8, M-9, S-8, S-33 |
 | F-HR-5 Results | M-16, M-18 to M-20b, S-1, S-3, S-7, S-8, S-80, S-81, S-90 |
 | F-HR-6 CSV export | S-2, S-4, S-88 |
 | F-HR-7 Signals and recommendations | M-20, M-21, S-78, S-85, S-90 |
@@ -345,7 +346,7 @@ Every flow in `docs/user-flows.md` has at least one case. Cases cite the flow in
 | Requirement group | Covered by |
 |---|---|
 | R-FLOW-1 to 4 (need, drafts, approval, publish) | M-4 to M-9, S-60 to S-65 |
-| R-FLOW-5 (answering, frequency, reminders) | M-10 to M-15, S-30 to S-32, S-40 to S-48, S-50 to S-55 |
+| R-FLOW-5 (answering, frequency, reminders) | M-10 to M-15, S-30 to S-33, S-40 to S-48, S-50 to S-55 |
 | R-FLOW-6 to 8 (analysis, dashboard, actions) | M-16 to M-22, S-85 to S-88 |
 | R-PRIV (anonymity, redaction, credentials, retention) | S-1 to S-9, S-15 to S-29, S-70 to S-76, S-89 |
 | R-X-3, R-PRIV-7, R-PRIV-10 (AI proposes, human decides, approver) | M-7, M-21, S-62, S-75 |
@@ -373,7 +374,7 @@ M-10 ☐  M-11 ☐  M-12 ☐  M-13 ☐  M-14 ☐  M-15 ☐  M-16 ☐  M-17 ☐  
 M-19 ☐  M-20 ☐  M-20b ☐ M-21 ☐  M-22 ☐  M-23 ☐  M-24 ☐
 
 Further scenarios (ID and result):
-S-1 ☐ ... S-9 ☐ | S-10 ☐ ... S-19 ☐ | S-20 ☐ ... S-29 ☐ | S-30 ☐ S-31 ☐ S-32 ☐
+S-1 ☐ ... S-9 ☐ | S-10 ☐ ... S-19 ☐ | S-20 ☐ ... S-29 ☐ | S-30 ☐ S-31 ☐ S-32 ☐ S-33 ☐
 S-40 ☐ ... S-48 ☐ | S-50 ☐ ... S-55 ☐ | S-60 ☐ ... S-65 ☐ | S-70 ☐ ... S-79 ☐
 S-80 ☐ ... S-90 ☐
 
@@ -382,6 +383,63 @@ Failures (ID, what happened, screenshot or log path, owner):
 
 Notes (timings, odd behaviour, ideas):
 -
+```
+
+### Run 2026-11-07 (agent run, partial)
+
+```
+Run date:           2026-11-07 ~19:00-20:30 (Europe/Madrid)
+Commit:             b39c355   branch: jan/e2e-run
+Tester:             Claude (agent session)
+Devices:            built-in browser pane, mobile 375x812 and desktop / no phone
+DB:                 demo (data/demo.db)   Join codes: DEMO-FÀB, DEMO-LOG, DEMO-COM, DEMO-OFI, E2AC187B (new Logística need)
+LLM:                fallback (no key; badge "Plantilla de reserva")   HR gate: on for M-1..M-3 and S-4, then OFF (HR_ACCESS_CODE emptied) for the rest of the HR browser cases, because the 12 h cookie expired and the code cannot be typed without echoing it
+Build checks:       check:anonymity P (also via S-5)  lint not run  build not run
+Server:             port 3001 (3000 was taken), so join links and QR show 3000; substitute 3001
+
+Main scenario
+M-1..M-8 P | M-9 P (Teams send ABS) | M-10 P (phone QR SKIP-P) | M-11 P | M-12 ABS (no push toggle)
+M-13 ABS (/api/push/* return 404) | M-14 P (batch of 3, no open question served) | M-15 P
+M-16 not run | M-17 P (see plan bug 1) | M-18 F (F5) | M-19 P | M-20 P (F2, F3) | M-20b P (12 "Confirmació del seguiment" cards, only skimmed)
+M-21 ABS (recomanacio has 0 rows, no generate button) | M-22 ABS (needs a recommendation) | M-23 P (4 collectives 200, /manager/Inexistent 404)
+M-24 P for the UI (closed without a confirm dialog); the KG that a new account still gets the closed need's questions was not re-checked
+
+Further scenarios run
+S-4 P | S-5 P | S-6(d) P | S-9 P | S-12 P | S-13 P | S-17 P | S-43 P | S-44 P | S-46 partial P (unknown id, 0/11 items, long comment, non-JSON all rejected;
+invalid_value and missing_comment not tried) | S-74 N/A (no open question was served) | S-30 inconclusive (Notification.permission is "denied" in the pane)
+Not run (time and memory budget): every other S-case, including S-1..S-3, S-6 (c, e), S-7, S-8, S-10, S-11, S-14..S-16, S-18..S-29, S-31, S-32, S-40..S-42, S-45, S-47, S-48,
+S-50..S-55, S-60..S-65, S-70..S-73, S-75..S-90. Engine `pnpm test` and lint/build were not run either.
+
+Failures (ID, URL, observed vs docs/user-flows.md, guessed file), ranked by demo impact:
+F1 HIGH  M-14/M-17/M-20. One live answer in a new month blanks the dashboard. My answer created period 2026-11; the 10-minute job wrote 66 all-suppressed
+         agregat rows and 78 insight rows for 2026-11 (1 respondent). /hr/results (latest period = 2026-11) then showed everything "Suprimit" with 0 themes, HR home
+         "Participació" showed "—", and 23 of 24 senyal rows got suprimit=1, so /hr/signals went empty. There is no period selector (only ?vs=). Deleting the answers
+         did not restore it, because the job never prunes stale agregat/insight rows (I had to delete them by hand and rerun). Expected: a month with n < 10 must not
+         become the "current" period for the dashboard and alarms. Files: packages/db/src/hr-repository.ts (latest period = MAX(periode) FROM agregat, also in
+         getRepresentativeness), packages/engine/src/alarms.ts (current at ~293, apply() ~359-380), packages/engine/src/job.ts, apps/web/app/hr/results/page.tsx.
+         Demo risk: the first live answer on stage in a new month, or after the demo DB date rolls over.
+F5 HIGH  M-18. /hr/results, section "Representativitat" (by collective and by shift) is entirely "Suprimit · Menys de 10 respondents", and "Temes dels comentaris" says
+         "Encara no hi ha temes" (Temes detectats 0), on the 2026-10 baseline. Cause: getRepresentativeness (packages/db/src/hr-repository.ts:508) reads agregat rows with
+         domini_id NULL and collectiu_id NOT NULL; the demo DB has none (checked on a backup taken before my changes too), the engine job only writes per-domain rows, and
+         packages/analysis does not exist. tema and comentari_tema have 0 rows (theme job absent, see section 6 item 3). Expected: R-FLOW-7 representativity vs the
+         synthetic population visible. Fix idea: write collective and shift totals in the job (or compute them in the HR repository from the analytics view).
+F2 MED   M-20. /hr/signals/1 shows "confiança 8011%" and /hr/signals/3 "confiança 6311%": confidence is multiplied by 100 twice. File: apps/web/app/hr/signals/[id]/page.tsx.
+F3 MINOR M-20. Alarm descriptions are English inside the Catalan UI ("Score fell 1.2 points (5.8 → 4.6) since the previous period.", "Confidence is low (35/100)...")
+         and the numbers (5.8, 4.6) are on a 0-10 score scale while the radar and trends use the 1-5 mean (about 3.x), which looks contradictory. File: packages/engine/src/alarms.ts.
+F6 MINOR M-18. Trends show n=344 and identical means in all three periods for five of six domains (for example 3.4, 3.4, 3.4), so the planted October theme and the "up/down"
+         labels never appear ("sense canvi clar" everywhere); on /manager/<collectiu> the radar point labels read "<collectiu> · 2026-09" for what looks like both series. Files: seed/demo generator, apps/web/app/manager.
+F7 MINOR M-24. "Tanca la necessitat" closes at once with no confirm dialog (irreversible-looking action). File: apps/web/app/hr/needs.
+Minor copy: M-11 heading "Crea el teu compte" stays above "Compte creat"; M-12 delete-account text mentions "la subscripció a les notificacions" although there is no push toggle;
+the need's join-code card shows no account count; `/join` says "Dues preguntes" (known S-48).
+
+Notes:
+- Plan bug 1: the M-17 command `DB_PATH=data/demo.db pnpm --filter @damm/engine run job` fails with "unable to open database file", because the relative path is resolved from
+  packages/engine. Use `DB_PATH=$PWD/data/demo.db`.
+- Plan bug 2: the plan says "Copia" where the app says "Còpia".
+- Plan note: `.env` does not exist in a fresh worktree; generate it from .env.example (HR_ACCESS_CODE and the session secret). session.ts has a dev-only fallback secret string.
+- Login throttle (5 per 15 min per username and IP) is in memory and is cleared by a restart.
+- Run-order lesson: run M-17/M-18 before any live answer, or reset 2026-11 rows afterwards (see F1).
+- State left behind: demo.db has a test account `usuari.prova`, a closed Logística need (join code E2AC187B) and alarm 3 set to "Resolta".
 ```
 
 ## 6. Findings while writing this plan

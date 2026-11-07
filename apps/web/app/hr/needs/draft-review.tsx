@@ -32,7 +32,7 @@ export function DraftReview({ g }: { g: NeedDraftGroup }) {
         <input type="hidden" name="id" value={g.id} />
         <input name="titol" defaultValue={g.titol ?? ""} aria-label="Títol" placeholder="Títol" className="input w-full" />
         <textarea name="intro" defaultValue={g.intro ?? ""} aria-label="Introducció" placeholder="Introducció" rows={2} className="input w-full resize-y" />
-        <button className="btn btn-ghost">Desar títol i introducció</button>
+        <button className="btn btn-ghost">Desa el títol i la introducció</button>
       </form>
       <ul className="mt-4 divide-y divide-line border-t border-line">
         {g.questions.map((q, i) => (
@@ -48,29 +48,29 @@ export function DraftReview({ g }: { g: NeedDraftGroup }) {
               <form action={editQuestionAction} className="flex w-full min-w-0 gap-2 lg:w-auto lg:flex-1">
                 <input type="hidden" name="id" value={q.id} />
                 <input name="text" defaultValue={q.text} aria-label="Text de la pregunta" className="input min-w-0 flex-1" />
-                <button className="btn btn-ghost">Desar text</button>
+                <button className="btn btn-ghost">Desa el text</button>
               </form>
               <form action={moveDraftAction}>
                 <input type="hidden" name="id" value={q.id} />
                 <input type="hidden" name="dir" value="up" />
-                <button className="btn btn-ghost" disabled={i === 0} aria-label="Moure amunt">↑</button>
+                <button className="btn btn-ghost" disabled={i === 0} aria-label="Mou amunt">↑</button>
               </form>
               <form action={moveDraftAction}>
                 <input type="hidden" name="id" value={q.id} />
                 <input type="hidden" name="dir" value="down" />
-                <button className="btn btn-ghost" disabled={i === g.questions.length - 1} aria-label="Moure avall">↓</button>
+                <button className="btn btn-ghost" disabled={i === g.questions.length - 1} aria-label="Mou avall">↓</button>
               </form>
               <form action={regenerateQuestionAction}>
                 <input type="hidden" name="id" value={q.id} />
-                <button className="btn btn-ghost">Regenerar</button>
+                <button className="btn btn-ghost">Torna a generar</button>
               </form>
               <form action={discardQuestionAction}>
                 <input type="hidden" name="id" value={q.id} />
-                <button className="btn">Descartar</button>
+                <button className="btn">Descarta</button>
               </form>
               <form action={approveQuestionAction}>
                 <input type="hidden" name="id" value={q.id} />
-                <button className="btn btn-primary">Aprovar</button>
+                <button className="btn btn-primary">Aprova</button>
               </form>
             </div>
           </li>

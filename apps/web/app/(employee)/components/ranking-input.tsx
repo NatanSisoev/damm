@@ -47,7 +47,7 @@ export function RankingInput({
       <ol className="flex flex-col gap-2">
         {order.map((optIdx, pos) => (
           <li key={optIdx} className="card flex items-center gap-3 px-3 py-2">
-            <span className="num flex h-8 w-8 items-center justify-center rounded-full bg-surface-muted text-sm font-semibold">
+            <span className="num flex h-8 w-8 items-center justify-center bg-surface-muted text-sm font-semibold">
               {pos + 1}
             </span>
             <span className="flex-1 text-base capitalize">{options[optIdx]}</span>

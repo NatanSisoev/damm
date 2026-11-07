@@ -1,5 +1,7 @@
 import { CHANGE_MIN_DELTA, CHANGE_MIN_N, type Change } from "@damm/db/hr";
 
+const num2 = (v: number) => v.toLocaleString("ca-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
 /** Mean on the 1–5 scale. Each sparkline is drawn on the 1–5 scale so small moves stay small. */
 export function Sparkline({ values }: { values: (number | null)[] }) {
   const w = 80, h = 24;
@@ -19,7 +21,7 @@ export function ChangeBadge({ canvi }: { canvi: Change }) {
     return (
       <span
         className="text-xs text-subtle"
-        title={`Només es parla de canvi si |Δ| ≥ ${CHANGE_MIN_DELTA} i els dos períodes tenen n ≥ ${CHANGE_MIN_N}`}
+        title={`Només es parla de canvi si |Δ| ≥ ${num2(CHANGE_MIN_DELTA)} (calculat amb les mitjanes sense arrodonir) i els dos períodes tenen n ≥ ${CHANGE_MIN_N}`}
       >
         sense canvi clar
       </span>
@@ -27,8 +29,8 @@ export function ChangeBadge({ canvi }: { canvi: Change }) {
   }
   const up = canvi.label === "puja";
   return (
-    <span className="badge num" title={`Δ ${canvi.delta! >= 0 ? "+" : "−"}${Math.abs(canvi.delta!).toFixed(1)}`}>
-      {up ? "↑ puja" : "↓ baixa"} {canvi.delta! >= 0 ? "+" : "−"}{Math.abs(canvi.delta!).toFixed(1)}
+    <span className="badge num" title={`Δ ${canvi.delta! >= 0 ? "+" : "−"}${num2(Math.abs(canvi.delta!))} (escala 1-5)`}>
+      {up ? "↑ puja" : "↓ baixa"} {canvi.delta! >= 0 ? "+" : "−"}{num2(Math.abs(canvi.delta!))}
     </span>
   );
 }

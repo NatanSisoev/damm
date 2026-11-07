@@ -30,8 +30,8 @@ self.addEventListener("fetch", (event) => {
   );
 });
 
-// Push stub: shows a notification from the payload ({ title, body, url }). Subscription handling
-// is not wired yet.
+// Push: shows a notification from the payload ({ title, body, url }). The server sends one when HR
+// publishes a need (apps/web/lib/push.ts); the payload never names the person.
 self.addEventListener("push", (event) => {
   let data = {};
   try {
@@ -51,6 +51,13 @@ self.addEventListener("push", (event) => {
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  const url = (event.notification.data && event.notification.data.url) || "/";
-  event.waitUntil(self.clients.openWindow(url));
+  const url = new URL((event.notification.data && event.notification.data.url) || "/", self.location.origin).href;
+  // Focus an open app window on the answering screen if there is one; otherwise open it.
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((wins) => {
+      const win = wins.find((w) => new URL(w.url).origin === self.location.origin);
+      if (win) return win.navigate(url).then((w) => (w || win).focus()).catch(() => self.clients.openWindow(url));
+      return self.clients.openWindow(url);
+    }),
+  );
 });

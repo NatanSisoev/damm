@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { MIN_GROUP_SIZE } from "@damm/shared";
 import { listJoinCodes } from "@damm/db/hr";
 import { minutes } from "../../../labels";
-import { DammLogo } from "../../../damm-logo";
+import { Wordmark } from "../../../../wordmark";
 import { joinUrl, qrSvg } from "../../qr";
 import { PrintButton } from "./print-button";
 
@@ -42,7 +42,7 @@ export default async function PosterPage({ params }: PageProps<"/hr/publish/[cod
           className="poster-page mx-auto my-6 flex flex-col items-center bg-white px-[16mm] py-[14mm] text-center shadow-lg"
           style={{ width: "210mm", height: "297mm", boxSizing: "border-box", overflow: "hidden", breakInside: "avoid" }}
         >
-          <DammLogo className="h-[18mm] w-auto text-[var(--brand-red)]" />
+          <Wordmark className="text-[11mm] leading-none" />
           <p className="mt-[6mm] text-[5mm] font-medium uppercase tracking-[0.2em] text-neutral-500">
             Escolta activa · {row.collectiu}
           </p>

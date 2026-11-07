@@ -7,7 +7,7 @@ export default async function HrLoginPage({ searchParams }: { searchParams: Prom
     <HrScope>
     <main className="mx-auto flex min-h-screen max-w-sm flex-col justify-center gap-4 px-4">
       <h1 className="text-xl font-semibold">Portal de persones</h1>
-      <p className="text-[13px] text-muted">Accés restringit a l&apos;equip de persones. Introdueix el codi d&apos;accés de la demo.</p>
+      <p className="text-[13px] text-muted">Accés restringit a l&apos;equip de persones. Escriu el codi d&apos;accés de la demo.</p>
       <form action={loginAction} className="space-y-3">
         <input type="hidden" name="next" value={next ?? "/hr"} />
         <label className="block text-xs font-medium text-subtle" htmlFor="code">Codi d&apos;accés</label>

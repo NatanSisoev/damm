@@ -1,6 +1,5 @@
 // HR-side data access. The only repository HR routes may import.
 // Reads aggregate outputs and the analytics view; never `resposta` or `compte`.
-import crypto from "node:crypto";
 import type { Agregat, Recomanacio, Senyal } from "@damm/shared";
 import { MIN_GROUP_SIZE } from "@damm/shared";
 import { getDb } from "./connection";
@@ -165,6 +164,14 @@ export function listCollectius(): { id: number; nom: string }[] {
   return getDb().prepare("SELECT id, nom FROM collectiu ORDER BY id").all() as { id: number; nom: string }[];
 }
 
+export function listDomains(): { id: number; nom: string }[] {
+  return getDb().prepare("SELECT id, nom FROM domini ORDER BY id").all() as { id: number; nom: string }[];
+}
+
+export function listTorns(): { id: number; nom: string }[] {
+  return getDb().prepare("SELECT id, nom FROM torn ORDER BY id").all() as { id: number; nom: string }[];
+}
+
 export function listDrafts(): DraftQuestion[] {
   return getDb()
     .prepare(
@@ -205,28 +212,21 @@ export function listApprovedUnpublishedNeeds(): { id: number; textNl: string; ap
 }
 
 /**
- * Publish = approved questions are already in the pool; create the join code and link.
- * A join code identifies one collective, so a need for all collectives gets one code per collective.
+ * Publish = the need's approved questions (already estat = 'aprovada', top priority) go live in
+ * the pool for its collective, or for every collective when it has none. No join code or link is
+ * created: onboarding codes are per collective (/hr/publish). The web layer then sends a push
+ * notification through the employee side and gets back an aggregate count only.
+ * Returns false when the need does not exist or has no approved question.
  */
-export function publishNecessitat(necessitatId: number, baseUrl: string): { codi: string; url: string; collectiuId: number }[] {
+export function publishNecessitat(necessitatId: number): boolean {
   const db = getDb();
-  const n = db.prepare("SELECT collectiu_id AS c FROM necessitat WHERE id = ?").get(necessitatId) as { c: number | null } | undefined;
-  if (!n) throw new Error("Necessitat not found");
-  const targets = n.c != null
-    ? [n.c]
-    : (db.prepare("SELECT id FROM collectiu ORDER BY id").all() as { id: number }[]).map((r) => r.id);
-  const out = targets.map((collectiuId) => {
-    const codi = crypto.randomBytes(4).toString("hex").toUpperCase();
-    return { codi, url: `${baseUrl}/join/${codi}`, collectiuId };
-  });
-  db.transaction(() => {
-    for (const p of out) {
-      db.prepare("INSERT INTO joincode (codi, empresa, collectiu_id) VALUES (?, 'Demo', ?)").run(p.codi, p.collectiuId);
-      db.prepare("INSERT INTO publicacio (necessitat_id, codi_join, qr_url) VALUES (?, ?, ?)").run(necessitatId, p.codi, p.url);
-    }
-    db.prepare("UPDATE necessitat SET estat = 'publicada' WHERE id = ?").run(necessitatId);
-  })();
-  return out;
+  const ok = db
+    .prepare(
+      `UPDATE necessitat SET estat = 'publicada' WHERE id = ? AND estat = 'oberta'
+       AND EXISTS (SELECT 1 FROM pregunta p WHERE p.necessitat_id = necessitat.id AND p.estat = 'aprovada')`,
+    )
+    .run(necessitatId);
+  return ok.changes > 0;
 }
 
 export function listPublications() {
@@ -281,12 +281,16 @@ export function listAggregates(): AggregateRow[] {
   });
 }
 
-export function listSignals(): (Omit<Senyal, "collectiuId"> & { collectiu: string | null })[] {
+export function listSignals(): (Omit<Senyal, "collectiuId"> & { collectiu: string | null; domini: string | null; torn: string | null })[] {
   return (getDb()
     .prepare(
-      `SELECT s.id, s.tipus, s.descripcio, c.nom AS collectiu, s.periode, s.n, s.confianca, s.suprimit,
-              s.severity, s.status
-       FROM senyal s LEFT JOIN collectiu c ON c.id = s.collectiu_id ORDER BY s.n DESC`,
+      `SELECT s.id, s.tipus, s.descripcio, c.nom AS collectiu, d.nom AS domini, t.nom AS torn,
+              s.periode, s.n, s.confianca, s.suprimit, s.severity, s.status
+       FROM senyal s
+       LEFT JOIN collectiu c ON c.id = s.collectiu_id
+       LEFT JOIN domini d ON d.id = s.domini_id
+       LEFT JOIN torn t ON t.id = s.torn_id
+       ORDER BY s.n DESC`,
     )
     .all() as any[])
     .filter((r) => r.n >= MIN_GROUP_SIZE && !r.suprimit)
@@ -302,12 +306,20 @@ export function listRecommendations(): Recomanacio[] {
     .all() as Recomanacio[];
 }
 
+/** Recommendations still waiting for a human decision (badge in the HR sidebar). */
+export function countPendingRecommendations(): number {
+  const r = getDb().prepare(`SELECT COUNT(*) AS n FROM recomanacio WHERE estat = 'proposada'`).get() as { n: number };
+  return r.n;
+}
+
 // --- Manager view reads (read-only, one collective, aggregates only) -------------------
 
 export interface ManagerSignal {
   id: number;
   tipus: string;
   descripcio: string;
+  domini: string | null;
+  torn: string | null;
   periode: string;
   n: number;
   severity: string;
@@ -317,9 +329,12 @@ export interface ManagerSignal {
 export function listManagerSignals(collectiuId: number): ManagerSignal[] {
   return getDb()
     .prepare(
-      `SELECT id, tipus, descripcio, periode, n, severity FROM senyal
-       WHERE collectiu_id = ? AND audience = 'hr_manager' AND suprimit = 0 AND n >= ?
-       ORDER BY periode DESC, n DESC`,
+      `SELECT s.id, s.tipus, s.descripcio, d.nom AS domini, t.nom AS torn, s.periode, s.n, s.severity
+       FROM senyal s
+       LEFT JOIN domini d ON d.id = s.domini_id
+       LEFT JOIN torn t ON t.id = s.torn_id
+       WHERE s.collectiu_id = ? AND s.audience = 'hr_manager' AND s.suprimit = 0 AND s.n >= ?
+       ORDER BY s.periode DESC, s.n DESC`,
     )
     .all(collectiuId, MIN_GROUP_SIZE) as ManagerSignal[];
 }
@@ -411,8 +426,14 @@ export interface NeedCard {
   /** Card state shown on the Necessitats page, derived from necessitat.estat and the question states. */
   state: NeedState;
   nDraft: number;
-  approved: { id: number; domini: string; tipus: string; text: string }[];
-  publications: { id: number; codi: string; url: string; collectiu: string }[];
+  approved: { id: number; domini: string; tipus: string; text: string; /** Answers so far; null when under the minimum group size. */ answers: number | null }[];
+  publications: { id: number; codi: string; url: string; collectiu: string; creat: string }[];
+  /** Date of the first publication (join code) row; null when none was recorded. */
+  publicat: string | null;
+  /** Most answers any one question has, i.e. a lower bound of respondents. Null when under the minimum group size. */
+  responses: number | null;
+  /** Synthetic population of the target collective (whole company when the need has none). */
+  population: number;
 }
 
 /**
@@ -430,21 +451,37 @@ export function listNeedCards(): NeedCard[] {
        FROM necessitat n LEFT JOIN collectiu c ON c.id = n.collectiu_id
        ORDER BY n.id DESC`,
     )
-    .all() as (Omit<NeedCard, "state" | "approved" | "publications"> & { estat: string })[];
+    .all() as (Omit<NeedCard, "state" | "approved" | "publications" | "publicat" | "responses" | "population"> & { estat: string })[];
   const approved = db.prepare(
     `SELECT p.id, d.nom AS domini, p.tipus, p.text FROM pregunta p JOIN domini d ON d.id = p.domini_id
      WHERE p.necessitat_id = ? AND p.estat = 'aprovada' ORDER BY p.ordre, p.id`,
   );
+  const answerCount = db.prepare("SELECT COUNT(*) AS n FROM v_resposta_analitica WHERE pregunta_id = ?");
+  const popAll = (db.prepare("SELECT COUNT(*) AS n FROM empleat_sintetic").get() as { n: number }).n;
+  const popOf = db.prepare("SELECT COUNT(*) AS n FROM empleat_sintetic es JOIN collectiu c ON c.id = es.collectiu_id WHERE c.nom = ?");
   const pubs = db.prepare(
-    `SELECT pu.id, pu.codi_join AS codi, pu.qr_url AS url, c.nom AS collectiu
+    `SELECT pu.id, pu.codi_join AS codi, pu.qr_url AS url, c.nom AS collectiu, pu.creat
      FROM publicacio pu JOIN joincode j ON j.codi = pu.codi_join JOIN collectiu c ON c.id = j.collectiu_id
      WHERE pu.necessitat_id = ? ORDER BY pu.id`,
   );
   return needs.map(({ estat, ...n }) => {
-    const ap = approved.all(n.id) as NeedCard["approved"];
+    const ap = (approved.all(n.id) as Omit<NeedCard["approved"][number], "answers">[]).map((q) => {
+      const c = (answerCount.get(q.id) as { n: number }).n;
+      return { ...q, answers: c >= MIN_GROUP_SIZE ? c : null };
+    });
+    const most = Math.max(0, ...ap.map((q) => (answerCount.get(q.id) as { n: number }).n));
+    const pubList = pubs.all(n.id) as NeedCard["publications"];
     const state: NeedState =
       estat === "tancada" ? "tancada" : estat === "publicada" ? "publicada" : n.nDraft === 0 && ap.length > 0 ? "llesta" : "esborrany";
-    return { ...n, state, approved: ap, publications: pubs.all(n.id) as NeedCard["publications"] };
+    return {
+      ...n,
+      state,
+      approved: ap,
+      publications: pubList,
+      publicat: pubList[0]?.creat ?? null,
+      responses: most >= MIN_GROUP_SIZE ? most : null,
+      population: n.collectiu ? (popOf.get(n.collectiu) as { n: number }).n : popAll,
+    };
   });
 }
 
@@ -533,6 +570,28 @@ function buildRep(items: RepItem[]): RepRow[] {
   });
 }
 
+/**
+ * Respondent counts per (collective, shift) for one period.
+ * Prefers the all-domains rows (domini_id NULL). The engine writes per-domain rows only, so otherwise the largest
+ * per-domain n of the segment is used: a lower bound of the distinct respondents, never an over-count.
+ */
+function segmentCounts(db: ReturnType<typeof getDb>, periode: string): { c: number; t: number | null; n: number; suprimit: number }[] {
+  const all = db
+    .prepare(
+      `SELECT collectiu_id AS c, torn_id AS t, domini_id AS d, n FROM agregat
+       WHERE periode = ? AND collectiu_id IS NOT NULL`,
+    )
+    .all(periode) as { c: number; t: number | null; d: number | null; n: number }[];
+  const best = new Map<string, { c: number; t: number | null; n: number; whole: boolean }>();
+  for (const r of all) {
+    const k = `${r.c}|${r.t}`;
+    const cur = best.get(k);
+    const whole = r.d === null;
+    if (!cur || (whole && !cur.whole) || (whole === cur.whole && r.n > cur.n)) best.set(k, { c: r.c, t: r.t, n: r.n, whole });
+  }
+  return [...best.values()].map((b) => ({ c: b.c, t: b.t, n: b.n, suprimit: b.n < MIN_GROUP_SIZE ? 1 : 0 }));
+}
+
 /** Response share vs synthetic population share for the latest period. Shares are computed among visible segments only, so suppressed counts cannot be recovered by subtraction. */
 export function getRepresentativeness(): Representativeness {
   const db = getDb();
@@ -543,12 +602,7 @@ export function getRepresentativeness(): Representativeness {
   const pop = db
     .prepare("SELECT collectiu_id AS c, torn_id AS t, COUNT(*) AS n FROM empleat_sintetic GROUP BY collectiu_id, torn_id")
     .all() as { c: number; t: number | null; n: number }[];
-  const resp = db
-    .prepare(
-      `SELECT collectiu_id AS c, torn_id AS t, n, suprimit FROM agregat
-       WHERE periode = ? AND collectiu_id IS NOT NULL AND domini_id IS NULL`,
-    )
-    .all(p.p) as { c: number; t: number | null; n: number; suprimit: number }[];
+  const resp = segmentCounts(db, p.p);
 
   const popC = (c: number) => pop.filter((x) => x.c === c).reduce((s, x) => s + x.n, 0);
   const collectius = buildRep(
@@ -581,6 +635,8 @@ export interface TrendCell {
   precisio: PrecisionBand | null;
   suprimit: boolean;
   motiu: HideReason;
+  consensus: number | null; // 0-100 (engine), higher = answers more alike; null when suppressed
+  sd: number | null; // population SD of the 1-5 scale answers; null when suppressed
 }
 export interface TrendRow { domini: string; cells: TrendCell[]; canvi: Change }
 export interface TrendSeries {
@@ -589,6 +645,32 @@ export interface TrendSeries {
 }
 export interface Trends { periodes: string[]; series: TrendSeries[] }
 
+/** Population SD of 1-5 scale answers per `periode|collectiu id or null|domini id`, from the analytics view (no account ids). Callers must only expose it for cells that are not suppressed. */
+function scaleSpread(): Map<string, number> {
+  const rows = getDb()
+    .prepare(
+      `SELECT v.periode AS per, v.collectiu_id AS c, v.domini_id AS d, COUNT(*) AS n, AVG(v.valor_num) AS m, AVG(v.valor_num * v.valor_num) AS m2
+       FROM v_resposta_analitica v JOIN pregunta p ON p.id = v.pregunta_id
+       WHERE v.valor_num IS NOT NULL AND p.tipus = 'scale5'
+       GROUP BY v.periode, v.collectiu_id, v.domini_id`,
+    )
+    .all() as { per: string; c: number; d: number; n: number; m: number; m2: number }[];
+  const out = new Map<string, number>();
+  const tot = new Map<string, { n: number; s: number; s2: number }>();
+  for (const r of rows) {
+    out.set(`${r.per}|${r.c}|${r.d}`, Math.sqrt(Math.max(0, r.m2 - r.m * r.m)));
+    const k = `${r.per}|null|${r.d}`;
+    const t = tot.get(k) ?? { n: 0, s: 0, s2: 0 };
+    t.n += r.n; t.s += r.m * r.n; t.s2 += r.m2 * r.n;
+    tot.set(k, t);
+  }
+  for (const [k, t] of tot) {
+    const m = t.s / t.n;
+    out.set(k, Math.sqrt(Math.max(0, t.s2 / t.n - m * m)));
+  }
+  return out;
+}
+
 /** Mean score per domain per period, overall and per collective. Suppression re-enforced on read, including complementary suppression of collectives under "Tots". */
 export function getTrends(): Trends {
   const db = getDb();
@@ -596,10 +678,11 @@ export function getTrends(): Trends {
   const doms = db.prepare("SELECT id, nom FROM domini ORDER BY id").all() as { id: number; nom: string }[];
   const rows = db
     .prepare(
-      `SELECT periode, collectiu_id AS c, domini_id AS d, n, mitjana, suprimit FROM agregat
+      `SELECT periode, collectiu_id AS c, domini_id AS d, n, mitjana, consensus, suprimit FROM agregat
        WHERE torn_id IS NULL AND domini_id IS NOT NULL`,
     )
-    .all() as { periode: string; c: number | null; d: number; n: number; mitjana: number | null; suprimit: number }[];
+    .all() as { periode: string; c: number | null; d: number; n: number; mitjana: number | null; consensus: number | null; suprimit: number }[];
+  const spread = scaleSpread();
   const cols = listCollectius();
   const scopes: { id: number | null; nom: string }[] = [{ id: null, nom: "Tots" }, ...cols.map((c) => ({ id: c.id, nom: c.nom }))];
   const find = (per: string, c: number | null, d: number) => rows.find((x) => x.periode === per && x.c === c && x.d === d);
@@ -624,10 +707,14 @@ export function getTrends(): Trends {
       const trendRows = doms.map((d): TrendRow => {
         const cells = periodes.map((per): TrendCell => {
           const r = find(per, s.id, d.id);
-          if (!r) return { mitjana: null, n: null, precisio: null, suprimit: false, motiu: null };
+          if (!r) return { mitjana: null, n: null, precisio: null, suprimit: false, motiu: null, consensus: null, sd: null };
           const motiu = reasonOf.get(`${per}|${s.id}|${d.id}`) ?? null;
-          if (motiu) return { mitjana: null, n: null, precisio: null, suprimit: true, motiu };
-          return { mitjana: r.mitjana, n: r.n, precisio: precisionBand(r.n), suprimit: false, motiu: null };
+          if (motiu) return { mitjana: null, n: null, precisio: null, suprimit: true, motiu, consensus: null, sd: null };
+          const sd = spread.get(`${per}|${s.id}|${d.id}`);
+          return {
+            mitjana: r.mitjana, n: r.n, precisio: precisionBand(r.n), suprimit: false, motiu: null,
+            consensus: r.consensus, sd: sd === undefined || r.n < MIN_GROUP_SIZE ? null : +sd.toFixed(2),
+          };
         });
         const last = cells.length - 1;
         return { domini: d.nom, cells, canvi: classifyChange(cells[last - 1], cells[last]) };
@@ -638,6 +725,60 @@ export function getTrends(): Trends {
   return { periodes, series };
 }
 
+/** Population SD of 1-5 scale answers per `periode|torn id|domini id` for one collective (analytics view, no account ids). */
+function shiftSpread(collectiuId: number): Map<string, number> {
+  const rows = getDb()
+    .prepare(
+      `SELECT v.periode AS per, v.torn_id AS t, v.domini_id AS d, AVG(v.valor_num) AS m, AVG(v.valor_num * v.valor_num) AS m2
+       FROM v_resposta_analitica v JOIN pregunta p ON p.id = v.pregunta_id
+       WHERE v.valor_num IS NOT NULL AND p.tipus = 'scale5' AND v.collectiu_id = ? AND v.torn_id IS NOT NULL
+       GROUP BY v.periode, v.torn_id, v.domini_id`,
+    )
+    .all(collectiuId) as { per: string; t: number; d: number; m: number; m2: number }[];
+  return new Map(rows.map((r) => [`${r.per}|${r.t}|${r.d}`, Math.sqrt(Math.max(0, r.m2 - r.m * r.m))]));
+}
+
+/**
+ * Trend of one shift inside one collective (same rigour as getTrends: n < 10 hides, complementary suppression across
+ * the collective's shifts). Null when the shift has no aggregate rows.
+ */
+export function getShiftTrend(collectiuId: number, tornId: number): { periodes: string[]; rows: TrendRow[] } | null {
+  const db = getDb();
+  const periodes = (db.prepare("SELECT DISTINCT periode FROM agregat ORDER BY periode").all() as { periode: string }[]).map((r) => r.periode);
+  const doms = db.prepare("SELECT id, nom FROM domini ORDER BY id").all() as { id: number; nom: string }[];
+  const rows = db
+    .prepare(
+      `SELECT periode, torn_id AS t, domini_id AS d, n, mitjana, consensus, suprimit FROM agregat
+       WHERE collectiu_id = ? AND torn_id IS NOT NULL AND domini_id IS NOT NULL`,
+    )
+    .all(collectiuId) as { periode: string; t: number; d: number; n: number; mitjana: number | null; consensus: number | null; suprimit: number }[];
+  if (!rows.some((r) => r.t === tornId)) return null;
+  const shifts = [...new Set(rows.map((r) => r.t))];
+  const find = (per: string, t: number, d: number) => rows.find((x) => x.periode === per && x.t === t && x.d === d);
+  const spread = shiftSpread(collectiuId);
+  const trendRows = doms.map((d): TrendRow => {
+    const cells = periodes.map((per): TrendCell => {
+      const r = find(per, tornId, d.id);
+      if (!r) return { mitjana: null, n: null, precisio: null, suprimit: false, motiu: null, consensus: null, sd: null };
+      const present = shifts.filter((t) => find(per, t, d.id));
+      const res = complementarySuppression(present.map((t) => {
+        const x = find(per, t, d.id)!;
+        return { n: x.n, primary: !!x.suprimit };
+      }));
+      const motiu = res[present.indexOf(tornId)] ?? null;
+      if (motiu) return { mitjana: null, n: null, precisio: null, suprimit: true, motiu, consensus: null, sd: null };
+      const sd = spread.get(`${per}|${tornId}|${d.id}`);
+      return {
+        mitjana: r.mitjana, n: r.n, precisio: precisionBand(r.n), suprimit: false, motiu: null,
+        consensus: r.consensus, sd: sd === undefined || r.n < MIN_GROUP_SIZE ? null : +sd.toFixed(2),
+      };
+    });
+    const last = cells.length - 1;
+    return { domini: d.nom, cells, canvi: classifyChange(cells[last - 1], cells[last]) };
+  });
+  return { periodes, rows: trendRows };
+}
+
 export interface ThemeRow {
   id: number;
   etiqueta: string | null; // null when suppressed
@@ -646,16 +787,31 @@ export interface ThemeRow {
   n: number | null;
   emergent: boolean;
   suprimit: boolean;
+  /** null = company-wide row. */
+  collectiuId: number | null;
+  /** Share of that collective's comments in the period (0..1); null when suppressed. */
+  share: number | null;
+  font: "seed" | "rules" | "llm";
 }
 
-export function listThemes(): ThemeRow[] {
+/**
+ * Themes from the comment analysis (one row per theme x period x collective, docs/engine.md section 12).
+ * Without `collectiuId` only the company-wide rows (collectiu_id IS NULL) are returned; pass a collective id for its rows.
+ * Suppressed rows (suprimit = 1 or n below the minimum group size) carry no label, summary, n or share.
+ */
+export function listThemes(opts: { collectiuId?: number | null } = {}): ThemeRow[] {
+  const col = opts.collectiuId ?? null;
   return (getDb()
-    .prepare("SELECT id, etiqueta, resum, periode, n, emergent, suprimit FROM tema ORDER BY periode DESC, emergent DESC, n DESC")
-    .all() as any[]).map((r) => {
+    .prepare(
+      `SELECT id, etiqueta, resum, periode, n, emergent, suprimit, collectiu_id, share, font FROM tema
+       WHERE collectiu_id IS ? ORDER BY periode DESC, emergent DESC, n DESC`,
+    )
+    .all(col) as any[]).map((r) => {
     const hidden = r.n < MIN_GROUP_SIZE || !!r.suprimit;
     return {
       id: r.id, periode: r.periode, emergent: !!r.emergent, suprimit: hidden,
       etiqueta: hidden ? null : r.etiqueta, resum: hidden ? null : r.resum, n: hidden ? null : r.n,
+      collectiuId: r.collectiu_id ?? null, share: hidden ? null : r.share ?? null, font: r.font,
     };
   });
 }
@@ -705,7 +861,7 @@ export function exportResultsCsv(now: Date = new Date()): string {
     `# Període: ${rep.periode ?? "–"} (representativitat); tendències: ${trends.periodes.join(", ") || "–"}`,
     `# Generat: ${now.toISOString()}`,
     `# Mida mínima de grup: n >= ${MIN_GROUP_SIZE}`,
-    `# Nota: els segments amb menys de ${MIN_GROUP_SIZE} respondents, i els ocults per protegir-los (supressió complementària) no tenen valors i porten suprimit=1. Només dades agregades, mai valors individuals.`,
+    `# Nota: els segments amb menys de ${MIN_GROUP_SIZE} persones que han respost, i els ocults per protegir-los (supressió complementària) no tenen valors i porten suprimit=1. Només dades agregades, mai valors individuals.`,
   ];
   return [...meta, ...lines.map((l) => l.map(csvCell).join(","))].join("\r\n") + "\r\n";
 }
@@ -745,12 +901,7 @@ export function getHrOverview(): HrOverview {
   let coveredPopulation: number | null = null;
   let excludedCollectius = 0;
   if (p.p) {
-    const rows = db
-      .prepare(
-        `SELECT collectiu_id AS c, n, suprimit FROM agregat
-         WHERE periode = ? AND collectiu_id IS NOT NULL AND torn_id IS NULL AND domini_id IS NULL`,
-      )
-      .all(p.p) as { c: number; n: number; suprimit: number }[];
+    const rows = segmentCounts(db, p.p).filter((r) => r.t === null);
     const hide = complementarySuppression(rows.map((r) => ({ n: r.n, primary: !!r.suprimit })));
     const visible = rows.filter((_, k) => hide[k] === null);
     excludedCollectius = listCollectius().length - visible.length;

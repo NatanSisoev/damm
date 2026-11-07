@@ -1,5 +1,5 @@
 // Builds a fully seeded dev DB from schema.sql. Deterministic: seeded PRNG, no network, no Math.random.
-// Writes RAW data only, plus TEMPORARY dashboard fixtures (dashboard-fixtures.ts) until the analysis layer exists.
+// Writes RAW data only; the engine job, comment analysis and recommendation proposals then derive everything else.
 import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
@@ -8,8 +8,8 @@ import { COLLECTIUS, DOMINIS, TORNS, MIN_GROUP_SIZE, PERIODES_SEED, type Pregunt
 import { mulberry32, int, pick, shuffle, normal, chance, type Rng } from "./rng";
 import { THEMES } from "./themes";
 import { anchorsOf, BANK, EXTRA, type QItem } from "./questions";
-import { applyDashboardFixtures } from "./dashboard-fixtures";
-import { runEngineJob } from "@damm/engine/job";
+import { runEngineJob, runCommentAnalysisSync, runRecommendations } from "@damm/engine/job";
+import { templateRecommendations } from "@damm/ai/recommendations";
 
 const root = path.resolve(__dirname, "../../..");
 const out = process.env.DB_PATH ?? path.join(root, "data/app.db");
@@ -296,7 +296,11 @@ const night = all(`SELECT COALESCE(t.nom,'-') torn, ROUND(AVG(1.0*x.n),2) avg_re
 line(`Responses per account (Fàbriques+Logística) by shift: ${night.map((x) => `${x.torn}=${x.avg_resp}`).join("  ")}`);
 const leak = one(`SELECT COUNT(*) n FROM resposta r JOIN pregunta p ON p.id=r.pregunta_id JOIN compte a ON a.id=r.compte_id WHERE p.collectiu_id <> a.collectiu_id`);
 line(`Responses to a question of another collective: ${leak.n}`);
-applyDashboardFixtures(db); // TEMPORARY until the analysis job exists
 const report = runEngineJob(db);
 console.log("engine job:", JSON.stringify(report));
-db.close();
+// Themes, summaries and emergent alarms from the comments (deterministic, no key), then template proposals for open alarms.
+const comments = runCommentAnalysisSync(db, { now: Date.now() });
+console.log("comment analysis:", JSON.stringify(comments));
+runRecommendations(db, { now: Date.now(), draft: templateRecommendations })
+  .then((recs) => console.log("recommendations:", JSON.stringify(recs)))
+  .finally(() => db.close());

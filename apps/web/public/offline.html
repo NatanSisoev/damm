@@ -3,18 +3,25 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#17211a">
 <title>Sense connexió</title>
 <style>
-  body { font-family: system-ui, sans-serif; margin: 0; min-height: 100dvh; display: grid; place-items: center; padding: 24px; text-align: center; color: #111; background: #fff; }
-  h1 { font-size: 1.25rem; margin: 0 0 8px; }
-  p { margin: 0 0 20px; color: #555; }
-  button { font: inherit; padding: 12px 20px; border: 0; border-radius: 12px; background: #eb0505; color: #fff; }
+  :root { color-scheme: light dark; --bg: #eef0ea; --text: #17211a; --muted: #52604f; --accent: #17211a; --on-accent: #fbfcf9; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #121512; --text: #eef1ea; --muted: #b2bcaf; --accent: #eef1ea; --on-accent: #121512; } }
+  body { font-family: "Hanken Grotesk", system-ui, sans-serif; margin: 0; min-height: 100dvh; display: grid; place-items: center; padding: 24px; text-align: center; color: var(--text); background: var(--bg); }
+  main { max-width: 24rem; }
+  .mark { font-weight: 800; font-size: 15px; margin: 0 0 24px; }
+  h1 { font-size: 1.5rem; font-weight: 800; margin: 0 0 8px; }
+  p { margin: 0 0 20px; color: var(--muted); line-height: 1.5; }
+  button { font: inherit; font-weight: 700; min-height: 44px; padding: 0 20px; border: 0; border-radius: 2px; background: var(--accent); color: var(--on-accent); cursor: pointer; }
+  button:focus-visible { outline: 3px solid var(--text); outline-offset: 2px; }
 </style>
 </head>
 <body>
 <main>
+  <p class="mark">Escolta activa</p>
   <h1>Sense connexió</h1>
-  <p>No hem pogut carregar l'app. Comprova la xarxa i torna-ho a provar. Les teves respostes no es perden.</p>
+  <p>No hem pogut carregar l'app. Comprova la connexió i torna-ho a provar. Les respostes que ja has enviat estan guardades.</p>
   <button type="button" onclick="location.reload()">Torna-ho a provar</button>
 </main>
 </body>

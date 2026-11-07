@@ -8,8 +8,16 @@ import { approveFromSignalAction, discardFromSignalAction, followUpFromSignalAct
 
 import { recommendationStatus } from "../../labels";
 import { ChangeBadge, Sparkline } from "../../trend";
-import { STATUS_LABELS, STATUS_ORDER, SignalBadges, signalTypeLabel } from "../../signal-labels";
-const suppressedHint = `Menys de ${MIN_GROUP_SIZE} respondents`;
+import { TrendChart } from "../../trend-chart";
+import { STATUS_LABELS, STATUS_ORDER, SignalBadges } from "../../signal-labels";
+import { signalDetail, signalHeadline } from "@/lib/signal-text";
+const suppressedHint = `Menys de ${MIN_GROUP_SIZE} persones han respost`;
+
+const NEXT: Partial<Record<SignalTimelineStep["key"], { href: string; label: string }>> = {
+  recomanacio: { href: "#recomanacions", label: "Decideix la recomanació" },
+  seguiment: { href: "#seguiment", label: "Crea l'enquesta de seguiment" },
+  resultats: { href: "#seguiment", label: "Mira el seguiment" },
+};
 
 function Timeline({ steps }: { steps: SignalTimelineStep[] }) {
   return (
@@ -29,6 +37,9 @@ function Timeline({ steps }: { steps: SignalTimelineStep[] }) {
             <div className="text-xs text-subtle">
               {s.state === "done" ? "Fet" : "Pendent"} · {s.detail}
             </div>
+            {s.state !== "done" && NEXT[s.key] && (
+              <Link href={NEXT[s.key]!.href} className="mt-1 inline-block text-xs text-accent-ink hover:underline">{NEXT[s.key]!.label} →</Link>
+            )}
           </div>
         </li>
       ))}
@@ -40,22 +51,21 @@ export default async function SignalPage({ params }: { params: Promise<{ id: str
   const { id } = await params;
   const detail = Number.isInteger(Number(id)) ? getSignalDetail(Number(id)) : null;
   if (!detail) notFound();
-  const { signal, periodes, trend, themes, hiddenThemes, recommendations, followUps, timeline } = detail;
+  const { signal, periodes, trend, trendScope, themes, hiddenThemes, recommendations, followUps, timeline } = detail;
 
   return (
     <>
       <PageHeader
-        title={signalTypeLabel(signal.tipus)}
-        subtitle={signal.descripcio}
-        actions={<Link href="/hr/recommendations" className="btn">← Recomanacions</Link>}
+        title={signalHeadline(signal)}
+        subtitle={signalDetail(signal)}
+        actions={<Link href="/hr/signals" className="btn">← Alarmes</Link>}
       />
 
       <div className="mb-6 flex flex-wrap items-center gap-2">
         <SignalBadges tipus={signal.tipus} severity={signal.severity} status={signal.status} />
-        <span className="badge">{signal.collectiu ?? "Tots els col·lectius"}</span>
         <span className="badge num">{signal.periode}</span>
         <span className="badge num">n={signal.n}</span>
-        {signal.confianca !== null && <span className="badge num">confiança {Math.round(signal.confianca * 100)}%</span>}
+        {signal.confianca !== null && <span className="badge num">confiança {Math.round(signal.confianca <= 1 ? signal.confianca * 100 : signal.confianca)}%</span>}
       </div>
 
       <div className="mb-6 flex flex-wrap items-center gap-2">
@@ -78,49 +88,60 @@ export default async function SignalPage({ params }: { params: Promise<{ id: str
       <div className="grid gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
         <div className="space-y-6">
           <Card
-            title="Tendència per domini"
-            meta={signal.collectiu ?? "Tots"}
+            title={`Evolució per domini · ${trendScope} (0-10)`}
+            meta="Puntuació 0-10"
             flush
           >
             {trend.length === 0 ? (
               <div className="px-5 pb-5"><Empty>Encara no hi ha agregats per a aquest col·lectiu.</Empty></div>
             ) : (
-              <table className="table min-w-[32rem]">
-                <thead>
-                  <tr>
-                    <th>Domini</th>
-                    {periodes.map((p) => <th key={p} className="text-right">{p}</th>)}
-                    <th className="text-right">Canvi</th>
-                    <th className="text-right">Tendència</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {trend.map((r) => (
-                    <tr key={r.domini} className={r.related ? "bg-accent-soft" : ""}>
-                      <td className="font-medium">
-                        {r.domini}
-                        {r.related && <span className="badge badge-accent ml-2">Relacionat</span>}
-                      </td>
-                      {r.cells.map((c) => (
-                        <td key={c.periode} className="num text-right">
-                          {c.suprimit ? (
-                            <SuppressedBadge title={suppressedHint} />
-                          ) : c.mitjana === null ? (
-                            <span className="text-subtle">–</span>
-                          ) : (
-                            <>
-                              {c.mitjana.toFixed(1)}
-                              <div className={`text-[11px] whitespace-nowrap ${c.precisio === "indicativa" ? "text-warn" : "text-subtle"}`}>n={c.n} · {c.precisio}</div>
-                            </>
-                          )}
-                        </td>
+              <>
+                <TrendChart periodes={periodes} rows={trend} highlight={trend.filter((r) => r.related).map((r) => r.domini)} scale="0-10" />
+                <details className="border-t border-line">
+                  <summary className="cursor-pointer px-5 py-3 text-xs font-medium text-subtle">Veure taula</summary>
+                  <div className="overflow-x-auto">
+                <table className="table min-w-[32rem]">
+                    <thead>
+                      <tr>
+                        <th>Domini</th>
+                        {periodes.map((p) => <th key={p} className="text-right">{p}</th>)}
+                        <th className="text-right">Canvi</th>
+                        <th className="text-right">Tendència</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {trend.map((r) => (
+                        <tr key={r.domini} className={r.related ? "bg-accent-soft" : ""}>
+                          <td className="font-medium">
+                            {r.domini}
+                            {r.related && <span className="badge badge-accent ml-2">Relacionat</span>}
+                          </td>
+                          {r.cells.map((c) => (
+                            <td key={c.periode} className="num text-right">
+                              {c.suprimit ? (
+                                <SuppressedBadge title={suppressedHint} />
+                              ) : c.mitjana === null ? (
+                                <span className="text-subtle">–</span>
+                              ) : (
+                                <>
+                                  {((c.mitjana - 1) * 2.5).toFixed(1)}
+                                  <div className={`text-[11px] whitespace-nowrap ${c.precisio === "indicativa" ? "text-warn" : "text-subtle"}`}>n={c.n} · {c.precisio}</div>
+                                  {c.sd !== null && c.consensus !== null && (
+                                    <div className="text-[11px] whitespace-nowrap text-subtle">±{(c.sd * 2.5).toLocaleString("ca-ES", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} · consens {Math.round(c.consensus)}%</div>
+                                  )}
+                                </>
+                              )}
+                            </td>
+                          ))}
+                          <td className="text-right"><ChangeBadge canvi={r.canvi} /></td>
+                          <td className="text-right"><Sparkline values={r.cells.map((c) => c.mitjana)} /></td>
+                        </tr>
                       ))}
-                      <td className="text-right"><ChangeBadge canvi={r.canvi} /></td>
-                      <td className="text-right"><Sparkline values={r.cells.map((c) => c.mitjana)} /></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                    </tbody>
+                  </table>
+                  </div>
+                </details>
+              </>
             )}
           </Card>
 
@@ -156,7 +177,7 @@ export default async function SignalPage({ params }: { params: Promise<{ id: str
         </div>
 
         <div className="space-y-6">
-          <Card title="Recomanacions" meta={<span className="num">{recommendations.length}</span>}>
+          <Card id="recomanacions" title="Recomanacions" meta={<span className="num">{recommendations.length}</span>}>
             {recommendations.length === 0 ? (
               <Empty>Encara no hi ha recomanacions per a aquest senyal.</Empty>
             ) : (
@@ -172,12 +193,12 @@ export default async function SignalPage({ params }: { params: Promise<{ id: str
                       <div className="mt-3 flex flex-wrap justify-end gap-2 border-t border-line pt-3">
                         {r.estat === "proposada" && (
                           <>
-                            <form action={discardFromSignalAction}><input type="hidden" name="id" value={r.id} /><input type="hidden" name="signal" value={signal.id} /><button className="btn">Descartar</button></form>
-                            <form action={approveFromSignalAction}><input type="hidden" name="id" value={r.id} /><input type="hidden" name="signal" value={signal.id} /><button className="btn btn-primary">Aprovar</button></form>
+                            <form action={discardFromSignalAction}><input type="hidden" name="id" value={r.id} /><input type="hidden" name="signal" value={signal.id} /><button className="btn">Descarta</button></form>
+                            <form action={approveFromSignalAction}><input type="hidden" name="id" value={r.id} /><input type="hidden" name="signal" value={signal.id} /><button className="btn btn-primary">Aprova</button></form>
                           </>
                         )}
                         {r.estat === "aprovada" && !r.seguimentNecessitatId && (
-                          <form action={followUpFromSignalAction}><input type="hidden" name="id" value={r.id} /><input type="hidden" name="signal" value={signal.id} /><button className="btn btn-primary">Crear enquesta de seguiment</button></form>
+                          <form action={followUpFromSignalAction}><input type="hidden" name="id" value={r.id} /><input type="hidden" name="signal" value={signal.id} /><button className="btn btn-primary">Crea l&apos;enquesta de seguiment</button></form>
                         )}
                       </div>
                     )}
@@ -187,7 +208,7 @@ export default async function SignalPage({ params }: { params: Promise<{ id: str
             )}
           </Card>
 
-          <Card title="Seguiment">
+          <Card id="seguiment" title="Seguiment">
             {followUps.length === 0 ? (
               <Empty>Encara no hi ha cap enquesta de seguiment. Apareixerà quan s&apos;aprovi una recomanació i es creï.</Empty>
             ) : (
@@ -196,7 +217,7 @@ export default async function SignalPage({ params }: { params: Promise<{ id: str
                   <li key={f.necessitatId} className="rounded-lg border border-line p-4">
                     <div className="mb-2 flex flex-wrap items-center gap-2">
                       <span className={`badge ${f.published ? "badge-good" : "badge-warn"}`}>{f.published ? "Publicada" : "Sense publicar"}</span>
-                      <Link href="/hr/needs" className="ml-auto text-xs text-accent-ink hover:underline">Revisar i publicar →</Link>
+                      <Link href="/hr/needs" className="ml-auto text-xs text-accent-ink hover:underline">Revisa i publica →</Link>
                     </div>
                     <p className="text-[13px] font-medium">{f.textNl}</p>
                     {f.questions.length > 0 ? (

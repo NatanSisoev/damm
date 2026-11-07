@@ -10,7 +10,7 @@ import {
   type SettingsState,
 } from "./actions";
 
-const err = "font-semibold text-accent-ink";
+const err = "font-semibold text-warn";
 
 export function ChangePasswordPanel() {
   const [state, action, pending] = useActionState<SettingsState, FormData>(changePasswordAction, {});
@@ -88,7 +88,7 @@ export function DeleteAccountPanel() {
         </h2>
         <p className="text-muted">
           S&apos;esborren el teu usuari, la contrasenya i la subscripció a les notificacions. Les respostes que ja has
-          donat es queden com a dades anònimes dins dels resultats de grup: no hi ha manera de tornar-les a lligar a tu.
+          donat es conserven com a dades anònimes dins dels resultats de grup: no hi ha manera de tornar-les a vincular amb tu.
           No es pot desfer.
         </p>
         {!confirming ? (

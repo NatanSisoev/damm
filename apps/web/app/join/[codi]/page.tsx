@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { lookupJoinCode } from "@damm/db/join";
-import { BrandFrame, BrandHero, PrivacyNote } from "../../(employee)/components/brand";
+import { EmployeeFrame, PageHead, PrivacyNote } from "../../(employee)/components/frame";
 
 export const dynamic = "force-dynamic";
 
@@ -10,11 +10,11 @@ export default async function JoinPage({ params }: { params: Promise<{ codi: str
   const valid = info !== null && info.actiu;
 
   return (
-    <BrandFrame>
+    <EmployeeFrame>
       <main className="mx-auto flex min-h-dvh w-full max-w-xl flex-col gap-6 md:py-8">
         {valid ? (
           <>
-            <BrandHero eyebrow={info.empresa} title="Benvinguda" lede={`Et donem la benvinguda a ${info.empresa}. Les teves respostes són anònimes i només es mostren de forma agregada.`} />
+            <PageHead eyebrow={info.empresa} title="Et donem la benvinguda" lede={`Les teves respostes a ${info.empresa} són anònimes i només es mostren agregades.`} />
             <div className="space-y-4 px-4">
               <div className="card p-4">
                 <div className="text-sm text-muted">Col·lectiu</div>
@@ -38,7 +38,7 @@ export default async function JoinPage({ params }: { params: Promise<{ codi: str
           </>
         ) : (
           <>
-            <BrandHero title="Codi no vàlid" lede="Aquest codi no existeix o ja no està actiu. Comprova l'enllaç o demana un codi nou al teu equip." />
+            <PageHead title="Codi no vàlid" lede="Aquest codi no existeix o ja no està actiu. Comprova l'enllaç o demana un codi nou al teu equip." />
             <p className="px-4">
               <Link href="/join" className="btn">
                 Torna a provar amb un altre codi
@@ -47,6 +47,6 @@ export default async function JoinPage({ params }: { params: Promise<{ codi: str
           </>
         )}
       </main>
-    </BrandFrame>
+    </EmployeeFrame>
   );
 }

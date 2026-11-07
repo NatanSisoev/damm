@@ -1,4 +1,5 @@
 // Catalan labels for senyal type, severity and status (C1: engine alarms add new types and both fields).
+import { signalDetail, signalHeadline, type SignalLike } from "@/lib/signal-text";
 
 const TIPUS: Record<string, string> = {
   emergent: "Emergent",
@@ -15,7 +16,7 @@ const TIPUS: Record<string, string> = {
 const SEVERITY: Record<string, { label: string; cls: string }> = {
   info: { label: "Info", cls: "" },
   warning: { label: "Avís", cls: "badge-warn" },
-  critical: { label: "Crític", cls: "badge-warn" },
+  critical: { label: "Crítica", cls: "badge-crit" },
 };
 
 export const STATUS_LABELS: Record<string, string> = {
@@ -38,6 +39,16 @@ export function SignalBadges({ tipus, severity, status }: { tipus: string; sever
       <span className={`badge ${tipus === "improvement" ? "badge-good" : "badge-warn"}`}>{signalTypeLabel(tipus)}</span>
       {sev && <span className={`badge ${sev.cls}`}>{sev.label}</span>}
       {status && <span className="badge">{STATUS_LABELS[status] ?? status}</span>}
+    </>
+  );
+}
+
+/** Headline (domain, who) first, then what moved. Shared by every card that shows a signal. */
+export function SignalText({ s }: { s: SignalLike }) {
+  return (
+    <>
+      <p className="text-[14px] font-semibold">{signalHeadline(s)}</p>
+      <p className="mt-0.5 text-[13px] text-muted">{signalDetail(s)}</p>
     </>
   );
 }

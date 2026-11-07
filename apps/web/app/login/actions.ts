@@ -12,7 +12,7 @@ async function clientIp(): Promise<string> {
   return h.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
 }
 
-const TOO_MANY = "Massa intents. Torna-ho a provar d'aquí a una estona.";
+const TOO_MANY = "Has fet massa intents. Torna-ho a provar d'aquí a una estona.";
 
 export async function loginAction(_prev: LoginState, formData: FormData): Promise<LoginState> {
   const res = await verifyLogin(String(formData.get("username") ?? ""), String(formData.get("password") ?? ""), await clientIp());

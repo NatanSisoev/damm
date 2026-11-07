@@ -5,6 +5,8 @@ import {
   getRepresentativeness,
   getTrends,
   listCollectius,
+  listDomains,
+  listTorns,
   listManagerRecommendations,
   listManagerSignals,
   listThemes,
@@ -18,7 +20,9 @@ import { InsightCards } from "../../hr/insight-cards";
 import { Radar, type RadarSeries } from "../../hr/results/radar";
 import { RepTable, TrendTable } from "../../hr/results/tables";
 import { Card, Empty, PageHeader, SuppressedBadge } from "../../hr/ui";
-import { SignalBadges } from "../../hr/signal-labels";
+import { SignalBadges, SignalText } from "../../hr/signal-labels";
+import { compareSignals } from "@/lib/signal-text";
+import { num1 } from "@/lib/format";
 import { AggregateNote } from "../note";
 
 export default async function ManagerCollectivePage({ params }: { params: Promise<{ collectiu: string }> }) {
@@ -33,13 +37,22 @@ export default async function ManagerCollectivePage({ params }: { params: Promis
   const rep = getRepresentativeness();
   const repRows = rep.collectius.filter((r) => r.collectiu === collectiu.nom);
   const shiftRows = rep.torns.filter((r) => r.collectiu === collectiu.nom);
-  const themes = listThemes().filter((t) => !t.suprimit);
+  const themes = listThemes({ collectiuId: collectiu.id }).filter((t) => !t.suprimit);
   const signals = listManagerSignals(collectiu.id);
   const recs = listManagerRecommendations(collectiu.id);
   // Viewer comes from the route's collective, never from a request parameter; managers only get their own hr_manager alarms.
   const viewer = { role: "manager" as const, collectiuId: collectiu.id };
   const insights = hrInsights(viewer, { kind: ["top_mover", "polarisation", "importance_gap", "trajectory_mix", "followup_confirmation", "segment_gap"] }).slice(0, 8);
   const alarms = hrAlarms(viewer);
+  const domainName = new Map(listDomains().map((d) => [d.id, d.nom]));
+  const tornName = new Map(listTorns().map((t) => [t.id, t.nom]));
+  // One list for alarms and signals, same text and order (severity, then size of the drop).
+  const cards = [
+    ...alarms.map((a) => ({ key: `alarm-${a.id}`, tipus: a.type, descripcio: a.description, severity: a.severity, n: a.n,
+      domini: a.domainId ? domainName.get(a.domainId) ?? null : null, torn: a.tornId ? tornName.get(a.tornId) ?? null : null, collectiu: collectiu.nom })),
+    ...signals.filter((s) => !alarms.some((a) => a.id === s.id)).map((s) => ({ key: `signal-${s.id}`, tipus: s.tipus, descripcio: s.descripcio,
+      severity: s.severity, n: s.n, domini: s.domini, torn: s.torn, collectiu: collectiu.nom })),
+  ].sort(compareSignals);
 
   const last = trends.periodes.length - 1;
   const latest = trends.periodes[last];
@@ -87,17 +100,17 @@ export default async function ManagerCollectivePage({ params }: { params: Promis
       </div>
 
       <div className="mt-6 space-y-6">
-        <Card title="Què destaca el motor" meta={<span className="num">{insights.length}</span>}>
-          <InsightCards insights={insights} empty="Encara no hi ha prou respostes per destacar res (cal n ≥ 10)." />
+        <Card title="Què destaca l'anàlisi" meta={<span className="num">{insights.length}</span>}>
+          <InsightCards insights={insights} empty={`Encara no hi ha prou respostes per destacar res (cal n ≥ ${MIN_GROUP_SIZE}).`} />
         </Card>
 
-        <Card title="Tendència per domini" meta="Mitjana 1–5 per període" flush={!!series}>
+        <Card title="Tendència per domini" meta="Mitjana en escala 1–5, per període" flush={!!series}>
           {series ? (
             <>
               <p className="border-b border-line px-5 py-3 text-xs text-subtle">
                 Cada mitjana mostra la seva n i una precisió: <span className="font-medium">indicativa</span> (n &lt; {PRECISION_MODERADA_MIN_N}),{" "}
                 <span className="font-medium">moderada</span> ({PRECISION_MODERADA_MIN_N}–{PRECISION_SOLIDA_MIN_N - 1}) o{" "}
-                <span className="font-medium">sòlida</span> (n ≥ {PRECISION_SOLIDA_MIN_N}). Un canvi només és «puja» o «baixa» si |Δ| ≥ {CHANGE_MIN_DELTA} i els dos períodes tenen n ≥ {CHANGE_MIN_N}.
+                <span className="font-medium">sòlida</span> (n ≥ {PRECISION_SOLIDA_MIN_N}). Un canvi només és «puja» o «baixa» si |Δ| ≥ {num1(CHANGE_MIN_DELTA)} i els dos períodes tenen n ≥ {CHANGE_MIN_N}.
               </p>
               <TrendTable periodes={trends.periodes} rows={series.rows} />
             </>
@@ -129,7 +142,7 @@ export default async function ManagerCollectivePage({ params }: { params: Promis
         <div className="grid gap-6 lg:grid-cols-2">
           <Card title="Temes dels comentaris" meta="Tota l'empresa, no només aquest col·lectiu">
             {themes.length === 0 ? (
-              <Empty>Encara no hi ha temes.</Empty>
+              <Empty>Encara no hi ha temes: cal que {MIN_GROUP_SIZE} comentaris o més parlin del mateix a tota l&apos;empresa. S&apos;actualitzen quan s&apos;executa l&apos;anàlisi.</Empty>
             ) : (
               <ul className="-my-1 divide-y divide-line">
                 {themes.map((t) => (
@@ -147,27 +160,18 @@ export default async function ManagerCollectivePage({ params }: { params: Promis
             <p className="mt-3 text-xs text-subtle">Els temes s&apos;extreuen de tots els comentaris. Els que tenen menys de {MIN_GROUP_SIZE} comentaris no es mostren.</p>
           </Card>
 
-          <Card title="Senyals del col·lectiu" meta={<span className="num">{signals.length}</span>}>
+          <Card title="Senyals del col·lectiu" meta={<span className="num">{cards.length}</span>}>
             {signals.length === 0 && alarms.length === 0 ? (
               <Empty>Cap senyal per a aquest col·lectiu.</Empty>
             ) : (
               <ul className="space-y-3">
-                {alarms.map((a) => (
-                  <li key={`alarm-${a.id}`} className="rounded-lg border border-line p-3">
-                    <div className="mb-1.5 flex flex-wrap items-center gap-2">
-                      <SignalBadges tipus={a.type} severity={a.severity} />
-                      <span className="num ml-auto text-xs text-subtle">n={a.n}</span>
+                {cards.map((c) => (
+                  <li key={c.key} className="rounded-lg border border-line p-3">
+                    <SignalText s={c} />
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                      <SignalBadges tipus={c.tipus} severity={c.severity} />
+                      <span className="num ml-auto text-xs text-subtle">n={c.n}</span>
                     </div>
-                    <p className="text-[13px]">{a.description}</p>
-                  </li>
-                ))}
-                {signals.filter((s) => !alarms.some((a) => a.id === s.id)).map((s) => (
-                  <li key={s.id} className="rounded-lg border border-line p-3">
-                    <div className="mb-1.5 flex flex-wrap items-center gap-2">
-                      <SignalBadges tipus={s.tipus} severity={s.severity} />
-                      <span className="num ml-auto text-xs text-subtle">n={s.n}</span>
-                    </div>
-                    <p className="text-[13px]">{s.descripcio}</p>
                   </li>
                 ))}
               </ul>

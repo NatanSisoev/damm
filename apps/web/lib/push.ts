@@ -1,0 +1,61 @@
+// Web push sender (server only). Employee-side: it reads push subscriptions through
+// @damm/db/employee. HR code calls notifyNeedPublished() with a need id and gets back an
+// aggregate outcome only (a device count, "<10" under the minimum group size): never an
+// account id, endpoint or key.
+import webpush from "web-push";
+import { MIN_GROUP_SIZE } from "@damm/shared";
+import { deletePushSubscriptionByEndpoint, listPushTargetsForNecessitat } from "@damm/db/employee";
+
+export type PushOutcome =
+  | { status: "off" } // VAPID keys not configured: publishing still works, nobody is notified
+  | { status: "sent"; devices: number | `<${number}` };
+
+let configured: boolean | null = null;
+
+/** The VAPID public key for the browser's subscribe call, or null when push is off. */
+export function vapidPublicKey(): string | null {
+  return pushEnabled() ? process.env.VAPID_PUBLIC_KEY! : null;
+}
+
+export function pushEnabled(): boolean {
+  if (configured !== null) return configured;
+  const pub = process.env.VAPID_PUBLIC_KEY;
+  const priv = process.env.VAPID_PRIVATE_KEY;
+  if (!pub || !priv) return (configured = false);
+  try {
+    webpush.setVapidDetails(process.env.VAPID_SUBJECT || "mailto:escolta@example.invalid", pub, priv);
+    configured = true;
+  } catch (e) {
+    console.warn("[push] invalid VAPID configuration, notifications are off:", (e as Error).message);
+    configured = false;
+  }
+  return configured;
+}
+
+const PAYLOAD = JSON.stringify({
+  title: "Escolta activa",
+  body: "Tens preguntes noves. Només et prendrà un minut.",
+  url: "/",
+});
+
+/** Notifies every subscribed device in the need's collective (all collectives if it has none). */
+export async function notifyNeedPublished(necessitatId: number): Promise<PushOutcome> {
+  if (!pushEnabled()) return { status: "off" };
+  const targets = listPushTargetsForNecessitat(necessitatId);
+  const results = await Promise.allSettled(
+    targets.map((t) =>
+      webpush.sendNotification({ endpoint: t.endpoint, keys: { p256dh: t.p256dh, auth: t.auth } }, PAYLOAD, { TTL: 60 * 60 * 24 }),
+    ),
+  );
+  let delivered = 0;
+  results.forEach((r, i) => {
+    if (r.status === "fulfilled") {
+      delivered++;
+      return;
+    }
+    const code = (r.reason as { statusCode?: number })?.statusCode;
+    if (code === 404 || code === 410) deletePushSubscriptionByEndpoint(targets[i].endpoint);
+    else console.warn("[push] send failed:", code ?? (r.reason as Error)?.message);
+  });
+  return { status: "sent", devices: delivered < MIN_GROUP_SIZE ? `<${MIN_GROUP_SIZE}` : delivered };
+}

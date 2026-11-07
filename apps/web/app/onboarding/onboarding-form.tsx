@@ -21,7 +21,7 @@ export function OnboardingForm({ codi }: { codi: string }) {
       <PasswordField name="password" label="Contrasenya" autoComplete="new-password" showHint minLength={8} />
       <PasswordField name="password2" label="Repeteix la contrasenya" autoComplete="new-password" minLength={8} />
       {state.error && (
-        <p role="alert" className="font-semibold text-accent-ink">
+        <p role="alert" className="font-semibold text-warn">
           {state.error}
         </p>
       )}
@@ -31,7 +31,7 @@ export function OnboardingForm({ codi }: { codi: string }) {
       <p className="text-center text-sm">
         Ja tens compte?{" "}
         <Link href="/login" className="font-semibold underline">
-          Inicia la sessió
+          Entra
         </Link>
       </p>
     </form>

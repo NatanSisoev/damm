@@ -26,7 +26,7 @@ export default async function PrivacyPage() {
     <EmployeeShell
       back
       backHref={loggedIn ? "/" : "/login"}
-      backLabel={loggedIn ? "Inici" : "Inicia la sessió"}
+      backLabel={loggedIn ? "Inici" : "Entra"}
       title="Privadesa"
     >
       <h1 className="page-title">Com tractem les teves dades</h1>
@@ -38,7 +38,7 @@ export default async function PrivacyPage() {
         <ul className={list}>
           <li>Les teves respostes a les preguntes de cada dia.</li>
           <li>El teu col·lectiu (ve del codi d&apos;invitació) i, si s&apos;ha indicat, el tipus de centre i el torn.</li>
-          <li>Un nom d&apos;usuari que tries tu i una contrasenya, que es guarda amb hash i sal (mai en clar ni recuperable).</li>
+          <li>Un nom d&apos;usuari que tries tu i una contrasenya, que es guarda xifrada de manera irreversible (mai en clar ni recuperable).</li>
           <li>El temps que tardes a respondre cada pregunta, només per detectar respostes fetes sense llegir.</li>
           <li>
             Un identificador intern opac que enllaça les teves respostes al llarg del temps. Serveix només per a
@@ -79,8 +79,8 @@ export default async function PrivacyPage() {
           <li>Si perds la contrasenya, la recuperes amb el codi d&apos;un sol ús que et vam donar en crear el compte.</li>
           <li>
             Pots esborrar el compte a Configuració. S&apos;esborren l&apos;usuari, la contrasenya i la subscripció a
-            notificacions. Les respostes que ja has donat es queden com a dades anònimes dins dels resultats de grup, ja
-            sense cap enllaç amb tu, i no es poden tornar a lligar al teu compte.
+            notificacions. Les respostes que ja has donat es conserven com a dades anònimes dins dels resultats de grup, ja
+            sense cap enllaç amb tu, i no es poden tornar a vincular al teu compte.
           </li>
         </ul>
       </Section>

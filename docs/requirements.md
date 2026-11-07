@@ -54,7 +54,7 @@ G-§3.2.
 | ID | User | What they need | Status | Evidence / gap |
 |----|------|----------------|--------|----------------|
 | R-U-1 | **Primary**: People/HR person who wants to understand a concrete situation and act | Need → drafts → approval → publish → results → recommendation | partial | `/hr/*`. Real AI and analysis are blocked. |
-| R-U-2 | **Respondent**: anyone at Damm (plant, logistics, sales, office, manager), little time, on a phone | Fast mobile answering, anonymity they can believe | done | PWA onboarding, answering, done state (2 a day max, day follows Europe/Madrid), in-progress answers kept on the device across reloads, loading and retry states, `/privacitat` and a shared mobile shell (44px targets). Push (task 4) still open. |
+| R-U-2 | **Respondent**: anyone at Damm (plant, logistics, sales, office, manager), little time, on a phone | Fast mobile answering, anonymity they can believe | done | PWA onboarding, answering, done state (2 a day max, day follows Europe/Madrid), in-progress answers kept on the device across reloads, loading and retry states, `/privacitat` and a shared mobile shell (44px targets), in the "Paper" identity (`docs/visual-identity.md`). Push opt-in in `/settings` and on the home screen; a publish notifies the collective (no daily reminder yet). |
 | R-U-3 | **Secondary**: team leads and management who receive aggregated results and recommendations | done (collective level) | `/manager` and `/manager/[collectiu]` (`apps/web/app/manager`): read-only, one collective, behind `HR_ACCESS_CODE`. Shows domain profile, trend, representativeness, company-wide themes, `hr_manager` signals and HR-approved recommendations only; `hr` (Lideratge) signals never shown; segments under 10 suppressed. No team concept, so no finer scope (N-6, N-8). | No team concept exists (only collective, centre type and shift), so a manager view carries re-identification risk. Proposal: collective-level read-only share or the Teams card (`/hr/publish/[codi]/teams`). See N-6. |
 
 ## 3. Functional flow (minimum)
@@ -94,8 +94,8 @@ G-§4 is the authoritative list ("Tots els equips han de cobrir aquest recorregu
 The guide says "Publicar a Typeform". AGENTS.md decides to ignore Typeform: the app is the channel. The equivalent requirement is below. **Explain this choice on the pitch** (we own the anonymity boundary end to end).
 | ID | Requirement | Status | Evidence / gap |
 |----|-------------|--------|----------------|
-| R-FLOW-4a | Publishing makes the approved questions live | done | `publishNecessitat`, pool |
-| R-FLOW-4b | A shareable **link** | done | `/hr/publish`, join URL per collective |
+| R-FLOW-4a | Publishing makes the approved questions live | done | `publishNecessitat` sets `publicada`; `notifyNeedPublished` (`apps/web/lib/push.ts`) sends web push to the need's collective and returns only a device count (`<10` under 10). Button "Publica i envia la notificació" on `/hr/needs`, redesigned in the HR UI audit (4bc0db3): filter tabs with counts, fact cards (collective, dates, participation n/population, per-question answers `<10` suppressed), confirm before closing. An employee in the collective who opens `/` (login or push tap) gets the published need's unanswered questions at once, past the daily cap (`addPublishedNeedsToDay` via `getTodaysBatch`). |
+| R-FLOW-4b | A shareable **link** | done | `/hr/publish`, onboarding join URL per collective (not per need: a need reaches people by push) |
 | R-FLOW-4c | A **QR** | done | Server-side SVG plus a printable A4 poster |
 | R-FLOW-4d | Publish via **API** / M365 integration (D-S13) | done | `/hr/publish/[codi]/teams`: Adaptive Card preview, copyable JSON, optional send to `TEAMS_WEBHOOK_URL`. The webhook send is not yet tested against a real Teams channel. |
 
@@ -105,17 +105,17 @@ The guide says "Publicar a Typeform". AGENTS.md decides to ignore Typeform: the 
 | R-FLOW-5a | Mobile **and PC** | done | Responsive PWA |
 | R-FLOW-5b | QR access | done | `/join/[codi]` |
 | R-FLOW-5c | **Frequency** strategy (about 2 a day, no repeats 4 days in a row) | blocked | Pool stub today; engine is Natan's |
-| R-FLOW-5d | **Reminders** | missing | Push is task 4 (ready). Needs HTTPS (task 9). |
-| R-FLOW-5e | **Representativeness control** while collecting (warn when a group is under-sampled) | partial | Shown on results. The engine now raises a `baixa_participacio` alarm (C9); banner pending. The engine can now act on it: a time-boxed probe samples a domain more in a segment (`startProbe`, C12, engine tests green) with progress (extra answers, confidence before and now). Missing: the Indagar button and progress card in the HR UI. |
+| R-FLOW-5d | **Reminders** | partial | Web push built: opt-in toggle (`/settings`, nudge on `/`), subscription in `push_subscripcio`, a publish notifies the collective, expired subscriptions (404/410) deleted. No daily reminder job yet. A real phone needs HTTPS (task 9). |
+| R-FLOW-5e | **Representativeness control** while collecting (warn when a group is under-sampled) | partial | Shown on results; the reach card links to a new need aimed at the gap (`/hr/needs?nova=1#nova`, c1c7422). The engine raises a `baixa_participacio` alarm (C9; banner pending) and can act on it with a time-boxed probe that samples a domain more in a segment (`startProbe`, C12) with progress. Missing: the Indagar button and progress card in the HR UI. |
 | R-FLOW-5f | Does not saturate anyone | blocked | Engine rules |
 
 ### R-FLOW-6 Collect and analyse
 | ID | Requirement | Status | Evidence / gap |
 |----|-------------|--------|----------------|
 | R-FLOW-6a | Read the responses (through the API) | done | `POST /api/responses` → `resposta` |
-| R-FLOW-6b | **Group comments by theme** | done (engine) | `runCommentAnalysis` (`packages/engine/src/comments.ts`) fills `tema`/`comentari_tema`, multi-theme, no LLM key needed; 91.2 % top-1 on the seed (engine.md section 12). HR display: C10 (Jan). |
-| R-FLOW-6c | **Summarise** | done (engine) | `tema.resum`: Catalan template per theme, period and collective, LLM optional. HR display: C10 (Jan). |
-| R-FLOW-6d | Detect **trends** | done | Trends with the change rule (task 17) |
+| R-FLOW-6b | **Group comments by theme** | done (engine) | `runCommentAnalysis` (`packages/engine/src/comments.ts`) fills `tema`/`comentari_tema`, multi-theme, no LLM key needed; 91.2 % top-1 on the seed (engine.md section 12). Wired into `POST /api/jobs/run` and the seed. HR display: C10 (Jan). |
+| R-FLOW-6c | **Summarise** | done (engine) | `tema.resum`: Catalan template per theme, period and collective, LLM optional. Wired into `POST /api/jobs/run` and the seed. HR display: C10 (Jan). |
+| R-FLOW-6d | Detect **trends** | done | Trends with the change rule (task 17). HR UI audit (c1c7422): delta shown with two decimals, chart footnote states the scale (1-5 or 0-10), badge title explains the 0,30 threshold. |
 | R-FLOW-6e | Detect **weak signals** | partial | Score weak signals: `feble` alarm. Comment themes: `emergent` alarm (rise of 10 points or more, n at least 10). Themes below n = 10 are suppressed, so a sub-threshold weak signal in comments stays hidden by design. Drilldown done (16). |
 | R-FLOW-6f | **Compare collectives or periods** | done | Results by collective and period |
 
@@ -123,16 +123,16 @@ The guide says "Publicar a Typeform". AGENTS.md decides to ignore Typeform: the 
 | ID | Requirement | Status | Evidence / gap |
 |----|-------------|--------|----------------|
 | R-FLOW-7a | Participation | done | HR home KPI, results |
-| R-FLOW-7b | Representativeness | done | Against the 1,200 population |
+| R-FLOW-7b | Representativeness | done | Against the 1,200 population. HR-X-1 fallback when the job writes no company-level rows (C11, Natan's emission still open). |
 | R-FLOW-7c | Main themes | done | Results / signals |
 | R-FLOW-7d | Evolution | done | Trends |
-| R-FLOW-7e | **Alerts** | done | Signals on the home page and the signal list |
-| R-FLOW-7f | **Sample size** on every figure | done | n plus a precision band (task 17) |
+| R-FLOW-7e | **Alerts** | done | Signals on the home page and the signal list. HR UI audit (c1c7422): signal detail timeline steps link to recommendations and follow-up, back link goes to the alarm list. |
+| R-FLOW-7f | **Sample size** on every figure | done | n plus a precision band (task 17). HR UI audit (c1c7422): headline strip flags the smaller n; empty theme and narrative cards explain why and link to `/hr/methodology`. |
 
 ### R-FLOW-8 Recommend and close the loop
 | ID | Requirement | Status | Evidence / gap |
 |----|-------------|--------|----------------|
-| R-FLOW-8a | Proposes **concrete actions** | done | `runRecommendations` + `draftRecommendations` draft 1 to 3 proposals per open alarm (template or LLM). Jan: show them (C11). |
+| R-FLOW-8a | Proposes **concrete actions** | done | `runRecommendations` + `draftRecommendations` draft 1 to 3 proposals per open alarm (template or LLM). Run by `POST /api/jobs/run` and the seed. Jan: show them (C11). |
 | R-FLOW-8b | Proposes a **new follow-up micro-survey** | done | `createDraftedFollowUp`: need for the signal's collective, AI-drafted questions, human review |
 | R-FLOW-8c | Recommendations are proposals, never automatic decisions | done | Approve or discard |
 | R-FLOW-8e | "Tornar a escoltar": how perception evolves after the action | partial | Engine done: `action_effect` insight, anchored on `recomanacio.aprovada_el` or a `context_event`; no "done" state; n≥10 in both windows; worded "since X", correlation not cause. `improvement` alarm uses the same anchors. Open: HR UI (Jan, C13) |
@@ -182,7 +182,7 @@ D-S9 and D-S10. Each needs a named mitigation we can point at in the demo. "AI d
 |----|------|----------------|--------|
 | R-BIAS-1 | Coverage | Representativeness against the 1,200 synthetic population, per collective and shift | done |
 | R-BIAS-2 | Non-response | Night shift under-response shown and alarmed (`baixa_participacio`, C9); engine oversampling of under-represented groups | partial (oversampling blocked) |
-| R-BIAS-3 | Self-selection | Push-driven continuous micro-questions rather than opt-in surveys; representativeness weighting | partial (push task 4) |
+| R-BIAS-3 | Self-selection | Push-driven continuous micro-questions rather than opt-in surveys; representativeness weighting | partial (push on publish built; no daily reminder) |
 | R-BIAS-4 | Wording | Question-quality checker (19); human approval | missing |
 | R-BIAS-5 | Social desirability | Anonymity promise plus `/privacitat`; **show the manager positivity gap** (seeded `MANAGER_BONUS`) | missing: the manager segment is not shown anywhere (option B, not started) |
 | R-BIAS-6 | Timing | The engine spreads questions over days and shifts; trend change rule | partial |
@@ -219,7 +219,7 @@ G-§8 principles, D-S16 trust pillars and D-S17 golden rules, merged. All Must.
 | R-PRIV-3 | Automatic detection and removal of identifying data in comments (names, emails, phones) | G-§8 | done | `redactPii` regex before storage. LLM pass is optional (Natan). |
 | R-PRIV-4 | No individual profile or inference about specific people; cannot be used to evaluate anyone | G-§8, D-S16 "No vigilància" | done | Trajectories exist only inside the analysis layer; the admin sees counts only. |
 | R-PRIV-5 | **Transparency to respondents**: what the survey is for and how data is handled | G-§8, D-S16 | done | `/privacitat`: what we collect, what HR sees (n≥10), what we never do, comment redaction, session and account deletion (answers stay anonymous). |
-| R-PRIV-6 | **Explainability**: sample size, confidence and limits of the analysis; correlations are not causes | G-§8 | partial | n and precision bands done; methodology page `/hr/methodology` built on `claude/audit-p2-methodology-8b92a4` (audit item 19), status unchanged until merge |
+| R-PRIV-6 | **Explainability**: sample size, confidence and limits of the analysis; correlations are not causes | G-§8 | partial | n and precision bands done; HR UI audit (c1c7422) adds scale and threshold explanations on trends and empty-state reasons linking to the methodology page; methodology page `/hr/methodology` built on `claude/audit-p2-methodology-8b92a4` (audit item 19), status unchanged until merge |
 | R-PRIV-7 | Human control: HR validates surveys and recommendations before acting | G-§8, D-S16, D-S17 | done | |
 | R-PRIV-8 | **Minimisation and expiry**: keep only what is needed, for as long as needed | G-§8 | partial | Minimisation done (no email or phone, redacted comments only). **No retention or expiry rule exists.** Add a documented retention period and a purge script or job. |
 | R-PRIV-9 | Equity: check coverage and results per collective | D-S16 | done | |
@@ -300,11 +300,11 @@ Bonus items named by the guide (G-§4 "Bonus") and the deck (D-S18), then our ow
 | N-5 | **Dynamic follow-up questions** | G bonus | Ties to R-FLOW-2e | missing | A low score triggers an open "why?" question in the same session. |
 | N-6 | **Multi-language** | G bonus | Catalan, Spanish, English at minimum; plant staff | missing | i18n on the employee app first; the AI translates approved questions with human review. |
 | N-7 | **Full cycle in one platform** | D-S18 | Already our architecture | done | Say it explicitly. |
-| N-8 | Manager segment in HR results (social desirability, R-BIAS-5) | ours | Shows we detect a seeded bias | missing | "Option B". Needs a db query on `es_manager` (Natan's area: flag). Only above n≥10. |
+| N-8 | Manager segment in HR results (social desirability, R-BIAS-5) | ours | Shows we detect a seeded bias | missing (manager view `/manager/[collectiu]` audited, empty-state themes explained in c1c7422; the manager-bias segment itself is still open) | "Option B". Needs a db query on `es_manager` (Natan's area: flag). Only above n≥10. |
 | N-9 | Methodology page "Com calculem" | ours | Explainability, scenario C6 | missing | Task 18, ready |
 | N-10 | Question-quality checker | ours | Wording bias, R-BIAS-4 | missing | Task 19, ready |
 | N-11 | Decision audit log and AI provenance | ours | Traceability, R-PRIV-10 | blocked | Task 21 |
-| N-12 | Installable PWA plus daily push reminder | ours | Reminders R-FLOW-5d, participation | partial | Installable: manifest, icons, offline page, service worker (push stub). Push subscribe and send still open (task 4), then the tunnel (9). |
+| N-12 | Installable PWA plus daily push reminder | ours | Reminders R-FLOW-5d, participation | partial | Installable: manifest, icons (Paper identity, ink `#17211a`), offline page, service worker with push and notification click. Subscribe and send on publish built; a daily reminder and the tunnel (9) are open. |
 | N-13 | Participation by channel chart | G-§6.2 | Uses the `canal` field we already store | missing | Small: one aggregate by `canal` with suppression. |
 | N-14 | Initiative ↔ domain mapping | D-S3 | Turns results into "is our policy working?" | missing | R-DOM-5 |
 | N-15 | Retention and purge job | G-§8 | Closes R-PRIV-8 | missing | Document the period; a script deletes old `resposta` rows after aggregation. |
