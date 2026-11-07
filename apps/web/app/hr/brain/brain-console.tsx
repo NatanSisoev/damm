@@ -347,9 +347,6 @@ function Summary({ brain, c }: { brain: Brain; c: BrainCollective }) {
   const maxGain = Math.max(1e-9, ...c.domains.map((d) => d.stats?.infoGain ?? 0));
   return (
     <div className="space-y-6">
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Fact label="Confirmacions pendents" value={c.pendingFollowups === null ? <SuppressedBadge /> : String(c.pendingFollowups)} hint="Persones a qui el motor tornarà a preguntar en uns dies, perquè una resposta inesperada es confirmi o es descarti" />
-      </div>
 
       <Card title="Com es reparteix l'atenció" meta="Prioritat = pes × impuls × (guany d'informació + mínim) × (1 + impuls per canvis bruscos)">
         {c.suppressed && <p className="mb-3 text-[13px] text-subtle">Aquest col·lectiu té menys de {brain.minGroupSize} comptes, així que les estadístiques queden amagades i el motor reparteix l&apos;atenció només amb els pesos.</p>}
