@@ -14,11 +14,16 @@ Status: `running`, `ready` (can start now), `blocked` (waiting on a dependency),
 | 0 | Seed data (`packages/seed`) | `jan/seed` | done | heavy |
 | 1 | Frontend refinement, HR side (domain radar, Magenta Desks-style restyle) | `jan/ui` | done | light |
 | 2 | PWA accounts and onboarding | `jan/pwa-auth` | done | heavy |
-| 3 | PWA answer flow | `jan/pwa-answer` | ready | heavy |
-| 6 | Security demo | `jan/security-demo` | ready | light |
-| 7 | Demo script and slide notes | `jan/demo-script` | ready | light |
-| 8 | HR CSV export with suppression | `jan/hr-export` | ready | light |
+| 3 | PWA answer flow | `jan/pwa-answer` | running | heavy |
+| 6 | Security demo | `jan/security-demo` | running | light |
+| 7 | Demo script and slide notes | `jan/demo-script` | done | light |
+| 8 | HR CSV export with suppression | `jan/hr-export` | done | light |
 | 10 | `jan/dev` → `main` PR | coordinating session | ready | light |
+| 12 | HR home overview | `jan/hr-home` | ready | light |
+| 13 | Publish page: join link, QR and print poster | `jan/publish-qr` | ready | light |
+| 14 | Pitch deck | `jan/deck` | ready | light |
+| 15 | Demo reset and presenter mode | `jan/demo-reset` | blocked on 3 | heavy |
+| 16 | Signal drilldown and follow-up loop view | `jan/signals` | ready | light |
 
 All of the done rows are merged into `jan/dev` and pushed (lint, `check:anonymity`, seed and build pass). Not yet verified: the production refusal when `SESSION_SECRET` is unset.
 
@@ -67,6 +72,39 @@ Lint and build pass on a clean checkout; Natan approves; merge commit.
 
 ### 11. Cleanup (coordinating session, after each merge)
 Remove the merged worktrees under `.claude/worktrees/` and delete the merged `jan/*` and `claude/*` branches.
+
+### 12. HR home overview: `jan/hr-home` (light, ready)
+- Files: `apps/web/app/hr/page.tsx` (it only redirects today), new read functions in `packages/db/src/hr-repository.ts`.
+- One screen for the first 10 seconds of the demo:
+  - KPI tiles: overall participation against the 1,200 population, respondents this period, open needs, pending drafts, new signals;
+  - the domain radar thumbnail;
+  - the top 3 signals;
+  - "what needs your decision" (drafts to approve, recommendations to decide).
+- Aggregates only, with suppression applied.
+
+### 13. Publish page, QR and poster: `jan/publish-qr` (light, ready)
+- Files: `apps/web/app/hr/publish/**`, the nav entry.
+- Join link per collective from `joincode`, plus a QR rendered server-side as SVG (the `qrcode` package).
+- A printable A4 poster in Damm branding ("Escaneja i respon en 1 minut", anonymity promise).
+- The QR follows `PUBLIC_BASE_URL`, so it works with the tunnel (9).
+
+### 14. Pitch deck: `jan/deck` (light, ready)
+- Built from `docs/slide-notes.md`, with screenshots of the HR portal.
+- Plain-label headings, views in the speaker notes.
+- Covers the future-evolution slide (services split, APK).
+
+### 15. Demo reset and presenter mode: `jan/demo-reset` (heavy, blocked on 3)
+- `pnpm demo:reset`: reseeds, and pre-creates one demo account per collective plus one fresh need, so every run of the demo starts identical.
+- An optional `?demo=1` banner on HR pages showing the step number from `docs/demo-script.md`.
+
+### 16. Signal drilldown and follow-up loop: `jan/signals` (light, ready)
+- Files: `apps/web/app/hr/recommendations/**`, `apps/web/app/hr/signals/[id]/**`, read functions in `hr-repository.ts`.
+- One page per signal:
+  - trend by period;
+  - representative redacted comment snippets per theme (only themes with n≥10);
+  - linked recommendations;
+  - the follow-up survey state.
+- A small timeline closes the loop: signal, recommendation, follow-up need, new results.
 
 ## Needs Natan first
 
