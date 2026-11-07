@@ -373,9 +373,9 @@ function replayHistory(db: SqlDatabase, cfg: EngineConfig): History {
       if (!parsed.ok || parsed.value.score === null) continue;
       score = parsed.value.score;
     }
-    const day = r.data.slice(0, 10);
     const ms = toMs(r.data);
-    const isFollowup = q.isFollowup || fuAssigned.has(`${r.compte_id}|${q.id}|${dayOf(ms, cfg.timezone)}`);
+    const day = dayOf(ms, cfg.timezone); // local day, as live submission uses it
+    const isFollowup = q.isFollowup || fuAssigned.has(`${r.compte_id}|${q.id}|${day}`);
     const pk = `${r.compte_id}|${q.domainId}`;
     const res = learn(
       { person: persons.get(pk) ?? null, item: items.get(q.id) ?? { ...EMPTY_ITEM }, question: q, score, at: r.data, day, isFollowup },

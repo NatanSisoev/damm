@@ -10,7 +10,7 @@ import type { PersonDomainState } from "./person.ts";
 import { createRng } from "./rng.ts";
 import { combineStrata, segmentStats, type SegmentStats } from "./segment.ts";
 import * as store from "./store.ts";
-import { daysBetween, periodEndMs, toSqlDatetime } from "./time.ts";
+import { dayOf, daysBetween, periodEndMs, toMs, toSqlDatetime } from "./time.ts";
 import { runInsights, type InsightConfig } from "./insights.ts";
 import { runAlarms, type AlarmReport, type AlarmThresholds } from "./alarms.ts";
 
@@ -49,8 +49,6 @@ interface ReplayRow {
   data: string;
   collectiu_id: number;
   torn_id: number | null;
-  /** 1 when the answer was to a follow-up slot of the daily batch. */
-  followup_slot: number;
 }
 
 const key = (a: string, d: number) => `${a}|${d}`;
@@ -63,10 +61,13 @@ export function runEngineJob(db: SqlDatabase, opts: JobOptions = {}): JobReport 
   const pop = store.population(db);
   const rows = all<ReplayRow>(
     db,
-    `SELECT r.id, r.compte_id, r.pregunta_id, r.valor_num, r.value_json, r.score, r.periode, r.data, c.collectiu_id, c.torn_id,
-       EXISTS (SELECT 1 FROM assignment a WHERE a.compte_id = r.compte_id AND a.pregunta_id = r.pregunta_id
-               AND a.reason = 'followup' AND a.day = date(r.data)) AS followup_slot
+    `SELECT r.id, r.compte_id, r.pregunta_id, r.valor_num, r.value_json, r.score, r.periode, r.data, c.collectiu_id, c.torn_id
      FROM resposta r JOIN compte c ON c.id = r.compte_id ORDER BY r.data, r.id`,
+  );
+
+  // Follow-up slots of the daily batches, keyed by local day (assignment.day), as live submission sees them.
+  const followupSlots = new Set(
+    all<{ k: string }>(db, "SELECT compte_id || '|' || pregunta_id || '|' || day AS k FROM assignment WHERE reason = 'followup'").map((r) => r.k),
   );
 
   const accounts = new Map<string, { c: number; t: number | null }>();
@@ -173,9 +174,11 @@ export function runEngineJob(db: SqlDatabase, opts: JobOptions = {}): JobReport 
       score = parsed.value.score;
       filledScores.push([score, r.id]);
     }
-    const day = r.data.slice(0, 10);
+    // The local calendar day, as live submission uses it: late-evening UTC answers belong to the next local day.
+    const day = dayOf(toMs(r.data), cfg.timezone);
+    const isFollowup = q.isFollowup || followupSlots.has(`${r.compte_id}|${q.id}|${day}`);
     const out = learn(
-      { person: persons.get(key(r.compte_id, q.domainId)) ?? null, item: items.get(q.id) ?? { ...EMPTY_ITEM }, question: q, score, at: r.data, day, isFollowup: q.isFollowup || r.followup_slot === 1 },
+      { person: persons.get(key(r.compte_id, q.domainId)) ?? null, item: items.get(q.id) ?? { ...EMPTY_ITEM }, question: q, score, at: r.data, day, isFollowup },
       cfg,
       createRng(`${r.compte_id}|${q.domainId}|${day}`),
     );
