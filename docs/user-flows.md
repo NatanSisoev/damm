@@ -233,7 +233,7 @@ Preconditions: GATE-ON.
 
 | # | Route and action | Expected result |
 |---|---|---|
-| 1 | Open `/hr` with no cookie | Redirect to `/hr-login?next=/hr`. Page "Portal de persones", "Accés restringit a l'equip de persones. Escriu el codi d'accés de la demo.", field "Codi d'accés", button "Entra". |
+| 1 | Open `/hr` with no cookie | Redirect to `/hr-login?next=/hr`. Page "Accés de Recursos Humans", "Accés restringit a l'equip de persones. Escriu el codi d'accés de la demo.", field "Codi d'accés", button "Entra". |
 | 2 | Wrong code, "Entra" | Stays on the page with the alert "Codi incorrecte." No cookie. |
 | 3 | Right code, "Entra" | Cookie `hr_access` set, redirect to the `next` path (`/hr` here). Nav: "Inici", "Necessitats", "Enllaços i QR", "Resultats", "Alarmes" (with a count badge), "Recomanacions", "Com es calcula?", "Vista de responsables". |
 

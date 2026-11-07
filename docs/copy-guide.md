@@ -33,6 +33,7 @@ How the Catalan text in the app should read. Use it when you write or review any
 | banc de preguntes | grup, grup de preguntes | The pool approved questions enter. |
 | persones que han respost | respondents | Counts of respondents. Short label: "Han respost". |
 | l'equip de persones | RRHH, RH | The HR team. |
+| Recursos Humans | Portal de persones, RRHH, RH | Name of the HR portal in titles and labels (es "Recursos Humanos", en "HR"). Written out in full. |
 | panell | tauler | |
 | connexió | xarxa | "Sense connexió". |
 | necessitat | | The HR need that starts a survey. |
