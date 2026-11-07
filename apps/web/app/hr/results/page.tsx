@@ -9,6 +9,7 @@ import {
   listThemes,
   CHANGE_MIN_DELTA,
   CHANGE_MIN_N,
+  REP_GAP_FLAG,
   PRECISION_MODERADA_MIN_N,
   PRECISION_SOLIDA_MIN_N,
   type Change,
@@ -72,7 +73,7 @@ function RepTable({ rows, byShift }: { rows: RepRow[]; byShift: boolean }) {
                   </div>
                 </td>
                 <td className="text-right">
-                  {Math.abs(r.gap!) >= 0.05 ? (
+                  {Math.abs(r.gap!) >= REP_GAP_FLAG ? (
                     <span className="badge badge-warn num">{gapLabel(r.gap!)}</span>
                   ) : (
                     <span className="num text-muted">{gapLabel(r.gap!)}</span>
@@ -186,7 +187,8 @@ export default async function ResultsPage({ searchParams }: { searchParams: Prom
   const counts = accountCounts();
   const [overall, ...perCollective] = trends.series;
 
-  const totalAccounts = counts.reduce((a, c) => a + c.comptes, 0);
+  const allVisible = counts.every((c) => c.comptes !== null);
+  const totalAccounts = allVisible ? counts.reduce((a, c) => a + (c.comptes ?? 0), 0) : null;
   const visibleThemes = themes.filter((t) => !t.suprimit);
   const emergent = visibleThemes.filter((t) => t.emergent).length;
   const suppressedSegments = [...rep.collectius, ...rep.torns].filter((r) => r.suprimit).length;
@@ -206,7 +208,7 @@ export default async function ResultsPage({ searchParams }: { searchParams: Prom
       />
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <Stat label="Comptes actius" value={totalAccounts} hint={`${counts.length} col·lectius`} />
+        <Stat label="Comptes actius" value={totalAccounts ?? "—"} hint={allVisible ? `${counts.length} col·lectius` : `Algun col·lectiu té menys de ${MIN_GROUP_SIZE} comptes`} />
         <Stat label="Temes detectats" value={visibleThemes.length} hint="Als comentaris" />
         <Stat label="Temes emergents" value={emergent} hint="Nous aquest període" />
         <Stat label="Segments suprimits" value={suppressedSegments} hint={suppressedHint} />
@@ -262,7 +264,7 @@ export default async function ResultsPage({ searchParams }: { searchParams: Prom
       <div className="mt-6 space-y-6">
         <Card
           title="Representativitat"
-          meta="Respostes davant població sintètica · diferències de 5 pp o més marcades"
+          meta={<>Respostes davant població sintètica · diferències de 5 pp o més marcades · <Link href="/hr/methodology" className="underline">Com es calcula?</Link></>}
           flush={rep.collectius.length > 0}
         >
           {rep.collectius.length === 0 ? (
@@ -305,7 +307,7 @@ export default async function ResultsPage({ searchParams }: { searchParams: Prom
             {counts.map((c) => (
               <div key={c.collectiu}>
                 <dt className="text-xs text-subtle">{c.collectiu}</dt>
-                <dd className="num text-lg font-semibold">{c.comptes}</dd>
+                <dd className="num text-lg font-semibold">{c.comptes === null ? `<${MIN_GROUP_SIZE}` : c.comptes}</dd>
               </div>
             ))}
           </dl>

@@ -6,18 +6,22 @@ import type { ReactNode } from "react";
 export function EmployeeShell({
   children,
   back,
+  backHref = "/",
+  backLabel = "Inici",
   title,
 }: {
   children: ReactNode;
   back?: boolean;
+  backHref?: string;
+  backLabel?: string;
   title?: string;
 }) {
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-xl flex-col px-4 pb-8 pt-3 md:pt-8">
       <header className="mb-6 flex items-center justify-between gap-2">
         {back ? (
-          <Link href="/" className="btn btn-ghost -ml-3 h-11 px-3 text-sm">
-            ← Inici
+          <Link href={backHref} className="btn btn-ghost -ml-3 h-11 px-3 text-sm">
+            ← {backLabel}
           </Link>
         ) : (
           <Link href="/" className="flex h-11 items-center text-base font-semibold tracking-tight">

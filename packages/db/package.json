@@ -6,7 +6,8 @@
   "types": "src/index.ts",
   "scripts": {
     "init": "tsx src/init.ts",
-    "rigour-check": "tsx scripts/rigour-check.mts"
+    "rigour-check": "tsx scripts/rigour-check.mts",
+    "madrid-check": "tsx scripts/madrid-day-check.mts"
   },
   "dependencies": {
     "@damm/shared": "workspace:*",

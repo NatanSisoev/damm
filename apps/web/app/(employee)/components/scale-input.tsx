@@ -1,27 +1,27 @@
 "use client";
 
-// scale5 and scale10: large tap targets, extremes labelled.
+// scale5 (1..5) and scale10 (0..10): large tap targets, extremes labelled.
+// scale10 has 11 values, so it wraps into two rows of 6 to keep 44px+ targets on a 375px phone.
 export function ScaleInput({
+  min = 1,
   max,
   value,
   onChange,
   lowLabel,
   highLabel,
 }: {
+  min?: 0 | 1;
   max: 5 | 10;
   value: number | null;
   onChange: (v: number) => void;
   lowLabel: string;
   highLabel: string;
 }) {
-  const values = Array.from({ length: max }, (_, i) => i + 1);
+  const values = Array.from({ length: max - min + 1 }, (_, i) => i + min);
+  const cols = max === 10 ? "grid-cols-6" : "grid-cols-5";
   return (
     <div>
-      <div
-        role="radiogroup"
-        aria-label="Valoració"
-        className="grid grid-cols-5 gap-2"
-      >
+      <div role="radiogroup" aria-label="Valoració" className={`grid ${cols} gap-2`}>
         {values.map((v) => {
           const on = value === v;
           return (
@@ -42,9 +42,13 @@ export function ScaleInput({
           );
         })}
       </div>
-      <div className="mt-2 flex justify-between text-xs text-subtle">
-        <span>{lowLabel}</span>
-        <span>{highLabel}</span>
+      <div className="mt-2 flex justify-between gap-4 text-xs text-subtle">
+        <span className="max-w-[45%]">
+          {min} · {lowLabel}
+        </span>
+        <span className="max-w-[45%] text-right">
+          {max} · {highLabel}
+        </span>
       </div>
     </div>
   );

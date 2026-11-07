@@ -7,6 +7,7 @@ export const PRECISION_MODERADA_MIN_N = 30; // below: "indicativa"
 export const PRECISION_SOLIDA_MIN_N = 100; // from here: "sòlida"
 export const CHANGE_MIN_DELTA = 0.3; // on the 1-5 scale
 export const CHANGE_MIN_N = 30; // both periods
+export const REP_GAP_FLAG = 0.05; // representativeness gap (share points) from which a segment is flagged
 
 export type PrecisionBand = "indicativa" | "moderada" | "sòlida";
 export type ChangeLabel = "puja" | "baixa" | "sense canvi clar";

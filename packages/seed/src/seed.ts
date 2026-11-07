@@ -7,7 +7,7 @@ import Database from "better-sqlite3";
 import { COLLECTIUS, DOMINIS, TORNS, MIN_GROUP_SIZE, PERIODES_SEED, type PreguntaTipus } from "@damm/shared";
 import { mulberry32, int, pick, shuffle, normal, chance, type Rng } from "./rng";
 import { THEMES } from "./themes";
-import { BANK, EXTRA, type QItem } from "./questions";
+import { anchorsOf, BANK, EXTRA, type QItem } from "./questions";
 import { applyDashboardFixtures } from "./dashboard-fixtures";
 
 const root = path.resolve(__dirname, "../../..");
@@ -54,7 +54,7 @@ const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v
 function valueFor(tipus: PreguntaTipus, x: number): number | null {
   switch (tipus) {
     case "scale5": return clamp(Math.round(x), 1, 5);
-    case "scale10": return clamp(Math.round(x * 2), 1, 10);
+    case "scale10": return clamp(Math.round(x * 2), 0, 10);
     case "yes_no": return chance(r, clamp((x - 1) / 4, 0.05, 0.95)) ? 1 : 0;
     case "ranking": return int(r, 1, 5); // position (1 = top priority) given to the first listed option
     case "open": return null;
@@ -88,16 +88,22 @@ for (const s of SEGS)
 interface Q { id: number; col: string; dom: number; domNom: string; item: QItem }
 const pool: Q[] = [];
 const insQ = db.prepare(
-  `INSERT INTO pregunta (domini_id, collectiu_id, text, tipus, necessitat_id, estat, prioritat, generada_per_ia, aprovada_per, aprovada_el)
-   VALUES (?,?,?,?,NULL,'aprovada',0,0,'seed','2026-07-30 09:00:00')`,
+  `INSERT INTO pregunta (domini_id, collectiu_id, text, tipus, necessitat_id, estat, prioritat, generada_per_ia, aprovada_per, aprovada_el, options_json)
+   VALUES (?,?,?,?,NULL,'aprovada',0,0,'seed','2026-07-30 09:00:00',?)`,
 );
+// Scale questions carry their low/high anchors as two scored labels (existing options_json shape).
+function scaleOptionsJson(item: QItem): string | null {
+  const a = anchorsOf(item);
+  if (!a) return null;
+  return JSON.stringify([{ label: a[0], score: 0 }, { label: a[1], score: item.tipus === "scale10" ? 10 : 5 }]);
+}
 COLLECTIUS.forEach((col, k) => {
   DOMINIS.forEach((domNom, d) => {
     const items: QItem[] = [0, 1, 2, 3].map((j) => BANK[domNom][(k * 2 + j) % 7]);
     if ((d + k) % 2 === 0) items.push(BANK[domNom][7]);
     for (const e of EXTRA[col] ?? []) if (e.domini === domNom) items.push(e.item);
     for (const item of items) {
-      const id = Number(insQ.run(domId.get(domNom), colId.get(col), item.text, item.tipus).lastInsertRowid);
+      const id = Number(insQ.run(domId.get(domNom), colId.get(col), item.text, item.tipus, scaleOptionsJson(item)).lastInsertRowid);
       pool.push({ id, col, dom: d, domNom, item });
     }
   });

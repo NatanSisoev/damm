@@ -1,3 +1,5 @@
+import { MIN_GROUP_SIZE } from "@damm/shared";
+
 // Domain radar: fixed axis order, fixed 1-5 scale, at most 2 series.
 // A suppressed value (n<10) is a gap in the shape, never drawn as 0.
 
@@ -132,7 +134,7 @@ export function Radar({ axes, series }: { axes: string[]; series: RadarSeries[] 
               ))}
               {suppressed.map((s) => (
                 <tspan key={s.label} x={x} dy={13} className="text-[10px]" fillOpacity={0.6}>
-                  {series.length > 1 ? `${s.label.split(" · ")[0]}: n<10` : "n<10"}
+                  {series.length > 1 ? `${s.label.split(" · ")[0]}: n<${MIN_GROUP_SIZE}` : `n<${MIN_GROUP_SIZE}`}
                 </tspan>
               ))}
             </text>
@@ -140,7 +142,7 @@ export function Radar({ axes, series }: { axes: string[]; series: RadarSeries[] 
         })}
       </svg>
       <figcaption className="text-xs text-subtle">
-        Escala fixa de 1 a 5; la línia discontínua marca el 3. Un domini amb menys de 10 respostes queda en blanc, mai com a 0.
+        Escala fixa de 1 a 5; la línia discontínua marca el 3. Un domini amb menys de {MIN_GROUP_SIZE} respostes queda en blanc, mai com a 0.
       </figcaption>
     </figure>
   );

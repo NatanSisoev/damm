@@ -33,7 +33,7 @@ G-§9: "Criteris excloents". These outrank everything else.
 |----|-------------|--------|----------------|
 | R-X-1 | No real personal data anywhere: code, seed, DB, slides, screenshots, LLM prompts | done | Seed is synthetic (`packages/seed`). Re-check slide screenshots before the deck. |
 | R-X-2 | No identifiable individual results on any screen or export | done | n≥10 suppression plus complementary suppression (task 17), CSV export with `suprimit` (task 8). |
-| R-X-3 | Human control: nothing the AI proposes takes effect without a person approving it | done | Questions need `aprovada`; recommendations need approval. Re-verify once Natan's AI calls land. |
+| R-X-3 | Human control: nothing the AI proposes takes effect without a person approving it | done | Questions need `aprovada`; recommendations need approval. Re-verify once Natan's AI calls land. Gap: the approver of a recommendation is not recorded (needs `recomanacio.aprovada_per/aprovada_el`); `/hr/*` now sits behind `HR_ACCESS_CODE`. |
 | R-X-4 | No tokens or secrets exposed in code, git history, slides or screenshots | partial | `.env` is gitignored and `.env.example` has empty values. Still to do: a history scan (`git log -p \| grep -iE "key\|token\|secret"`) before the PR, and a check of the slides and screenshots. |
 
 ## 1. Challenge statement and principle
@@ -54,7 +54,7 @@ G-§3.2.
 | ID | User | What they need | Status | Evidence / gap |
 |----|------|----------------|--------|----------------|
 | R-U-1 | **Primary**: People/HR person who wants to understand a concrete situation and act | Need → drafts → approval → publish → results → recommendation | partial | `/hr/*`. Real AI and analysis are blocked. |
-| R-U-2 | **Respondent**: anyone at Damm (plant, logistics, sales, office, manager), little time, on a phone | Fast mobile answering, anonymity they can believe | done | PWA onboarding, answering, done state (2 a day max), `/privacitat` and a shared mobile shell (44px targets). Push (task 4) still open. |
+| R-U-2 | **Respondent**: anyone at Damm (plant, logistics, sales, office, manager), little time, on a phone | Fast mobile answering, anonymity they can believe | done | PWA onboarding, answering, done state (2 a day max, day follows Europe/Madrid), in-progress answers kept on the device across reloads, loading and retry states, `/privacitat` and a shared mobile shell (44px targets). Push (task 4) still open. |
 | R-U-3 | **Secondary**: team leads and management who receive aggregated results and recommendations | Read-only aggregate view and recommendations | missing | No team concept exists (only collective, centre type and shift), so a manager view carries re-identification risk. Proposal: collective-level read-only share or the Teams card (`/hr/publish/[codi]/teams`). See N-6. |
 
 ## 3. Functional flow (minimum)
@@ -73,20 +73,20 @@ G-§4 is the authoritative list ("Tots els equips han de cobrir aquest recorregu
 ### R-FLOW-2 Generate the survey with AI
 | ID | Requirement | Status | Evidence / gap |
 |----|-------------|--------|----------------|
-| R-FLOW-2a | Proposes a **title** | missing | `packages/ai` blocked |
-| R-FLOW-2b | Proposes an **introduction** | missing | blocked |
-| R-FLOW-2c | **3 to 6 questions** | partial | Drafts are seeded. Real generation is blocked. |
-| R-FLOW-2d | **Answer type** per question | partial | Types exist (`scale5`, `scale10`, `yes_no`, `pair`, `choice`, `ranking`, `open`, C2) and the answer UI renders all of them. The AI does not pick them yet. |
+| R-FLOW-2a | Proposes a **title** | done | `draftSurvey` in `packages/ai` (ornith, thinking off, JSON mode, about 3.4 s); editable in review |
+| R-FLOW-2b | Proposes an **introduction** | done | `draftSurvey`; editable in review |
+| R-FLOW-2c | **3 to 6 questions** | done | LLM drafts from the need, context and exclusions; template fallback flagged "Plantilla de reserva". Quality eval in progress (`need-ai-quality` branch). |
+| R-FLOW-2d | **Answer type** per question | done | The AI picks among `scale5`, `scale10`, `yes_no`, `ranking`, `open` (C2 English types); scale questions carry their own end labels. |
 | R-FLOW-2e | **Conditional logic** | missing | Not in the schema or the UI. Minimal version: "if score ≤ 2, ask the open follow-up". |
-| R-FLOW-2f | **Estimated time** | missing | Can be computed deterministically from types (for example 8 s per scale and 30 s per open question) and checked against R-FLOW-1d. |
-| R-FLOW-2g | Adapted to the collective in **tone, length and channel** | blocked | Prompt design is in `packages/ai`. S14 asks for "to proper" (a warm tone). |
+| R-FLOW-2f | **Estimated time** | done | `estimateSeconds` per question and per draft; review warns when it exceeds R-FLOW-1d. |
+| R-FLOW-2g | Adapted to the collective in **tone, length and channel** | partial | The prompt takes the collective and a warm tone; channel adaptation not done. |
 
 ### R-FLOW-3 Human validation
 | ID | Requirement | Status | Evidence / gap |
 |----|-------------|--------|----------------|
 | R-FLOW-3a | HR can **edit** each question | done | `editQuestionAction` |
 | R-FLOW-3b | HR can **delete** each question | done | `discardQuestionAction` |
-| R-FLOW-3c | HR can **reorder** questions | missing | There is no order field or control. |
+| R-FLOW-3c | HR can **reorder** questions | done | `moveDraftAction` with `pregunta.ordre` (C3 draft column, contract entry pending). |
 | R-FLOW-3d | HR **approves**. The AI never publishes without approval | done | `approveQuestionAction`; only `aprovada` enters the pool. |
 | R-FLOW-3e | Quality warnings before approval (bias in the wording, D-S9 #4) | missing | Task 19 (ready) |
 
@@ -133,7 +133,7 @@ The guide says "Publicar a Typeform". AGENTS.md decides to ignore Typeform: the 
 | ID | Requirement | Status | Evidence / gap |
 |----|-------------|--------|----------------|
 | R-FLOW-8a | Proposes **concrete actions** | partial | `recomanacio` seeded. Generation is blocked. |
-| R-FLOW-8b | Proposes a **new follow-up micro-survey** | done | `createFollowUp` creates a need |
+| R-FLOW-8b | Proposes a **new follow-up micro-survey** | done | `createDraftedFollowUp`: need for the signal's collective, AI-drafted questions, human review |
 | R-FLOW-8c | Recommendations are proposals, never automatic decisions | done | Approve or discard |
 | R-FLOW-8d | Results go back to the people who answered | done | Employee home lists approved actions for their collective (`approvedActionsForCompte`, n≥10 only) with period and follow-up badge |
 
@@ -186,7 +186,7 @@ D-S9 and D-S10. Each needs a named mitigation we can point at in the demo. "AI d
 | R-BIAS-5 | Social desirability | Anonymity promise plus `/privacitat`; **show the manager positivity gap** (seeded `MANAGER_BONUS`) | missing: the manager segment is not shown anywhere (option B, not started) |
 | R-BIAS-6 | Timing | The engine spreads questions over days and shifts; trend change rule | partial |
 | R-BIAS-7 | Segmentation (averages hide collectives) | Always broken down by collective, domain radar per collective | done |
-| R-BIAS-8 | Analysis (confirmation bias) | Change rule, precision bands, "correlation is not cause" note, human validation of signals | partial (methodology page 18 missing) |
+| R-BIAS-8 | Analysis (confirmation bias) | Change rule, precision bands, "correlation is not cause" note, human validation of signals | partial (methodology page `/hr/methodology` pending merge, audit item 19) |
 
 ### R-DIFF (D-S10)
 | ID | Difficulty | Our answer | Status |
@@ -214,11 +214,11 @@ G-§8 principles, D-S16 trust pillars and D-S17 golden rules, merged. All Must.
 | ID | Requirement | Source | Status | Evidence / gap |
 |----|-------------|--------|--------|----------------|
 | R-PRIV-1 | Results always aggregated, never individual answers | G-§8, D-S17 | done | HR imports only `@damm/db/hr`; lint rule plus `check:anonymity` |
-| R-PRIV-2 | Minimum group threshold (guide: 5 to 10; ours: **10**) everywhere, exports included | G-§8, A | done | Plus complementary suppression |
+| R-PRIV-2 | Minimum group threshold (guide: 5 to 10; ours: **10**) everywhere, exports included | G-§8, A | done | Plus complementary suppression. Join-code account counts under 10 show "<10"; CSV export carries a suppression note. |
 | R-PRIV-3 | Automatic detection and removal of identifying data in comments (names, emails, phones) | G-§8 | done | `redactPii` regex before storage. LLM pass is optional (Natan). |
 | R-PRIV-4 | No individual profile or inference about specific people; cannot be used to evaluate anyone | G-§8, D-S16 "No vigilància" | done | Trajectories exist only inside the analysis layer; the admin sees counts only. |
 | R-PRIV-5 | **Transparency to respondents**: what the survey is for and how data is handled | G-§8, D-S16 | done | `/privacitat`: what we collect, what HR sees (n≥10), what we never do, comment redaction, session and account |
-| R-PRIV-6 | **Explainability**: sample size, confidence and limits of the analysis; correlations are not causes | G-§8 | partial | n and precision bands done; methodology page 18 missing |
+| R-PRIV-6 | **Explainability**: sample size, confidence and limits of the analysis; correlations are not causes | G-§8 | partial | n and precision bands done; methodology page `/hr/methodology` built on `claude/audit-p2-methodology-8b92a4` (audit item 19), status unchanged until merge |
 | R-PRIV-7 | Human control: HR validates surveys and recommendations before acting | G-§8, D-S16, D-S17 | done | |
 | R-PRIV-8 | **Minimisation and expiry**: keep only what is needed, for as long as needed | G-§8 | partial | Minimisation done (no email or phone, redacted comments only). **No retention or expiry rule exists.** Add a documented retention period and a purge script or job. |
 | R-PRIV-9 | Equity: check coverage and results per collective | D-S16 | done | |
@@ -303,7 +303,7 @@ Bonus items named by the guide (G-§4 "Bonus") and the deck (D-S18), then our ow
 | N-9 | Methodology page "Com calculem" | ours | Explainability, scenario C6 | missing | Task 18, ready |
 | N-10 | Question-quality checker | ours | Wording bias, R-BIAS-4 | missing | Task 19, ready |
 | N-11 | Decision audit log and AI provenance | ours | Traceability, R-PRIV-10 | blocked | Task 21 |
-| N-12 | Installable PWA plus daily push reminder | ours | Reminders R-FLOW-5d, participation | missing | Task 4, then the tunnel (9) |
+| N-12 | Installable PWA plus daily push reminder | ours | Reminders R-FLOW-5d, participation | partial | Installable: manifest, icons, offline page, service worker (push stub). Push subscribe and send still open (task 4), then the tunnel (9). |
 | N-13 | Participation by channel chart | G-§6.2 | Uses the `canal` field we already store | missing | Small: one aggregate by `canal` with suppression. |
 | N-14 | Initiative ↔ domain mapping | D-S3 | Turns results into "is our policy working?" | missing | R-DOM-5 |
 | N-15 | Retention and purge job | G-§8 | Closes R-PRIV-8 | missing | Document the period; a script deletes old `resposta` rows after aggregation. |

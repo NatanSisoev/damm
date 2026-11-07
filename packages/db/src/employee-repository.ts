@@ -4,6 +4,7 @@
 import { randomBytes, randomUUID, scrypt, timingSafeEqual } from "node:crypto";
 import type { Canal, PreguntaTipus, RankingOption, ScoredOption } from "@damm/shared";
 import { getDb } from "./connection";
+import { madridDay, type MadridDay } from "./madrid-day";
 
 const KEYLEN = 64;
 const USERNAME_RE = /^[a-z0-9._-]{3,30}$/;
@@ -216,10 +217,9 @@ export type AnswerInput = {
 };
 export type SaveError = "pregunta_invalida" | "valor_invalid" | "comentari_obligatori" | "ja_respost" | "redaccio_fallida";
 
-/** `YYYY-MM-DD` and `YYYY-MM` from the server clock (UTC, same clock as SQLite's datetime('now')). */
-function serverDate(now = new Date()): { dia: string; periode: string } {
-  const iso = now.toISOString();
-  return { dia: iso.slice(0, 10), periode: iso.slice(0, 7) };
+/** "Today" in Europe/Madrid, with the UTC bounds used to match `resposta.data` (stored in UTC). */
+function serverDate(now = new Date()): MadridDay {
+  return madridDay(now);
 }
 
 function collectiuOf(compteId: string): number | undefined {
@@ -229,10 +229,10 @@ function collectiuOf(compteId: string): number | undefined {
   return row?.collectiu_id;
 }
 
-function answeredToday(compteId: string): number {
+function answeredToday(compteId: string, day: MadridDay): number {
   const row = getDb()
-    .prepare("SELECT COUNT(*) AS n FROM resposta WHERE compte_id = ? AND date(data) = ?")
-    .get(compteId, serverDate().dia) as { n: number };
+    .prepare("SELECT COUNT(*) AS n FROM resposta WHERE compte_id = ? AND data >= ? AND data < ?")
+    .get(compteId, day.startUtc, day.endUtc) as { n: number };
   return row.n;
 }
 
@@ -244,7 +244,8 @@ function answeredToday(compteId: string): number {
 export function nextQuestionsForToday(compteId: string): PoolQuestion[] {
   const collectiuId = collectiuOf(compteId);
   if (collectiuId === undefined) return [];
-  const remaining = DAILY_QUESTION_LIMIT - answeredToday(compteId);
+  const day = serverDate();
+  const remaining = DAILY_QUESTION_LIMIT - answeredToday(compteId, day);
   if (remaining <= 0) return [];
   const rows = getDb()
     .prepare(
@@ -254,12 +255,12 @@ export function nextQuestionsForToday(compteId: string): PoolQuestion[] {
          AND (p.collectiu_id IS NULL OR p.collectiu_id = @collectiu)
          AND NOT EXISTS (
            SELECT 1 FROM resposta r
-           WHERE r.compte_id = @compte AND r.pregunta_id = p.id AND date(r.data) = @dia
+           WHERE r.compte_id = @compte AND r.pregunta_id = p.id AND r.data >= @from AND r.data < @to
          )
        ORDER BY p.prioritat DESC, p.id ASC
        LIMIT @limit`,
     )
-    .all({ collectiu: collectiuId, compte: compteId, dia: serverDate().dia, limit: remaining });
+    .all({ collectiu: collectiuId, compte: compteId, from: day.startUtc, to: day.endUtc, limit: remaining });
   return (rows as (Omit<PoolQuestion, "options"> & { optionsJson: string | null })[]).map(
     ({ optionsJson, ...q }) => ({ ...q, options: parseOptions(optionsJson) }),
   );
@@ -308,7 +309,7 @@ function valueRange(tipus: PreguntaTipus, optionCount: number): [number, number]
     case "scale5":
       return [1, 5];
     case "scale10":
-      return [1, 10];
+      return [0, 10];
     case "yes_no":
       return [0, 1];
     case "ranking":
@@ -349,14 +350,14 @@ export function saveResponses(
   const db = getDb();
   const collectiuId = collectiuOf(compteId);
   if (collectiuId === undefined) return { ok: false, error: "pregunta_invalida" };
-  const { dia, periode } = serverDate();
+  const { periode, startUtc, endUtc } = serverDate();
 
   const getQ = db.prepare(
     `SELECT tipus, options_json FROM pregunta
      WHERE id = ? AND estat = 'aprovada' AND (collectiu_id IS NULL OR collectiu_id = ?)`,
   );
   const already = db.prepare(
-    "SELECT 1 FROM resposta WHERE compte_id = ? AND pregunta_id = ? AND date(data) = ?",
+    "SELECT 1 FROM resposta WHERE compte_id = ? AND pregunta_id = ? AND data >= ? AND data < ?",
   );
   const insert = db.prepare(
     `INSERT INTO resposta (compte_id, pregunta_id, valor_num, value_json, comentari, canal, periode, answer_ms)
@@ -371,7 +372,7 @@ export function saveResponses(
         seen.add(a.preguntaId);
         const q = getQ.get(a.preguntaId, collectiuId) as { tipus: PreguntaTipus; options_json: string | null } | undefined;
         if (!q) return { ok: false, error: "pregunta_invalida", preguntaId: a.preguntaId };
-        if (already.get(compteId, a.preguntaId, dia)) {
+        if (already.get(compteId, a.preguntaId, startUtc, endUtc)) {
           return { ok: false, error: "ja_respost", preguntaId: a.preguntaId };
         }
         const optionCount = parseOptions(q.options_json)?.length ?? 0;

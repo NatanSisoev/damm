@@ -15,6 +15,9 @@ export default async function OnboardingPage({ searchParams }: { searchParams: P
       {valid ? (
         <>
           <OnboardingForm codi={codi} empresa={info.empresa} collectiu={info.collectiu} />
+          <p className="text-center text-sm">
+            <Link href="/privacitat" className="underline">Com tractem les teves dades</Link>
+          </p>
         </>
       ) : (
         <div className="space-y-2">
