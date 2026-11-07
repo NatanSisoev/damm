@@ -333,6 +333,57 @@ export function listNeeds(): { id: number; textNl: string; estat: string; collec
     .all() as { id: number; textNl: string; estat: string; collectiu: string | null }[];
 }
 
+export type NeedState = "esborrany" | "llesta" | "publicada" | "tancada";
+
+export interface NeedCard {
+  id: number;
+  textNl: string;
+  titol: string | null;
+  intro: string | null;
+  collectiu: string | null;
+  duradaMaxS: number | null;
+  draftFont: "llm" | "fallback" | null;
+  creat: string;
+  /** Card state shown on the Necessitats page, derived from necessitat.estat and the question states. */
+  state: NeedState;
+  nDraft: number;
+  approved: { id: number; domini: string; tipus: string; text: string }[];
+  publications: { id: number; codi: string; url: string; collectiu: string }[];
+}
+
+/**
+ * Read-only: every need with its card state, approved questions and publications (join codes), newest first.
+ * Esborrany = still has draft questions (or none yet); Llesta = open with approved questions and no drafts left;
+ * Publicada / Tancada follow necessitat.estat. Reads only needs, questions and publications: no responses, no accounts.
+ */
+export function listNeedCards(): NeedCard[] {
+  const db = getDb();
+  const needs = db
+    .prepare(
+      `SELECT n.id, n.text_nl AS textNl, n.titol, n.intro, n.durada_max_s AS duradaMaxS, n.draft_font AS draftFont,
+              n.creat, n.estat, c.nom AS collectiu,
+              (SELECT COUNT(*) FROM pregunta p WHERE p.necessitat_id = n.id AND p.estat = 'draft') AS nDraft
+       FROM necessitat n LEFT JOIN collectiu c ON c.id = n.collectiu_id
+       ORDER BY n.id DESC`,
+    )
+    .all() as (Omit<NeedCard, "state" | "approved" | "publications"> & { estat: string })[];
+  const approved = db.prepare(
+    `SELECT p.id, d.nom AS domini, p.tipus, p.text FROM pregunta p JOIN domini d ON d.id = p.domini_id
+     WHERE p.necessitat_id = ? AND p.estat = 'aprovada' ORDER BY p.ordre, p.id`,
+  );
+  const pubs = db.prepare(
+    `SELECT pu.id, pu.codi_join AS codi, pu.qr_url AS url, c.nom AS collectiu
+     FROM publicacio pu JOIN joincode j ON j.codi = pu.codi_join JOIN collectiu c ON c.id = j.collectiu_id
+     WHERE pu.necessitat_id = ? ORDER BY pu.id`,
+  );
+  return needs.map(({ estat, ...n }) => {
+    const ap = approved.all(n.id) as NeedCard["approved"];
+    const state: NeedState =
+      estat === "tancada" ? "tancada" : estat === "publicada" ? "publicada" : n.nDraft === 0 && ap.length > 0 ? "llesta" : "esborrany";
+    return { ...n, state, approved: ap, publications: pubs.all(n.id) as NeedCard["publications"] };
+  });
+}
+
 export interface FollowUpNeed {
   id: number;
   objective: string;

@@ -67,7 +67,7 @@ export default function HrHome() {
                 {o.pending.map((i) => (
                   <li key={`${i.kind}-${i.id}`}>
                     <Link
-                      href={i.kind === "draft" ? "/hr/review" : "/hr/recommendations"}
+                      href={i.kind === "draft" ? "/hr/needs?estat=esborrany" : "/hr/recommendations"}
                       className="flex items-start gap-3 py-3 hover:text-accent-ink"
                     >
                       <span className={`badge mt-0.5 ${i.kind === "draft" ? "" : "badge-accent"}`}>
