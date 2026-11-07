@@ -1,6 +1,5 @@
 // HR-side data access. The only repository HR routes may import.
 // Reads aggregate outputs and the analytics view; never `resposta` or `compte`.
-import crypto from "node:crypto";
 import type { Agregat, Recomanacio, Senyal } from "@damm/shared";
 import { MIN_GROUP_SIZE } from "@damm/shared";
 import { getDb } from "./connection";
@@ -205,28 +204,21 @@ export function listApprovedUnpublishedNeeds(): { id: number; textNl: string; ap
 }
 
 /**
- * Publish = approved questions are already in the pool; create the join code and link.
- * A join code identifies one collective, so a need for all collectives gets one code per collective.
+ * Publish = the need's approved questions (already estat = 'aprovada', top priority) go live in
+ * the pool for its collective, or for every collective when it has none. No join code or link is
+ * created: onboarding codes are per collective (/hr/publish). The web layer then sends a push
+ * notification through the employee side and gets back an aggregate count only.
+ * Returns false when the need does not exist or has no approved question.
  */
-export function publishNecessitat(necessitatId: number, baseUrl: string): { codi: string; url: string; collectiuId: number }[] {
+export function publishNecessitat(necessitatId: number): boolean {
   const db = getDb();
-  const n = db.prepare("SELECT collectiu_id AS c FROM necessitat WHERE id = ?").get(necessitatId) as { c: number | null } | undefined;
-  if (!n) throw new Error("Necessitat not found");
-  const targets = n.c != null
-    ? [n.c]
-    : (db.prepare("SELECT id FROM collectiu ORDER BY id").all() as { id: number }[]).map((r) => r.id);
-  const out = targets.map((collectiuId) => {
-    const codi = crypto.randomBytes(4).toString("hex").toUpperCase();
-    return { codi, url: `${baseUrl}/join/${codi}`, collectiuId };
-  });
-  db.transaction(() => {
-    for (const p of out) {
-      db.prepare("INSERT INTO joincode (codi, empresa, collectiu_id) VALUES (?, 'Demo', ?)").run(p.codi, p.collectiuId);
-      db.prepare("INSERT INTO publicacio (necessitat_id, codi_join, qr_url) VALUES (?, ?, ?)").run(necessitatId, p.codi, p.url);
-    }
-    db.prepare("UPDATE necessitat SET estat = 'publicada' WHERE id = ?").run(necessitatId);
-  })();
-  return out;
+  const ok = db
+    .prepare(
+      `UPDATE necessitat SET estat = 'publicada' WHERE id = ? AND estat = 'oberta'
+       AND EXISTS (SELECT 1 FROM pregunta p WHERE p.necessitat_id = necessitat.id AND p.estat = 'aprovada')`,
+    )
+    .run(necessitatId);
+  return ok.changes > 0;
 }
 
 export function listPublications() {

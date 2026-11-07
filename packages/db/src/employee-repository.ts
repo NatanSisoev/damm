@@ -304,3 +304,50 @@ export function deletePushSubscription(compteId: string): void {
 
 // PII redaction lives in ./pii.ts (ca/es/en); re-exported for the web routes.
 export { redactPii };
+
+// --- Web push ------------------------------------------------------------------------------
+// The subscription lives in its own table keyed by compte_id, is deleted on logout and is never
+// joined to analytics. Only the push sender (apps/web/lib/push.ts) reads targets, and it reports
+// aggregate counts only.
+
+export interface PushTarget {
+  endpoint: string;
+  p256dh: string;
+  auth: string;
+}
+
+/** Stores (or replaces) this account's subscription: one device per account. */
+export function savePushSubscription(compteId: string, sub: PushTarget): void {
+  getDb()
+    .prepare(
+      `INSERT INTO push_subscripcio (compte_id, endpoint, p256dh, auth) VALUES (?, ?, ?, ?)
+       ON CONFLICT(compte_id) DO UPDATE SET endpoint = excluded.endpoint, p256dh = excluded.p256dh,
+       auth = excluded.auth, creat = datetime('now')`,
+    )
+    .run(compteId, sub.endpoint, sub.p256dh, sub.auth);
+}
+
+export function hasPushSubscription(compteId: string): boolean {
+  return getDb().prepare("SELECT 1 FROM push_subscripcio WHERE compte_id = ?").get(compteId) !== undefined;
+}
+
+/**
+ * Subscriptions of every account in the need's collective (all collectives when the need has
+ * none). Returns endpoints and keys only, never the account id.
+ */
+export function listPushTargetsForNecessitat(necessitatId: number): PushTarget[] {
+  const db = getDb();
+  const n = db.prepare("SELECT collectiu_id AS c FROM necessitat WHERE id = ?").get(necessitatId) as { c: number | null } | undefined;
+  if (!n) return [];
+  return db
+    .prepare(
+      `SELECT s.endpoint, s.p256dh, s.auth FROM push_subscripcio s JOIN compte c ON c.id = s.compte_id
+       WHERE ? IS NULL OR c.collectiu_id = ?`,
+    )
+    .all(n.c, n.c) as PushTarget[];
+}
+
+/** The push service said the subscription is gone (404/410). */
+export function deletePushSubscriptionByEndpoint(endpoint: string): void {
+  getDb().prepare("DELETE FROM push_subscripcio WHERE endpoint = ?").run(endpoint);
+}
