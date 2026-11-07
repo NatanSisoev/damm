@@ -3,6 +3,31 @@ import { QUESTION_TYPES, type QuestionType } from "@damm/shared";
 import { run, transaction, type SqlDatabase } from "./db.ts";
 
 export { getConfig, setConfig, ConfigError, DEFAULT_CONFIG, ENGINE_VERSION } from "./config.ts";
+export {
+  listInsights,
+  latestInsightPeriod,
+  listAlarms,
+  alarmCounts,
+  setAlarmStatus,
+  ALARM_TRANSITIONS,
+  AlarmTransitionError,
+} from "./read.ts";
+export type {
+  Viewer,
+  InsightView,
+  InsightDetails,
+  InsightQuery,
+  InsightKind,
+  SegmentLabels,
+  Snapshot,
+  ShiftGroup,
+  AlarmView,
+  AlarmQuery,
+  AlarmStatus,
+  AlarmType,
+  Audience,
+  Severity,
+} from "./read.ts";
 
 export interface QuestionDraft {
   type: string;

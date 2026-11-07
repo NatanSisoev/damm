@@ -236,3 +236,6 @@ export function runEngineJob(db: SqlDatabase, opts: JobOptions = {}): JobReport 
     alarms,
   };
 }
+
+export { startEngineScheduler, DEFAULT_INTERVAL_MS } from "./scheduler.ts";
+export type { EngineScheduler, SchedulerOptions } from "./scheduler.ts";

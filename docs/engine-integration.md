@@ -32,8 +32,8 @@ Rules that do not change:
 | Import | Who uses it | What |
 |---|---|---|
 | `@damm/engine` | employee API routes | `createEngine`, `getDailyBatch`, `submitAnswers` |
-| `@damm/engine/job` | job route and script | `runEngineJob` |
-| `@damm/engine/hr` | HR routes | `validateQuestion`, `setDomainWeight`, `setFormatPreference`, `getConfig`, `setConfig` |
+| `@damm/engine/job` | server startup, job route, script | `runEngineJob`, `startEngineScheduler` |
+| `@damm/engine/hr` | HR routes and pages | `listInsights`, `listAlarms`, `alarmCounts`, `setAlarmStatus`, `validateQuestion`, `setDomainWeight`, `setFormatPreference`, `getConfig`, `setConfig` |
 | `@damm/engine/core` | tests, simulations | pure functions (normalise, Kalman, segment stats, Thompson) |
 
 ## Employee app
@@ -157,6 +157,115 @@ Run it:
 - after seeding, so the dashboard has data.
 
 The job is idempotent: it recomputes and replaces its own rows for the periods it covers.
+
+## Running the engine on the server
+
+The engine is a library inside the Next.js server process, not a separate service:
+
+| Work | When | How |
+|---|---|---|
+| Daily batch | each `GET /api/pool/next` | `getDailyBatch` |
+| Learning from an answer (trajectory, item bias, format stats, follow-up scheduling) | each `POST /api/responses`, immediately | `submitAnswers` |
+| Aggregates, insights, alarms | periodically, and on demand | `startEngineScheduler` runs `runEngineJob` every 10 minutes |
+
+Start the scheduler once per server process, in `apps/web/instrumentation.ts`:
+
+```ts
+export async function register() {
+  if (process.env.NEXT_RUNTIME !== "nodejs") return;
+  const { startEngineScheduler } = await import("@damm/engine/job");
+  const { getDb } = await import("@damm/db"); // the app's shared better-sqlite3 connection
+  const g = globalThis as { __engineScheduler?: unknown };
+  // Dev hot reload re-runs register(): keep a single scheduler.
+  g.__engineScheduler ??= startEngineScheduler(getDb(), {
+    intervalMs: 10 * 60_000,
+    onError: (e) => console.error("[engine] job failed", e),
+  });
+}
+```
+
+Behaviour:
+- **Runs:** once at start (`runOnStart`, default true), then every `intervalMs`. Runs never overlap.
+- **Failures:** a failed run is reported to `onError` and the next tick tries again.
+- **Shutdown:** the timer does not keep the process alive.
+- **On demand:** `scheduler.runNow()` runs immediately, for an HR "Recalculate now" button. It returns `null` if a run is already in progress.
+- **Cost:** the job is synchronous and replays all answers. At the demo's scale (about 1,000 people, a few thousand answers) it takes well under a second. For much larger data, move it to a worker thread or a separate process; the API stays the same.
+
+## Reading insights and alarms (HR dashboard)
+
+HR pages read through `@damm/engine/hr` (or through `@damm/db/hr` wrapping it). Both functions take a **viewer**:
+
+```ts
+type Viewer = { role: "hr" } | { role: "manager"; collectiuId: number };
+```
+
+The route resolves the viewer from the session, never from a request parameter. HR sees everything. A manager sees only their own collective, and only alarms with `audience = 'hr_manager'`, so Lideratge alarms are never shown to managers.
+
+### Insights
+
+```ts
+import { listInsights } from "@damm/engine/hr";
+const cards = listInsights(db, viewer, { kind: ["top_mover", "importance_gap"], collectiuId: 1 });
+```
+
+Query options:
+- `periode`: defaults to the latest; `"all"` returns every period;
+- `kind`: one or several;
+- `collectiuId`: `null` = company-wide rows only;
+- `domainId`;
+- `includeSuppressed`: default false. When true, suppressed rows come back with `value` and `detail` null, so the UI can show "not enough answers (n < 10)".
+
+Each `InsightView` has `id`, `kind`, `periode`, `collectiuId`, `tornId`, `domainId`, `n`, `value`, a typed `detail` and `suppressed`. The `InsightDetails` type in `@damm/engine/hr` gives the exact shape per kind, and every `detail` has `labels: { collective, shift, domain }` for display.
+
+| `kind` | `value` (headline) | `detail` (beyond `labels`) | Card idea |
+|---|---|---|---|
+| `domain_state` | score 0..10 | `current` and `previous` snapshots (score, confidence, consensus, n), `delta` | score tile with a confidence bar and consensus |
+| `top_mover` | change in score | `rank`, `direction` up/down, `current`, `previous`, `delta` | "biggest changes" list |
+| `polarisation` | consensus drop (points) | `current`, `previous`, `consensusDrop`, `scoreDelta` | "the group is splitting" warning |
+| `importance_gap` | priority 0..1 | `importance`, `score`, `priority`, `rank`, `quadrant` (`act_first`, `maintain`, `monitor`, `low_priority`), `importanceN` | importance vs satisfaction quadrant |
+| `trajectory_mix` | % declining | `improving`, `stable`, `declining` (%), `windowDays`, `n` | stacked bar |
+| `followup_confirmation` | % confirmed | `resolved`, `confirmed`, `confirmedDown`, `confirmedUp`, `rate`, `n` | "real change or noise?" |
+| `segment_gap` | gap in score | `dimension: "shift"`: `lowest`, `highest`, `groups[]`, `gap`. `dimension: "manager"`: `managers`, `others`, `gap`, `asOf` | side-by-side bars |
+
+`driver` and `action_effect` are reserved but not produced yet.
+
+### Alarms
+
+```ts
+import { listAlarms, alarmCounts, setAlarmStatus } from "@damm/engine/hr";
+const alarms = listAlarms(db, viewer); // unresolved, visible to this viewer
+const badge = alarmCounts(db, viewer); // { critical, warning, info }
+setAlarmStatus(db, id, "acknowledged"); // HR route only
+```
+
+`AlarmView` fields:
+- `id`, `type`;
+- `description`: an English sentence ready to display;
+- `collectiuId`, `tornId`, `domainId`, `periode`, `n`, `confidence`;
+- `severity`, `status`, `audience`, `createdAt`.
+
+Query options:
+- `status`: defaults to everything except `resolved`;
+- `severity`, `collectiuId`, `domainId`, `limit`.
+
+Suppressed alarms (n < 10) are never returned. Order: open first, then critical before warning before info, then newest first.
+
+Status changes:
+
+| From | Allowed to |
+|---|---|
+| `open` | `acknowledged`, `action_linked`, `resolved` |
+| `acknowledged` | `action_linked`, `resolved` |
+| `action_linked` | `resolved` |
+| `resolved` | none (if the problem returns, the engine opens a new alarm after its 7-day cooldown) |
+
+- **HR** makes these changes. `setAlarmStatus` throws `AlarmTransitionError` on any other move.
+- **The engine** only opens alarms and auto-resolves alarms that are still `open`. It never changes one a human has moved.
+
+### Getting alarms to the screen
+
+- **Today:** alarms are written by each job run, at most every 10 minutes. The dashboard picks them up when it reads, so a page load or a 60-second poll of `alarmCounts` for the header badge is enough for the demo.
+- **Planned:** a weekly digest of warnings and an immediate push or email for critical alarms. These will be an `onReport` hook on the scheduler (`report.alarms.opened > 0`). Not built yet.
 
 ## Seeded data
 

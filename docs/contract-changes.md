@@ -19,6 +19,26 @@ What changed and why.
 
 ---
 
+## C5 · 2026-11-07 · Natan · Read API for insights and alarms, job scheduler
+
+New in `@damm/engine/hr`:
+- `listInsights(db, viewer, query)`: typed insight cards, with the `InsightDetails` type giving the exact `detail` shape per kind;
+- `listAlarms(db, viewer, query)`;
+- `alarmCounts(db, viewer)`;
+- `setAlarmStatus(db, id, status)`, which only allows the human transitions.
+
+`viewer` is `{ role: "hr" }` or `{ role: "manager", collectiuId }`. Managers see only their own collective, and only `audience = 'hr_manager'` alarms.
+
+New in `@damm/engine/job`: `startEngineScheduler(db, { intervalMs })` runs the job every 10 minutes (default) inside the server process. `runNow()` serves a "Recalculate now" button.
+
+Full contract, the card table and an `instrumentation.ts` snippet: [engine-integration.md](engine-integration.md), sections "Running the engine on the server" and "Reading insights and alarms". No schema change.
+
+Action items:
+- [ ] Jan: start the scheduler once in `apps/web/instrumentation.ts`, as in engine-integration.md, with the app's shared DB connection.
+- [ ] Jan: HR pages read insights and alarms only through `listInsights`, `listAlarms` and `alarmCounts`, with the viewer taken from the session. Status buttons call `setAlarmStatus` from an HR-only route.
+- [ ] Jan: header badge from `alarmCounts` (poll every ~60 s or refresh on page load).
+- [ ] Jan (optional): a "Recalculate now" button calling `scheduler.runNow()` from an HR-only route.
+
 ## C4 · 2026-11-07 · Natan · Engine job writes insights and alarms
 
 `runEngineJob` now also calls `runInsights` and `runAlarms`, so one job run fills `agregat`, `domain_importance`, `insight` and `senyal`. `JobReport.insights` and `JobReport.alarms` are objects with counts instead of `"pending"`. No schema change.
