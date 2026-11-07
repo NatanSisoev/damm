@@ -109,7 +109,7 @@ export default async function AlarmsPage({ searchParams }: { searchParams: Promi
       </div>
 
       {all.length === 0 ? (
-        <Empty>Cap alarma. Prem «Recalcula ara» perquè l'anàlisi torni a mirar les dades.</Empty>
+        <Empty>Cap alarma. Prem «Recalcula ara» perquè l&apos;anàlisi torni a mirar les dades.</Empty>
       ) : (
         <div className="space-y-6">
           {grouped.map(([segment, items]) => (
