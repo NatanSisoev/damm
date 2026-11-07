@@ -8,6 +8,7 @@ import { approveFromSignalAction, discardFromSignalAction, followUpFromSignalAct
 
 import { recommendationStatus } from "../../labels";
 import { ChangeBadge, Sparkline } from "../../trend";
+import { TrendChart } from "../../trend-chart";
 import { STATUS_LABELS, STATUS_ORDER, SignalBadges } from "../../signal-labels";
 import { signalDetail, signalHeadline } from "@/lib/signal-text";
 const suppressedHint = `Menys de ${MIN_GROUP_SIZE} persones han respost`;
@@ -85,42 +86,50 @@ export default async function SignalPage({ params }: { params: Promise<{ id: str
             {trend.length === 0 ? (
               <div className="px-5 pb-5"><Empty>Encara no hi ha agregats per a aquest col·lectiu.</Empty></div>
             ) : (
-              <table className="table min-w-[32rem]">
-                <thead>
-                  <tr>
-                    <th>Domini</th>
-                    {periodes.map((p) => <th key={p} className="text-right">{p}</th>)}
-                    <th className="text-right">Canvi</th>
-                    <th className="text-right">Tendència</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {trend.map((r) => (
-                    <tr key={r.domini} className={r.related ? "bg-accent-soft" : ""}>
-                      <td className="font-medium">
-                        {r.domini}
-                        {r.related && <span className="badge badge-accent ml-2">Relacionat</span>}
-                      </td>
-                      {r.cells.map((c) => (
-                        <td key={c.periode} className="num text-right">
-                          {c.suprimit ? (
-                            <SuppressedBadge title={suppressedHint} />
-                          ) : c.mitjana === null ? (
-                            <span className="text-subtle">–</span>
-                          ) : (
-                            <>
-                              {c.mitjana.toFixed(1)}
-                              <div className={`text-[11px] whitespace-nowrap ${c.precisio === "indicativa" ? "text-warn" : "text-subtle"}`}>n={c.n} · {c.precisio}</div>
-                            </>
-                          )}
-                        </td>
+              <>
+                <TrendChart periodes={periodes} rows={trend} highlight={trend.filter((r) => r.related).map((r) => r.domini)} />
+                <details className="border-t border-line">
+                  <summary className="cursor-pointer px-5 py-3 text-xs font-medium text-subtle">Veure taula</summary>
+                  <div className="overflow-x-auto">
+                <table className="table min-w-[32rem]">
+                    <thead>
+                      <tr>
+                        <th>Domini</th>
+                        {periodes.map((p) => <th key={p} className="text-right">{p}</th>)}
+                        <th className="text-right">Canvi</th>
+                        <th className="text-right">Tendència</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {trend.map((r) => (
+                        <tr key={r.domini} className={r.related ? "bg-accent-soft" : ""}>
+                          <td className="font-medium">
+                            {r.domini}
+                            {r.related && <span className="badge badge-accent ml-2">Relacionat</span>}
+                          </td>
+                          {r.cells.map((c) => (
+                            <td key={c.periode} className="num text-right">
+                              {c.suprimit ? (
+                                <SuppressedBadge title={suppressedHint} />
+                              ) : c.mitjana === null ? (
+                                <span className="text-subtle">–</span>
+                              ) : (
+                                <>
+                                  {c.mitjana.toFixed(1)}
+                                  <div className={`text-[11px] whitespace-nowrap ${c.precisio === "indicativa" ? "text-warn" : "text-subtle"}`}>n={c.n} · {c.precisio}</div>
+                                </>
+                              )}
+                            </td>
+                          ))}
+                          <td className="text-right"><ChangeBadge canvi={r.canvi} /></td>
+                          <td className="text-right"><Sparkline values={r.cells.map((c) => c.mitjana)} /></td>
+                        </tr>
                       ))}
-                      <td className="text-right"><ChangeBadge canvi={r.canvi} /></td>
-                      <td className="text-right"><Sparkline values={r.cells.map((c) => c.mitjana)} /></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                    </tbody>
+                  </table>
+                  </div>
+                </details>
+              </>
             )}
           </Card>
 
