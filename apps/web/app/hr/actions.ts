@@ -8,6 +8,7 @@ import {
   discardRecommendation, publishNecessitat, updateDraftText, closeNecessitat, setSignalStatus,
 } from "@damm/db/hr";
 import { createDraftedFollowUp } from "./follow-up";
+import { changeAlarmStatus, type AlarmStatus } from "@/lib/hr-engine";
 
 const HR_USER = "hr-demo"; // no auth in the prototype; approval is still an explicit human action
 
@@ -94,5 +95,22 @@ export async function closeNeedAction(formData: FormData) {
 export async function setSignalStatusAction(formData: FormData) {
   const id = Number(formData.get("id"));
   setSignalStatus(id, String(formData.get("status") ?? ""));
+  revalidatePath("/hr", "layout");
+}
+
+export async function setAlarmStatusAction(formData: FormData) {
+  const status = String(formData.get("status") ?? "");
+  if (!["acknowledged", "action_linked", "resolved"].includes(status)) return;
+  try {
+    changeAlarmStatus(Number(formData.get("id")), status as AlarmStatus);
+  } catch {
+    // invalid transition (stale page): just refresh
+  }
+  revalidatePath("/hr", "layout");
+}
+
+export async function recomputeAction() {
+  const { getScheduler } = await import("@/lib/engine");
+  await getScheduler().runNow();
   revalidatePath("/hr", "layout");
 }

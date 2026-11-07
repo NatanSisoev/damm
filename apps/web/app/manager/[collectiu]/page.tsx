@@ -13,6 +13,8 @@ import {
   PRECISION_MODERADA_MIN_N,
   PRECISION_SOLIDA_MIN_N,
 } from "@damm/db/hr";
+import { hrAlarms, hrInsights } from "@/lib/hr-engine";
+import { InsightCards } from "../../hr/insight-cards";
 import { Radar, type RadarSeries } from "../../hr/results/radar";
 import { RepTable, TrendTable } from "../../hr/results/tables";
 import { Card, Empty, PageHeader, SuppressedBadge } from "../../hr/ui";
@@ -34,6 +36,10 @@ export default async function ManagerCollectivePage({ params }: { params: Promis
   const themes = listThemes().filter((t) => !t.suprimit);
   const signals = listManagerSignals(collectiu.id);
   const recs = listManagerRecommendations(collectiu.id);
+  // Viewer comes from the route's collective, never from a request parameter; managers only get their own hr_manager alarms.
+  const viewer = { role: "manager" as const, collectiuId: collectiu.id };
+  const insights = hrInsights(viewer, { kind: ["top_mover", "polarisation", "importance_gap", "trajectory_mix", "followup_confirmation", "segment_gap"] }).slice(0, 8);
+  const alarms = hrAlarms(viewer);
 
   const last = trends.periodes.length - 1;
   const latest = trends.periodes[last];
@@ -81,6 +87,10 @@ export default async function ManagerCollectivePage({ params }: { params: Promis
       </div>
 
       <div className="mt-6 space-y-6">
+        <Card title="Què destaca el motor" meta={<span className="num">{insights.length}</span>}>
+          <InsightCards insights={insights} empty="Encara no hi ha prou respostes per destacar res (cal n ≥ 10)." />
+        </Card>
+
         <Card title="Tendència per domini" meta="Mitjana 1–5 per període" flush={!!series}>
           {series ? (
             <>
@@ -138,11 +148,20 @@ export default async function ManagerCollectivePage({ params }: { params: Promis
           </Card>
 
           <Card title="Senyals del col·lectiu" meta={<span className="num">{signals.length}</span>}>
-            {signals.length === 0 ? (
+            {signals.length === 0 && alarms.length === 0 ? (
               <Empty>Cap senyal per a aquest col·lectiu.</Empty>
             ) : (
               <ul className="space-y-3">
-                {signals.map((s) => (
+                {alarms.map((a) => (
+                  <li key={`alarm-${a.id}`} className="rounded-lg border border-line p-3">
+                    <div className="mb-1.5 flex flex-wrap items-center gap-2">
+                      <SignalBadges tipus={a.type} severity={a.severity} />
+                      <span className="num ml-auto text-xs text-subtle">n={a.n}</span>
+                    </div>
+                    <p className="text-[13px]">{a.description}</p>
+                  </li>
+                ))}
+                {signals.filter((s) => !alarms.some((a) => a.id === s.id)).map((s) => (
                   <li key={s.id} className="rounded-lg border border-line p-3">
                     <div className="mb-1.5 flex flex-wrap items-center gap-2">
                       <SignalBadges tipus={s.tipus} severity={s.severity} />

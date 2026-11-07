@@ -8,12 +8,13 @@ const links = [
   { href: "/hr/needs", label: "Necessitats", step: "1" },
   { href: "/hr/publish", label: "Enllaços i QR", step: "↗" },
   { href: "/hr/results", label: "Resultats", step: "2" },
+  { href: "/hr/signals", label: "Alarmes", step: "!" },
   { href: "/hr/recommendations", label: "Recomanacions", step: "3" },
   { href: "/hr/methodology", label: "Com es calcula?", step: "?" },
   { href: "/manager", label: "Vista de responsables", step: "↗" },
 ];
 
-export function HrNav() {
+export function HrNav({ alarms }: { alarms: { critical: number; warning: number; total: number } }) {
   const path = usePathname();
   return (
     <nav aria-label="Seccions" className="flex gap-1 overflow-x-auto md:flex-col md:overflow-visible">
@@ -40,6 +41,11 @@ export function HrNav() {
               )}
             </span>
             {l.label}
+            {l.href === "/hr/signals" && alarms.total > 0 && (
+              <span className={`badge num ml-auto ${alarms.critical > 0 ? "badge-warn" : ""}`} title={`${alarms.critical} crítiques, ${alarms.warning} avisos`}>
+                {alarms.total}
+              </span>
+            )}
           </Link>
         );
       })}

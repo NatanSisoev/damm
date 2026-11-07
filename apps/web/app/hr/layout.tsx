@@ -2,10 +2,12 @@ import Link from "next/link";
 import { MIN_GROUP_SIZE } from "@damm/shared";
 import { HrNav } from "./nav";
 import { DammLogo } from "./damm-logo";
+import { hrAlarmCounts } from "@/lib/hr-engine";
 
 export const dynamic = "force-dynamic";
 
 export default function HrLayout({ children }: LayoutProps<"/hr">) {
+  const counts = hrAlarmCounts();
   return (
     <div className="min-h-screen md:grid md:grid-cols-[232px_1fr]">
       <aside className="flex flex-col gap-4 bg-nav px-3 py-3 md:sticky md:top-0 md:h-screen md:gap-6 md:py-5">
@@ -16,7 +18,7 @@ export default function HrLayout({ children }: LayoutProps<"/hr">) {
             <span className="block text-[11px] text-nav-muted">Portal de persones</span>
           </span>
         </Link>
-        <HrNav />
+        <HrNav alarms={{ critical: counts.critical, warning: counts.warning, total: counts.critical + counts.warning + counts.info }} />
         <div className="mt-auto hidden space-y-2 rounded-lg border border-white/10 p-3 text-[11px] leading-4 text-nav-muted md:block">
           <p><span className="text-nav-ink">Dades sintètiques.</span> Cap resposta individual.</p>
           <p>Grups de menys de {MIN_GROUP_SIZE} persones suprimits.</p>
