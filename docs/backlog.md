@@ -14,15 +14,17 @@ Status: `running`, `ready` (can start now), `blocked` (waiting on a dependency),
 | 0 | Seed data (`packages/seed`) | `jan/seed` | done | heavy |
 | 1 | Frontend refinement, HR side (domain radar, Magenta Desks-style restyle) | `jan/ui` | done | light |
 | 2 | PWA accounts and onboarding | `jan/pwa-auth` | done | heavy |
-| 3 | PWA answer flow | `jan/pwa-answer` | running | heavy |
+| 3 | PWA answer flow | `jan/pwa-answer` | done | heavy |
+| 4 | Installable PWA and push | `jan/pwa-push` | ready | heavy |
+| 5 | Employee UI refinement | `jan/ui-employee` | ready | light |
 | 6 | Security demo | `jan/security-demo` | running | light |
 | 7 | Demo script and slide notes | `jan/demo-script` | done | light |
 | 8 | HR CSV export with suppression | `jan/hr-export` | done | light |
 | 10 | `jan/dev` → `main` PR | coordinating session | ready | light |
-| 12 | HR home overview | `jan/hr-home` | ready | light |
-| 13 | Publish page: join link, QR and print poster | `jan/publish-qr` | ready | light |
+| 12 | HR home overview | `jan/hr-home` | running | light |
+| 13 | Publish page: join link, QR and print poster | `jan/publish-qr` | running | light |
 | 14 | Pitch deck | `jan/deck` | ready | light |
-| 15 | Demo reset and presenter mode | `jan/demo-reset` | blocked on 3 | heavy |
+| 15 | Demo reset and presenter mode | `jan/demo-reset` | ready | heavy |
 | 16 | Signal drilldown and follow-up loop view | `jan/signals` | ready | light |
 
 All of the done rows are merged into `jan/dev` and pushed (lint, `check:anonymity`, seed and build pass). Not yet verified: the production refusal when `SESSION_SECRET` is unset.
