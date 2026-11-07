@@ -20,6 +20,8 @@ export { runAlarms } from "./alarms.ts";
 export { runNarrative } from "./narrative.ts";
 export { runCommentAnalysis, runCommentAnalysisSync } from "./comments.ts";
 export type { CommentOptions, CommentReport } from "./comments.ts";
+export { runRecommendations } from "./recommendations.ts";
+export type { RecommendationContext, RecommendationProposal, RecommendationOptions, RecommendationReport, DraftFn } from "./recommendations.ts";
 
 export interface JobOptions {
   now?: number;

@@ -297,6 +297,19 @@ if (card?.kind === "narrative" && card.detail) card.detail.summary; // typed: hi
 **What the model receives** (per segment, only if at least 10 people answered in the period): domain scores, confidence, consensus, previous score and change (only `agregat` rows with n of at least 10, no shift rows); up to 8 open alarms (id, type, severity, domain, engine description); up to 3 top movers, 2 polarisation and 3 `act_first` insights; and at most 40 redacted comments (300 characters each) with their domain name only, taken round-robin over domains that have a visible aggregate. No account ids, dates, shifts or counts below 10.
 
 **Idempotent and cheap.** The input is hashed (with the model and prompt version). If the stored narrative has the same `inputHash`, the segment is skipped with no LLM call. A changed input replaces the narrative row and deletes only the recommendations it proposed that are still `proposada`; `aprovada` and `descartada` ones are never touched, and an action whose title matches one a human already decided is not proposed again. A failed call (after 2 retries in the client and one re-ask on unusable output) keeps the old row. One run is at most 5 calls, one per segment (company + 4 collectives), more only on retries.
+## Recommendations
+
+Job code only, never a request handler:
+
+```ts
+import { runEngineJob, runRecommendations } from "@damm/engine/job";
+import { draftRecommendations } from "@damm/ai";
+
+runEngineJob(db);
+await runRecommendations(db, { now: Date.now(), draft: (ctx) => draftRecommendations(ctx) });
+```
+
+It inserts `recomanacio` rows (`estat = 'proposada'`, `senyal_id`, `titol`, `iniciativa`, `responsable_suggerit`, `termini_suggerit`, `justificacio`, `limits`, `font`) for open alarms that have none. Safe to re-run. `pnpm --filter @damm/engine run job` and the demo builder already do this (template mode unless an LLM key is set). Show the fields on the signal page; HR only approves or discards, there is no "done" state. See contract change C11.
 
 ## Seeded data
 

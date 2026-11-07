@@ -3,6 +3,10 @@
   "version": "0.0.0",
   "private": true,
   "main": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./recommendations": "./src/recommendations.ts"
+  },
   "types": "src/index.ts",
   "dependencies": {
     "@damm/shared": "workspace:*",

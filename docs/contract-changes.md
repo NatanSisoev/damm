@@ -19,6 +19,12 @@ What changed and why.
 
 ---
 
+## C11 · 2026-11-07 · Natan · Recommendation proposals for open alarms
+
+Additive schema change on `recomanacio`: `titol`, `iniciativa` (Damm initiative), `responsable_suggerit`, `termini_suggerit`, `justificacio` (cites n and confidence), `limits` ("correlació, no causa"), `font` (`llm` | `template`). `text` holds the concrete action. Rows are inserted as `estat = 'proposada'`, linked by `senyal_id`, by `runRecommendations` (`@damm/engine/job`, run with `draftRecommendations` from `@damm/ai`). Owner and timeframe are suggestions only. There is deliberately **no done/completed column**: HR only approves or discards. Old databases need the seven columns added (or a re-init).
+- [ ] Jan: show these fields on the signal page (title, action, initiative, suggested owner and timeframe, justification, limits, source). Keep approve/discard only, with no "done" tick.
+- [ ] Jan: call `runRecommendations` where the job runs (see engine-integration.md, "Recommendations"), never in a request. `createDraftedFollowUp` stays as is.
+
 ## C10 · 2026-11-07 · Natan · Comment analysis: themes, summaries, emergent alarm
 
 Design: [engine.md](engine.md) section 12. `runCommentAnalysis` fills `tema` and `comentari_tema` from the redacted comments (no LLM key needed) and opens `emergent` alarms in `senyal` (`warning`, audience `hr`). It replaces the seeded `tema` rows.

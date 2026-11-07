@@ -5,10 +5,10 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { buildDemo } from "../demo/build-demo.ts";
 
-test("demo builder: a short run produces answers, comments, aggregates and insights", () => {
+test("demo builder: a short run produces answers, comments, aggregates and insights", async () => {
   const dir = mkdtempSync(join(tmpdir(), "engine-demo-"));
   try {
-    const s = buildDemo({ out: join(dir, "demo.db"), days: 5 });
+    const s = await buildDemo({ out: join(dir, "demo.db"), days: 5 });
     assert.equal(s.people, 1200);
     assert.ok(s.accounts > 300);
     assert.ok(s.answers >= s.accounts * 5 * 2, `answers ${s.answers}`);

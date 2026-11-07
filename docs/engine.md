@@ -244,3 +244,13 @@ The weakest themes are conciliation, tiredness and the shift theme (extra assign
 - **Correlation, not cause.** A rise in a theme is not evidence of what caused it.
 - **Summaries are automatic.** Template summaries describe counts only. LLM summaries are checked against copying but can still be wrong or generic. AI proposes, a human decides.
 - **Redaction.** Names and contact details are redacted before storage by a pattern scrubber, which can miss unusual identifiers.
+
+## 13. Recommendation proposals
+
+`packages/engine/src/recommendations.ts`, `runRecommendations(db, { now, draft })`. Runs as a job after `runEngineJob` (alarms must exist), never in a request. The engine stays dependency-free: `draft` is injected, normally `draftRecommendations` from `@damm/ai`.
+
+- For each alarm that is `open`, not suppressed, with `n >= minGroupSize`, and with no `recomanacio` yet, it builds an aggregate-only context (alarm type, severity, domain, collective and shift labels, score, change vs. the previous period, n, confidence, summaries of the `importance_gap`, `segment_gap` and `polarisation` insights of the same segment) and inserts the 1 to 3 returned proposals as `estat = 'proposada'`, linked by `senyal_id`.
+- Idempotent: an alarm with any recommendation (even a discarded one) is never redrafted. A failing or empty draft is counted in `failed` and retried on the next run.
+- Lideratge alarms stay HR-only: a manager role (Cap de ..., Responsable de ...) is never kept as suggested owner there; it becomes RRHH, and the template wording is programme-level, not aimed at a person.
+- Proposals: title, concrete action (in `text`), Damm initiative, suggested owner and timeframe, rationale with n and confidence, and a limits line. Owner and timeframe are suggestions and are **not tracked**. There is no done state: HR approves or discards.
+- `draftRecommendations` uses the LLM only if `LLM_BASE_URL` and `LLM_API_KEY` are set, and falls back to the template library (alarm type × domain × collective, e.g. Logística + Condicions i organització gives hydration points and adjusted breaks) on any failure. No key is needed.
