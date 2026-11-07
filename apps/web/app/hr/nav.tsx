@@ -10,6 +10,7 @@ const links = [
   { href: "/hr/publish", label: "Enllaços i QR", step: "↗" },
   { href: "/hr/results", label: "Resultats", step: "3" },
   { href: "/hr/recommendations", label: "Recomanacions", step: "4" },
+  { href: "/hr/methodology", label: "Com es calcula?", step: "?" },
 ];
 
 export function HrNav() {

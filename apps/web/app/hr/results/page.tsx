@@ -262,7 +262,7 @@ export default async function ResultsPage({ searchParams }: { searchParams: Prom
       <div className="mt-6 space-y-6">
         <Card
           title="Representativitat"
-          meta="Respostes davant població sintètica · diferències de 5 pp o més marcades"
+          meta={<>Respostes davant població sintètica · diferències de 5 pp o més marcades · <Link href="/hr/methodology" className="underline">Com es calcula?</Link></>}
           flush={rep.collectius.length > 0}
         >
           {rep.collectius.length === 0 ? (
