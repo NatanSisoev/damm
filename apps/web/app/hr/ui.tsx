@@ -46,12 +46,12 @@ export function SuppressedBadge({ title }: { title?: string }) {
   );
 }
 
-export function Stat({ label, value, hint }: { label: string; value: ReactNode; hint?: ReactNode }) {
+export function Stat({ label, value, hint, icon }: { label: string; value: ReactNode; hint?: ReactNode; icon?: string }) {
   return (
-    <div className="card px-5 py-4">
-      <div className="text-xs font-medium text-subtle">{label}</div>
+    <div className="card h-full px-5 py-4">
+      <div className="flex items-center gap-1.5 text-xs font-medium text-subtle">{icon && <span aria-hidden className="text-[15px] leading-none">{icon}</span>}{label}</div>
       <div className="num mt-1 text-2xl font-semibold tracking-tight">{value}</div>
-      {hint && <div className="mt-0.5 text-xs text-subtle">{hint}</div>}
+      {hint && <div className="mt-2 text-xs text-subtle">{hint}</div>}
     </div>
   );
 }

@@ -19,6 +19,16 @@ What changed and why.
 
 ---
 
+## C20 · 2026-11-08 · Natan · HR dashboard: date window and collective filter
+
+- New read-only HR repository functions in `@damm/db/hr`: `getWindowTrends` (same shape and suppression as `getTrends`, for an arbitrary date window and optional collective, read from the analytics view), `getDataBounds`, `populationOf`. No schema change.
+- `/hr` is now the dashboard ("Panell") with interval and collective dropdowns and an "Actualitza" button (`refreshDashboardAction`: runs the engine job and, with `LLM_API_KEY`, the narrative). The sidebar is now Panell, Banc de preguntes, Alarmes, Consultes; Enllaços i QR, Cervell, Com es calcula? and Vista de responsables are at the bottom. "Necessitats" is renamed "Consultes" in the UI only; routes are unchanged.
+
+Action items:
+- [ ] Jan: FYI only. If you rework the HR sidebar or `/hr`, keep these entries and the filter dropdowns.
+
+---
+
 ## C19 · 2026-11-07 · Natan · Brain tab: engine parameters, signals and what-if simulator
 
 - New HR-side engine API in `@damm/engine/hr`: `getBrain` (every config value with its default, HR weights and format preferences with their source, per-collective domain statistics and priorities, format arms per shift, active probes), `simulateBrain` (plays hypothetical people with no history over up to 28 days against the real question bank; config, weights, format preferences and probe boosts can be overridden for the run, nothing is stored), `resetConfig`, `clearDomainWeight`, `clearFormatPreference`, `describeConfig`, `parseConfigPatch`.

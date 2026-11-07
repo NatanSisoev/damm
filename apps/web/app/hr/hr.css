@@ -78,7 +78,8 @@
 .hr-side-badge { flex: none; }
 
 @media (min-width: 1024px) {
-  .hr-layout { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: start; }
+  .hr-layout { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: stretch; }
+  .hr-sidebar { align-self: start; }
   .hr-topbar, .hr-drawer-wrap { display: none; }
   .hr-sidebar {
     display: flex; flex-direction: column; width: 248px; height: 100vh; position: sticky; top: 0;
@@ -195,3 +196,6 @@
 .pool-group > td { padding: 0; background: var(--surface-muted); border-top: 1px solid var(--line-strong); }
 .pool-group-btn { display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px 12px; text-align: left; cursor: pointer; }
 .pool-group-head { display: inline-flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; }
+
+.glyph { display: inline-flex; align-items: center; gap: 3px; white-space: nowrap; }
+@keyframes hr-spin { to { transform: rotate(360deg); } } .gen-spinner-svg { animation: hr-spin 0.9s linear infinite; }

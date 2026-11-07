@@ -27,31 +27,26 @@ const icons = {
   manager: svg(<><circle cx="9" cy="8" r="3.5" /><path d="M2.5 20c.5-3.5 3-5.5 6.5-5.5s6 2 6.5 5.5M16 5a3.5 3.5 0 010 6.5M18 14.5c2 .6 3.3 2.3 3.5 5.5" /></>),
 };
 
-const groups: { title: string; items: Item[] }[] = [
-  {
-    title: "Escoltar",
-    items: [
-      { href: "/hr/needs", label: "Necessitats", icon: icons.needs },
-      { href: "/hr/pool", label: "Banc de preguntes", icon: icons.pool },
-      { href: "/hr/publish", label: "Enllaços i QR", icon: icons.publish },
-    ],
-  },
-  {
-    title: "Entendre",
-    items: [
-      { href: "/hr", label: "Inici", icon: icons.home },
-      { href: "/hr/results", label: "Resultats", icon: icons.results },
-      { href: "/hr/signals", label: "Alarmes", icon: icons.alarms },
-    ],
-  },
-  { title: "Actuar", items: [{ href: "/hr/recommendations", label: "Recomanacions", icon: icons.recs }] },
+const main: Item[] = [
+  { href: "/hr", label: "Panell", icon: icons.home },
+  { href: "/hr/pool", label: "Banc de preguntes", icon: icons.pool },
+  { href: "/hr/signals", label: "Alarmes", icon: icons.alarms },
+  { href: "/hr/needs", label: "Consultes", icon: icons.needs },
 ];
 
 const footer: Item[] = [
+  { href: "/hr/publish", label: "Enllaços i QR", icon: icons.publish },
   { href: "/hr/brain", label: "Cervell", icon: icons.brain },
   { href: "/hr/methodology", label: "Com es calcula?", icon: icons.method },
   { href: "/manager", label: "Vista de responsables", icon: icons.manager },
 ];
+
+/** Pages that live under a main item (results under Panell, recommendations under Alarmes). */
+const alias: Record<string, string[]> = {
+  "/hr": ["/hr/results"],
+  "/hr/signals": ["/hr/recommendations"],
+  "/hr/needs": ["/hr/need", "/hr/review"],
+};
 
 const STORE = "hr-sidebar-collapsed";
 function subscribe(cb: () => void) {
@@ -124,7 +119,7 @@ export function HrSidebar({ badges, subtitle, logo }: { badges?: NavBadges; subt
   };
 
   const renderItem = (l: Item, compact: boolean) => {
-    const active = l.href === "/hr" ? path === "/hr" : path.startsWith(l.href);
+    const active = (l.href === "/hr" ? path === "/hr" : path.startsWith(l.href)) || (alias[l.href] ?? []).some((p) => path.startsWith(p));
     const b = badgeFor(l.href);
     return (
       <Link
@@ -149,12 +144,7 @@ export function HrSidebar({ badges, subtitle, logo }: { badges?: NavBadges; subt
   const body = (compact: boolean) => (
     <>
       <div className="hr-side-scroll">
-        {groups.map((g) => (
-          <div key={g.title} className="hr-side-group">
-            <p className="hr-side-title">{g.title}</p>
-            {g.items.map((l) => renderItem(l, compact))}
-          </div>
-        ))}
+        {main.map((l) => renderItem(l, compact))}
       </div>
       <div className="hr-side-foot">{footer.map((l) => renderItem(l, compact))}</div>
     </>

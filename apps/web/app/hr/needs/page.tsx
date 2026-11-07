@@ -65,11 +65,11 @@ export default async function NeedsPage({ searchParams }: { searchParams: Promis
   return (
     <>
       <PageHeader
-        title="Necessitats"
+        title="Consultes"
         subtitle="Descriu què vols escoltar; la IA proposa preguntes i una persona les aprova abans de publicar."
         actions={
           <Link href={showForm ? "/hr/needs" : "/hr/needs?nova=1#nova"} className="btn btn-primary" aria-expanded={showForm}>
-            {showForm && all.length > 0 ? "Tanca el formulari" : "+ Nova necessitat"}
+            {showForm && all.length > 0 ? "Tanca el formulari" : "+ Nova consulta"}
           </Link>
         }
       />
@@ -113,7 +113,7 @@ export default async function NeedsPage({ searchParams }: { searchParams: Promis
         <Empty>
           <p>{EMPTY_NEXT[filter]}</p>
           <div className="mt-3 flex justify-center gap-2">
-            <Link href="/hr/needs?nova=1#nova" className="btn btn-primary">+ Nova necessitat</Link>
+            <Link href="/hr/needs?nova=1#nova" className="btn btn-primary">+ Nova consulta</Link>
             <Link href="/hr/needs" className="btn btn-ghost">Mostra-les totes</Link>
           </div>
         </Empty>

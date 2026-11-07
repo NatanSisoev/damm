@@ -1,10 +1,12 @@
 import "./alarms.css";
+import { MinPeople, People } from "../glyphs";
 import { GenerateButton } from "./generate-button";
 import Link from "next/link";
 import { MIN_GROUP_SIZE } from "@damm/shared";
 import { getTrends, listCollectius, listDomains, listRecommendations, listTorns } from "@damm/db/hr";
 import { hrAlarms, type AlarmView } from "@/lib/hr-engine";
 import { Card, Empty, PageHeader } from "../ui";
+import { countPendingRecommendations } from "@damm/db/hr";
 import { STATUS_LABELS, signalTypeLabel } from "../signal-labels";
 import { Sparkline } from "../trend";
 import { recomputeAction, setAlarmStatusAction } from "../actions";
@@ -35,6 +37,7 @@ const SORTS = [
 ] as const;
 
 export default async function AlarmsPage({ searchParams }: { searchParams: Promise<Params> }) {
+  const pendingRecs = countPendingRecommendations();
   const sp = await searchParams;
   const { estat } = sp;
   const tab = TABS.find((t) => t.key === estat) ?? TABS[0];
@@ -135,9 +138,14 @@ export default async function AlarmsPage({ searchParams }: { searchParams: Promi
         title="Alarmes"
         subtitle="Què ha canviat i on cal mirar. Sempre sobre grups agregats; una persona decideix què fer-ne."
         actions={
-          <form action={recomputeAction}>
-            <button className="btn" type="submit">Recalcula ara</button>
-          </form>
+          <div className="flex flex-wrap gap-2">
+            <Link href="/hr/recommendations" className="btn">
+              Suggeriments{pendingRecs > 0 && <span className="badge num">{pendingRecs}</span>}
+            </Link>
+            <form action={recomputeAction}>
+              <button className="btn" type="submit">Recalcula ara</button>
+            </form>
+          </div>
         }
       />
 
@@ -210,7 +218,7 @@ export default async function AlarmsPage({ searchParams }: { searchParams: Promi
                 {good.map((r) => (
                   <li key={r.id} className="py-2 text-[13px]">
                     <strong>{r.domain ? `${r.domain} · ` : ""}{r.segment}</strong>: {r.detail}
-                    <span className="num ml-2 text-xs text-subtle">{r.periode} · n={r.n}</span>
+                    <span className="num ml-2 text-xs text-subtle">{r.periode} · <People n={r.n} /></span>
                   </li>
                 ))}
               </ul>
@@ -225,7 +233,7 @@ export default async function AlarmsPage({ searchParams }: { searchParams: Promi
               </summary>
               <div className="card-body space-y-2 text-[13px]">
                 <p className="text-muted">
-                  Encara no hi ha prou respostes per fiar-se&apos;n; no cal actuar, cal que el grup segueixi responent. Resultats amb n ≥ {MIN_GROUP_SIZE}.
+                  Encara no hi ha prou respostes per fiar-se&apos;n; no cal actuar, cal que el grup segueixi responent. Resultats amb <MinPeople />.
                 </p>
                 <ul className="space-y-1">
                   {[...lowBySegment.entries()].map(([seg, doms]) => (
@@ -272,7 +280,7 @@ function AlarmItem({ r, spark, rec, drafted }: { r: Row; spark: number[] | null;
           <p className="text-[14px] font-semibold">{r.domain ?? "General"}</p>
           <p className="text-[13px] text-muted">{r.detail}</p>
           <p className="mt-0.5 text-xs text-subtle">
-            <span className="num">{r.periode} · n={r.n}</span>
+            <span className="num">{r.periode} · <People n={r.n} /></span>
             {alarmHint(r.type) && <> · {alarmHint(r.type)}</>}
           </p>
         </div>

@@ -141,3 +141,24 @@ export async function setQuestionActiveAction(formData: FormData) {
   hrSetQuestionActive(Number(formData.get("id")), formData.get("active") === "1", HR_USER);
   revalidatePath("/hr/pool");
 }
+
+/** Dashboard "Actualitza": re-reads the database (aggregates, alarms) and rewrites the AI summary when an LLM key is configured. */
+export async function refreshDashboardAction(formData: FormData) {
+  const { getScheduler } = await import("@/lib/engine");
+  const s = getScheduler();
+  s.runNow();
+  let status = "ok";
+  if (!process.env.LLM_API_KEY) status = "sense-llm";
+  else {
+    const r = await s.runNarrativeNow();
+    status = r === null ? "ocupat" : r.segments.some((x) => x.status === "failed") ? "fallada" : "ok";
+  }
+  revalidatePath("/hr", "layout");
+  const q = new URLSearchParams();
+  for (const k of ["r", "from", "to", "c"]) {
+    const v = formData.get(k);
+    if (typeof v === "string" && v) q.set(k, v);
+  }
+  q.set("actualitzat", status);
+  redirect(`/hr?${q.toString()}`);
+}

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Comments, People, PeopleRange } from "../../glyphs";
 import type { ReactNode } from "react";
 import { notFound } from "next/navigation";
 import { MIN_GROUP_SIZE } from "@damm/shared";
@@ -43,7 +44,7 @@ export default async function RecommendationPage({ params }: { params: Promise<{
     { label: "Proposada", detail: `${day(r.creat)}${r.font ? ` · ${r.font === "llm" ? "redactada per la IA" : "plantilla"}` : ""}`, done: true },
     { label: "Decisió", detail: r.estat === "aprovada" ? `Aprovada el ${r.aprovadaEl ? day(r.aprovadaEl) : "?"}` : r.estat === "descartada" ? "Descartada" : "Pendent", done: r.estat !== "proposada" },
     { label: "Enquesta de seguiment", detail: followUp ? (followUp.published ? "Publicada" : "Creada, sense publicar") : r.seguimentNecessitatId ? "Creada" : "Per crear", done: !!r.seguimentNecessitatId },
-    { label: "Nous resultats", detail: followUp?.newResults ? "Disponibles" : `Cal n ≥ ${MIN_GROUP_SIZE}`, done: !!followUp?.newResults },
+    { label: "Nous resultats", detail: followUp?.newResults ? "Disponibles" : `Cal 👤≥${MIN_GROUP_SIZE}`, done: !!followUp?.newResults },
   ];
 
   return (
@@ -131,7 +132,7 @@ export default async function RecommendationPage({ params }: { params: Promise<{
           )}
 
           {sd && (
-            <Card title="Temes relacionats" meta={`n ≥ ${MIN_GROUP_SIZE}`}>
+            <Card title="Temes relacionats" meta={`👤≥${MIN_GROUP_SIZE}`}>
               {sd.themes.length === 0 ? (
                 <Empty>Cap tema amb prou comentaris per a aquest col·lectiu.</Empty>
               ) : (
@@ -141,7 +142,7 @@ export default async function RecommendationPage({ params }: { params: Promise<{
                       <div className="mb-1.5 flex flex-wrap items-center gap-2">
                         <h3 className="font-medium">{t.etiqueta}</h3>
                         {t.emergent && <span className="badge badge-warn">Emergent</span>}
-                        <span className="num ml-auto text-xs text-subtle">n={t.n} comentaris</span>
+                        <span className="num ml-auto text-xs text-subtle"><Comments n={t.n} /></span>
                       </div>
                       {t.resum && <p className="text-[13px] text-muted">{t.resum}</p>}
                       {t.snippets.map((s, i) => (
@@ -164,7 +165,7 @@ export default async function RecommendationPage({ params }: { params: Promise<{
                 <div className="mt-3 flex flex-wrap items-center gap-2">
                   <SignalBadges tipus={signal.tipus} severity={signal.severity} status={signal.status} />
                   <span className="badge num">{signal.periode}</span>
-                  <span className="badge num">n={signal.n}</span>
+                  <span className="badge num"><People n={signal.n} /></span>
                   {signal.confianca !== null && <span className="badge num">confiança {Math.round(signal.confianca <= 1 ? signal.confianca * 100 : signal.confianca)}%</span>}
                 </div>
                 <Link href={`/hr/signals/${signal.id}`} className="mt-3 inline-block text-xs text-accent-ink hover:underline">Obre l&apos;alarma →</Link>
@@ -187,7 +188,7 @@ export default async function RecommendationPage({ params }: { params: Promise<{
                     <li key={i.id} className="rounded-lg border border-line p-4">
                       <div className="mb-1 text-xs font-medium text-subtle">Des de {d.since} · {d.anchor.label}</div>
                       <p className="text-[13px]">{d.wording}</p>
-                      <p className="mt-1 text-xs text-subtle"><span className="num">{f1(d.before.score)} → {f1(d.after.score)}</span> · n={d.before.n} / {d.after.n}</p>
+                      <p className="mt-1 text-xs text-subtle"><span className="num">{f1(d.before.score)} → {f1(d.after.score)}</span> · <PeopleRange from={d.before.n} to={d.after.n} /></p>
                       <p className="mt-1 text-xs text-subtle">{d.limits}</p>
                     </li>
                   );
@@ -215,8 +216,8 @@ export default async function RecommendationPage({ params }: { params: Promise<{
                 )}
                 <p className="mt-3 text-xs text-subtle">
                   {followUp.newResults
-                    ? <>Nous resultats: <span className="num">n={followUp.newResults.n}</span>{followUp.newResults.mitjana !== null && <> · mitjana <span className="num">{followUp.newResults.mitjana.toFixed(1)}</span></>}</>
-                    : `Nous resultats: pendents (cal n ≥ ${MIN_GROUP_SIZE}).`}
+                    ? <>Nous resultats: <span className="num"><People n={followUp.newResults.n} /></span>{followUp.newResults.mitjana !== null && <> · mitjana <span className="num">{followUp.newResults.mitjana.toFixed(1)}</span></>}</>
+                    : `Nous resultats: pendents (cal 👤≥${MIN_GROUP_SIZE}).`}
                 </p>
               </div>
             )}
