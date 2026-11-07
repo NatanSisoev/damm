@@ -4,6 +4,7 @@
 import { randomBytes, randomUUID, scrypt, timingSafeEqual } from "node:crypto";
 import { getDb } from "./connection";
 import { redactPii } from "./pii";
+import { lookupJoinCode } from "./join-repository";
 
 const KEYLEN = 64;
 const USERNAME_RE = /^[a-z0-9._-]{3,30}$/;
@@ -123,10 +124,9 @@ export async function registerAccount(input: {
   if (!USERNAME_RE.test(username)) return { ok: false, error: "username_invalid" };
   if (input.password.length < MIN_PASSWORD_LENGTH) return { ok: false, error: "password_curta" };
 
-  const jc = db
-    .prepare("SELECT collectiu_id FROM joincode WHERE codi = ? AND actiu = 1")
-    .get(input.codi.trim().toUpperCase()) as { collectiu_id: number } | undefined;
-  if (!jc) return { ok: false, error: "codi_invalid" };
+  const found = lookupJoinCode(input.codi);
+  if (!found || !found.actiu) return { ok: false, error: "codi_invalid" };
+  const jc = db.prepare("SELECT collectiu_id FROM joincode WHERE codi = ?").get(found.codi) as { collectiu_id: number };
 
   const salt = randomBytes(16).toString("hex");
   const recoveryCode = newRecoveryCode();

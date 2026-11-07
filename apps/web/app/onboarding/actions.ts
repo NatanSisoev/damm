@@ -2,6 +2,7 @@
 
 import { registerAccount } from "@damm/db/employee";
 import { createSession } from "@/lib/session";
+import { normalizeJoinCode } from "@/lib/join-code";
 
 export type OnboardingState = { error?: string; recoveryCode?: string };
 
@@ -16,7 +17,7 @@ export async function registerAction(_prev: OnboardingState, formData: FormData)
   const password = String(formData.get("password") ?? "");
   if (password !== String(formData.get("password2") ?? "")) return { error: "Les contrasenyes no coincideixen." };
   const res = await registerAccount({
-    codi: String(formData.get("codi") ?? ""),
+    codi: normalizeJoinCode(String(formData.get("codi") ?? "")),
     username: String(formData.get("username") ?? ""),
     password,
   });

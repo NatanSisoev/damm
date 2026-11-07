@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { lookupJoinCode } from "@damm/db/join";
+import { normalizeJoinCode } from "@/lib/join-code";
 import { EmployeeFrame, PageHead, PrivacyNote } from "../../(employee)/components/frame";
 
 export const dynamic = "force-dynamic";
 
 export default async function JoinPage({ params }: { params: Promise<{ codi: string }> }) {
   const { codi } = await params;
-  const info = lookupJoinCode(codi.toUpperCase());
+  const info = lookupJoinCode(normalizeJoinCode(codi));
   const valid = info !== null && info.actiu;
 
   return (
@@ -21,7 +22,7 @@ export default async function JoinPage({ params }: { params: Promise<{ codi: str
                 <div className="text-lg font-bold">{info.collectiu}</div>
               </div>
               <Link
-                href={`/onboarding?codi=${encodeURIComponent(codi.toUpperCase())}`}
+                href={`/onboarding?codi=${encodeURIComponent(info.codi)}`}
                 className="btn btn-primary h-14 w-full justify-center text-base"
               >
                 Continua

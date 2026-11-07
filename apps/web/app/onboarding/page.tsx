@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { lookupJoinCode } from "@damm/db/join";
+import { normalizeJoinCode } from "@/lib/join-code";
 import { EmployeeFrame, PageHead } from "../(employee)/components/frame";
 import { OnboardingForm } from "./onboarding-form";
 
@@ -7,8 +8,8 @@ export const dynamic = "force-dynamic";
 
 export default async function OnboardingPage({ searchParams }: { searchParams: Promise<{ codi?: string }> }) {
   const { codi: raw } = await searchParams;
-  const codi = (raw ?? "").trim().toUpperCase();
-  const info = codi ? lookupJoinCode(codi) : null;
+  const typed = normalizeJoinCode(raw);
+  const info = typed ? lookupJoinCode(typed) : null;
   const valid = info !== null && info.actiu;
 
   return (
@@ -18,7 +19,7 @@ export default async function OnboardingPage({ searchParams }: { searchParams: P
           <>
             <PageHead eyebrow={`${info.empresa} · ${info.collectiu}`} title="Crea el teu compte" />
             <div className="px-4 pb-8">
-              <OnboardingForm codi={codi} />
+              <OnboardingForm codi={info.codi} />
               <p className="mt-6 text-center text-sm">
                 <Link href="/privacitat" className="underline">
                   Com tractem les teves dades
