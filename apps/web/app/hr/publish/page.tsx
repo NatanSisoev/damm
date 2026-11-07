@@ -16,7 +16,7 @@ export default async function PublishPage() {
       {items.length === 0 ? (
         <Empty>Encara no hi ha cap codi d&apos;accés.</Empty>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-4 xl:grid-cols-2">
           {items.map((c) => (
             <Card key={c.codi} title={c.collectiu} meta={<span className="num">{c.comptes} comptes</span>}>
               <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
