@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { draftSurvey, redraftQuestion } from "@damm/ai";
 import {
-  approveQuestion, getRedraftContext, listCollectius, moveDraft, replaceDraft, saveDraftSurvey, updateNeedHeader, approveRecommendation, createNecessitat, discardQuestion,
+  approveQuestion, getRedraftContext, listCollectius, listNeedCards, moveDraft, replaceDraft, saveDraftSurvey, updateNeedHeader, approveRecommendation, createNecessitat, discardQuestion,
   discardRecommendation, publishNecessitat, updateDraftText, closeNecessitat, setSignalStatus,
 } from "@damm/db/hr";
 import { createDraftedFollowUp } from "./follow-up";
@@ -74,7 +74,9 @@ export async function discardQuestionAction(formData: FormData) {
 export async function editQuestionAction(formData: FormData) {
   const text = String(formData.get("text") ?? "").trim();
   if (text) updateDraftText(Number(formData.get("id")), text, String(formData.get("text_es") ?? ""), String(formData.get("text_en") ?? ""));
+  // The review screen re-runs the wording check (questionWarnings) on the saved text, so warnings show right after saving.
   revalidatePath("/hr/review");
+  revalidatePath("/hr/needs");
 }
 
 /**
@@ -90,6 +92,20 @@ export async function publishAction(formData: FormData) {
   revalidatePath("/hr/review");
   const avis = outcome.status === "off" ? "off" : String(outcome.devices);
   redirect(`/hr/needs?publicada=${id}&avis=${encodeURIComponent(avis)}`);
+}
+
+/**
+ * Reminder for a published need with low participation (R-FLOW-5d): the same web push path as publishing.
+ * HR passes only the need id and gets back an aggregate device count ("<10" under the minimum group size).
+ */
+export async function remindNeedAction(formData: FormData) {
+  const id = Number(formData.get("id"));
+  const need = listNeedCards().find((n) => n.id === id);
+  if (!need || need.state !== "publicada") redirect("/hr/needs");
+  const outcome = await notifyNeedPublished(id);
+  revalidatePath("/hr/needs");
+  const avis = outcome.status === "off" ? "off" : String(outcome.devices);
+  redirect(`/hr/needs?recordatori=${id}&avis=${encodeURIComponent(avis)}`);
 }
 
 export async function approveRecommendationAction(formData: FormData) {

@@ -107,6 +107,34 @@ export function findProblems(need: NeedInput, s: { title: string; intro: string;
   return out;
 }
 
+export type QuestionWarningCode =
+  | "not_catalan" | "catalan_error" | "gendered" | "identifying" | "leading" | "excluded" | "scale_open" | "yesno_form" | "too_long";
+export interface QuestionWarning { code: QuestionWarningCode; /** Word count, for "too_long". */ n?: number; /** The excluded topics, for "excluded". */ detail?: string }
+
+/**
+ * Per-question quality warnings for the HR review screen (R-FLOW-3e). The same rules as findProblems, but
+ * structured (a code per warning) so the UI can show them in ca/es/en. Runs on AI drafts and on HR edits.
+ * Warnings inform; they never block approval.
+ */
+export function questionWarnings(
+  need: Pick<NeedInput, "exclusions" | "collective">,
+  q: { text: string; type: string; reason?: string | null; low?: string | null; high?: string | null },
+): QuestionWarning[] {
+  const out: QuestionWarning[] = [];
+  const t = q.text.trim();
+  if ([q.text, q.low ?? "", q.high ?? ""].some(notCatalanIn)) out.push({ code: "not_catalan" });
+  if (catalanErrorsIn(`${q.text} ${q.low ?? ""} ${q.high ?? ""}`).length) out.push({ code: "catalan_error" });
+  if (genderedIn(q.text).length) out.push({ code: "gendered" });
+  if (identifyingIn(q.text)) out.push({ code: "identifying" });
+  if (leadingIn(q.text)) out.push({ code: "leading" });
+  if (violatesExclusions(q.text, need.exclusions)) out.push({ code: "excluded", detail: need.exclusions?.trim() });
+  if ((q.type === "scale5" || q.type === "scale10") && /^(per què|què|quin|quina|quins|quines|on|qui|quan)\b/i.test(t)) out.push({ code: "scale_open" });
+  if (q.type === "yes_no" && WH.test(t) && !YN_STARTS.test(t)) out.push({ code: "yesno_form" });
+  const w = words(q.text).length;
+  if (w > wordLimit(need.collective) + 3) out.push({ code: "too_long", n: w });
+  return out;
+}
+
 type Kind = "freq" | "agree" | "quality" | "prob" | "degree";
 const stemKind = (text: string): Kind => {
   const t = norm(text);

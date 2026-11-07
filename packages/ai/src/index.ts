@@ -10,6 +10,8 @@ import { draftQuestionSchema, draftSurveySchema, estimateSeconds, type DraftQues
 export { estimateSeconds, DRAFT_TYPES } from "./types";
 export type { DraftQuestion, DraftSurvey, DraftType, NeedInput } from "./types";
 export { violatesExclusions } from "./exclusions";
+export { questionWarnings, wordLimit } from "./quality";
+export type { QuestionWarning, QuestionWarningCode } from "./quality";
 export { translateQuestionTexts, withTranslations } from "./translate";
 export { classifyCommentsLlm, summariseThemeLlm } from "./comments";
 export type { CommentToClassify, SummaryRequest, ThemeOption } from "./comments";

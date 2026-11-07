@@ -1,4 +1,4 @@
-import { estimateSeconds } from "@damm/ai";
+import { estimateSeconds, questionWarnings, wordLimit } from "@damm/ai";
 import type { NeedDraftGroup } from "@damm/db/hr";
 import { getTL } from "@/lib/i18n/server";
 import { draftReviewDict } from "@/lib/i18n/hr-draft-review";
@@ -49,6 +49,21 @@ export async function DraftReview({ g }: { g: NeedDraftGroup }) {
               <span className="num text-xs text-subtle">~{estimateSeconds([q.tipusAi])} s</span>
             </div>
             {q.motiu && <p className="text-sm text-subtle">{t("why", { reason: q.motiu })}</p>}
+            {(() => {
+              // Same wording rules the AI repair loop uses, re-run on the saved text so HR edits are checked too.
+              const warns = questionWarnings({ exclusions: g.exclusions, collective: g.collectiu }, { text: q.text, type: q.tipusAi, reason: q.motiu });
+              if (warns.length === 0) return null;
+              return (
+                <div role="status" className="rounded-lg border border-warn px-3 py-2 text-sm">
+                  <p className="text-xs font-medium text-warn">{t("warn_title")}</p>
+                  <ul className="mt-1 list-disc space-y-0.5 pl-4">
+                    {warns.map((w) => (
+                      <li key={w.code}>{t(`w_${w.code}` as never, { topics: w.detail ?? "", n: w.n ?? 0, max: wordLimit(g.collectiu) } as never)}</li>
+                    ))}
+                  </ul>
+                </div>
+              );
+            })()}
             <div className="flex flex-wrap items-center justify-end gap-2">
               <form action={editQuestionAction} className="w-full min-w-0 space-y-2">
                 <input type="hidden" name="id" value={q.id} />
