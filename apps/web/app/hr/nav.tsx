@@ -21,6 +21,7 @@ const icons = {
   results: svg(<><path d="M5 20V10m7 10V4m7 16v-7" /></>),
   alarms: svg(<><path d="M6 17V11a6 6 0 0112 0v6l1.5 2h-15z" /><path d="M10 21h4" /></>),
   recs: svg(<><path d="M9 18h6M10 21h4M12 3a6 6 0 00-3.5 10.9c.7.6 1 1.3 1 2.1h5c0-.8.3-1.5 1-2.1A6 6 0 0012 3z" /></>),
+  pool: svg(<><rect x="4" y="4" width="16" height="4" /><rect x="4" y="10" width="16" height="4" /><rect x="4" y="16" width="16" height="4" /></>),
   method: svg(<><circle cx="12" cy="12" r="9" /><path d="M9.5 9.5a2.5 2.5 0 114 2c-.9.6-1.5 1-1.5 2M12 17h.01" /></>),
   brain: svg(<><circle cx="12" cy="12" r="3" /><path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M18.4 5.6l-2.8 2.8M8.4 15.6l-2.8 2.8" /></>),
   manager: svg(<><circle cx="9" cy="8" r="3.5" /><path d="M2.5 20c.5-3.5 3-5.5 6.5-5.5s6 2 6.5 5.5M16 5a3.5 3.5 0 010 6.5M18 14.5c2 .6 3.3 2.3 3.5 5.5" /></>),
@@ -31,6 +32,7 @@ const groups: { title: string; items: Item[] }[] = [
     title: "Escoltar",
     items: [
       { href: "/hr/needs", label: "Necessitats", icon: icons.needs },
+      { href: "/hr/pool", label: "Banc de preguntes", icon: icons.pool },
       { href: "/hr/publish", label: "Enllaços i QR", icon: icons.publish },
     ],
   },

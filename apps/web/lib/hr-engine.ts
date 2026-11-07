@@ -9,6 +9,9 @@ import {
   startProbe,
   listProbes,
   stopProbe,
+  listPool,
+  getPoolQuestion,
+  setQuestionActive,
   ProbeError,
   getBrain,
   simulateBrain,
@@ -31,7 +34,7 @@ import type { QuestionType } from "@damm/shared";
 // better-sqlite3 satisfies the engine's minimal SqlDatabase at runtime; its typings are stricter.
 const db = () => getDb() as unknown as Parameters<typeof listInsights>[0];
 
-export type { AlarmView, AlarmStatus, InsightView, InsightDetails, Viewer, ProbeView, ProbeProgress } from "@damm/engine/hr";
+export type { PoolQuestionDetail, PoolWeek, PoolSegment, Pool, PoolQuestion, PoolSummary, PoolState, PoolReason, PoolByCollective, SetPoolStatusResult, AlarmView, AlarmStatus, InsightView, InsightDetails, Viewer, ProbeView, ProbeProgress } from "@damm/engine/hr";
 export { ProbeError };
 
 export const hrInsights = (viewer: Viewer, q?: InsightQuery) => listInsights(db(), viewer, q);
@@ -56,3 +59,8 @@ export const hrSetFormatPreference = (collectiuId: number | null, type: Question
 export const hrClearFormatPreference = (collectiuId: number | null, type: QuestionType) => clearFormatPreference(db(), collectiuId, type);
 export { ConfigError };
 export type { Brain, BrainCollective, BrainDomain, BrainFormat, SimResult, SimulateInput, ConfigEntry } from "@damm/engine/hr";
+
+// Question pool inspector: every question with delivery statistics and schedule. Aggregates only.
+export const hrPool = () => listPool(db());
+export const hrSetQuestionActive = (id: number, active: boolean, by: string) => setQuestionActive(db(), id, active, by);
+export const hrPoolQuestion = (id: number) => getPoolQuestion(db(), id);
