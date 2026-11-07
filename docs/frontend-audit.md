@@ -22,14 +22,14 @@ All six are done and merged into `jan/dev` (2026-11-07): items 1 to 3 in `claude
 | 7 | The follow-up `n` counts answers, not respondents. Two questions × 5 people shows n=10 and passes the minimum group size. This is a privacy bug. | `packages/db/src/hr-signals.ts:155-159` | J+N (distinct-respondent column) |
 | 8 | Participation on the home page reads low: the numerator counts only visible respondents, but the denominator is the whole population. | `hr-repository.ts` `getHrOverview` | J |
 | 9 | The pool asks the same questions every day. Only questions answered today are excluded, so the "not 4 days in a row" rule is missing. | `packages/db/src/employee-repository.ts` `nextQuestionsForToday` | N (engine) or J if it stays in the repo |
-| 10 | The day rolls over at UTC instead of Europe/Madrid time, so answers after 23:00 or 00:00 land on the wrong day. | `employee-repository.ts` `serverDate()` | J |
+| 10 | The day rolls over at UTC instead of Europe/Madrid time, so answers after 23:00 or 00:00 land on the wrong day. | `employee-repository.ts` `serverDate()` | J, **done** (Europe/Madrid day via `madrid-day.ts`; `pnpm --filter @damm/db run madrid-check`) |
 | 11 | Signal status is never written (there's no `setSignalStatus`), and there's no way to close a need. The status badges never change. | `hr-repository.ts` | J |
 | 12 | Join-code account counts aren't suppressed below 10, and every code of one collective repeats the same count. | `hr-repository.ts:467-476` | J |
 | 13 | The HR routes have no access gate, and approving a recommendation doesn't record who approved it. That weakens the "a human decides" story. | `app/hr/*`, `hr-repository.ts` | J |
 | 14 | The CSV export has no metadata (period, minimum n, suppression note) and no date in the filename. | `app/hr/results` export route | J |
 | 15 | Some constants are hardcoded instead of using `MIN_GROUP_SIZE` and the rigour constants: `0.05` in the results page, `10` in `radar.tsx:135,143` and in settings. | `app/hr/results/*` | J |
 | 16 | Employees can't skip a question. A forced answer hurts data quality and goes against the "voluntary" copy. | employee answer flow | J+N (skip in the contract) |
-| 17 | Answer drafts are lost on reload, and the loading and error states are weak. | employee answer flow | J |
+| 17 | Answer drafts are lost on reload, and the loading and error states are weak. | employee answer flow | J, **done** (drafts in localStorage, loading skeleton, retry on load and submit) |
 
 ## P2: polish and coverage
 

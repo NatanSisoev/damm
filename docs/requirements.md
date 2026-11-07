@@ -54,7 +54,7 @@ G-§3.2.
 | ID | User | What they need | Status | Evidence / gap |
 |----|------|----------------|--------|----------------|
 | R-U-1 | **Primary**: People/HR person who wants to understand a concrete situation and act | Need → drafts → approval → publish → results → recommendation | partial | `/hr/*`. Real AI and analysis are blocked. |
-| R-U-2 | **Respondent**: anyone at Damm (plant, logistics, sales, office, manager), little time, on a phone | Fast mobile answering, anonymity they can believe | done | PWA onboarding, answering, done state (2 a day max), `/privacitat` and a shared mobile shell (44px targets). Push (task 4) still open. |
+| R-U-2 | **Respondent**: anyone at Damm (plant, logistics, sales, office, manager), little time, on a phone | Fast mobile answering, anonymity they can believe | done | PWA onboarding, answering, done state (2 a day max, day follows Europe/Madrid), in-progress answers kept on the device across reloads, loading and retry states, `/privacitat` and a shared mobile shell (44px targets). Push (task 4) still open. |
 | R-U-3 | **Secondary**: team leads and management who receive aggregated results and recommendations | Read-only aggregate view and recommendations | missing | No team concept exists (only collective, centre type and shift), so a manager view carries re-identification risk. Proposal: collective-level read-only share or the Teams card (`/hr/publish/[codi]/teams`). See N-6. |
 
 ## 3. Functional flow (minimum)
