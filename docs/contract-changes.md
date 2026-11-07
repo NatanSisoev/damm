@@ -105,10 +105,10 @@ Question (answer) type values are now English. Engine API defined in [engine-int
   - computing `agregat` (`runEngineJob`, which writes `mitjana` 1..5 as before, plus `score`, `confidence` and `consensus`).
 
 Action items:
-- [ ] Jan: replace `escala5`/`escala10`/`swipe`/`obert` with `scale5`/`scale10`/`yes_no`/`open` in the seed (`packages/seed/src/questions.ts`, `seed.ts`), `employee-repository.ts` and the answer UI (`question-renderer.tsx`, `answer-flow.tsx`).
+- [x] Jan: replace `escala5`/`escala10`/`swipe`/`obert` with `scale5`/`scale10`/`yes_no`/`open` in the seed (`packages/seed/src/questions.ts`, `seed.ts`), `employee-repository.ts` and the answer UI (`question-renderer.tsx`, `answer-flow.tsx`). (done 2026-11-07, d3b4db5)
 - [ ] Jan: once `@damm/engine` is on main, route `GET /api/pool/next` and `POST /api/responses` through `createEngine({ db, redact })` (engine-integration.md), and drop the selection and validation logic in `employee-repository.ts`.
 - [ ] Jan: stop writing `agregat` in `packages/db/src/init.ts` and call `runEngineJob(db)` after seeding instead.
-- [ ] Jan: add `@damm/engine` and `@damm/engine/job` to the HR import ban and to `scripts/check-anonymity.mjs`. HR code may import only `@damm/engine/hr`.
+- [x] Jan: add `@damm/engine` and `@damm/engine/job` to the HR import ban and to `scripts/check-anonymity.mjs`. HR code may import only `@damm/engine/hr`. (done 2026-11-07, f47df99)
 
 ## C1 · 2026-11-07 · Natan · Engine tables, new question types, alarms
 
@@ -137,8 +137,8 @@ All changes are additive: nothing was renamed or removed, and new TypeScript fie
 
 Action items:
 - [ ] Jan: ranking items in the seed need `options_json` with a `domain_id` per option; give items a `facet`.
-- [ ] Jan: the answer UI renders `pair` and `choice` from `options`.
-- [ ] Jan: `POST /api/responses` accepts `valueJson` and `answerMs`.
-- [ ] Jan: add `assignment` and `person_domain_state` to `scripts/check-anonymity.mjs` as forbidden for HR code.
-- [ ] Jan: the HR signals page handles the new `senyal` types, `severity` and `status`.
+- [x] Jan: the answer UI renders `pair` and `choice` from `options`. (done 2026-11-07, d3b4db5)
+- [x] Jan: `POST /api/responses` accepts `valueJson` and `answerMs`. (done 2026-11-07, d3b4db5)
+- [x] Jan: add `assignment` and `person_domain_state` to `scripts/check-anonymity.mjs` as forbidden for HR code. (done 2026-11-07, f47df99)
+- [x] Jan: the HR signals page handles the new `senyal` types, `severity` and `status`. (done 2026-11-07, 355c13c)
 - [ ] Jan (optional): the results page shows `confidence` and `consensus` next to each score.

@@ -151,7 +151,35 @@ Web push through the PWA (service worker plus VAPID keys in `.env`, `web-push` o
 
 - TypeScript monorepo, Next.js frontend (PWA), LLM via the endpoint above for question generation and comment clustering, SQLite with a seed script generating synthetic employees (Fàbriques, Logística, Comercial, Oficines).
 
-Install, run, test and build commands: add them here as soon as they exist.
+Commands (run from the repo root, pnpm 10):
+
+- Install: `pnpm install`
+- Create the dev DB: `pnpm --filter @damm/db run init` (writes `data/app.db`; override the path with `DB_PATH`)
+- Run: `pnpm dev`
+- Lint: `pnpm lint`
+- Build: `pnpm build`
+- Seed the dev DB (fresh, deterministic, ~1,200 synthetic employees, ~700 responses, ~500 comments): `pnpm --filter @damm/seed run seed`. Regenerate comments (template mode, or `-- --llm` with `LLM_BASE_URL`/`LLM_API_KEY`/`LLM_MODEL`): `pnpm --filter @damm/seed run comments`.
+- Test: no test suite yet.
+- Anonymity checks: `pnpm check:anonymity` fails if HR code or `@damm/db/hr` touches raw responses/accounts or the analytics view exposes `compte_id`; `pnpm lint` enforces the HR import rules (only `@damm/db/hr` and `@damm/shared`).
+
+Config: copy `.env.example` to `.env` and fill it in. `PUBLIC_BASE_URL` (default `http://localhost:3000`) is the base for join links.
+
+## Docs
+
+Read these before planning work. Both people's agents keep them current.
+
+- `docs/requirements.md`: **the source of truth for scope.** It lists every requirement from the challenge deck and the participant guide with an ID (R-FLOW-2a, R-PRIV-8, N-5 and so on). Each one has a status, where it lives in the code, and its gap. The file ends with nice-to-haves and a list of the gaps that need the engine, AI, analysis or a schema change.
+  - Before starting a task, find the IDs it covers.
+  - Cite the IDs in commits, PRs and session briefs.
+  - When work merges into your `/dev` branch, update the status of those IDs in the same merge.
+  - Before a PR or a demo checkpoint, check that every Must still holds, starting with section 0 (the exclusion criteria).
+- `docs/backlog.md`: numbered tasks with their state (done, ready, blocked, deferred). It also has a "Needs Natan first" table. Mark a task done when it merges.
+- `docs/employee-pwa-spec.md`: the employee app's screens, flow and anonymity copy.
+- `docs/security-demo.md`: the steps for the anonymity and security demo (exclusion criteria, R-PRIV).
+- `docs/demo-script.md` and `docs/slide-notes.md`: the pitch flow and the slide content.
+- `docs/teams-integration.md`: what the Teams publish card does today and the Graph/bot/Entra roadmap (R-FLOW-4d, N-1).
+
+When you add a doc, list it here with one line on what it is for.
 
 ## Before the demo
 
