@@ -37,6 +37,7 @@ const alarms = (db: SqlDatabase, tipus?: string) =>
     audience: string;
     n: number;
     confianca: number | null;
+    descripcio: string;
     suprimit: number;
     domini_id: number;
     periode: string;
@@ -199,22 +200,42 @@ test("low_confidence: below 40 for 14 days", () => {
   assert.equal(runAlarms(db2, { now: Date.UTC(2026, 9, 18, 9) }).resolved, 1);
 });
 
-test("improvement: significant rise after a linked action", () => {
+test("improvement: significant rise since an adopted recommendation or a recorded context event", () => {
   const db = makeDb();
   series(db, OFICINES, null, BENESTAR, [{ score: 5.0 }, { score: 5.4 }, { score: 6.0 }]);
-  // No linked action: nothing.
+  // Nothing adopted: nothing.
   runAlarms(db, { now: NOW });
   assert.equal(alarms(db, "improvement").length, 0);
-  db.prepare(
-    "INSERT INTO senyal (tipus, descripcio, collectiu_id, torn_id, domini_id, periode, n, status, created_at) VALUES ('sharp_drop','x',?,NULL,?,'2026-08',20,'action_linked','2026-08-20 09:00:00')",
-  ).run(OFICINES, BENESTAR);
+  // A status of action_linked alone is not an anchor: there is no completion state.
+  const sig = db
+    .prepare(
+      "INSERT INTO senyal (tipus, descripcio, collectiu_id, torn_id, domini_id, periode, n, status, created_at) VALUES ('sharp_drop','x',?,NULL,?,'2026-08',20,'action_linked','2026-08-20 09:00:00')",
+    )
+    .run(OFICINES, BENESTAR).lastInsertRowid;
+  runAlarms(db, { now: NOW });
+  assert.equal(alarms(db, "improvement").length, 0);
+  // Adopting (approving) a recommendation on 10 Sep anchors it; the baseline is the period before (Aug).
+  db.prepare("INSERT INTO recomanacio (senyal_id, text, estat, aprovada_el) VALUES (?, 'r', 'aprovada', '2026-09-10 09:00:00')").run(sig);
   runAlarms(db, { now: NOW });
   const a = alarms(db, "improvement");
   assert.equal(a.length, 1);
   assert.equal(a[0]!.severity, "info");
   assert.equal(a[0]!.audience, "hr_manager");
+  assert.match(a[0]!.descripcio, /since 2026-09-10/);
+  assert.match(a[0]!.descripcio, /does not show the action caused it/);
   // The linked alarm itself is never touched.
   assert.equal(alarms(db, "sharp_drop")[0]!.status, "action_linked");
+});
+
+test("improvement: a context event with a domain is an anchor too; a domainless one is not", () => {
+  const db = makeDb();
+  series(db, OFICINES, null, BENESTAR, [{ score: 5.0 }, { score: 5.4 }, { score: 6.0 }]);
+  db.prepare("INSERT INTO context_event (event_date, collectiu_id, label) VALUES ('2026-09-05', ?, 'Reorganisation')").run(OFICINES);
+  runAlarms(db, { now: NOW });
+  assert.equal(alarms(db, "improvement").length, 0);
+  db.prepare("INSERT INTO context_event (event_date, collectiu_id, domini_id, label) VALUES ('2026-09-05', ?, ?, 'New rota')").run(OFICINES, BENESTAR);
+  runAlarms(db, { now: NOW });
+  assert.equal(alarms(db, "improvement").length, 1);
 });
 
 function confirmDrops(db: SqlDatabase, accounts: string[], d: number, day: string) {

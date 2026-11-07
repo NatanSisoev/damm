@@ -9,6 +9,8 @@ import { draftQuestionSchema, draftSurveySchema, estimateSeconds, type DraftQues
 export { estimateSeconds, DRAFT_TYPES } from "./types";
 export type { DraftQuestion, DraftSurvey, DraftType, NeedInput } from "./types";
 export { violatesExclusions } from "./exclusions";
+export { classifyCommentsLlm, summariseThemeLlm } from "./comments";
+export type { CommentToClassify, SummaryRequest, ThemeOption } from "./comments";
 
 const EXAMPLES = `EXEMPLE 1 (col·lectiu Logística, 40 s, NO preguntar: sou)
 Objectiu: Volem saber com porta la gent el canvi de l'accés al pàrquing.
@@ -191,3 +193,5 @@ export async function redraftQuestion(need: NeedInput, current: DraftQuestion, o
 }
 
 const norm0 = (s: string) => s.toLowerCase().replace(/[^a-zà-ü0-9]/g, "");
+export { draftRecommendations, templateRecommendations, DAMM_INITIATIVES } from "./recommendations";
+export type { RecommendationContext, RecommendationProposal, RecInsight, DammInitiative, DraftOptions } from "./recommendations";

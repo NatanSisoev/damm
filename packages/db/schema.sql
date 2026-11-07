@@ -145,7 +145,12 @@ CREATE TABLE tema (
   periode      TEXT NOT NULL,
   n            INTEGER NOT NULL,
   emergent     INTEGER NOT NULL DEFAULT 0 CHECK (emergent IN (0,1)),
-  suprimit     INTEGER NOT NULL DEFAULT 0 CHECK (suprimit IN (0,1))
+  suprimit     INTEGER NOT NULL DEFAULT 0 CHECK (suprimit IN (0,1)),
+  -- Comment analysis (engine, docs/engine.md section 12). One row per theme x period x collective (NULL = company).
+  collectiu_id INTEGER REFERENCES collectiu(id),
+  clau         TEXT,                              -- stable theme key, e.g. 'torns_comunicacio_pauses'
+  share        REAL,                              -- n / comments of that collective and period; NULL when suppressed
+  font         TEXT NOT NULL DEFAULT 'seed' CHECK (font IN ('seed','rules','llm'))
 );
 
 CREATE TABLE comentari_tema (
@@ -197,7 +202,30 @@ CREATE TABLE recomanacio (
   text                     TEXT NOT NULL,
   estat                    TEXT NOT NULL DEFAULT 'proposada' CHECK (estat IN ('proposada','aprovada','descartada')),
   seguiment_necessitat_id  INTEGER REFERENCES necessitat(id),  -- follow-up survey
-  creat                    TEXT NOT NULL DEFAULT (datetime('now'))
+  creat                    TEXT NOT NULL DEFAULT (datetime('now')),
+  -- Drafted proposals (C11). `text` holds the concrete action. Owner and timeframe are suggestions, never tracked;
+  -- there is deliberately no done/completed column: HR only approves or discards.
+  titol                    TEXT,
+  iniciativa               TEXT,                               -- Damm initiative the proposal uses
+  responsable_suggerit     TEXT,
+  termini_suggerit         TEXT,
+  justificacio             TEXT,                               -- cites n and confidence
+  limits                   TEXT,                               -- honest limits line ("correlació, no causa")
+  font                     TEXT CHECK (font IS NULL OR font IN ('llm','template')),
+  aprovada_el              TEXT                                 -- when HR adopted it (set with estat = 'aprovada'); anchor of the "listen again" before/after
+);
+
+-- Something that happened in the organisation, recorded by HR (e.g. "new shift system from 1 Oct").
+-- Anchor of the before/after comparison (insight `action_effect`) when it has a domain.
+-- Optional scope: collectiu_id / torn_id NULL = all. Never holds personal data.
+CREATE TABLE context_event (
+  id            INTEGER PRIMARY KEY,
+  event_date    TEXT NOT NULL CHECK (event_date GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]'),
+  collectiu_id  INTEGER REFERENCES collectiu(id),
+  torn_id       INTEGER REFERENCES torn(id),
+  domini_id     INTEGER REFERENCES domini(id),
+  label         TEXT NOT NULL,
+  created_at    TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
 -- Engine (Natan, packages/engine; see docs/engine.md) ------------------------------
@@ -298,6 +326,34 @@ CREATE TABLE domain_importance (
   UNIQUE (periode, collectiu_id, domini_id),
   CHECK (suprimit = 0 OR importance IS NULL)
 );
+
+-- Time-boxed "Indagar" probe (C12): HR asks the engine to sample one domain more in one segment for a while.
+-- Targets a segment (collective, optional shift), never accounts. Progress columns are written by the engine job
+-- from aggregates only; when fewer than MIN_GROUP_SIZE people answered, suprimit = 1 and the value columns are NULL.
+CREATE TABLE probe (
+  id                   INTEGER PRIMARY KEY,
+  senyal_id            INTEGER REFERENCES senyal(id),
+  collectiu_id         INTEGER NOT NULL REFERENCES collectiu(id),
+  torn_id              INTEGER REFERENCES torn(id),
+  domini_id            INTEGER NOT NULL REFERENCES domini(id),
+  boost                REAL NOT NULL DEFAULT 2 CHECK (boost > 1 AND boost <= 10),
+  starts_at            TEXT NOT NULL,                     -- SQLite UTC datetime
+  ends_at              TEXT NOT NULL,
+  stopped_at           TEXT,                              -- set by stopProbe
+  created_at           TEXT NOT NULL DEFAULT (datetime('now')),
+  baseline_confidence  REAL,                              -- agregat confidence at start (NULL if unknown or suppressed)
+  baseline_score       REAL,
+  progress_at          TEXT,                              -- last engine job update
+  answers_n            INTEGER,                           -- answers in the domain and segment since start
+  answers_before_n     INTEGER,                           -- same, over an equally long window before start
+  respondents_n        INTEGER,                           -- distinct people behind answers_n
+  confidence_now       REAL,
+  score_now            REAL,
+  suprimit             INTEGER NOT NULL DEFAULT 0 CHECK (suprimit IN (0,1)),
+  CHECK (ends_at > starts_at),
+  CHECK (suprimit = 0 OR (answers_n IS NULL AND answers_before_n IS NULL AND confidence_now IS NULL AND score_now IS NULL))
+);
+CREATE INDEX idx_probe_seg ON probe(collectiu_id, domini_id);
 
 -- Seed only: hidden ground truth for validating analysis. Never shipped with the app.
 CREATE TABLE resposta_seed (

@@ -19,14 +19,14 @@ What changed and why.
 
 ---
 
-## C12 · 2026-11-07 · Jan · NeedCard carries dates, per-question answer counts and participation
+## C17 · 2026-11-07 · Jan · NeedCard carries dates, per-question answer counts and participation
 
 `NeedCard` (`@damm/db/hr`, read-only HR type) gains `publicat`, `responses`, `population`, `publications[].creat` and `approved[].answers`. Counts come from `v_resposta_analitica` and are `null` under the minimum group size. No schema change.
 
 - [x] Jan: the Necessitats page shows them (done 2026-11-07, 4bc0db3).
 - [x] Natan: nothing to do.
 
-## C11 · 2026-11-07 · Jan · HR respondent counts fall back to per-domain aggregates
+## C16 · 2026-11-07 · Jan · HR respondent counts fall back to per-domain aggregates
 
 - `@damm/db/hr` `getRepresentativeness()` and `getHrOverview()` no longer require `agregat` rows with `domini_id IS NULL`. They use those rows when present and otherwise the largest per-domain `n` of each (collective, shift) as a lower bound of distinct respondents (`segmentCounts` in `hr-repository.ts`).
 - Why: `packages/engine/src/job.ts` writes per-domain rows only, so on an engine-built DB Inici showed "—" for participation and every segment showed "Suprimit · Menys de 10 persones han respost" even with n=80 (`docs/hr-ui-audit.md` HR-X-1, HR-ENG-1). No schema change.
@@ -37,7 +37,7 @@ Action items:
 
 ---
 
-## C10 · 2026-11-07 · Jan · Published needs are added to today's batch past the cap
+## C15 · 2026-11-07 · Jan · Published needs are added to today's batch past the cap
 
 - New in `@damm/db/employee`: `addPublishedNeedsToDay(compteId, day)`. For an account whose batch for `day` already exists, it appends every approved, non-follow-up question of a `publicada` need for the account's collective (or all collectives) that the account never answered and that is not in today's batch, as extra `assignment` rows (`reason='need'`, slots after the engine's). `apps/web/lib/engine.ts` `getTodaysBatch` calls it after `getDailyBatch`; `GET /api/pool/next` uses `getTodaysBatch`.
 - Why: Jan wants an employee who logs in or taps the push after a publish to see that need's questions at once. The engine freezes the day's batch on the first request and caps needs at `maxNeedsPerDay` (1) and the day at `questionsPerDay` (3), so a need published later only showed up tomorrow, one question a day.
@@ -47,7 +47,7 @@ Action items:
 - [ ] Natan: in `approvedQuestionsFor` / `selectBatch`, serve need questions only when their `necessitat` is `publicada` (today an `aprovada` question is served while the need is still `oberta`, before HR publishes; seen in the browser 2026-11-07).
 - [ ] Natan: in `getDailyBatch`, top up an existing day's batch with unanswered questions of `publicada` needs, past `questionsPerDay` and `maxNeedsPerDay`; then tell Jan so `addPublishedNeedsToDay` and `getTodaysBatch` can be removed.
 
-## C9 · 2026-11-07 · Jan · Publishing a need sends web push, no per-need join code
+## C14 · 2026-11-07 · Jan · Publishing a need sends web push, no per-need join code
 
 - `publishNecessitat(necessitatId)` in `@damm/db/hr` no longer takes a base URL, no longer creates `joincode` or `publicacio` rows, and returns `boolean` (false when the need is not `oberta` or has no approved question). Join codes stay per collective for onboarding (`/hr/publish`).
 - New in `@damm/db/employee`: `savePushSubscription`, `hasPushSubscription`, `listPushTargetsForNecessitat` (endpoints and keys for the need's collective, or all), `deletePushSubscriptionByEndpoint`. HR code never imports them; it calls `notifyNeedPublished(id)` in `apps/web/lib/push.ts` and gets an aggregate device count only.
@@ -55,6 +55,68 @@ Action items:
 
 Action items:
 - [ ] Natan: none required; FYI if the engine or seed ever relied on a `publicacio` row per need.
+
+---
+
+## C13 · 2026-11-07 · Natan · Listen again: context events, `aprovada_el`, `action_effect`
+
+The deck's cycle ends with "tornar a escoltar". HR is not forced to carry out a recommendation, so there is **no "done" state**: the before/after is anchored on when HR adopted (approved) a recommendation, or on a context event HR records, and always worded "since X", never as proof of cause. Design: [engine.md](engine.md) section 6.
+
+All changes are additive:
+- **`recomanacio`:** new column `aprovada_el` (datetime). `approveRecommendation` in `packages/db/src/hr-repository.ts` now sets it. Any other code that approves a recommendation must set it too. Approved rows without it fall back to the first day of their alarm's period. Existing databases need `ALTER TABLE recomanacio ADD COLUMN aprovada_el TEXT` (or re-run init / the demo).
+- **New table `context_event`:** `event_date` (YYYY-MM-DD), optional `collectiu_id`, `torn_id`, `domini_id`, `label`, `created_at`. HR functions `addContextEvent` and `listContextEvents` in `@damm/db/hr`. Only events with a domain produce an insight.
+- **`insight` kind `action_effect`** (already allowed by the CHECK) is now written by the engine: segment × domain score, confidence and n before vs. after the anchor, `detail.wording` ("Des de <data>, ...") and `detail.limits`. n ≥ 10 in both windows, otherwise suppressed. Rows appear 14 days after the anchor.
+- **`improvement` alarm** now uses the same anchors instead of the `action_linked` status; it no longer reads that status.
+
+Action items:
+- [ ] Jan: show `action_effect` insights and context events on the signal timeline (R-DIFF-6, R-FLOW-8e): "des de <data>" with `detail.wording` and `detail.limits` together, never worded as proof the action worked. No "done" button.
+- [ ] Jan: add a small form on the HR side to record a context event with `addContextEvent` (date, label, optional collective, shift and domain) and list them with `listContextEvents`.
+- [ ] Jan: if anything else approves a recommendation, set `aprovada_el` there too.
+
+---
+
+## C12 · 2026-11-07 · Natan · "Indagar" probe (time-boxed extra sampling)
+
+New table `probe` in `packages/db/schema.sql` (additive; rebuild existing databases with `pnpm --filter @damm/db run init` or the demo builder). New in `@damm/engine/hr`: `startProbe`, `listProbes`, `stopProbe` and the types `ProbeView`, `ProbeProgress`. A probe makes the scheduler ask one domain more often for one segment (collective, optionally one shift) for a number of days, optionally tied to an alarm (`senyalId`). It targets segments, never accounts; segments under 10 people are refused with a `ProbeError`. The engine job refreshes each probe's progress (extra answers, confidence before and now) from aggregates, hidden when fewer than 10 people answered. Details: [engine.md](engine.md), "Probes", and [engine-integration.md](engine-integration.md), "Probes (Indagar)".
+
+Action items:
+- [ ] Jan: rebuild existing databases (new `probe` table).
+- [ ] Jan: on the signal page, next to the recommendations, add an "Indagar" button. HR-only route that calls `startProbe(db, { senyalId, collectiuId, tornId, dominiId, boost, days })` with the alarm's segment and domain (defaults `boost = 2`, `days = 14`). Show `ProbeError.message` if it refuses.
+- [ ] Jan: while a probe exists for the signal (`listProbes(db, { senyalId })`), show its status, days left, extra answers, confidence before and now, and a "Stop" button (`stopProbe`). Show "not enough answers yet" when `progress` is null or `progress.suppressed`.
+
+## C11 · 2026-11-07 · Natan · Recommendation proposals for open alarms
+
+Additive schema change on `recomanacio`: `titol`, `iniciativa` (Damm initiative), `responsable_suggerit`, `termini_suggerit`, `justificacio` (cites n and confidence), `limits` ("correlació, no causa"), `font` (`llm` | `template`). `text` holds the concrete action. Rows are inserted as `estat = 'proposada'`, linked by `senyal_id`, by `runRecommendations` (`@damm/engine/job`, run with `draftRecommendations` from `@damm/ai`). Owner and timeframe are suggestions only. There is deliberately **no done/completed column**: HR only approves or discards. Old databases need the seven columns added (or a re-init).
+- [ ] Jan: show these fields on the signal page (title, action, initiative, suggested owner and timeframe, justification, limits, source). Keep approve/discard only, with no "done" tick.
+- [ ] Jan: call `runRecommendations` where the job runs (see engine-integration.md, "Recommendations"), never in a request. `createDraftedFollowUp` stays as is.
+
+## C10 · 2026-11-07 · Natan · Comment analysis: themes, summaries, emergent alarm
+
+Design: [engine.md](engine.md) section 12. `runCommentAnalysis` fills `tema` and `comentari_tema` from the redacted comments (no LLM key needed) and opens `emergent` alarms in `senyal` (`warning`, audience `hr`). It replaces the seeded `tema` rows.
+
+- **`tema`:** new columns `collectiu_id` (NULL = company-wide), `clau` (stable theme key), `share` (0..1, NULL when suppressed) and `font` (`seed` | `rules` | `llm`). Rows are now per theme x period x collective, so a theme appears once per collective. Existing databases get the columns from `ensureThemeColumns` (called by the analysis); fresh ones from `schema.sql`.
+- **`comentari_tema`:** written only for shown (`suprimit = 0`), non-sensitive, per-collective rows. A comment can have up to three themes.
+- **`senyal`:** `emergent` rows have `domini_id` set and a description starting with the theme label. A seeded placeholder for the same collective and theme is adopted, not duplicated.
+- **Entry points:** `runCommentAnalysisSync` / `runCommentAnalysis` from `@damm/engine/job`; script `pnpm --filter @damm/engine run comments`; `scripts/job.ts` and the demo build call it. `runEngineJob` is unchanged.
+
+Action items:
+- [ ] Jan: show `tema.resum` and `emergent` on the HR results and signals pages, filtered by collective (`tema.collectiu_id`; the company row, `collectiu_id IS NULL`, for "all"), and show only "not enough data" for `suprimit = 1`. `listThemes` in `hr-repository.ts` currently lists every row without the collective.
+- [ ] Jan: stop relying on the seeded `tema` rows (`init.ts`, `dashboard-fixtures.ts`): call `runCommentAnalysisSync(db, { now })` after `runEngineJob` in `POST /api/jobs/run` and after seeding, and let the `emergent` alarm come from there instead of the hand-written `senyal` row.
+- [ ] Jan (optional): a "limits of the analysis" note on the themes view, from the list in engine.md section 12.
+
+---
+
+## C9 · 2026-11-07 · Natan · `baixa_participacio` alarm is now emitted
+
+No schema or API change. `runAlarms` now writes `senyal` rows with `tipus = 'baixa_participacio'`:
+- one per collective × shift (collective alone where it has no shifts), `domini_id` NULL, severity `warning`, audience `hr`;
+- triggers when the response rate (distinct respondents in the period over the synthetic population) is under 40%, or the segment's share of respondents is under 0.7 × its population share; clears at 45% and 0.8;
+- `descripcio` is a Catalan sentence, e.g. "Participació baixa al torn de nit de Fàbriques: 22% (n=18 de 82). ...", and `n` is the respondent count;
+- segments with a population or respondents under 10 are suppressed like every other alarm type.
+The demo builder now uses `participationScale` 1.6 so only the thin shifts trigger it.
+
+Action items:
+- [ ] Jan: show `baixa_participacio` alarms as an explicit representativeness warning banner on results/need pages (R-SC-A5, R-SC-B3)
 
 ## C8 · 2026-11-07 · Natan · Scheduler runs the narrative, engine hardening
 

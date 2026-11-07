@@ -5,6 +5,7 @@
 import { DEFAULT_CONFIG, resolveConfig, type EngineConfig } from "./config.ts";
 import { all, one, run, transaction, type SqlDatabase } from "./db.ts";
 import { addDays, dayOf, toMs, toSqlDatetime } from "./time.ts";
+import { improvementAnchors, loadAnchors } from "./listen-again.ts";
 
 export type AlarmType =
   | "sharp_drop"
@@ -13,7 +14,8 @@ export type AlarmType =
   | "polarisation"
   | "feble"
   | "low_confidence"
-  | "improvement";
+  | "improvement"
+  | "baixa_participacio";
 export type Severity = "info" | "warning" | "critical";
 export type Audience = "hr" | "hr_manager";
 
@@ -46,10 +48,16 @@ export interface AlarmThresholds {
   lowConfidenceTrigger: number;
   lowConfidenceClear: number;
   lowConfidenceDays: number;
-  /** improvement: score rose at least trigger since the period of an alarm with a linked action. */
+  /** improvement: score rose at least trigger since the period before an adopted recommendation or a recorded context event. */
   improvementTrigger: number;
   improvementClear: number;
   improvementMinConfidence: number;
+  /** baixa_participacio: response rate (respondents / population) below trigger, or share of respondents below
+   *  shareRatioTrigger × share of the population. Cleared only when both are back above the clear levels. */
+  participationTrigger: number;
+  participationClear: number;
+  shareRatioTrigger: number;
+  shareRatioClear: number;
 }
 
 export const ALARM_DEFAULTS: AlarmThresholds = {
@@ -75,6 +83,10 @@ export const ALARM_DEFAULTS: AlarmThresholds = {
   improvementTrigger: 0.5,
   improvementClear: 0.25,
   improvementMinConfidence: 60,
+  participationTrigger: 0.4,
+  participationClear: 0.45,
+  shareRatioTrigger: 0.7,
+  shareRatioClear: 0.8,
 };
 
 export const ALARM_SEVERITY: Record<AlarmType, Severity> = {
@@ -85,6 +97,7 @@ export const ALARM_SEVERITY: Record<AlarmType, Severity> = {
   feble: "info",
   low_confidence: "info",
   improvement: "info",
+  baixa_participacio: "warning",
 };
 
 export const ALARM_AUDIENCE: Record<AlarmType, Audience> = {
@@ -95,6 +108,7 @@ export const ALARM_AUDIENCE: Record<AlarmType, Audience> = {
   feble: "hr",
   low_confidence: "hr",
   improvement: "hr_manager",
+  baixa_participacio: "hr",
 };
 
 export interface AlarmOptions {
@@ -242,7 +256,7 @@ export function evalLowConfidence(hist: (Point | null)[], daysIntoCurrent: numbe
   };
 }
 
-export function evalImprovement(baseline: Point | null, cur: Point | null, t: AlarmThresholds): Evaluation {
+export function evalImprovement(baseline: Point | null, cur: Point | null, t: AlarmThresholds, since?: string): Evaluation {
   if (!baseline || !cur) return NONE;
   const rise = cur.score - baseline.score;
   return {
@@ -250,7 +264,7 @@ export function evalImprovement(baseline: Point | null, cur: Point | null, t: Al
     clear: rise < t.improvementClear,
     n: cur.n,
     confidence: cur.confidence,
-    description: `Score rose ${fmt(rise)} points (${fmt(baseline.score)} → ${fmt(cur.score)}) since an action was linked.`,
+    description: `Score rose ${fmt(rise)} points (${fmt(baseline.score)} → ${fmt(cur.score)}) since ${since ?? "an action was adopted"}; this does not show the action caused it.`,
   };
 }
 
@@ -262,6 +276,34 @@ export function evalChangepointCluster(count: number, windowDays: number, t: Ala
     n: count,
     confidence: null,
     description: `${count} people in this segment show a confirmed drop in this domain in the last ${windowDays} days.`,
+  };
+}
+
+/** Counts for one non-nesting segment in the current period (respondents are distinct accounts, counted here only). */
+export interface ParticipationCounts {
+  respondents: number;
+  population: number;
+  totalRespondents: number;
+  totalPopulation: number;
+}
+
+const TORN_CA: Record<string, string> = { mati: "matí", tarda: "tarda", nit: "nit" };
+
+/** `where` is the Catalan place phrase, e.g. "al torn de nit de Fàbriques". */
+export function evalLowParticipation(c: ParticipationCounts, where: string, t: AlarmThresholds, minN: number): Evaluation {
+  const { respondents, population } = c;
+  if (population < minN || respondents < minN) return { ...NONE, suppressed: true, n: respondents };
+  const rate = respondents / population;
+  const ratio = c.totalRespondents > 0 && c.totalPopulation > 0 ? respondents / c.totalRespondents / (population / c.totalPopulation) : 1;
+  const pct = (x: number) => Math.round(x * 100);
+  return {
+    trigger: rate < t.participationTrigger || ratio < t.shareRatioTrigger,
+    clear: rate >= t.participationClear && ratio >= t.shareRatioClear,
+    n: respondents,
+    confidence: null,
+    description:
+      `Participació baixa ${where}: ${pct(rate)}% (n=${respondents} de ${population}). ` +
+      `Pes a la mostra ${pct(respondents / c.totalRespondents)}% davant ${pct(population / c.totalPopulation)}% de la plantilla.`,
   };
 }
 
@@ -345,22 +387,15 @@ export function runAlarms(db: SqlDatabase, opts: AlarmOptions): AlarmReport {
     all<{ collectiu_id: number }>(db, "SELECT DISTINCT collectiu_id FROM empleat_sintetic WHERE torn_id IS NOT NULL").map((r) => r.collectiu_id),
   );
 
-  // Linked actions: alarm with status action_linked, or with an approved recommendation. Baseline = its period.
-  const linked = all<{ collectiu_id: number | null; torn_id: number | null; domini_id: number; periode: string }>(
-    db,
-    `SELECT s.collectiu_id, s.torn_id, s.domini_id, MAX(s.periode) AS periode FROM senyal s
-     WHERE s.domini_id IS NOT NULL AND s.tipus <> 'improvement'
-       AND (s.status = 'action_linked' OR EXISTS (SELECT 1 FROM recomanacio r WHERE r.senyal_id = s.id AND r.estat = 'aprovada'))
-     GROUP BY s.collectiu_id, s.torn_id, s.domini_id`,
-  );
-  const baselinePeriod = new Map(linked.map((l) => [segKey(l.collectiu_id, l.torn_id, l.domini_id), l.periode]));
+  // Adoption anchors (approved recommendation, HR-recorded context event). Baseline = the period before the anchor's. No completion state.
+  const anchorOf = improvementAnchors(loadAnchors(db, cfg.timezone), periods, current);
 
   const insert = db.prepare(
     `INSERT INTO senyal (tipus, descripcio, collectiu_id, torn_id, domini_id, periode, n, confianca, severity, status, audience, created_at, suprimit)
      VALUES (?,?,?,?,?,?,?,?,?, 'open', ?,?, 0)`,
   );
 
-  const apply = (type: AlarmType, c: number | null, tn: number | null, d: number, e: Evaluation) => {
+  const apply = (type: AlarmType, c: number | null, tn: number | null, d: number | null, e: Evaluation) => {
     const k = alarmKey(type, c, tn, d);
     const act = active.get(k);
     if (e.suppressed) {
@@ -385,11 +420,46 @@ export function runAlarms(db: SqlDatabase, opts: AlarmOptions): AlarmReport {
     if (!e.trigger) return;
     const last = latest.get(k);
     if (last && toMs(nowSql) - toMs(last.created_at) < t.cooldownDays * 86_400_000) return;
-    insert.run(type, e.description, c, tn, d, current, e.n, e.confidence, ALARM_SEVERITY[type], audienceFor(type, c, d, leadershipId), nowSql);
+    insert.run(type, e.description, c, tn, d, current, e.n, e.confidence, ALARM_SEVERITY[type], d === null ? "hr" : audienceFor(type, c, d, leadershipId), nowSql);
     report.opened++;
   };
 
+  // Participation per non-nesting segment (same rule as changepoint_cluster, so counts cannot be differenced).
+  // Distinct respondents are counted here and leave only as per-segment totals; no account id is kept.
+  const segOf = (c: number, tn: number | null) => (shifted.has(c) ? segKey(c, tn, null) : segKey(c, null, null));
+  const popBySeg = new Map<string, { c: number; t: number | null; n: number }>();
+  for (const r of all<{ collectiu_id: number; torn_id: number | null; n: number }>(
+    db,
+    "SELECT collectiu_id, torn_id, COUNT(*) AS n FROM empleat_sintetic GROUP BY collectiu_id, torn_id",
+  )) {
+    const tn = shifted.has(r.collectiu_id) ? r.torn_id : null;
+    const k = segOf(r.collectiu_id, r.torn_id);
+    const e = popBySeg.get(k);
+    if (e) e.n += r.n;
+    else popBySeg.set(k, { c: r.collectiu_id, t: tn, n: r.n });
+  }
+  const respBySeg = new Map<string, number>();
+  for (const r of all<{ collectiu_id: number; torn_id: number | null; n: number }>(
+    db,
+    `SELECT c.collectiu_id, c.torn_id, COUNT(DISTINCT r.compte_id) AS n
+     FROM resposta r JOIN compte c ON c.id = r.compte_id WHERE r.periode = ? GROUP BY c.collectiu_id, c.torn_id`,
+    current,
+  ))
+    respBySeg.set(segOf(r.collectiu_id, r.torn_id), (respBySeg.get(segOf(r.collectiu_id, r.torn_id)) ?? 0) + r.n);
+  const names = {
+    c: new Map(all<{ id: number; nom: string }>(db, "SELECT id, nom FROM collectiu").map((r) => [r.id, r.nom])),
+    t: new Map(all<{ id: number; nom: string }>(db, "SELECT id, nom FROM torn").map((r) => [r.id, r.nom])),
+  };
+  const totalPop = [...popBySeg.values()].reduce((s, v) => s + v.n, 0);
+  const totalResp = [...popBySeg.keys()].reduce((s, k) => s + (respBySeg.get(k) ?? 0), 0);
+
   transaction(db, () => {
+    for (const [k, seg] of popBySeg) {
+      const cn = names.c.get(seg.c) ?? `col·lectiu ${seg.c}`;
+      const where = seg.t === null ? `a ${cn}` : `al torn de ${TORN_CA[names.t.get(seg.t) ?? ""] ?? names.t.get(seg.t) ?? seg.t} de ${cn}`;
+      const counts = { respondents: respBySeg.get(k) ?? 0, population: seg.n, totalRespondents: totalResp, totalPopulation: totalPop };
+      apply("baixa_participacio", seg.c, seg.t, null, evalLowParticipation(counts, where, t, minN));
+    }
     for (const h of hist.values()) {
       const cur = h.pts[h.pts.length - 1] ?? null;
       // Current period missing or below the minimum group size: nothing can be said about this segment.
@@ -404,10 +474,10 @@ export function runAlarms(db: SqlDatabase, opts: AlarmOptions): AlarmReport {
       apply("polarisation", h.c, h.t, h.d, evalPolarisation(h.pts, t));
       apply("feble", h.c, h.t, h.d, evalWeakSignal(h.pts, t));
       apply("low_confidence", h.c, h.t, h.d, evalLowConfidence(h.pts, daysIntoCurrent, t));
-      const bp = baselinePeriod.get(segKey(h.c, h.t, h.d));
-      if (bp !== undefined && bp < current) {
-        const bi = idx.get(bp);
-        apply("improvement", h.c, h.t, h.d, evalImprovement(bi === undefined ? null : h.pts[bi] ?? null, cur, t));
+      const anchor = anchorOf.get(segKey(h.c, h.t, h.d));
+      if (anchor !== undefined) {
+        const bi = idx.get(anchor.baseline);
+        apply("improvement", h.c, h.t, h.d, evalImprovement(bi === undefined ? null : h.pts[bi] ?? null, cur, t, anchor.since));
       }
 
       // Changepoint cluster on the non-nesting segments only.

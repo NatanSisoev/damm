@@ -40,7 +40,7 @@ G-§9: "Criteris excloents". These outrank everything else.
 
 | ID | Requirement | Source | Status | Evidence / gap |
 |----|-------------|--------|--------|----------------|
-| R-CH-1 | An AI-based active-listening platform that creates climate micro-surveys adapted to each collective **and moment** | D-S12, G-§3 | partial | Collective adaptation exists in the seeded pool. "Moment" (timing) depends on the engine (blocked). |
+| R-CH-1 | An AI-based active-listening platform that creates climate micro-surveys adapted to each collective **and moment** | D-S12, G-§3 | partial | Collective adaptation exists in the seeded pool. "Moment" (timing): the engine times extra sampling with HR "Indagar" probes (time-boxed, per segment; `startProbe`, C12). The Indagar button on the signal page is Jan's open item. |
 | R-CH-2 | Representative participation **without saturating** people | D-S11, G-§3 | partial | About 2 questions a day and representativeness per collective are in place. The anti-saturation rules live in the engine (blocked). |
 | R-CH-3 | Answers become insights **and actions** automatically | G-§3 | partial | Engine insights and alarms (`@damm/engine`) are shown on HR results, the Alarmes page and the manager view; the engine job runs after seeding and every 10 min. Themes and recommendations still come from the seed. |
 | R-CH-4 | Anonymity and privacy guaranteed at all times | D-S12, G-§3 | done | See section 6. |
@@ -106,17 +106,17 @@ The guide says "Publicar a Typeform". AGENTS.md decides to ignore Typeform: the 
 | R-FLOW-5b | QR access | done | `/join/[codi]` |
 | R-FLOW-5c | **Frequency** strategy (about 2 a day, no repeats 4 days in a row) | blocked | Pool stub today; engine is Natan's |
 | R-FLOW-5d | **Reminders** | partial | Web push built: opt-in toggle (`/settings`, nudge on `/`), subscription in `push_subscripcio`, a publish notifies the collective, expired subscriptions (404/410) deleted. No daily reminder job yet. A real phone needs HTTPS (task 9). |
-| R-FLOW-5e | **Representativeness control** while collecting (warn when a group is under-sampled) | partial | Shown on results; the reach card links to a new need aimed at the gap (`/hr/needs?nova=1#nova`, c1c7422). Not yet acted on (engine oversampling is blocked). |
+| R-FLOW-5e | **Representativeness control** while collecting (warn when a group is under-sampled) | partial | Shown on results; the reach card links to a new need aimed at the gap (`/hr/needs?nova=1#nova`, c1c7422). The engine raises a `baixa_participacio` alarm (C9; banner pending) and can act on it with a time-boxed probe that samples a domain more in a segment (`startProbe`, C12) with progress. Missing: the Indagar button and progress card in the HR UI. |
 | R-FLOW-5f | Does not saturate anyone | blocked | Engine rules |
 
 ### R-FLOW-6 Collect and analyse
 | ID | Requirement | Status | Evidence / gap |
 |----|-------------|--------|----------------|
 | R-FLOW-6a | Read the responses (through the API) | done | `POST /api/responses` → `resposta` |
-| R-FLOW-6b | **Group comments by theme** | partial | `tema`/`comentari_tema` from the seed. Real clustering is blocked. |
-| R-FLOW-6c | **Summarise** | partial | Theme labels only. No per-theme summary text. |
+| R-FLOW-6b | **Group comments by theme** | done (engine) | `runCommentAnalysis` (`packages/engine/src/comments.ts`) fills `tema`/`comentari_tema`, multi-theme, no LLM key needed; 91.2 % top-1 on the seed (engine.md section 12). HR display: C10 (Jan). |
+| R-FLOW-6c | **Summarise** | done (engine) | `tema.resum`: Catalan template per theme, period and collective, LLM optional. HR display: C10 (Jan). |
 | R-FLOW-6d | Detect **trends** | done | Trends with the change rule (task 17). HR UI audit (c1c7422): delta shown with two decimals, chart footnote states the scale (1-5 or 0-10), badge title explains the 0,30 threshold. |
-| R-FLOW-6e | Detect **weak signals** | partial | `senyal` seeded, drilldown done (16). Detection is blocked. |
+| R-FLOW-6e | Detect **weak signals** | partial | Score weak signals: `feble` alarm. Comment themes: `emergent` alarm (rise of 10 points or more, n at least 10). Themes below n = 10 are suppressed, so a sub-threshold weak signal in comments stays hidden by design. Drilldown done (16). |
 | R-FLOW-6f | **Compare collectives or periods** | done | Results by collective and period |
 
 ### R-FLOW-7 Visualise (simple dashboard)
@@ -132,9 +132,10 @@ The guide says "Publicar a Typeform". AGENTS.md decides to ignore Typeform: the 
 ### R-FLOW-8 Recommend and close the loop
 | ID | Requirement | Status | Evidence / gap |
 |----|-------------|--------|----------------|
-| R-FLOW-8a | Proposes **concrete actions** | partial | `recomanacio` seeded. Generation is blocked. |
+| R-FLOW-8a | Proposes **concrete actions** | done | `runRecommendations` + `draftRecommendations` draft 1 to 3 proposals per open alarm (template or LLM). Jan: show them (C11). |
 | R-FLOW-8b | Proposes a **new follow-up micro-survey** | done | `createDraftedFollowUp`: need for the signal's collective, AI-drafted questions, human review |
 | R-FLOW-8c | Recommendations are proposals, never automatic decisions | done | Approve or discard |
+| R-FLOW-8e | "Tornar a escoltar": how perception evolves after the action | partial | Engine done: `action_effect` insight, anchored on `recomanacio.aprovada_el` or a `context_event`; no "done" state; n≥10 in both windows; worded "since X", correlation not cause. `improvement` alarm uses the same anchors. Open: HR UI (Jan, C13) |
 | R-FLOW-8d | Results go back to the people who answered | done | Employee home lists approved actions for their collective (`approvedActionsForCompte`, n≥10 only) with period and follow-up badge |
 
 ## 4. Acceptance scenarios
@@ -150,7 +151,7 @@ At least one must run end to end in the final demo; ideally all three (G-§5).
 | A2 | The AI proposes **4 short questions with a warm tone** | blocked (seeded drafts stand in) |
 | A3 | HR **edits one** and approves | done |
 | A4 | Publish **with a QR for the plant** | done |
-| A5 | The system **warns that the night shift responds little** | partial: visible in representativeness; check it surfaces as an explicit alert |
+| A5 | The system **warns that the night shift responds little** | partial: engine emits a `baixa_participacio` alarm per collective × shift (C9); the explicit banner is Jan's |
 | A6 | Comments grouped into **communication** and **breaks** | partial: seeded October theme |
 | A7 | **2 actions** recommended plus a follow-up survey | partial: seeded recommendations; follow-up done |
 | A8 | Answers whether the change was understood, what difficulties it causes and what to reinforce (G-§5 A) | partial: depends on A2 question quality |
@@ -160,17 +161,17 @@ At least one must run end to end in the final demo; ideally all three (G-§5).
 |------|----------|--------|
 | B1 | Mobile experience, reached by QR, very short | done |
 | B2 | No computer, little email access, so no email-based flow | done (join code plus username, no email) |
-| B3 | A control that **warns when the sample is not representative** | partial: representativeness gap shown; make it an explicit warning banner per need/collective |
+| B3 | A control that **warns when the sample is not representative** | partial: engine emits `baixa_participacio` (C9); show it as an explicit warning banner per need/collective |
 
 ### R-SC-C Large volume of comments
 | Step | Expected | Status |
 |------|----------|--------|
 | C1 | About 500 open comments on wellbeing, leadership, communication, tools, organisation and development | done (seed) |
-| C2 | Group them | partial (seeded themes) |
-| C3 | Summarise them | missing (no summary text per theme) |
-| C4 | Detect **emerging themes compared with a previous period** | partial (October theme seeded; the "new vs previous" view needs checking) |
-| C5 | Propose areas for action | partial |
-| C6 | **Explain the limits of the analysis** | missing: task 18 (methodology page) plus a short per-screen note |
+| C2 | Group them | done (engine: lexicon classifier, 15 themes, multi-theme) |
+| C3 | Summarise them | done (engine: `tema.resum`); HR display: C10 (Jan) |
+| C4 | Detect **emerging themes compared with a previous period** | done (engine: `emergent` alarm on the October shift-communication theme); HR display: C10 (Jan) |
+| C5 | Propose areas for action | partial (themes and emergent alarms feed the AI recommendations; the proposals are the recommendations module) |
+| C6 | **Explain the limits of the analysis** | partial: limits written in engine.md section 12 for the methodology page (task 18); the per-screen note is still to do (Jan) |
 
 ## 5. Bias and analysis-difficulty coverage
 
@@ -180,7 +181,7 @@ D-S9 and D-S10. Each needs a named mitigation we can point at in the demo. "AI d
 | ID | Bias | Our mitigation | Status |
 |----|------|----------------|--------|
 | R-BIAS-1 | Coverage | Representativeness against the 1,200 synthetic population, per collective and shift | done |
-| R-BIAS-2 | Non-response | Night shift under-response shown; engine oversampling of under-represented groups | partial (engine blocked) |
+| R-BIAS-2 | Non-response | Night shift under-response shown and alarmed (`baixa_participacio`, C9); engine oversampling of under-represented groups | partial (oversampling blocked) |
 | R-BIAS-3 | Self-selection | Push-driven continuous micro-questions rather than opt-in surveys; representativeness weighting | partial (push on publish built; no daily reminder) |
 | R-BIAS-4 | Wording | Question-quality checker (19); human approval | missing |
 | R-BIAS-5 | Social desirability | Anonymity promise plus `/privacitat`; **show the manager positivity gap** (seeded `MANAGER_BONUS`) | missing: the manager segment is not shown anywhere (option B, not started) |
@@ -196,9 +197,9 @@ D-S9 and D-S10. Each needs a named mitigation we can point at in the demo. "AI d
 | R-DIFF-3 | Causality | Never present correlations as causes; wording on signals and methodology | partial (needs 18) |
 | R-DIFF-4 | Prioritisation (frequent ≠ most relevant) | Signals ranked by effect and n, not by volume | blocked (signal criteria, Natan) |
 | R-DIFF-5 | Comparability | Same item IDs across periods; change rule only on the same question | done |
-| R-DIFF-6 | Context: what event explains a change? | Need text and recommendations attached to the signal timeline | partial (16 timeline) |
-| R-DIFF-7 | Open text (languages, irony, several themes) | LLM clustering, multi-theme `comentari_tema` | blocked |
-| R-DIFF-8 | Actionability: an insight needs an owner and a plan | Recommendation with an approval, follow-up survey | partial (no owner field) |
+| R-DIFF-6 | Context: what event explains a change? | Need text and recommendations attached to the signal timeline | partial. Engine done (`context_event`, `addContextEvent`, `action_effect` "des de <data>" with limits note). Open: show events and `action_effect` on the signal timeline (Jan, C13) |
+| R-DIFF-7 | Open text (languages, irony, several themes) | Multi-theme `comentari_tema`; Catalan, Spanish and English lexicon with accent and typo tolerance; optional LLM classifier; irony is not handled and is stated as a limit (engine.md section 12) | done (engine), limits documented |
+| R-DIFF-8 | Actionability: an insight needs an owner and a plan | Recommendation with an approval, follow-up survey | done (suggested owner and timeframe on `recomanacio`, C11; suggestions only, not tracked) |
 
 ### R-TENSION (D-S11)
 | ID | Tension | Status |
@@ -295,7 +296,7 @@ Bonus items named by the guide (G-§4 "Bonus") and the deck (D-S18), then our ow
 | N-1 | **Teams / M365 integration** | G bonus, D-S18, 10% criterion | Hits a weighted criterion directly | partial | Adaptive Card, optional webhook, `docs/teams-integration.md`. Roadmap: Graph for audience, Entra SSO without identity leakage. |
 | N-2 | **Representativeness indicator** | G bonus | Already built; name it as the bonus in the pitch | done | |
 | N-3 | **Experience for people without a computer** | G bonus, D-S18 | Plant and logistics, scenario B | partial | QR plus mobile done. Add a **kiosk mode**: shared tablet, no account, one answer per session with a rate limit, own `canal` value. |
-| N-4 | **Actionable wellbeing recommendations** | G bonus, D-S18 | Value for people | partial | Recommendations exist; make them concrete (owner, deadline, which initiative from D-S3). |
+| N-4 | **Actionable wellbeing recommendations** | G bonus, D-S18 | Value for people | done (engine side) | Proposals name a Damm initiative, a suggested owner and timeframe, and cite n and confidence. UI in C11. |
 | N-5 | **Dynamic follow-up questions** | G bonus | Ties to R-FLOW-2e | missing | A low score triggers an open "why?" question in the same session. |
 | N-6 | **Multi-language** | G bonus | Catalan, Spanish, English at minimum; plant staff | missing | i18n on the employee app first; the AI translates approved questions with human review. |
 | N-7 | **Full cycle in one platform** | D-S18 | Already our architecture | done | Say it explicitly. |
@@ -307,7 +308,7 @@ Bonus items named by the guide (G-§4 "Bonus") and the deck (D-S18), then our ow
 | N-13 | Participation by channel chart | G-§6.2 | Uses the `canal` field we already store | missing | Small: one aggregate by `canal` with suppression. |
 | N-14 | Initiative ↔ domain mapping | D-S3 | Turns results into "is our policy working?" | missing | R-DOM-5 |
 | N-15 | Retention and purge job | G-§8 | Closes R-PRIV-8 | missing | Document the period; a script deletes old `resposta` rows after aggregation. |
-| N-16 | Accuracy of the theme classifier against `resposta_seed` | G-§6.2 | A number that proves analysis quality | blocked | After the real clustering lands. |
+| N-16 | Accuracy of the theme classifier against `resposta_seed` | G-§6.2 | A number that proves analysis quality | done | `pnpm --filter @damm/engine run comments:eval`: 91.2 % top-1, 97.4 % recall, 84.8 % precision (engine.md section 12, with the template-data caveat). |
 | N-17 | Demo reset and presenter mode | ours | Demo reliability | deferred | Task 15, after 8 Nov 09:00 |
 | N-18 | Question reordering and conditional logic in review | G-§4 | Closes R-FLOW-3c and R-FLOW-2e | missing | Needs an `ordre` field (shared contract). |
 

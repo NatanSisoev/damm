@@ -12,6 +12,8 @@ export {
   ALARM_TRANSITIONS,
   AlarmTransitionError,
 } from "./read.ts";
+export { startProbe, listProbes, stopProbe, ProbeError, MAX_PROBE_BOOST, MAX_PROBE_DAYS } from "./probe.ts";
+export type { StartProbeInput, ProbeView, ProbeProgress, ProbeStatus, ListProbesQuery } from "./probe.ts";
 export type {
   Viewer,
   InsightView,

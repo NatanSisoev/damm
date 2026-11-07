@@ -164,4 +164,4 @@ New read functions for 16 to 20 go in new files under `packages/db/src/` (for ex
 | Signals carry a minimum effect size and n in their criteria | signals are not noise | 16, 18 |
 | Catalan seed text in `packages/engine/demo/build-demo.ts` and `comments.ts` (NEEDS-DECISION HR-X-8, HR-NEED-1) | demo copy matches `docs/copy-guide.md` | 22, demo |
 | Wording of 'punts' for scores (NEEDS-DECISION HR-X-9) | one consistent unit on the 1-5 scale | 22 |
-| All-domain `agregat` rows in `job.ts` (NEEDS-DECISION HR-ENG-1; with C11 company-level rows) | representativeness and trends without the HR fallback | 22, 17 |
+| All-domain `agregat` rows in `job.ts` (NEEDS-DECISION HR-ENG-1; with C16 company-level rows) | representativeness and trends without the HR fallback | 22, 17 |
