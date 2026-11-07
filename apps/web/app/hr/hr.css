@@ -264,3 +264,14 @@
 .hr-chip[aria-pressed="true"] { border-color: var(--text); background: var(--surface-muted); font-weight: 600; }
 .hr-chip[aria-disabled="true"] { opacity: 0.5; pointer-events: none; }
 .hr-chip-dot { width: 10px; height: 10px; border-radius: 9999px; flex: none; }
+
+/* Critical alarms read stronger than warnings. */
+.hr-shell .badge-crit { background: var(--brand-red); border-color: var(--brand-red); color: #fff; font-weight: 600; }
+
+/* Touch targets: 44px on phones. */
+@media (max-width: 767px) {
+  .hr-shell .btn,
+  .hr-shell .hr-chip,
+  .hr-shell summary { min-height: 44px; }
+  .hr-shell .btn { display: inline-flex; align-items: center; justify-content: center; }
+}
