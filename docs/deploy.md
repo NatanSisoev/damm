@@ -62,3 +62,7 @@ The VAPID pair is set as Railway variables, so `pushEnabled()` is true on the de
 - Trigger: publishing an approved need in `/hr` notifies that need's collective, or everyone if it has none.
 - HR only ever sees a device count, shown as "<10" under the minimum group size.
 - HR login uses `HR_ACCESS_CODE`, the same value as in Jan's local `.env`.
+
+## Join codes
+
+The start script runs `scripts/fix-join-codes.mjs` on every boot: it renames `DEMO-FÀB` to `DEMO-FAB` in the volume DB when the old code exists and the new one does not. Lookup ignores accents, case and hyphens, so old links keep working.

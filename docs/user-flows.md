@@ -14,7 +14,7 @@ How to read this:
 | Tag | Meaning |
 |---|---|
 | **DB-seed** | Dev DB from `pnpm --filter @damm/seed run seed` (`data/app.db`). About 1,200 synthetic employees, about 700 responses, about 500 comments. Join codes `DAMM-FAB`, `DAMM-LOG`, `DAMM-COM`, `DAMM-OFI`. Logística/nit has 6 accounts by design (below 10). |
-| **DB-demo** | `DB_PATH=data/demo.db`, built by `pnpm --filter @damm/engine run demo` (about 4 min). Three months of synthetic answers, planted alarms and insights (stories S-90). Join codes are `DEMO-<first three letters of the collective>`; read the real values from the `joincode` table before testing. |
+| **DB-demo** | `DB_PATH=data/demo.db`, built by `pnpm --filter @damm/engine run demo` (about 4 min). Three months of synthetic answers, planted alarms and insights (stories S-90). Join codes are `DEMO-<first three letters of the collective>` (the deployed DB has `DEMO-FAB`: accents are stripped at startup); read the real values from the `joincode` table before testing. |
 | **GATE-ON** | `HR_ACCESS_CODE` is set in `.env`. `/hr`, `/manager` and their subpaths redirect to `/hr-login?next=<path>` without the cookie `hr_access`. |
 | **GATE-OFF** | `HR_ACCESS_CODE` is empty. The gate is off and `/hr` opens directly. |
 | **LLM-ON** | `LLM_API_KEY` and `LLM_BASE_URL` set. Model `ornith`. |

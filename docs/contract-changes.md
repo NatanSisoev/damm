@@ -19,6 +19,13 @@ What changed and why.
 
 ---
 
+## C18 · 2026-11-07 · Jan · Join code lookup ignores accents; DEMO-FÀB becomes DEMO-FAB
+
+`lookupJoinCode` (`@damm/db/join`) matches on a key without diacritics, hyphens, spaces and case, and now returns the stored `codi`; `registerAccount` resolves the code through it. No schema change. The deployed DB renames `DEMO-FÀB` to `DEMO-FAB` at startup (`scripts/fix-join-codes.mjs`, idempotent). `packages/engine/demo/build-demo.ts` still derives `DEMO-<first 3 letters>` from the collective name, so a fresh demo DB has `DEMO-FÀB` until the generator strips diacritics.
+
+- [ ] Natan: in `packages/engine/demo/build-demo.ts` strip diacritics from the generated code (`.normalize("NFD").replace(/[\u0300-\u036f]/g, "")`) so it yields `DEMO-FAB`.
+- [x] Jan: lookup, startup rename and docs (done 2026-11-07).
+
 ## C17 · 2026-11-07 · Jan · NeedCard carries dates, per-question answer counts and participation
 
 `NeedCard` (`@damm/db/hr`, read-only HR type) gains `publicat`, `responses`, `population`, `publications[].creat` and `approved[].answers`. Counts come from `v_resposta_analitica` and are `null` under the minimum group size. No schema change.

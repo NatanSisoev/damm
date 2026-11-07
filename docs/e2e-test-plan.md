@@ -57,7 +57,7 @@ pnpm --filter @damm/engine run demo        # about 4 minutes, writes data/demo.d
 DB_PATH=data/demo.db pnpm dev
 ```
 
-Join codes in the demo DB are `DEMO-<first three letters of the collective>`. Read the real values before testing and write them in the log:
+Join codes in the demo DB are `DEMO-<first three letters of the collective>` (the deployed DB has `DEMO-FAB`: accents are stripped at startup). Read the real values before testing and write them in the log:
 
 ```bash
 sqlite3 data/demo.db "select * from joincode"
@@ -392,7 +392,7 @@ Run date:           2026-11-07 ~19:00-20:30 (Europe/Madrid)
 Commit:             b39c355   branch: jan/e2e-run
 Tester:             Claude (agent session)
 Devices:            built-in browser pane, mobile 375x812 and desktop / no phone
-DB:                 demo (data/demo.db)   Join codes: DEMO-FÀB, DEMO-LOG, DEMO-COM, DEMO-OFI, E2AC187B (new Logística need)
+DB:                 demo (data/demo.db)   Join codes: DEMO-FAB, DEMO-LOG, DEMO-COM, DEMO-OFI, E2AC187B (new Logística need)
 LLM:                fallback (no key; badge "Plantilla de reserva")   HR gate: on for M-1..M-3 and S-4, then OFF (HR_ACCESS_CODE emptied) for the rest of the HR browser cases, because the 12 h cookie expired and the code cannot be typed without echoing it
 Build checks:       check:anonymity P (also via S-5)  lint not run  build not run
 Server:             port 3001 (3000 was taken), so join links and QR show 3000; substitute 3001

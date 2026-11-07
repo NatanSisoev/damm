@@ -19,5 +19,7 @@ else
   echo "[start] using existing database at $DB_PATH"
 fi
 
+node scripts/fix-join-codes.mjs
+
 cd apps/web
 exec pnpm exec next start -H 0.0.0.0 -p "${PORT:-3000}"
