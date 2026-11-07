@@ -6,9 +6,13 @@
 // only for the series being hovered/focused, so six overlapping bands do not turn the chart into a smear.
 import { useEffect, useRef, useState } from "react";
 import type { TrendRow } from "@damm/db/hr";
+import { MIN_GROUP_SIZE } from "@damm/shared";
+import { useLang, useT } from "@/lib/i18n/client";
+import { LOCALES } from "@/lib/i18n/core";
+import { hrResultsDict, type HrResultsKey } from "@/lib/i18n/hr-results";
+import { domainLabel } from "@/lib/i18n/names";
+import { numD } from "@/lib/i18n/num";
 
-const f1 = (v: number) => v.toLocaleString("ca-ES", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
-const f0 = (v: number) => Math.round(v).toLocaleString("ca-ES");
 const H = 300;
 const PAD = { top: 14, bottom: 30, left: 34 };
 
@@ -19,6 +23,14 @@ const scaleOf = (scale: TrendScale) => (scale === "0-10" ? { min: 0, max: 10, k:
 
 // `highlight`: domain names to emphasise (coloured, thicker); all others muted. Without it, domains with a clear change are coloured.
 export function TrendChart({ periodes, rows, highlight, scale = "1-5" }: { periodes: string[]; rows: TrendRow[]; highlight?: string[]; scale?: TrendScale }) {
+  const tr = useT(hrResultsDict);
+  const lang = useLang();
+  const f1 = (v: number) => numD(v, lang, 1);
+  const f0 = (v: number) => Math.round(v).toLocaleString(LOCALES[lang]);
+  // Precision is a data value (indicativa | moderada | sòlida): shown translated.
+  const prec = (x: string | null) => (x ? tr(`prec_${x === "sòlida" ? "solida" : x}` as HrResultsKey) : "");
+  const dom = (name: string) => domainLabel(name, lang);
+  const scoreLabel = scale === "0-10" ? tr("ch_score") : tr("ch_mean");
   const sc = scaleOf(scale);
   const tv = (v: number) => scale === "0-10" ? (v - 1) * 2.5 : v;
   const bandOf = (v: number, sd: number | null) => (sd === null ? { lo: null, hi: null } : { lo: Math.max(sc.min, tv(v) - sd * sc.k), hi: Math.min(sc.max, tv(v) + sd * sc.k) });
@@ -53,7 +65,7 @@ export function TrendChart({ periodes, rows, highlight, scale = "1-5" }: { perio
   if (lo < sc.min) { lo = sc.min; hi = Math.max(hi, sc.min + 1); }
   const ticks: number[] = [];
   const step = hi - lo > 4 ? 1 : 0.5;
-  for (let t = lo; t <= hi + 1e-9; t += step) ticks.push(t);
+  for (let v = lo; v <= hi + 1e-9; v += step) ticks.push(v);
 
   const narrow = w < 520;
   const right = narrow ? 112 : 190;
@@ -109,11 +121,11 @@ export function TrendChart({ periodes, rows, highlight, scale = "1-5" }: { perio
   return (
     <div className="px-5 py-4">
       <div ref={wrapRef} className="relative w-full min-w-0 overflow-hidden" onMouseLeave={() => setActive(null)}>
-        <svg width={w} height={H} role="img" aria-label={`${scale === "0-10" ? "Puntuació" : "Mitjana"} per domini i període. Els dominis amb canvi clar van en color, la resta en gris.`} className="block max-w-full">
-          {ticks.map((t) => (
-            <g key={t}>
-              <line x1={plotL} x2={plotR} y1={yOf(t)} y2={yOf(t)} stroke="var(--border)" strokeWidth="1" />
-              <text x={plotL - 8} y={yOf(t) + 4} textAnchor="end" fontSize="11" fill="var(--text-subtle)" className="num">{f1(t)}</text>
+        <svg width={w} height={H} role="img" aria-label={scale === "0-10" ? tr("ch_aria_score") : tr("ch_aria_mean")} className="block max-w-full">
+          {ticks.map((v) => (
+            <g key={v}>
+              <line x1={plotL} x2={plotR} y1={yOf(v)} y2={yOf(v)} stroke="var(--border)" strokeWidth="1" />
+              <text x={plotL - 8} y={yOf(v) + 4} textAnchor="end" fontSize="11" fill="var(--text-subtle)" className="num">{f1(v)}</text>
             </g>
           ))}
           {periodes.map((p, i) => (
@@ -154,7 +166,7 @@ export function TrendChart({ periodes, rows, highlight, scale = "1-5" }: { perio
               <g key={s.r.domini} opacity={active && active.ri !== s.ri ? 0.5 : 1}>
                 {Math.abs(ly - l.y) > 2 && <line x1={l.last.x + 6} y1={l.y} x2={plotR + 8} y2={ly - 4} stroke="var(--border-strong)" strokeWidth="1" />}
                 <text x={plotR + 12} y={ly} fontSize="11.5" fill={s.changed ? "var(--text)" : "var(--text-subtle)"} fontWeight={s.changed ? 700 : 400}>
-                  {clip(s.r.domini, val.length + 1)} <tspan className="num">{val}</tspan>
+                  {clip(dom(s.r.domini), val.length + 1)} <tspan className="num">{val}</tspan>
                 </text>
               </g>
             );
@@ -170,7 +182,11 @@ export function TrendChart({ periodes, rows, highlight, scale = "1-5" }: { perio
                   r="14"
                   fill="transparent"
                   tabIndex={0}
-                  aria-label={`${s.r.domini}, ${periodes[pi]}: ${f1(p.v)}, n=${p.n}, ${p.precisio}${s.r.cells[pi].sd !== null ? `, dispersió ±${f1(s.r.cells[pi].sd! * sc.k)}` : ""}${s.r.cells[pi].consensus !== null ? `, consens ${f0(s.r.cells[pi].consensus!)}%` : ""}`}
+                  aria-label={
+                    tr("ch_pt_aria", { domain: dom(s.r.domini), period: periodes[pi], v: f1(p.v), n: p.n ?? "", prec: prec(p.precisio) }) +
+                    (s.r.cells[pi].sd !== null ? tr("ch_pt_sd", { v: f1(s.r.cells[pi].sd! * sc.k) }) : "") +
+                    (s.r.cells[pi].consensus !== null ? tr("ch_pt_cons", { v: f0(s.r.cells[pi].consensus!) }) : "")
+                  }
                   onMouseEnter={() => setActive({ ri: s.ri, pi })}
                   onFocus={() => setActive({ ri: s.ri, pi })}
                   onBlur={() => setActive(null)}
@@ -187,32 +203,31 @@ export function TrendChart({ periodes, rows, highlight, scale = "1-5" }: { perio
             className="pointer-events-none absolute z-10 border border-line bg-surface px-3 py-2 text-xs shadow-sm"
             style={{ left: Math.min(Math.max(actPt.x + 12, 0), w - 190), top: Math.max(0, actPt.y - 84), width: 180 }}
           >
-            <div className="font-semibold">{act.r.domini}</div>
+            <div className="font-semibold">{dom(act.r.domini)}</div>
             <div className="num text-subtle">{periodes[active.pi]}</div>
-            <div className="num mt-1">{scale === "0-10" ? "Puntuació" : "Mitjana"} {f1(actPt.v)} / {sc.max}</div>
-            {actCell.sd !== null && <div className="num">Dispersió ±{f1(actCell.sd * sc.k)}</div>}
-            {actCell.consensus !== null && <div className="num">Consens {f0(actCell.consensus)}%</div>}
-            <div className="num text-subtle">n = {actCell.n} · {actCell.precisio}</div>
+            <div className="num mt-1">{tr("ch_tip_val", { label: scoreLabel, v: f1(actPt.v), max: sc.max })}</div>
+            {actCell.sd !== null && <div className="num">{tr("ch_tip_sd", { v: f1(actCell.sd * sc.k) })}</div>}
+            {actCell.consensus !== null && <div className="num">{tr("ch_tip_cons", { v: f0(actCell.consensus) })}</div>}
+            <div className="num text-subtle">{tr("ch_tip_n", { n: actCell.n ?? "", prec: prec(actCell.precisio) })}</div>
           </div>
         )}
       </div>
 
-      <ul className="mt-3 flex flex-wrap gap-x-5 gap-y-1.5 text-xs" aria-label="Llegenda">
+      <ul className="mt-3 flex flex-wrap gap-x-5 gap-y-1.5 text-xs" aria-label={tr("ch_legend")}>
         {series.map((s) => (
           <li key={s.r.domini} className="flex items-center gap-1.5">
             <span aria-hidden className="inline-block h-0.5 w-4" style={{ background: s.changed ? `var(--dom-${(s.ri % 6) + 1})` : "var(--dom-muted)" }} />
             <span className={s.changed ? "font-semibold" : "text-subtle"}>
-              {s.r.domini}
-              {s.changed && s.r.canvi.delta !== null && s.r.canvi.label !== "sense canvi clar" && <span className="num"> · {s.r.canvi.label === "puja" ? "↑" : "↓"} {s.r.canvi.delta! >= 0 ? "+" : "−"}{Math.abs(s.r.canvi.delta!).toLocaleString("ca-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>}
+              {dom(s.r.domini)}
+              {s.changed && s.r.canvi.delta !== null && s.r.canvi.label !== "sense canvi clar" && <span className="num"> · {s.r.canvi.label === "puja" ? "↑" : "↓"} {s.r.canvi.delta! >= 0 ? "+" : "−"}{numD(Math.abs(s.r.canvi.delta!), lang, 2)}</span>}
             </span>
           </li>
         ))}
       </ul>
       <p className="mt-2 text-xs text-subtle">
-        {highlight
-          ? "En color: domini relacionat amb el senyal. En gris: la resta de dominis."
-          : hasChange ? "En color: dominis amb canvi clar entre períodes. En gris: sense canvi clar." : "Cap domini té un canvi clar: tots en gris."}{" "}
-        {scale === "0-10" ? "Escala 0-10 (la mitjana d'1 a 5 convertida)." : "Escala 1-5 (mitjana de les respostes)."} Els períodes suprimits (menys de 10 respondents) no es dibuixen. Banda: ±1 desviació típica de les respostes ({scale}). Consens: 0-100, més alt = respostes més semblants.{!highlight && " Passa el cursor per un punt per veure'n la banda."}
+        {highlight ? tr("ch_foot_hl") : hasChange ? tr("ch_foot_change") : tr("ch_foot_none")}{" "}
+        {scale === "0-10" ? tr("ch_scale010") : tr("ch_scale15")} {tr("ch_foot_sup", { min: MIN_GROUP_SIZE })} {tr("ch_foot_band", { scale })} {tr("ch_foot_cons")}
+        {!highlight && ` ${tr("ch_foot_hover")}`}
       </p>
     </div>
   );

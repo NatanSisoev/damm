@@ -5,6 +5,8 @@ import { redirect } from "next/navigation";
 import { addContextEvent, approveRecommendation, discardRecommendation } from "@damm/db/hr";
 import { ProbeError, hrStartProbe, hrStopProbe } from "@/lib/hr-engine";
 import { createDraftedFollowUp } from "../../follow-up";
+import { getT } from "@/lib/i18n/server";
+import { hrResultsDict } from "@/lib/i18n/hr-results";
 
 // Same human actions as the recommendations page; they only revalidate the signal page too.
 function refresh(formData: FormData) {
@@ -40,7 +42,7 @@ export async function startProbeAction(formData: FormData) {
   const dominiId = idOrNull(formData.get("domini"));
   let error: string | null = null;
   if (!collectiuId || !dominiId) {
-    error = "Aquest senyal no té un col·lectiu i un domini concrets: no es pot indagar.";
+    error = (await getT(hrResultsDict))("sd_err_probe");
   } else {
     try {
       hrStartProbe({ senyalId: signalId, collectiuId, tornId: idOrNull(formData.get("torn")), dominiId, boost: 2, days: 14 });
@@ -77,7 +79,7 @@ export async function addContextEventAction(formData: FormData) {
       dominiId: idOrNull(formData.get("domini")),
     });
   } catch {
-    error = "Cal una data vàlida i una descripció.";
+    error = (await getT(hrResultsDict))("sd_err_event");
   }
   revalidatePath(`/hr/signals/${signalId}`);
   if (error) redirect(`/hr/signals/${signalId}?eventError=${encodeURIComponent(error)}#context`);

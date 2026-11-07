@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { useT } from "@/lib/i18n/client";
+import { employeeDict } from "@/lib/i18n/employee";
 
 // ranking: `valor_num` is the position (1 = top priority) the person gives to the FIRST option,
 // kept for the legacy aggregate. The full order (option indices, best first) goes in `valueJson`.
@@ -12,7 +14,7 @@ export function parseRanking(text: string): { prompt: string; options: string[] 
   const options = text
     .slice(i + 1)
     .replace(/[.?!\s]+$/, "")
-    .split(/,|\s+i\s+/)
+    .split(/,|\s+(?:i|y|and)\s+/)
     .map((s) => s.trim())
     .filter(Boolean);
   return { prompt: text.slice(0, i), options };
@@ -27,6 +29,7 @@ export function RankingInput({
   options: string[];
   onChange: (positionOfFirst: number | null, order: number[]) => void;
 }) {
+  const t = useT(employeeDict);
   const [order, setOrder] = useState(options.map((_, i) => i));
   const [touched, setTouched] = useState(false);
 
@@ -53,7 +56,7 @@ export function RankingInput({
             <span className="flex-1 text-base capitalize">{options[optIdx]}</span>
             <button
               type="button"
-              aria-label={`Puja ${options[optIdx]}`}
+              aria-label={t("rank_up", { option: options[optIdx] })}
               disabled={pos === 0}
               onClick={() => move(pos, pos - 1)}
               className="h-11 w-11 rounded-lg border border-line-strong bg-surface text-lg disabled:opacity-30"
@@ -62,7 +65,7 @@ export function RankingInput({
             </button>
             <button
               type="button"
-              aria-label={`Baixa ${options[optIdx]}`}
+              aria-label={t("rank_down", { option: options[optIdx] })}
               disabled={pos === order.length - 1}
               onClick={() => move(pos, pos + 1)}
               className="h-11 w-11 rounded-lg border border-line-strong bg-surface text-lg disabled:opacity-30"
@@ -74,7 +77,7 @@ export function RankingInput({
       </ol>
       {!touched && (
         <button type="button" onClick={() => commit(order)} className="mt-3 text-sm text-muted underline">
-          Deixa l&apos;ordre així
+          {t("rank_keep")}
         </button>
       )}
     </div>

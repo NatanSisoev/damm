@@ -41,7 +41,7 @@ self.addEventListener("push", (event) => {
   }
   event.waitUntil(
     self.registration.showNotification(data.title || "Escolta activa", {
-      body: data.body || "Tens preguntes noves.",
+      body: data.body || "Tens preguntes noves · Tienes preguntas nuevas · New questions",
       icon: "/icons/icon-192.png",
       badge: "/icons/icon-192.png",
       data: { url: data.url || "/" },

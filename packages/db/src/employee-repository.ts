@@ -2,6 +2,7 @@
 // (reads `pregunta`, reads/writes the caller's own `resposta`).
 // No email, phone or name: an account is an opaque id, a username and salted hashes.
 import { randomBytes, randomUUID, scrypt, timingSafeEqual } from "node:crypto";
+import { DEFAULT_LANG, isLang, parseTranslations, type Lang, type Translations } from "@damm/shared";
 import { getDb } from "./connection";
 import { redactPii } from "./pii";
 
@@ -117,6 +118,7 @@ export async function registerAccount(input: {
   codi: string;
   username: string;
   password: string;
+  lang?: Lang;
 }): Promise<{ ok: true; compteId: string; recoveryCode: string } | { ok: false; error: RegisterError }> {
   const db = getDb();
   const username = normalizeUsername(input.username);
@@ -136,9 +138,9 @@ export async function registerAccount(input: {
 
   try {
     db.prepare(
-      `INSERT INTO compte (id, collectiu_id, username, password_hash, salt, recovery_hash)
-       VALUES (?, ?, ?, ?, ?, ?)`,
-    ).run(compteId, jc.collectiu_id, username, passwordHash, salt, recoveryHash);
+      `INSERT INTO compte (id, collectiu_id, username, password_hash, salt, recovery_hash, lang)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    ).run(compteId, jc.collectiu_id, username, passwordHash, salt, recoveryHash, isLang(input.lang) ? input.lang : DEFAULT_LANG);
   } catch (e) {
     if ((e as { code?: string }).code === "SQLITE_CONSTRAINT_UNIQUE") return { ok: false, error: "username_ocupat" };
     throw e;
@@ -294,6 +296,48 @@ export function compteExists(compteId: string): boolean {
   return getDb().prepare("SELECT 1 FROM compte WHERE id = ?").get(compteId) !== undefined;
 }
 
+/** The account's chosen language (the only language data stored per person). */
+export function getCompteLang(compteId: string): Lang {
+  const r = getDb().prepare("SELECT lang FROM compte WHERE id = ?").get(compteId) as { lang: string } | undefined;
+  return r && isLang(r.lang) ? r.lang : DEFAULT_LANG;
+}
+
+export function setCompteLang(compteId: string, lang: Lang): void {
+  if (!isLang(lang)) return;
+  getDb().prepare("UPDATE compte SET lang = ? WHERE id = ?").run(lang, compteId);
+}
+
+export interface QuestionTranslation {
+  text: Translations | null;
+  /** Per option index, in the same order as the question's options. */
+  options: (Translations | null)[];
+}
+
+/**
+ * Translations of the given questions, by id. The engine only returns Catalan/canonical text and
+ * labels, so the app merges these by question id and option index. Missing = fall back to the text.
+ */
+export function getQuestionTranslations(ids: number[]): Map<number, QuestionTranslation> {
+  const out = new Map<number, QuestionTranslation>();
+  if (ids.length === 0) return out;
+  const rows = getDb()
+    .prepare(`SELECT id, text_i18n, options_json FROM pregunta WHERE id IN (${ids.map(() => "?").join(",")})`)
+    .all(...ids) as { id: number; text_i18n: string | null; options_json: string | null }[];
+  for (const r of rows) {
+    let options: (Translations | null)[] = [];
+    if (r.options_json) {
+      try {
+        const arr = JSON.parse(r.options_json);
+        if (Array.isArray(arr)) options = arr.map((o) => parseTranslations(o?.i18n));
+      } catch {
+        /* malformed options: no option translations */
+      }
+    }
+    out.set(r.id, { text: parseTranslations(r.text_i18n), options });
+  }
+  return out;
+}
+
 export function deletePushSubscription(compteId: string): void {
   getDb().prepare("DELETE FROM push_subscripcio WHERE compte_id = ?").run(compteId);
 }
@@ -316,6 +360,11 @@ export interface PushTarget {
   auth: string;
 }
 
+/** A push target plus the subscriber's language (never the account id). */
+export interface PushTargetLang extends PushTarget {
+  lang: Lang;
+}
+
 /** Stores (or replaces) this account's subscription: one device per account. */
 export function savePushSubscription(compteId: string, sub: PushTarget): void {
   getDb()
@@ -335,16 +384,16 @@ export function hasPushSubscription(compteId: string): boolean {
  * Subscriptions of every account in the need's collective (all collectives when the need has
  * none). Returns endpoints and keys only, never the account id.
  */
-export function listPushTargetsForNecessitat(necessitatId: number): PushTarget[] {
+export function listPushTargetsForNecessitat(necessitatId: number): PushTargetLang[] {
   const db = getDb();
   const n = db.prepare("SELECT collectiu_id AS c FROM necessitat WHERE id = ?").get(necessitatId) as { c: number | null } | undefined;
   if (!n) return [];
   return db
     .prepare(
-      `SELECT s.endpoint, s.p256dh, s.auth FROM push_subscripcio s JOIN compte c ON c.id = s.compte_id
+      `SELECT s.endpoint, s.p256dh, s.auth, c.lang FROM push_subscripcio s JOIN compte c ON c.id = s.compte_id
        WHERE ? IS NULL OR c.collectiu_id = ?`,
     )
-    .all(n.c, n.c) as PushTarget[];
+    .all(n.c, n.c) as PushTargetLang[];
 }
 
 /** The push service said the subscription is gone (404/410). */

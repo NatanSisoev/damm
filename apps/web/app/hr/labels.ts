@@ -1,32 +1,33 @@
-// Catalan labels for raw enum values the DB stores (estat, tipus). Never render the raw value.
+// Labels for raw enum values the DB stores (estat, tipus). Never render the raw value.
+// Pass `lang` to get a translated label; without it the Catalan label is returned.
+import type { Lang } from "@damm/shared";
+import { hrLookup } from "@/lib/i18n/hr";
 
-export const RECOMMENDATION_STATUS: Record<string, { label: string; cls: string }> = {
-  proposada: { label: "Proposada", cls: "" },
-  aprovada: { label: "Aprovada", cls: "badge-good" },
-  descartada: { label: "Descartada", cls: "" },
+export const RECOMMENDATION_STATUS: Record<string, { key: string; cls: string }> = {
+  proposada: { key: "rec_proposed", cls: "" },
+  aprovada: { key: "rec_approved", cls: "badge-good" },
+  descartada: { key: "rec_discarded", cls: "" },
 };
 
-export const NEED_STATUS: Record<string, { label: string; cls: string }> = {
-  esborrany: { label: "Esborrany", cls: "" },
-  llesta: { label: "Llesta per publicar", cls: "badge-accent" },
-  publicada: { label: "Publicada", cls: "badge-good" },
-  tancada: { label: "Tancada", cls: "" },
+export const NEED_STATUS: Record<string, { key: string; cls: string }> = {
+  esborrany: { key: "need_draft", cls: "" },
+  llesta: { key: "need_ready", cls: "badge-accent" },
+  publicada: { key: "need_published", cls: "badge-good" },
+  tancada: { key: "need_closed", cls: "" },
 };
 
-export const QUESTION_TYPE_LABELS: Record<string, string> = {
-  scale5: "Escala 1–5",
-  scale10: "Escala 1–10",
-  yes_no: "Sí / No",
-  pair: "Parella",
-  choice: "Opció",
-  ranking: "Ordenació",
-  open: "Resposta oberta",
+const label = (key: string, fallback: string, lang: Lang) => (key ? hrLookup("", key, lang) : fallback);
+
+export const recommendationStatus = (estat: string, lang: Lang = "ca") => {
+  const s = RECOMMENDATION_STATUS[estat];
+  return s ? { label: label(s.key, estat, lang), cls: s.cls } : { label: estat, cls: "" };
 };
+export const needStatus = (estat: string, lang: Lang = "ca") => {
+  const s = NEED_STATUS[estat];
+  return s ? { label: label(s.key, estat, lang), cls: s.cls } : { label: estat, cls: "" };
+};
+export const questionTypeLabel = (tipus: string, lang: Lang = "ca") => hrLookup("qt_", tipus, lang);
 
-export const recommendationStatus = (estat: string) =>
-  RECOMMENDATION_STATUS[estat] ?? { label: estat, cls: "" };
-export const needStatus = (estat: string) => NEED_STATUS[estat] ?? { label: estat, cls: "" };
-export const questionTypeLabel = (tipus: string) => QUESTION_TYPE_LABELS[tipus] ?? tipus;
-
-/** "1 minut", "2 minuts". */
-export const minutes = (n: number) => `${n} ${n === 1 ? "minut" : "minuts"}`;
+/** "1 minut", "2 minuts" (translated). */
+export const minutes = (n: number, lang: Lang = "ca") =>
+  hrLookup("", n === 1 ? "minute_one" : "minute_other", lang).replace("{n}", String(n));

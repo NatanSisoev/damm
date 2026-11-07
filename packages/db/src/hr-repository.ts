@@ -13,6 +13,9 @@ export interface DraftQuestion {
   text: string;
   necessitatId: number | null;
   generadaPerIa: boolean;
+  /** Spanish / English wording, when present. */
+  textEs?: string | null;
+  textEn?: string | null;
 }
 
 export function createNecessitat(input: {
@@ -39,6 +42,15 @@ export interface DraftInput {
   type: string; // English type from @damm/ai
   domain: string; // domain name
   reason: string;
+  /** Spanish / English wording proposed by the AI or edited by HR. Catalan `text` is canonical. */
+  i18n?: { es?: { text: string }; en?: { text: string } };
+}
+
+/** `pregunta.text_i18n` JSON for a Catalan text plus optional es/en; null when there is nothing to add (readers fall back to `text`). */
+function textI18nJson(ca: string, es?: string | null, en?: string | null): string | null {
+  const e = es?.trim();
+  const n = en?.trim();
+  return e || n ? JSON.stringify({ ca, ...(e ? { es: e } : {}), ...(n ? { en: n } : {}) }) : null;
 }
 
 function insertDraft(necessitatId: number, collectiuId: number | null, q: DraftInput, ordre: number, byIa: boolean): void {
@@ -47,9 +59,9 @@ function insertDraft(necessitatId: number, collectiuId: number | null, q: DraftI
   const tipus = TIPUS_FROM_AI[q.type];
   if (!dom || !tipus) throw new Error(`Unknown domain or type: ${q.domain} / ${q.type}`);
   db.prepare(
-    `INSERT INTO pregunta (domini_id, collectiu_id, text, tipus, necessitat_id, generada_per_ia, motiu, ordre)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-  ).run(dom.id, collectiuId, q.text, tipus, necessitatId, byIa ? 1 : 0, q.reason, ordre);
+    `INSERT INTO pregunta (domini_id, collectiu_id, text, text_i18n, tipus, necessitat_id, generada_per_ia, motiu, ordre)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+  ).run(dom.id, collectiuId, q.text, textI18nJson(q.text, q.i18n?.es?.text, q.i18n?.en?.text), tipus, necessitatId, byIa ? 1 : 0, q.reason, ordre);
 }
 
 /** Store an AI (or fallback) survey as draft questions of a need. Nothing is approved here. */
@@ -95,7 +107,7 @@ export function listNeedDrafts(): NeedDraftGroup[] {
     )
     .all() as Omit<NeedDraftGroup, "questions">[];
   const qs = db.prepare(
-    `SELECT p.id, d.nom AS domini, p.tipus, p.text, p.necessitat_id AS necessitatId, p.generada_per_ia AS ia, p.motiu, p.ordre
+    `SELECT p.id, d.nom AS domini, p.tipus, p.text, p.text_i18n AS ti, p.necessitat_id AS necessitatId, p.generada_per_ia AS ia, p.motiu, p.ordre
      FROM pregunta p JOIN domini d ON d.id = p.domini_id
      WHERE p.estat = 'draft' AND p.necessitat_id = ? ORDER BY p.ordre, p.id`,
   );
@@ -104,8 +116,14 @@ export function listNeedDrafts(): NeedDraftGroup[] {
     questions: (qs.all(n.id) as any[]).map((r) => ({
       id: r.id, domini: r.domini, tipus: r.tipus, text: r.text, necessitatId: r.necessitatId,
       generadaPerIa: !!r.ia, motiu: r.motiu, ordre: r.ordre, tipusAi: TIPUS_TO_AI[r.tipus] ?? r.tipus,
+      textEs: parseTr(r.ti)?.es ?? null, textEn: parseTr(r.ti)?.en ?? null,
     })),
   }));
+}
+
+function parseTr(raw: string | null): { es?: string; en?: string } | null {
+  if (!raw) return null;
+  try { return JSON.parse(raw); } catch { return null; }
 }
 
 /** Move a draft one position up or down among the drafts of its need. */
@@ -157,8 +175,8 @@ export function replaceDraft(id: number, q: DraftInput, byIa: boolean): void {
   const tipus = TIPUS_FROM_AI[q.type];
   if (!dom || !tipus) throw new Error(`Unknown domain or type: ${q.domain} / ${q.type}`);
   db.prepare(
-    "UPDATE pregunta SET text = ?, tipus = ?, domini_id = ?, motiu = ?, generada_per_ia = ? WHERE id = ? AND estat = 'draft'",
-  ).run(q.text, tipus, dom.id, q.reason, byIa ? 1 : 0, id);
+    "UPDATE pregunta SET text = ?, text_i18n = ?, tipus = ?, domini_id = ?, motiu = ?, generada_per_ia = ? WHERE id = ? AND estat = 'draft'",
+  ).run(q.text, textI18nJson(q.text, q.i18n?.es?.text, q.i18n?.en?.text), tipus, dom.id, q.reason, byIa ? 1 : 0, id);
 }
 
 export function listCollectius(): { id: number; nom: string }[] {
@@ -184,8 +202,9 @@ export function listDrafts(): DraftQuestion[] {
     .map((r: any) => ({ ...r, generadaPerIa: !!r.ia }));
 }
 
-export function updateDraftText(id: number, text: string): void {
-  getDb().prepare("UPDATE pregunta SET text = ? WHERE id = ? AND estat = 'draft'").run(text, id);
+/** HR edit of a draft: Catalan text plus the Spanish and English wording (empty means "fall back to Catalan"). */
+export function updateDraftText(id: number, text: string, es?: string | null, en?: string | null): void {
+  getDb().prepare("UPDATE pregunta SET text = ?, text_i18n = ? WHERE id = ? AND estat = 'draft'").run(text, textI18nJson(text, es, en), id);
 }
 
 /** Human approval: the only code path that sets estat = 'aprovada'. */

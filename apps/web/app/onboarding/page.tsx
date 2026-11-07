@@ -1,11 +1,15 @@
 import Link from "next/link";
 import { lookupJoinCode } from "@damm/db/join";
+import { LangSwitcher } from "@/components/lang-switcher";
+import { employeeDict } from "@/lib/i18n/employee";
+import { getT } from "@/lib/i18n/server";
 import { EmployeeFrame, PageHead } from "../(employee)/components/frame";
 import { OnboardingForm } from "./onboarding-form";
 
 export const dynamic = "force-dynamic";
 
 export default async function OnboardingPage({ searchParams }: { searchParams: Promise<{ codi?: string }> }) {
+  const t = await getT(employeeDict);
   const { codi: raw } = await searchParams;
   const codi = (raw ?? "").trim().toUpperCase();
   const info = codi ? lookupJoinCode(codi) : null;
@@ -14,24 +18,27 @@ export default async function OnboardingPage({ searchParams }: { searchParams: P
   return (
     <EmployeeFrame>
       <main className="mx-auto flex min-h-dvh w-full max-w-xl flex-col gap-6 md:py-8">
+        <div className="flex justify-end px-4 pt-3">
+          <LangSwitcher />
+        </div>
         {valid ? (
           <>
-            <PageHead eyebrow={`${info.empresa} · ${info.collectiu}`} title="Crea el teu compte" />
+            <PageHead eyebrow={`${info.empresa} · ${info.collectiu}`} title={t("onb_title")} />
             <div className="px-4 pb-8">
               <OnboardingForm codi={codi} />
               <p className="mt-6 text-center text-sm">
                 <Link href="/privacitat" className="underline">
-                  Com tractem les teves dades
+                  {t("privacy_link")}
                 </Link>
               </p>
             </div>
           </>
         ) : (
           <>
-            <PageHead title="Codi no vàlid" lede="Aquest codi no existeix o ja no està actiu. Comprova l'enllaç o demana un codi nou al teu equip." />
+            <PageHead title={t("invalid_code_title")} lede={t("invalid_code_lede")} />
             <p className="px-4">
               <Link href="/join" className="btn">
-                Escriu un altre codi
+                {t("onb_other_code")}
               </Link>
             </p>
           </>
