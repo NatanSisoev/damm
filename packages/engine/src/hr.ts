@@ -92,3 +92,9 @@ export function setFormatPreference(db: SqlDatabase, p: { collectiuId: number | 
     run(db, "INSERT INTO format_preference (collectiu_id, tipus, weight) VALUES (?,?,?)", p.collectiuId, p.type, p.weight);
   });
 }
+
+// Brain tab: engine parameters, signals and the what-if simulator.
+export { getBrain, simulateBrain, clearDomainWeight, clearFormatPreference, MAX_SIM_DAYS, MAX_SIM_PEOPLE } from "./brain.ts";
+export type { Brain, BrainCollective, BrainDomain, BrainFormat, BrainProbe, SimulateInput, SimResult, SimQueueItem } from "./brain.ts";
+export { resetConfig, describeConfig, parseConfigPatch } from "./config.ts";
+export type { ConfigEntry } from "./config.ts";

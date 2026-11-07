@@ -271,3 +271,48 @@ export function population(db: SqlDatabase): { collectiuId: number; tornId: numb
 }
 
 export const domainIds = (db: SqlDatabase) => all<{ id: number }>(db, "SELECT id FROM domini ORDER BY id").map((r) => r.id);
+
+// --- aggregates for the HR brain view (counts and parameters only, never a row per account) ---
+
+export const accountCount = (db: SqlDatabase, collectiuId: number) =>
+  one<{ n: number }>(db, "SELECT COUNT(*) AS n FROM compte WHERE collectiu_id = ?", collectiuId)?.n ?? 0;
+
+export const pendingFollowupCount = (db: SqlDatabase, collectiuId: number) =>
+  one<{ n: number }>(
+    db,
+    `SELECT COUNT(*) AS n FROM person_domain_state s JOIN compte c ON c.id = s.compte_id
+     WHERE c.collectiu_id = ? AND s.pending_followup_level IS NOT NULL`,
+    collectiuId,
+  )?.n ?? 0;
+
+export const domainNames = (db: SqlDatabase) => all<{ id: number; nom: string }>(db, "SELECT id, nom FROM domini ORDER BY id");
+export const collectiveNames = (db: SqlDatabase) => all<{ id: number; nom: string }>(db, "SELECT id, nom FROM collectiu ORDER BY id");
+export const shiftNames = (db: SqlDatabase) => all<{ id: number; nom: string }>(db, "SELECT id, nom FROM torn ORDER BY id");
+
+/** Raw HR weight rows: collectiuId null = the default for every collective. */
+export const domainWeightRows = (db: SqlDatabase) =>
+  all<{ collectiuId: number | null; dominiId: number; weight: number }>(db, "SELECT collectiu_id AS collectiuId, domini_id AS dominiId, weight FROM domain_weight");
+export const formatPreferenceRows = (db: SqlDatabase) =>
+  all<{ collectiuId: number | null; type: QuestionType; weight: number }>(db, "SELECT collectiu_id AS collectiuId, tipus AS type, weight FROM format_preference");
+
+/** Format arms of a collective, per shift (tornId 0 = no shift). */
+export const formatStatsRows = (db: SqlDatabase, collectiuId: number) =>
+  all<{ tornId: number; type: QuestionType; alpha: number; beta: number }>(
+    db,
+    "SELECT torn_id AS tornId, tipus AS type, alpha, beta FROM format_stats WHERE collectiu_id = ?",
+    collectiuId,
+  );
+
+export const activeProbeRows = (db: SqlDatabase, nowSql: string) =>
+  all<{ id: number; collectiuId: number; tornId: number | null; dominiId: number; boost: number; endsAt: string }>(
+    db,
+    `SELECT id, collectiu_id AS collectiuId, torn_id AS tornId, domini_id AS dominiId, boost, ends_at AS endsAt FROM probe
+     WHERE stopped_at IS NULL AND starts_at <= ? AND ends_at > ? ORDER BY ends_at`,
+    nowSql,
+    nowSql,
+  );
+
+export const clearDomainWeight = (db: SqlDatabase, collectiuId: number | null, dominiId: number) =>
+  run(db, "DELETE FROM domain_weight WHERE collectiu_id IS ? AND domini_id = ?", collectiuId, dominiId);
+export const clearFormatPreference = (db: SqlDatabase, collectiuId: number | null, type: QuestionType) =>
+  run(db, "DELETE FROM format_preference WHERE collectiu_id IS ? AND tipus = ?", collectiuId, type);

@@ -10,12 +10,23 @@ import {
   listProbes,
   stopProbe,
   ProbeError,
+  getBrain,
+  simulateBrain,
+  setConfig,
+  resetConfig,
+  setDomainWeight,
+  setFormatPreference,
+  clearDomainWeight,
+  clearFormatPreference,
+  ConfigError,
+  type SimulateInput,
   type StartProbeInput,
   type AlarmQuery,
   type AlarmStatus,
   type InsightQuery,
   type Viewer,
 } from "@damm/engine/hr";
+import type { QuestionType } from "@damm/shared";
 
 // better-sqlite3 satisfies the engine's minimal SqlDatabase at runtime; its typings are stricter.
 const db = () => getDb() as unknown as Parameters<typeof listInsights>[0];
@@ -32,3 +43,16 @@ export const changeAlarmStatus = (id: number, status: AlarmStatus) => setAlarmSt
 export const hrStartProbe = (input: StartProbeInput) => startProbe(db(), input);
 export const hrListProbes = (senyalId: number) => listProbes(db(), { senyalId });
 export const hrStopProbe = (id: number) => stopProbe(db(), id);
+
+// "Cervell": every engine parameter, the signals behind the daily batch and the what-if simulator.
+// Aggregates and parameters only, never an account.
+export const hrBrain = () => getBrain(db());
+export const hrSimulate = (input: SimulateInput) => simulateBrain(db(), input);
+export const hrSetConfig = (patch: Record<string, unknown>) => setConfig(db(), patch);
+export const hrResetConfig = (keys?: string[]) => resetConfig(db(), keys);
+export const hrSetDomainWeight = (collectiuId: number | null, dominiId: number, weight: number) => setDomainWeight(db(), { collectiuId, dominiId, weight });
+export const hrClearDomainWeight = (collectiuId: number | null, dominiId: number) => clearDomainWeight(db(), collectiuId, dominiId);
+export const hrSetFormatPreference = (collectiuId: number | null, type: QuestionType, weight: number) => setFormatPreference(db(), { collectiuId, type, weight });
+export const hrClearFormatPreference = (collectiuId: number | null, type: QuestionType) => clearFormatPreference(db(), collectiuId, type);
+export { ConfigError };
+export type { Brain, BrainCollective, BrainDomain, BrainFormat, SimResult, SimulateInput, ConfigEntry } from "@damm/engine/hr";
