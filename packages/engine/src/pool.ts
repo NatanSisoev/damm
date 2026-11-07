@@ -401,14 +401,21 @@ export function setQuestionActive(db: SqlDatabase, id: number, active: boolean, 
 
 // --- one question, in depth ---------------------------------------------------------------------
 
+export type PoolGrain = "week" | "day";
+
+/** One bucket of the evolution chart. Despite the name it is a day when the grain is "day". */
 export interface PoolWeek {
-  /** Monday of the week, YYYY-MM-DD. */
+  /** First day of the bucket (the Monday for weeks), YYYY-MM-DD. */
   week: string;
   asked: number;
   answeredAssigned: number;
   responses: number;
   /** 0..1, null under the minimum group size. */
   avgScore: number | null;
+  /** Standard deviation of the scores in the bucket (0..1), null under the minimum group size. */
+  sd: number | null;
+  /** Running mean of every answer up to and including this bucket (0..1), null until 10 answers. */
+  cumMean: number | null;
 }
 
 export interface PoolSegment {
@@ -444,32 +451,49 @@ export interface PoolQuestionDetail {
 }
 
 const WEEK = (col: string) => `date(${col}, 'weekday 0', '-6 days')`;
+const BUCKET = (grain: PoolGrain, col: string) => (grain === "day" ? `date(${col})` : WEEK(col));
 
-export function getPoolQuestion(db: SqlDatabase, id: number, opts: { now?: number; config?: Partial<EngineConfig> } = {}): PoolQuestionDetail | null {
+export function getPoolQuestion(db: SqlDatabase, id: number, opts: { now?: number; config?: Partial<EngineConfig>; grain?: PoolGrain } = {}): PoolQuestionDetail | null {
   const cfg = resolveConfig(db, opts.config);
   const question = listPool(db, opts).questions.find((q) => q.id === id);
   if (!question) return null;
   const min = cfg.minGroupSize;
 
+  const grain = opts.grain ?? "week";
   const weeks = new Map<string, PoolWeek>();
-  const week = (w: string) => weeks.get(w) ?? weeks.set(w, { week: w, asked: 0, answeredAssigned: 0, responses: 0, avgScore: null }).get(w)!;
+  const week = (w: string) => weeks.get(w) ?? weeks.set(w, { week: w, asked: 0, answeredAssigned: 0, responses: 0, avgScore: null, sd: null, cumMean: null }).get(w)!;
   for (const r of all<{ w: string; asked: number; answered: number }>(
     db,
-    `SELECT ${WEEK("day")} AS w, COUNT(*) AS asked, SUM(answered_at IS NOT NULL) AS answered FROM assignment WHERE pregunta_id = ? GROUP BY w`,
+    `SELECT ${BUCKET(grain, "day")} AS w, COUNT(*) AS asked, SUM(answered_at IS NOT NULL) AS answered FROM assignment WHERE pregunta_id = ? GROUP BY w`,
     id,
   )) {
     const x = week(r.w);
     x.asked = r.asked;
     x.answeredAssigned = r.answered;
   }
-  for (const r of all<{ w: string; n: number; avg: number | null }>(
+  const sums = new Map<string, { n: number; ns: number; sum: number; sq: number }>();
+  for (const r of all<{ w: string; n: number; ns: number; sum: number | null; sq: number | null }>(
     db,
-    `SELECT ${WEEK("data")} AS w, COUNT(*) AS n, AVG(score) AS avg FROM resposta WHERE pregunta_id = ? GROUP BY w`,
+    `SELECT ${BUCKET(grain, "data")} AS w, COUNT(*) AS n, COUNT(score) AS ns, SUM(score) AS sum, SUM(score * score) AS sq FROM resposta WHERE pregunta_id = ? GROUP BY w`,
     id,
   )) {
-    const x = week(r.w);
-    x.responses = r.n;
-    x.avgScore = r.n >= min ? r.avg : null;
+    week(r.w).responses = r.n;
+    sums.set(r.w, { n: r.n, ns: r.ns, sum: r.sum ?? 0, sq: r.sq ?? 0 });
+  }
+  let cn = 0;
+  let cs = 0;
+  for (const w of [...weeks.keys()].sort()) {
+    const x = week(w);
+    const t = sums.get(w);
+    if (!t) continue;
+    cn += t.ns;
+    cs += t.sum;
+    if (t.ns >= min) {
+      const mean = t.sum / t.ns;
+      x.avgScore = mean;
+      x.sd = Math.sqrt(Math.max(0, t.sq / t.ns - mean * mean));
+    }
+    x.cumMean = cn >= min ? cs / cn : null;
   }
 
   const periods = all<{ p: string; n: number; avg: number | null }>(

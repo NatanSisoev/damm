@@ -80,6 +80,9 @@ test("pool detail: weekly series, distribution and suppression", async () => {
   assert.equal(d.question.responses, 12);
   assert.equal(d.weekly.length, 1);
   assert.equal(d.weekly[0]!.week, "2026-09-28"); // Monday of the week of 2026-10-01
+  assert.ok(d.weekly[0]!.sd! > 0.2 && d.weekly[0]!.sd! < 0.5);
+  assert.equal(d.weekly[0]!.cumMean, d.weekly[0]!.avgScore);
+  assert.equal(getPoolQuestion(db, id, { now: T0, grain: "day" })!.weekly[0]!.week, "2026-10-01");
   assert.equal(d.distribution!.bars.reduce((s, b) => s + b.count, 0), 12);
   assert.ok(d.segments.every((s) => s.suppressed === (s.responses < 10)));
   assert.equal(getPoolQuestion(db, 9999, { now: T0 }), null);
