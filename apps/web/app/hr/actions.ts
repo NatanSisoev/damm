@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { draftSurvey, redraftQuestion } from "@damm/ai";
 import {
   approveQuestion, getRedraftContext, listCollectius, moveDraft, replaceDraft, saveDraftSurvey, updateNeedHeader, approveRecommendation, createNecessitat, discardQuestion,
-  discardRecommendation, publishNecessitat, updateDraftText,
+  discardRecommendation, publishNecessitat, updateDraftText, closeNecessitat, setSignalStatus,
 } from "@damm/db/hr";
 import { createDraftedFollowUp } from "./follow-up";
 
@@ -84,4 +84,15 @@ export async function followUpAction(formData: FormData) {
   await createDraftedFollowUp(Number(formData.get("id")));
   revalidatePath("/hr/recommendations");
   redirect("/hr/review");
+}
+
+export async function closeNeedAction(formData: FormData) {
+  closeNecessitat(Number(formData.get("id")));
+  revalidatePath("/hr", "layout");
+}
+
+export async function setSignalStatusAction(formData: FormData) {
+  const id = Number(formData.get("id"));
+  setSignalStatus(id, String(formData.get("status") ?? ""));
+  revalidatePath("/hr", "layout");
 }

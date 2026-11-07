@@ -33,7 +33,7 @@ G-§9: "Criteris excloents". These outrank everything else.
 |----|-------------|--------|----------------|
 | R-X-1 | No real personal data anywhere: code, seed, DB, slides, screenshots, LLM prompts | done | Seed is synthetic (`packages/seed`). Re-check slide screenshots before the deck. |
 | R-X-2 | No identifiable individual results on any screen or export | done | n≥10 suppression plus complementary suppression (task 17), CSV export with `suprimit` (task 8). |
-| R-X-3 | Human control: nothing the AI proposes takes effect without a person approving it | done | Questions need `aprovada`; recommendations need approval. Re-verify once Natan's AI calls land. |
+| R-X-3 | Human control: nothing the AI proposes takes effect without a person approving it | done | Questions need `aprovada`; recommendations need approval. Re-verify once Natan's AI calls land. Gap: the approver of a recommendation is not recorded (needs `recomanacio.aprovada_per/aprovada_el`); `/hr/*` now sits behind `HR_ACCESS_CODE`. |
 | R-X-4 | No tokens or secrets exposed in code, git history, slides or screenshots | partial | `.env` is gitignored and `.env.example` has empty values. Still to do: a history scan (`git log -p \| grep -iE "key\|token\|secret"`) before the PR, and a check of the slides and screenshots. |
 
 ## 1. Challenge statement and principle
@@ -214,7 +214,7 @@ G-§8 principles, D-S16 trust pillars and D-S17 golden rules, merged. All Must.
 | ID | Requirement | Source | Status | Evidence / gap |
 |----|-------------|--------|--------|----------------|
 | R-PRIV-1 | Results always aggregated, never individual answers | G-§8, D-S17 | done | HR imports only `@damm/db/hr`; lint rule plus `check:anonymity` |
-| R-PRIV-2 | Minimum group threshold (guide: 5 to 10; ours: **10**) everywhere, exports included | G-§8, A | done | Plus complementary suppression |
+| R-PRIV-2 | Minimum group threshold (guide: 5 to 10; ours: **10**) everywhere, exports included | G-§8, A | done | Plus complementary suppression. Join-code account counts under 10 show "<10"; CSV export carries a suppression note. |
 | R-PRIV-3 | Automatic detection and removal of identifying data in comments (names, emails, phones) | G-§8 | done | `redactPii` regex before storage. LLM pass is optional (Natan). |
 | R-PRIV-4 | No individual profile or inference about specific people; cannot be used to evaluate anyone | G-§8, D-S16 "No vigilància" | done | Trajectories exist only inside the analysis layer; the admin sees counts only. |
 | R-PRIV-5 | **Transparency to respondents**: what the survey is for and how data is handled | G-§8, D-S16 | done | `/privacitat`: what we collect, what HR sees (n≥10), what we never do, comment redaction, session and account |

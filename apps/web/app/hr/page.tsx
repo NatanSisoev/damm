@@ -35,7 +35,11 @@ export default function HrHome() {
         <Stat
           label="Participació"
           value={o.participation === null ? "—" : `${Math.round(o.participation * 100)}%`}
-          hint={`de ${o.population.toLocaleString("ca-ES")} persones`}
+          hint={
+            o.coveredPopulation === null
+              ? `de ${o.population.toLocaleString("ca-ES")} persones`
+              : `de ${o.coveredPopulation.toLocaleString("ca-ES")} persones${o.excludedCollectius > 0 ? ` (${o.excludedCollectius} col·lectiu ocult per n<${MIN_GROUP_SIZE})` : ""}`
+          }
         />
         <Stat label="Respondents" value={fmt(o.respondents)} hint={o.periode ?? "Sense període"} />
         <Stat label="Necessitats obertes" value={o.openNeeds} hint="sense publicar" />
