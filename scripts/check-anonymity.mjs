@@ -91,6 +91,8 @@ const hrFiles = new Set();
 const FORBIDDEN = [
   "resposta", "resposta_seed", "compte_id", "push_subscripcio",
   "password_hash", "salt", "recovery_hash", "username",
+  // Engine per-account tables (C1): only the engine and its job may read them.
+  "assignment", "person_domain_state",
 ];
 // `compte` (the accounts table) is forbidden too, with ONE explicit whitelist:
 // accountCounts() in hr-repository.ts may count rows of `compte` grouped by collective
@@ -123,6 +125,8 @@ function walk(dir) {
 function forbiddenImport(spec) {
   if (spec === "@damm/db") return "the @damm/db root exposes getDb and raw tables";
   if (spec.startsWith("@damm/db/") && spec !== "@damm/db/hr") return "only @damm/db/hr is allowed (join/raw repositories are employee-side)";
+  if (spec === "@damm/engine" || (spec.startsWith("@damm/engine/") && spec !== "@damm/engine/hr")) return "only @damm/engine/hr is allowed (the engine root and job read per-account state)";
+  if (/packages\/engine/.test(spec)) return "HR code must not reach into engine internals";
   if (["better-sqlite3", "sqlite3", "node:sqlite"].includes(spec)) return "HR code must not open the database directly";
   if (/packages\/db|join-repository|response-repository|resposta-repository|compte-repository|account-repository|\/connection$/.test(spec)) return "HR code must not reach into db internals or raw repositories";
   return null;
