@@ -258,6 +258,7 @@ export default async function SignalPage({ params, searchParams }: { params: Pro
                       {r.seguimentNecessitatId && <span className="badge badge-accent">Seguiment creat</span>}
                     </div>
                     <RecommendationBody r={r} />
+                    <Link href={`/hr/recommendations/${r.id}`} className="mt-3 inline-block text-xs text-accent-ink hover:underline">Veure tot el detall →</Link>
                     {(r.estat === "proposada" || (r.estat === "aprovada" && !r.seguimentNecessitatId)) && (
                       <div className="mt-3 flex flex-wrap justify-end gap-2 border-t border-line pt-3">
                         {r.estat === "proposada" && (
