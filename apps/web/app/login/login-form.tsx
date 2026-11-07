@@ -7,7 +7,7 @@ import { TextField } from "../(employee)/components/text-field";
 import { RecoveryCodeScreen } from "../onboarding/recovery-code";
 import { loginAction, recoverAction, type LoginState } from "./actions";
 
-const err = "font-semibold text-accent-ink";
+const err = "font-semibold text-warn";
 
 export function LoginForm() {
   const [recovering, setRecovering] = useState(false);

@@ -54,3 +54,7 @@ All six are done and merged into `jan/dev` (2026-11-07): items 1 to 3 in `claude
 1. **P0 batch (about 2 to 3 h):** items 1 to 6. Items 1 and 3 go together in the need-ai branch (the follow-up calls the drafter). Items 2, 4, 5 and 6 are independent and small.
 2. **P1 batch:** items 8, 10, 11, 12, 13, 14 and 15 are Jan-only. For items 7, 9, 16 and 23, raise C3 or C4 contract entries with Natan first.
 3. **P2:** do item 18 (manager view) and item 19 (methodology) first, because they're visible in the pitch. The rest is polish.
+
+## Visual identity applied (2026-11-07)
+
+The "Paper" identity (`docs/visual-identity.md`) is applied on `jan/paper-identity`: one token source in `globals.css`, the employee PWA, HR and manager views retheme with ink buttons and 2px corners, the Damm wordmark and the hop hero are replaced, Hanken loads once, the app icon, manifest and `themeColor` are unified, and the lock emoji is an outline icon. This closes the brand inconsistencies noted in items 20, 22 and 26 (three styles for one product).

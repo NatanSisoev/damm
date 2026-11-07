@@ -84,7 +84,7 @@ export function PushToggle({ vapidKey, compact = false }: { vapidKey: string; co
               : "Activa-les i t'avisarem quan hi hagi preguntes noves. No veiem qui les rep."}
       </p>
       {state === "error" && (
-        <p role="alert" className="font-semibold text-accent-ink">
+        <p role="alert" className="font-semibold text-warn">
           No s&apos;han pogut activar les notificacions. Torna-ho a provar.
         </p>
       )}

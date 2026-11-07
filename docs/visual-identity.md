@@ -1,6 +1,6 @@
 # Visual identity: "Paper"
 
-Decided by Jan on 2026-11-07 (option C of three: Llúpol, Mediterrània, Paper). One look for the employee PWA, the HR dashboard and the manager view. Status: **spec only, not implemented yet.**
+Decided by Jan on 2026-11-07 (option C of three: Llúpol, Mediterrània, Paper). One look for the employee PWA, the HR dashboard and the manager view. Status: **implemented 2026-11-07 on `jan/paper-identity`** (see "What changed in code" at the end).
 
 Idea: ink on paper. Text first, thin rules, no decoration. Red is a signal, never a fill for decoration. It reads as a serious internal people tool, which supports the anonymity message.
 
@@ -58,7 +58,7 @@ Rules:
 - Errors say what happened and what to do, in one sentence.
 - Labels in sentence case. HR copy stays in the same register, only more technical.
 
-## What changes in code (when Jan asks to implement)
+## What changes in code (implemented)
 
 1. Move the `.hr-shell` tokens to `globals.css` (or a shared `theme.css`) and remove `.brand` / `brand.css`, `BrandHero`, Alfa Slab One and the stale zinc and black-sidebar tokens.
 2. Retheme the employee screens: ink primary buttons, 2px corners, flat header instead of the hop hero.
@@ -67,3 +67,12 @@ Rules:
 5. Re-run the dataviz palette validation if any chart token changes.
 
 Coordinate with the HR UI polish branch before touching `hr.css` or HR pages. Update `docs/employee-pwa-spec.md` and `docs/frontend-audit.md` when this lands.
+
+## What changed in code (2026-11-07)
+
+- `apps/web/app/globals.css` is the single token source (light and dark, 2px radii, `--line`, `--line-strong`, `--control-border` for 3:1 employee controls, `--on-accent`). `hr.css` keeps HR layout only. `brand.css`, `BrandHero`, `damm-logo.tsx`, Alfa Slab One and the zinc and black-sidebar tokens are gone.
+- Employee screens share `(employee)/components/frame.tsx` (`EmployeeFrame`, flat `PageHead`, outline `LockIcon`, `PrivacyNote`, `CompanyLabel` "Persones · Estrella Damm"). `app/wordmark.tsx` is the text wordmark used by HR and the poster.
+- Hanken Grotesk is loaded once in `app/layout.tsx` (400, 500, 700, 800). `themeColor` is ink `#17211a`, manifest background `#eef0ea`.
+- `app/icon.svg` and the four PNG icons are regenerated (ink square, white E, maskable keeps the glyph in the safe zone). `public/offline.html` follows the same palette and supports dark mode.
+- Chart tokens (`--co-*`, `--dom-*`, heatmap) moved unchanged, so the dataviz palette validation was not re-run.
+- Error text uses `--warn` now, because the accent is ink and no longer distinct from body text.

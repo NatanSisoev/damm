@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import type { PoolNextResponse, PostResponsesRequest } from "@damm/shared";
+import { PrivacyNote } from "./frame";
 import {
   EMPTY_DRAFT,
   isAnswerable,
@@ -172,10 +173,10 @@ export function AnswerFlow({ compteId }: { compteId: string }) {
       <div role="status" aria-busy="true" aria-live="polite" className="py-4">
         <span className="sr-only">Carregant les preguntes d&apos;avui…</span>
         <div aria-hidden className="animate-pulse">
-          <div className="mb-6 h-1.5 rounded-full bg-surface-muted" />
+          <div className="mb-6 h-1.5  bg-surface-muted" />
           <div className="mb-3 h-6 w-4/5 rounded bg-surface-muted" />
           <div className="mb-8 h-6 w-3/5 rounded bg-surface-muted" />
-          <div className="h-14 rounded-xl bg-surface-muted" />
+          <div className="h-14 bg-surface-muted" />
         </div>
       </div>
     );
@@ -197,17 +198,17 @@ export function AnswerFlow({ compteId }: { compteId: string }) {
   if (phase === "done" || !q) {
     return (
       <div>
-        <section className="hop rounded-[28px] px-5 pb-8 pt-8">
-          <h2 className="out text-[48px]">Gràcies</h2>
-          <p className="hop-lede mt-3 max-w-sm text-base">
+        <section className="border-b border-line pb-6 pt-4">
+          <h2 className="page-title">Gràcies</h2>
+          <p className="mt-3 max-w-sm text-muted">
             {answeredAny || questions.length
               ? `Has respost ${questions.length === 1 ? "la pregunta" : `les ${questions.length} preguntes`} d'avui. Demà en tens de noves.`
               : "Avui ja has acabat. Demà en tens de noves."}
           </p>
         </section>
-        <p className="mt-4 rounded-xl border border-line bg-surface px-3 py-3 text-sm text-muted">
-          <span aria-hidden>🔒 </span>Anònim de debò. No et demanem nom ni correu. Només veiem grups de 10 persones o més.
-        </p>
+        <div className="mt-4">
+          <PrivacyNote>Anònim. Mínim 10 persones per grup.</PrivacyNote>
+        </div>
       </div>
     );
   }
@@ -220,9 +221,9 @@ export function AnswerFlow({ compteId }: { compteId: string }) {
           <span className="num">
             Pregunta {index + 1} de {questions.length}
           </span>
-          <span className="tag">Anònim</span>
+          <span className="eyebrow">Anònim</span>
         </div>
-        <div className="h-1.5 overflow-hidden rounded-full bg-surface-muted">
+        <div className="h-1.5 overflow-hidden  bg-surface-muted">
           <div
             className="h-full bg-accent transition-[width] duration-300"
             style={{ width: `${((index + 1) / questions.length) * 100}%` }}
@@ -234,7 +235,7 @@ export function AnswerFlow({ compteId }: { compteId: string }) {
 
       <div className="mt-auto pt-8">
         {message && (
-          <p role="alert" className="mb-3 font-semibold text-accent-ink">
+          <p role="alert" className="mb-3 font-semibold text-warn">
             {message}
           </p>
         )}
