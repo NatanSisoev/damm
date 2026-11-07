@@ -134,6 +134,22 @@ Commands (run from the repo root, pnpm 10):
 
 Config: copy `.env.example` to `.env` and fill it in. `PUBLIC_BASE_URL` (default `http://localhost:3000`) is the base for join links.
 
+## Docs
+
+Read these before planning work. Both people's agents keep them current.
+
+- `docs/requirements.md`: **the source of truth for scope.** It lists every requirement from the challenge deck and the participant guide with an ID (R-FLOW-2a, R-PRIV-8, N-5 and so on). Each one has a status, where it lives in the code, and its gap. The file ends with nice-to-haves and a list of the gaps that need the engine, AI, analysis or a schema change.
+  - Before starting a task, find the IDs it covers.
+  - Cite the IDs in commits, PRs and session briefs.
+  - When work merges into your `/dev` branch, update the status of those IDs in the same merge.
+  - Before a PR or a demo checkpoint, check that every Must still holds, starting with section 0 (the exclusion criteria).
+- `docs/backlog.md`: numbered tasks with their state (done, ready, blocked, deferred). It also has a "Needs Natan first" table. Mark a task done when it merges.
+- `docs/employee-pwa-spec.md`: the employee app's screens, flow and anonymity copy.
+- `docs/security-demo.md`: the steps for the anonymity and security demo (exclusion criteria, R-PRIV).
+- `docs/demo-script.md` and `docs/slide-notes.md`: the pitch flow and the slide content.
+
+When you add a doc, list it here with one line on what it is for.
+
 ## Before the demo
 
 In the last hour, branch protection can relax to "merge your own PR if checks pass". Freeze new features, only fix and polish, and make sure `main` builds and runs from a clean clone.
