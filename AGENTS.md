@@ -24,6 +24,11 @@ Find out who you are working for (Jan or Natan) from `git config user.name` or b
 - **Merge, never rebase** a branch that has been pushed. **Never force-push.**
 - On any merge conflict: stop, show the conflict, and ask. Do not guess at resolutions.
 - When the user says "sync", do the above.
+- **After every sync or pull, process the contract change log** (`docs/contract-changes.md`) before any other work:
+  1. Find every entry with an open action item (`- [ ]`) for your person.
+  2. Apply it in your own area, then tick it (`- [x]`) and add `(done YYYY-MM-DD, <commit>)`. If you cannot apply it yet, leave it open and tell the user why.
+  3. Commit the ticks with the work, so the other person sees what was incorporated.
+  4. Never edit or tick the other person's items. Never delete entries: the log is the history.
 
 ## Hard rules
 
@@ -38,6 +43,10 @@ Find out who you are working for (Jan or Natan) from `git config user.name` or b
 
 Work is split by area so the two of you rarely edit the same files. Stay in the areas your person has claimed. The shared contract (DB schema and API types) is agreed by both before anyone builds on it; change it only after telling the other person.
 
+- **Natan:** the engine (`packages/engine`): question scheduling, domain scores with confidence and consensus, personal trajectories and follow-ups, insights and alarms. Design: `docs/engine.md`.
+- **Contract change log:** every change to `packages/db/schema.sql`, `packages/shared` or an API another person calls gets an entry in `docs/contract-changes.md`, in the same commit. Each entry lists action items as checkboxes per person. See the sync rules for how to process it.
+- **Naming:** new code, tables, columns, enum values and docs are in English. Existing Catalan table and column names stay until both agree to rename them.
+
 ## Challenge
 
 Estrella Damm, UAB THE HACK 2026: an active-listening platform that creates tailored micro-surveys, gets representative participation, and turns answers into insights and actions, while always guaranteeing anonymity.
@@ -50,9 +59,76 @@ Non-negotiable rules:
 - Always aggregated, with a minimum group size. Never show individual answers.
 - AI proposes, a human decides.
 
+## Product decisions
+
+- **Collectives (4):** Fàbriques, Logística, Comercial, Oficines. Manager is a role flag, not a collective.
+- **Domains (6):** Benestar, Lideratge, Desenvolupament, Cultura i pertinença, Entorn i relacions, Condicions i organització. Each collective gets a different subset of items per domain.
+- **Minimum group size: 10.** Any segment (collective, shift, period, domain) with fewer than 10 respondents is suppressed everywhere, dashboard and exports included.
+- **No time tracking, no clock-in anchor.**
+- **Typeform is ignored.** The app is the only channel. "Publish" means putting approved questions in the survey pool and generating the join link and QR.
+- **App:** standalone mobile app (PWA). Onboarding: join code (identifies company and collective), then the user picks a username and password. The account maps to an opaque internal ID. No email or phone, no personal data. Credentials are salted-hashed. Recovery uses a one-time code.
+- **Admin sees only counts per collective, never identities.**
+- **Longitudinal tracking** per internal ID is for trajectory clustering only. It is never shown per person and never leaves the analysis layer.
+- **Hybrid engine:** continuous monitoring is the base (dynamic question pool over the 6 domains, about 2 questions a day, no same question 4 days in a row, more sampling on outliers). An approved HR need enters the pool with top priority.
+- **Synthetic data:** about 1,200 synthetic employees as the representativeness denominator, about 700 responses over 3 periods (Aug, Sep, Oct 2026), about 500 open comments. Deliberate biases: low night-shift response, an October emerging theme (shift system communication and breaks), a weak signal in Logística (safety equipment, heat), manager positivity bias, one sub-threshold group. Comments are generated once with the LLM and committed as JSON, so nobody needs the key to seed.
+
+## Architecture
+
+One TypeScript monorepo, one backend process with clean internal modules. No separate services: everything shares one SQLite file, and the central-server idea (send questions out, receive anonymized answers back) is a module and data boundary, not a deployment one. Splitting into services later is cheap because of these boundaries (future-evolution slide).
+
+```
+apps/web/            Next.js app
+  app/               employee PWA (onboarding, answering, push)
+  hr/                HR dashboard (need, drafts, approval, publish, results, recommendations)
+  api/               HTTP routes for both sides
+packages/db/         schema, migrations, repositories (shared contract)
+packages/shared/     types, zod schemas, constants (shared contract)
+packages/engine/     question selection (pure, deterministic, unit-testable)
+packages/ai/         draft questions, PII redaction, recommendations (LLM calls)
+packages/analysis/   clustering, trends, weak signals, representativeness, aggregates
+packages/seed/       synthetic population, responses and comments
+```
+
+### Layers
+
+1. **Data:** SQLite. Tables: reference (`collectiu`, `domini`, `centre_tipus`, `torn`), synthetic population (`empleat_sintetic`, seed only), accounts (`joincode`, `compte`), content (`necessitat`, `pregunta`, `publicacio`), responses (`resposta`, one row per answered question; comments stored redacted only), analysis outputs (`tema`, `comentari_tema`, `agregat`, `senyal`, `recomanacio`) and the hidden seed label (`resposta_seed`, never shipped with the app).
+2. **Engine:** given an account context and the pool state, returns the next questions: about 2 a day, no same question 4 days in a row, approved HR needs first, more sampling on outliers, formats and timing per collective and shift.
+3. **AI:** drafts questions from a need, redacts PII from comments, proposes recommendations and follow-up surveys. Proposals only, a human approves.
+4. **Analysis:** runs as jobs (script or `POST /api/jobs/run`) and writes aggregate tables. Clusters comments, finds emerging themes and weak signals, compares periods, computes representativeness against the synthetic population and suppresses segments below the minimum group size.
+5. **Employee app (PWA):** join code onboarding, answer UI per collective, push notifications, response submission.
+6. **HR dashboard:** need in natural language, review and approve AI drafts, publish (join link and QR), results with representativeness, recommendations, follow-up survey.
+
+### Integration points
+
+- The employee side and the HR side meet only through the DB and two endpoints: `GET /api/pool/next` (questions for an account) and `POST /api/responses` (answers in).
+- Approved questions enter the pool via `pregunta.estat = aprovada`. Publishing creates the join link and QR.
+- Analysis jobs write `agregat`, `tema`, `comentari_tema`, `senyal`, `recomanacio`. The dashboard reads only these. The LLM is never called in a dashboard request path.
+- The seed makes both sides workable independently: seeded responses feed analysis, seeded approved questions feed the engine.
+
+### Anonymity boundary (enforced in code, shown in the security demo)
+
+- Employee-side code may touch `compte`, `resposta` and the push-subscription table.
+- HR-side code and analysis read only the aggregate outputs and an analytics view without `compte_id`. HR routes import only the HR repository, never the raw response repository.
+- The trajectory job is the one reader of per-account history. It writes aggregates only.
+- The push subscription is stored in its own table keyed by `compte_id`, deleted on logout, never joined to analytics.
+- Admin sees account counts per collective only.
+
+### Push notifications
+
+Web push through the PWA (service worker plus VAPID keys in `.env`, `web-push` on the server). No APK. Android Chrome works installed or not; iOS needs the PWA added to the home screen (16.4+) and a user tap for permission. Push needs public HTTPS, so use a tunnel or a quick deploy for the phone demo. APK (Capacitor plus FCM) is a future-evolution item.
+
+### Shared contract
+
+`packages/db` and `packages/shared` (schema, types, API shapes) are the shared contract. Agree changes before building on them.
+
+## LLM
+
+- OpenAI-compatible API served by UAB DCC: `https://dcc-llm-gw.uab.cat/uabthehack/v1`. Only model: `ornith` (`nemotron` returns 404; checked 2026-11-07). It is a reasoning model: it thinks in a separate `reasoning` field before answering in `content`, so use a large `max_tokens` (1500+) and handle `content: null`. Send request bodies as UTF-8.
+- The team key goes in `.env` only (`LLM_API_KEY`), never in code, commits, slides or chat. `.env.example` has the variable names with empty values.
+
 ## Stack and commands
 
-- TypeScript monorepo, Next.js frontend, LLM API for question generation and comment clustering, SQLite with a seed script generating synthetic employees (plant, logistics, sales, offices).
+- TypeScript monorepo, Next.js frontend (PWA), LLM via the endpoint above for question generation and comment clustering, SQLite with a seed script generating synthetic employees (Fàbriques, Logística, Comercial, Oficines).
 
 Install, run, test and build commands: add them here as soon as they exist.
 
