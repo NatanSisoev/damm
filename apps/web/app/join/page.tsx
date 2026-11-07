@@ -1,31 +1,50 @@
+import { BrandFrame, BrandHero, PrivacyNote } from "../(employee)/components/brand";
 import { goToJoinAction } from "./actions";
 
-export default function JoinEntryPage() {
+export default async function JoinEntryPage({ searchParams }: { searchParams: Promise<{ compte?: string }> }) {
+  const { compte } = await searchParams;
   return (
-    <main className="mx-auto flex min-h-dvh max-w-md flex-col justify-center gap-6 p-6">
-      <div className="space-y-1">
-        <p className="text-sm opacity-60">Escolta activa</p>
-        <h1 className="text-2xl font-semibold">Introdueix el teu codi</h1>
-      </div>
-      <p className="text-sm opacity-70">
-        El trobaràs al cartell o al missatge del teu equip (per exemple DAMM-FAB). Si tens el QR, escaneja&apos;l directament.
-      </p>
-      <form action={goToJoinAction} className="space-y-4">
-        <label className="block space-y-1 text-sm">
-          <span>Codi d&apos;accés</span>
-          <input
-            name="codi"
-            required
-            autoFocus
-            autoCapitalize="characters"
-            autoComplete="off"
-            spellCheck={false}
-            placeholder="DAMM-XXX"
-            className="w-full rounded border bg-transparent px-3 py-3 font-mono uppercase tracking-wide"
-          />
-        </label>
-        <button className="w-full rounded bg-black px-4 py-3 text-white dark:bg-white dark:text-black">Continua</button>
-      </form>
-    </main>
+    <BrandFrame>
+      <main className="mx-auto flex min-h-dvh w-full max-w-xl flex-col gap-6 md:py-8">
+        <BrandHero
+          title="Escoltem la teva veu"
+          lede="Dues preguntes breus al dia. Sense nom, sense rastre."
+          size="lg"
+        />
+        {compte === "esborrat" && (
+          <p role="status" className="mx-4 rounded-xl border border-line bg-surface px-4 py-3 font-semibold">
+            Compte esborrat. Les respostes que vas donar es queden com a dades anònimes.
+          </p>
+        )}
+        <form action={goToJoinAction} className="space-y-4 px-4">
+          <div>
+            <label htmlFor="codi" className="label">
+              Codi d&apos;unió
+            </label>
+            <input
+              id="codi"
+              name="codi"
+              required
+              autoFocus
+              autoCapitalize="characters"
+              autoComplete="off"
+              spellCheck={false}
+              placeholder="DAMM-XXX"
+              aria-describedby="codi-hint"
+              className="input font-mono uppercase tracking-wider"
+            />
+            <p id="codi-hint" className="mt-1 text-sm text-muted">
+              Està al cartell o al missatge del teu equip. Si tens el QR, escaneja&apos;l directament.
+            </p>
+          </div>
+          <button className="btn btn-primary h-14 w-full text-base">Entra</button>
+        </form>
+        <div className="px-4 pb-8">
+          <PrivacyNote>
+            Anònim de debò. No et demanem nom ni correu. Només veiem grups de 10 persones o més.
+          </PrivacyNote>
+        </div>
+      </main>
+    </BrandFrame>
   );
 }

@@ -5,8 +5,8 @@ import {
 } from "../actions";
 import { Card, Empty, PageHeader } from "../ui";
 import { SignalBadges } from "../signal-labels";
+import { recommendationStatus } from "../labels";
 
-const ESTAT: Record<string, string> = { proposada: "", aprovada: "badge-good", descartada: "" };
 
 export default function RecommendationsPage() {
   const signals = listSignals();
@@ -14,7 +14,7 @@ export default function RecommendationsPage() {
   return (
     <>
       <PageHeader
-        title="Senyals i recomanacions"
+        title="Recomanacions"
         subtitle="Senyals detectats a l'anàlisi i accions proposades per la IA. Una persona decideix quines tirar endavant."
       />
       <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
@@ -45,7 +45,7 @@ export default function RecommendationsPage() {
               {recs.map((r) => (
                 <li key={r.id} className={`rounded-lg border border-line p-4 ${r.estat === "descartada" ? "opacity-60" : ""}`}>
                   <div className="mb-2 flex items-center gap-2">
-                    <span className={`badge ${ESTAT[r.estat] ?? ""}`}>{r.estat}</span>
+                    <span className={`badge ${recommendationStatus(r.estat).cls}`}>{recommendationStatus(r.estat).label}</span>
                     {r.seguimentNecessitatId && <span className="badge badge-accent">Seguiment creat</span>}
                   </div>
                   <p>{r.text}</p>

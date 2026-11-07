@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { MIN_GROUP_SIZE } from "@damm/shared";
 import { listJoinCodes } from "@damm/db/hr";
+import { minutes } from "../../../labels";
 import { DammLogo } from "../../../damm-logo";
 import { joinUrl, qrSvg } from "../../qr";
 import { PrintButton } from "./print-button";
@@ -21,10 +22,10 @@ export default async function PosterPage({ params }: PageProps<"/hr/publish/[cod
     <>
       <style>{`
         @page { size: A4; margin: 0; }
-        .poster-root { position: fixed; inset: 0; z-index: 50; overflow: auto; background: #fff; color: #111; }
+        .poster-root { --brand-red: #c8201a; position: fixed; inset: 0; z-index: 50; overflow: auto; background: #fff; color: #111; }
         @media print {
-          aside { display: none !important; }
-          div:has(> aside) { display: block !important; min-height: 0 !important; }
+          .hr-bar, .hr-shell > footer { display: none !important; }
+          .hr-shell { display: block !important; min-height: 0 !important; }
           main { padding: 0 !important; }
           html, body { background: #fff !important; }
           .poster-root { position: static; overflow: visible; }
@@ -41,11 +42,11 @@ export default async function PosterPage({ params }: PageProps<"/hr/publish/[cod
           className="poster-page mx-auto my-6 flex flex-col items-center bg-white px-[16mm] py-[14mm] text-center shadow-lg"
           style={{ width: "210mm", height: "297mm", boxSizing: "border-box", overflow: "hidden", breakInside: "avoid" }}
         >
-          <DammLogo className="h-[18mm] w-auto text-[#c8102e]" />
+          <DammLogo className="h-[18mm] w-auto text-[var(--brand-red)]" />
           <p className="mt-[6mm] text-[5mm] font-medium uppercase tracking-[0.2em] text-neutral-500">
             Escolta activa · {row.collectiu}
           </p>
-          <h1 className="mt-[8mm] text-[12mm] font-bold leading-[1.1] text-balance">Escaneja i respon en 1&nbsp;minut</h1>
+          <h1 className="mt-[8mm] text-[12mm] font-bold leading-[1.1] text-balance">Escaneja i respon en {minutes(1)}</h1>
           <div
             role="img"
             aria-label={`Codi QR per a ${row.collectiu}`}
@@ -56,7 +57,7 @@ export default async function PosterPage({ params }: PageProps<"/hr/publish/[cod
           <ul className="mt-auto w-full space-y-[3mm] text-left">
             {promises.map((p) => (
               <li key={p} className="flex items-center gap-[4mm] rounded-[3mm] bg-neutral-100 px-[6mm] py-[4mm] text-[5mm] font-medium">
-                <span aria-hidden className="grid size-[8mm] shrink-0 place-items-center rounded-full bg-[#c8102e] text-[5mm] text-white">✓</span>
+                <span aria-hidden className="grid size-[8mm] shrink-0 place-items-center rounded-full bg-[var(--brand-red)] text-[5mm] text-white">✓</span>
                 {p}
               </li>
             ))}

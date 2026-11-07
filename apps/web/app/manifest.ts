@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 
-// Web app manifest for the employee PWA. Plain placeholder icons; brand work is separate.
+// Web app manifest for the employee PWA. Icons: white "D" speech-bubble mark on brand red (source: app/icon.svg; maskable keeps the glyph inside the safe zone).
 export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "Escolta activa",

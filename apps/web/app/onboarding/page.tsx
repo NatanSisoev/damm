@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { lookupJoinCode } from "@damm/db/join";
+import { BrandFrame, BrandHero } from "../(employee)/components/brand";
 import { OnboardingForm } from "./onboarding-form";
 
 export const dynamic = "force-dynamic";
@@ -11,23 +12,31 @@ export default async function OnboardingPage({ searchParams }: { searchParams: P
   const valid = info !== null && info.actiu;
 
   return (
-    <main className="mx-auto flex min-h-dvh max-w-md flex-col justify-center gap-6 p-6">
-      {valid ? (
-        <>
-          <OnboardingForm codi={codi} empresa={info.empresa} collectiu={info.collectiu} />
-          <p className="text-center text-sm">
-            <Link href="/privacitat" className="underline">Com tractem les teves dades</Link>
-          </p>
-        </>
-      ) : (
-        <div className="space-y-2">
-          <h1 className="text-2xl font-semibold">Codi no vàlid</h1>
-          <p className="text-sm opacity-70">
-            Aquest codi no existeix o ja no està actiu. Comprova l&apos;enllaç o demana un codi nou al teu equip.
-          </p>
-          <Link href="/join" className="inline-block underline text-sm">Introdueix un altre codi</Link>
-        </div>
-      )}
-    </main>
+    <BrandFrame>
+      <main className="mx-auto flex min-h-dvh w-full max-w-xl flex-col gap-6 md:py-8">
+        {valid ? (
+          <>
+            <BrandHero eyebrow={`${info.empresa} · ${info.collectiu}`} title="Crea el teu compte" />
+            <div className="px-4 pb-8">
+              <OnboardingForm codi={codi} />
+              <p className="mt-6 text-center text-sm">
+                <Link href="/privacitat" className="underline">
+                  Com tractem les teves dades
+                </Link>
+              </p>
+            </div>
+          </>
+        ) : (
+          <>
+            <BrandHero title="Codi no vàlid" lede="Aquest codi no existeix o ja no està actiu. Comprova l'enllaç o demana un codi nou al teu equip." />
+            <p className="px-4">
+              <Link href="/join" className="btn">
+                Introdueix un altre codi
+              </Link>
+            </p>
+          </>
+        )}
+      </main>
+    </BrandFrame>
   );
 }

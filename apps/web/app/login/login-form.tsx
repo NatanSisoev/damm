@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { useActionState, useState } from "react";
+import { PasswordField } from "../(employee)/components/password-field";
+import { TextField } from "../(employee)/components/text-field";
 import { RecoveryCodeScreen } from "../onboarding/recovery-code";
 import { loginAction, recoverAction, type LoginState } from "./actions";
 
-const input = "w-full rounded border bg-transparent px-3 py-3";
-const primary = "w-full rounded bg-black px-4 py-3 text-white disabled:opacity-40 dark:bg-white dark:text-black";
+const err = "font-semibold text-accent-ink";
 
 export function LoginForm() {
   const [recovering, setRecovering] = useState(false);
@@ -18,49 +19,49 @@ export function LoginForm() {
   if (recovering) {
     return (
       <form action={recDo} className="space-y-5">
-        <h1 className="text-2xl font-semibold">Recupera el compte</h1>
-        <p className="text-sm opacity-70">
+        <h2 className="section-title">Recupera el compte</h2>
+        <p className="text-muted">
           Introdueix el teu usuari, el codi de recuperació que vas desar i una contrasenya nova. El codi només serveix
           una vegada; te&apos;n donarem un de nou.
         </p>
-        <label className="block space-y-1 text-sm">
-          <span>Nom d&apos;usuari</span>
-          <input name="username" required autoComplete="username" autoCapitalize="none" className={input} />
-        </label>
-        <label className="block space-y-1 text-sm">
-          <span>Codi de recuperació</span>
-          <input name="code" required autoCapitalize="characters" autoComplete="off" className={`${input} font-mono`} />
-        </label>
-        <label className="block space-y-1 text-sm">
-          <span>Contrasenya nova</span>
-          <input name="password" type="password" required minLength={8} autoComplete="new-password" className={input} />
-        </label>
-        {rec.error && <p role="alert" className="text-sm text-red-600">{rec.error}</p>}
-        <button disabled={recPending} className={primary}>Canvia la contrasenya</button>
-        <button type="button" onClick={() => setRecovering(false)} className="w-full text-sm underline">Torna a l&apos;inici de sessió</button>
+        <TextField name="username" label="Nom d'usuari" autoComplete="username" />
+        <TextField name="code" label="Codi de recuperació" autoCapitalize="characters" mono />
+        <PasswordField name="password" label="Contrasenya nova" autoComplete="new-password" showHint minLength={8} />
+        {rec.error && (
+          <p role="alert" className={err}>
+            {rec.error}
+          </p>
+        )}
+        <button disabled={recPending} className="btn btn-primary h-14 w-full justify-center text-base disabled:opacity-50">
+          Canvia la contrasenya
+        </button>
+        <button type="button" onClick={() => setRecovering(false)} className="btn btn-ghost w-full justify-center underline">
+          Torna a l&apos;inici de sessió
+        </button>
       </form>
     );
   }
 
   return (
     <form action={loginDo} className="space-y-5">
-      <h1 className="text-2xl font-semibold">Inicia la sessió</h1>
-      <label className="block space-y-1 text-sm">
-        <span>Nom d&apos;usuari</span>
-        <input name="username" required autoComplete="username" autoCapitalize="none" className={input} />
-      </label>
-      <label className="block space-y-1 text-sm">
-        <span>Contrasenya</span>
-        <input name="password" type="password" required autoComplete="current-password" className={input} />
-      </label>
-      {login.error && <p role="alert" className="text-sm text-red-600">{login.error}</p>}
-      <button disabled={loginPending} className={primary}>Entra</button>
-      <button type="button" onClick={() => setRecovering(true)} className="w-full text-sm underline">He perdut la contrasenya</button>
-      <p className="text-center text-sm opacity-70">
-        Primera vegada? Obre l&apos;enllaç d&apos;invitació del teu equip.
-      </p>
+      <TextField name="username" label="Nom d'usuari" autoComplete="username" />
+      <PasswordField name="password" label="Contrasenya" autoComplete="current-password" />
+      {login.error && (
+        <p role="alert" className={err}>
+          {login.error}
+        </p>
+      )}
+      <button disabled={loginPending} className="btn btn-primary h-14 w-full justify-center text-base disabled:opacity-50">
+        Entra
+      </button>
+      <button type="button" onClick={() => setRecovering(true)} className="btn btn-ghost w-full justify-center underline">
+        He perdut la contrasenya
+      </button>
+      <p className="text-center text-sm text-muted">Primera vegada? Obre l&apos;enllaç d&apos;invitació del teu equip.</p>
       <p className="text-center text-sm">
-        <Link href="/privacitat" className="underline">Com tractem les teves dades</Link>
+        <Link href="/privacitat" className="underline">
+          Com tractem les teves dades
+        </Link>
       </p>
     </form>
   );

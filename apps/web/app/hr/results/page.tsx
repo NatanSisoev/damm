@@ -13,6 +13,8 @@ import {
   PRECISION_MODERADA_MIN_N,
   PRECISION_SOLIDA_MIN_N,
 } from "@damm/db/hr";
+import { hrInsights } from "@/lib/hr-engine";
+import { InsightCards } from "../insight-cards";
 
 function radarData(trends: ReturnType<typeof getTrends>, vs: string | undefined) {
   const [overall, ...perCollective] = trends.series;
@@ -39,6 +41,7 @@ export default async function ResultsPage({ searchParams }: { searchParams: Prom
   const trends = getTrends();
   const themes = listThemes();
   const counts = accountCounts();
+  const insights = hrInsights({ role: "hr" }, { kind: ["top_mover", "polarisation", "importance_gap", "trajectory_mix", "followup_confirmation", "segment_gap"] }).slice(0, 12);
   const [overall, ...perCollective] = trends.series;
 
   const allVisible = counts.every((c) => c.comptes !== null);
@@ -68,10 +71,14 @@ export default async function ResultsPage({ searchParams }: { searchParams: Prom
         <Stat label="Segments suprimits" value={suppressedSegments} hint={suppressedHint} />
       </div>
 
+      <Card title="Què destaca el motor" meta={<span className="num">{insights.length}</span>} className="mt-6">
+        <InsightCards insights={insights} empty="Encara no hi ha prou respostes per destacar res (cal n ≥ 10)." />
+      </Card>
+
       <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
         <Card
           title="Perfil per domini"
-          meta="Mitjana 1–5"
+          meta="Mitjana per domini"
         >
           {radar ? (
             <div className="space-y-4">

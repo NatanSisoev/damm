@@ -77,7 +77,11 @@ export default async function PrivacyPage() {
         <ul className={list}>
           <li>Pots tancar la sessió a Configuració. Això esborra la subscripció a notificacions del dispositiu.</li>
           <li>Si perds la contrasenya, la recuperes amb el codi d&apos;un sol ús que et vam donar en crear el compte.</li>
-          <li>Ara mateix l&apos;app no té l&apos;opció d&apos;esborrar el compte.</li>
+          <li>
+            Pots esborrar el compte a Configuració. S&apos;esborren l&apos;usuari, la contrasenya i la subscripció a
+            notificacions. Les respostes que ja has donat es queden com a dades anònimes dins dels resultats de grup, ja
+            sense cap enllaç amb tu, i no es poden tornar a lligar al teu compte.
+          </li>
         </ul>
       </Section>
     </EmployeeShell>

@@ -11,9 +11,6 @@ import {
   type PoolQuestion,
 } from "./question-renderer";
 
-// Same cap the server applies (DAILY_QUESTION_LIMIT in @damm/db/employee).
-const DAILY_QUESTION_LIMIT = 2;
-
 type Phase = "loading" | "answering" | "done" | "error";
 
 // In-progress answers live on this device only (never sent anywhere until the person submits).
@@ -199,20 +196,17 @@ export function AnswerFlow({ compteId }: { compteId: string }) {
   }
   if (phase === "done" || !q) {
     return (
-      <div className="card px-6 py-12 text-center">
-        <div
-          aria-hidden
-          className="mx-auto mb-4 flex size-12 items-center justify-center rounded-full bg-good-soft text-good"
-        >
-          <svg viewBox="0 0 24 24" className="size-6" fill="none" stroke="currentColor" strokeWidth="2.2">
-            <path d="m5 12.5 4.5 4.5L19 7.5" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </div>
-        <h2 className="text-xl font-semibold">Avui ja has acabat</h2>
-        <p className="mt-2 text-muted">Tornem demà amb un parell de preguntes.</p>
-        <p className="mt-4 text-sm text-subtle">
-          {answeredAny ? "Gràcies! Les teves respostes són anònimes. " : ""}Mai et farem més de{" "}
-          {DAILY_QUESTION_LIMIT} preguntes al dia.
+      <div>
+        <section className="hop rounded-[28px] px-5 pb-8 pt-8">
+          <h2 className="out text-[48px]">Gràcies</h2>
+          <p className="hop-lede mt-3 max-w-sm text-base">
+            {answeredAny || questions.length
+              ? `Has respost ${questions.length === 1 ? "la pregunta" : `les ${questions.length} preguntes`} d'avui. Demà en tens de noves.`
+              : "Avui ja has acabat. Demà en tens de noves."}
+          </p>
+        </section>
+        <p className="mt-4 rounded-xl border border-line bg-surface px-3 py-3 text-sm text-muted">
+          <span aria-hidden>🔒 </span>Anònim de debò. No et demanem nom ni correu. Només veiem grups de 10 persones o més.
         </p>
       </div>
     );
@@ -226,7 +220,7 @@ export function AnswerFlow({ compteId }: { compteId: string }) {
           <span className="num">
             Pregunta {index + 1} de {questions.length}
           </span>
-          <span className="badge">Anònim</span>
+          <span className="tag">Anònim</span>
         </div>
         <div className="h-1.5 overflow-hidden rounded-full bg-surface-muted">
           <div
@@ -240,7 +234,7 @@ export function AnswerFlow({ compteId }: { compteId: string }) {
 
       <div className="mt-auto pt-8">
         {message && (
-          <p role="alert" className="mb-3 text-sm text-accent-ink">
+          <p role="alert" className="mb-3 font-semibold text-accent-ink">
             {message}
           </p>
         )}
@@ -248,7 +242,7 @@ export function AnswerFlow({ compteId }: { compteId: string }) {
           type="button"
           onClick={submit}
           disabled={!isAnswerable(q, draft) || sending}
-          className="h-14 w-full rounded-xl bg-accent text-base font-semibold text-white transition-colors hover:bg-accent-hover disabled:opacity-40"
+          className="btn btn-primary h-14 w-full justify-center text-base disabled:opacity-40"
         >
           {sending ? "Enviant…" : message ? "Torna-ho a provar" : last ? "Envia" : "Envia i continua"}
         </button>

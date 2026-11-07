@@ -31,10 +31,6 @@ q.run(6, 1, "El sistema de torns es comunica amb prou antelació?", "scale5");
 q.run(1, 1, "Les pauses durant el torn són suficients?", "scale5");
 q.run(4, 1, "Què canviaries del sistema de torns?", "open");
 
-const ag = db.prepare("INSERT INTO agregat (periode, collectiu_id, torn_id, domini_id, n, mitjana, suprimit) VALUES (?,?,?,?,?,?,?)");
-ag.run("2026-10", 1, 1, 6, 64, 3.6, 0);
-ag.run("2026-10", 1, 3, 6, 12, 2.9, 0);
-ag.run("2026-10", 2, 3, 6, 6, 3.1, 0); // below 10: hidden on read
 // Synthetic population (denominator for representativeness): 1,200 employees.
 const emp = db.prepare("INSERT INTO empleat_sintetic (collectiu_id, centre_tipus_id, torn_id) VALUES (?,?,?)");
 const pop: [number, number, number | null, number][] = [
@@ -44,28 +40,7 @@ const pop: [number, number, number | null, number][] = [
 ];
 for (const [c, ct, t, n] of pop) for (let i = 0; i < n; i++) emp.run(c, ct, t);
 
-// Respondents (domini NULL) for the latest period; Logística night shift is below the minimum.
-const resp: [number, number | null, number][] = [
-  [1, null, 150], [1, 1, 70], [1, 2, 55], [1, 3, 25],
-  [2, null, 100], [2, 1, 50], [2, 2, 44], [2, 3, 6],
-  [3, null, 90], [4, null, 160],
-];
-for (const [c, t, n] of resp) ag.run("2026-10", c, t, null, n, null, n < 10 ? 1 : 0);
-
-// Mean score per domain and period, overall (collectiu NULL) and per collective. A few cells are small.
-const periods = ["2026-08", "2026-09", "2026-10"];
-const base = [3.8, 3.6, 3.4, 3.7, 3.9, 3.3];
-for (const c of [null, 1, 2, 3, 4]) {
-  for (let d = 1; d <= 6; d++) {
-    periods.forEach((per, pi) => {
-      const drift = d === 6 ? -0.25 * pi : d === 1 && c === 2 ? -0.1 * pi : 0.05 * pi;
-      const n = c === null ? 480 + pi * 20 : c === 2 && pi === 0 && d === 3 ? 7 : 40 + pi * 5 + c;
-      const small = n < 10;
-      const mean = Math.round((base[d - 1] + drift + (c ?? 0) * 0.04) * 10) / 10;
-      ag.run(per, c, null, d, n, small ? null : mean, small ? 1 : 0);
-    });
-  }
-}
+// agregat is written by the engine job (runEngineJob) after seeding.
 
 // Themes from comment clustering. October has an emergent theme; one theme is below the minimum.
 const tm = db.prepare("INSERT INTO tema (etiqueta, resum, periode, n, emergent, suprimit) VALUES (?,?,?,?,?,?)");
