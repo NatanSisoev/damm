@@ -17,7 +17,7 @@ export function OpenInput({ value, onChange }: { value: string; onChange: (v: st
         onChange={(e) => onChange(e.target.value)}
         placeholder="Escriu amb les teves paraules…"
       />
-      <div className="mt-1 flex justify-between text-xs text-subtle">
+      <div className="mt-1 flex justify-between text-sm text-muted">
         <span>Anònim. No hi posis dades personals (noms, telèfons, correus).</span>
         <span className="num">
           {value.length}/{OPEN_MAX}

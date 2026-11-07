@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { lookupJoinCode } from "@damm/db/join";
+import { BrandFrame, BrandHero, PrivacyNote } from "../../(employee)/components/brand";
 
 export const dynamic = "force-dynamic";
 
@@ -9,39 +10,43 @@ export default async function JoinPage({ params }: { params: Promise<{ codi: str
   const valid = info !== null && info.actiu;
 
   return (
-    <main className="mx-auto flex min-h-dvh max-w-md flex-col justify-center gap-6 p-6">
-      {valid ? (
-        <>
-          <div className="space-y-1">
-            <p className="text-sm opacity-60">Escolta activa</p>
-            <h1 className="text-2xl font-semibold">Et donem la benvinguda a {info.empresa}</h1>
-          </div>
-          <div className="rounded border p-4 text-sm">
-            <div className="opacity-60">Col·lectiu</div>
-            <div className="text-lg font-medium">{info.collectiu}</div>
-          </div>
-          <p className="text-sm opacity-70">
-            Les teves respostes són anònimes i només es mostren de forma agregada.
-          </p>
-          <Link
-            href={`/onboarding?codi=${encodeURIComponent(codi.toUpperCase())}`}
-            className="rounded bg-black px-4 py-3 text-center text-white dark:bg-white dark:text-black"
-          >
-            Continua
-          </Link>
-          <p className="text-center text-sm">
-            <Link href="/privacitat" className="underline">Com tractem les teves dades</Link>
-          </p>
-        </>
-      ) : (
-        <div className="space-y-2">
-          <h1 className="text-2xl font-semibold">Codi no vàlid</h1>
-          <p className="text-sm opacity-70">
-            Aquest codi no existeix o ja no està actiu. Comprova l&apos;enllaç o demana un codi nou al teu equip.
-          </p>
-          <Link href="/join" className="inline-block underline text-sm">Torna a provar amb un altre codi</Link>
-        </div>
-      )}
-    </main>
+    <BrandFrame>
+      <main className="mx-auto flex min-h-dvh w-full max-w-xl flex-col gap-6 md:py-8">
+        {valid ? (
+          <>
+            <BrandHero eyebrow={info.empresa} title="Benvinguda" lede={`Et donem la benvinguda a ${info.empresa}. Les teves respostes són anònimes i només es mostren de forma agregada.`} />
+            <div className="space-y-4 px-4">
+              <div className="card p-4">
+                <div className="text-sm text-muted">Col·lectiu</div>
+                <div className="text-lg font-bold">{info.collectiu}</div>
+              </div>
+              <Link
+                href={`/onboarding?codi=${encodeURIComponent(codi.toUpperCase())}`}
+                className="btn btn-primary h-14 w-full justify-center text-base"
+              >
+                Continua
+              </Link>
+              <PrivacyNote>
+                Anònim de debò. No et demanem nom ni correu. Només veiem grups de 10 persones o més.
+              </PrivacyNote>
+              <p className="pb-8 text-center text-sm">
+                <Link href="/privacitat" className="underline">
+                  Com tractem les teves dades
+                </Link>
+              </p>
+            </div>
+          </>
+        ) : (
+          <>
+            <BrandHero title="Codi no vàlid" lede="Aquest codi no existeix o ja no està actiu. Comprova l'enllaç o demana un codi nou al teu equip." />
+            <p className="px-4">
+              <Link href="/join" className="btn">
+                Torna a provar amb un altre codi
+              </Link>
+            </p>
+          </>
+        )}
+      </main>
+    </BrandFrame>
   );
 }
