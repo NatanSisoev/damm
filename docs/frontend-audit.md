@@ -37,15 +37,15 @@ All six are done and merged into `jan/dev` (2026-11-07): items 1 to 3 in `claude
 |---|---|---|
 | 18 | There's no manager view: no read-only, collective-scoped dashboard (R-U-3, N-8). | J |
 | 19 | There's no methodology page (precision bands, margin of error, suppression rule) linked from the results. **Done 2026-11-07:** `/hr/methodology`, linked from the results page and the HR nav. | J |
-| 20 | Onboarding and login use raw styles. Signup has friction: an 8-character password, no show toggle, and a 24-character recovery code with no copy button. | J |
-| 21 | Accounts can't change the password, regenerate the recovery code or delete the account. | J |
-| 22 | There's no manual join-code entry, only the link and QR. | J |
+| 20 | Onboarding and login use raw styles. Signup has friction: an 8-character password, no show toggle, and a 24-character recovery code with no copy button. **Done 2026-11-07:** brand styles, show/hide toggle, inline 8-character rule, grouped recovery code with copy and a "save it now" step. | J, **done** |
+| 21 | Accounts can't change the password, regenerate the recovery code or delete the account. **Done 2026-11-07:** `/settings` has change password, regenerate recovery code (shown once) and delete account (confirm with password; answers stay as anonymous data). | J, **done** |
+| 22 | There's no manual join-code entry, only the link and QR. **Done 2026-11-07:** `/join` takes a typed code (branded in the employee polish). | J, **done** |
 | 23 | Shift, centre and manager are never asked, so those segments are empty for real signups. | J+N |
 | 24 | Lowercase `estat` and raw `tipus` reach the UI (recommendation badges). The copy is inconsistent ("1 minut" vs "2 minuts", mixed nav labels). | J |
 | 25 | The need form fails silently on error. | J |
 | 26 | The mobile HR nav has issues, there's a hardcoded red, and ChangeBadge and Sparkline are duplicated in `signals/[id]`. | J |
 | 27 | The radar's fixed 1 to 5 scale hides small changes. | J |
-| 28 | Accessibility gaps: focus states, labels on the scale buttons, contrast on subtle text. | J |
+| 28 | Accessibility gaps: focus states, labels on the scale buttons, contrast on subtle text. **Done 2026-11-07:** focus rings, "3 de 5, Neutral" names on scale buttons, muted text at 4.5:1 or better, 44px tap targets in the employee app. | J, **done** |
 | 29 | The login rate limit lets anyone lock out a known username. | J |
 | 30 | PII redaction only catches Catalan name patterns. Theme snippets depend on it. | J |
 

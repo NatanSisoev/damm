@@ -217,7 +217,7 @@ G-§8 principles, D-S16 trust pillars and D-S17 golden rules, merged. All Must.
 | R-PRIV-2 | Minimum group threshold (guide: 5 to 10; ours: **10**) everywhere, exports included | G-§8, A | done | Plus complementary suppression. Join-code account counts under 10 show "<10"; CSV export carries a suppression note. |
 | R-PRIV-3 | Automatic detection and removal of identifying data in comments (names, emails, phones) | G-§8 | done | `redactPii` regex before storage. LLM pass is optional (Natan). |
 | R-PRIV-4 | No individual profile or inference about specific people; cannot be used to evaluate anyone | G-§8, D-S16 "No vigilància" | done | Trajectories exist only inside the analysis layer; the admin sees counts only. |
-| R-PRIV-5 | **Transparency to respondents**: what the survey is for and how data is handled | G-§8, D-S16 | done | `/privacitat`: what we collect, what HR sees (n≥10), what we never do, comment redaction, session and account |
+| R-PRIV-5 | **Transparency to respondents**: what the survey is for and how data is handled | G-§8, D-S16 | done | `/privacitat`: what we collect, what HR sees (n≥10), what we never do, comment redaction, session and account deletion (answers stay anonymous). |
 | R-PRIV-6 | **Explainability**: sample size, confidence and limits of the analysis; correlations are not causes | G-§8 | partial | n and precision bands done; methodology page `/hr/methodology` built on `claude/audit-p2-methodology-8b92a4` (audit item 19), status unchanged until merge |
 | R-PRIV-7 | Human control: HR validates surveys and recommendations before acting | G-§8, D-S16, D-S17 | done | |
 | R-PRIV-8 | **Minimisation and expiry**: keep only what is needed, for as long as needed | G-§8 | partial | Minimisation done (no email or phone, redacted comments only). **No retention or expiry rule exists.** Add a documented retention period and a purge script or job. |
@@ -225,7 +225,7 @@ G-§8 principles, D-S16 trust pillars and D-S17 golden rules, merged. All Must.
 | R-PRIV-10 | **Traceability**: record sources, criteria and decisions | D-S16 | blocked | Task 21 needs the `decisio` table and `font` fields (Natan) |
 | R-PRIV-11 | Synthetic data only | D-S17, G-§6 | done | |
 | R-PRIV-12 | Zero secrets | D-S17, G-§7 | partial | See R-X-4 |
-| R-PRIV-13 | Credentials salted and hashed; recovery by one-time code | A | done | scrypt |
+| R-PRIV-13 | Credentials salted and hashed; recovery by one-time code | A | done | scrypt. `/settings`: change password (current one required), regenerate the recovery code (shown once), delete account (deletes `compte` and the push subscription; answers move to an anonymous tombstone account, excluded from HR counts). |
 
 ## 7. Synthetic data
 
