@@ -4,11 +4,7 @@ import { getHrOverview, getTrends } from "@damm/db/hr";
 import { Radar, type RadarSeries } from "./results/radar";
 import { Card, Empty, PageHeader, Stat } from "./ui";
 
-const TIPUS: Record<string, string> = {
-  emergent: "Emergent",
-  feble: "Senyal feble",
-  baixa_participacio: "Baixa participació",
-};
+import { SignalBadges } from "./signal-labels";
 
 function radarFromTrends() {
   const { periodes, series: all } = getTrends();
@@ -92,7 +88,7 @@ export default function HrHome() {
                 {o.topSignals.map((s) => (
                   <li key={s.id} className="rounded-lg border border-line p-3">
                     <div className="mb-1.5 flex flex-wrap items-center gap-2">
-                      <span className="badge badge-warn">{TIPUS[s.tipus] ?? s.tipus}</span>
+                      <SignalBadges tipus={s.tipus} severity={s.severity} status={s.status} />
                       {s.collectiu && <span className="badge">{s.collectiu}</span>}
                       <span className="num ml-auto text-xs text-subtle">n={s.n}</span>
                     </div>

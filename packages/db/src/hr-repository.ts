@@ -139,7 +139,8 @@ export function listAggregates(): AggregateRow[] {
 export function listSignals(): (Omit<Senyal, "collectiuId"> & { collectiu: string | null })[] {
   return (getDb()
     .prepare(
-      `SELECT s.id, s.tipus, s.descripcio, c.nom AS collectiu, s.periode, s.n, s.confianca, s.suprimit
+      `SELECT s.id, s.tipus, s.descripcio, c.nom AS collectiu, s.periode, s.n, s.confianca, s.suprimit,
+              s.severity, s.status
        FROM senyal s LEFT JOIN collectiu c ON c.id = s.collectiu_id ORDER BY s.n DESC`,
     )
     .all() as any[])

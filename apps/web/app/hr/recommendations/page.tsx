@@ -4,6 +4,7 @@ import {
   approveRecommendationAction, discardRecommendationAction, followUpAction,
 } from "../actions";
 import { Card, Empty, PageHeader } from "../ui";
+import { SignalBadges } from "../signal-labels";
 
 const ESTAT: Record<string, string> = { proposada: "", aprovada: "badge-good", descartada: "" };
 
@@ -25,7 +26,7 @@ export default function RecommendationsPage() {
               {signals.map((s) => (
                 <li key={s.id} className="rounded-lg border border-line p-3">
                   <div className="mb-1.5 flex flex-wrap items-center gap-2">
-                    <span className="badge badge-warn">{s.tipus}</span>
+                    <SignalBadges tipus={s.tipus} severity={s.severity} status={s.status} />
                     {s.collectiu && <span className="badge">{s.collectiu}</span>}
                     <span className="num ml-auto text-xs text-subtle">n={s.n}</span>
                   </div>
