@@ -85,3 +85,6 @@ export async function redraftQuestion(need: NeedInput, current: DraftQuestion, o
   const f = fallbackReplacement(need, current, others);
   return f ? { question: f, source: "fallback" } : null;
 }
+
+export { draftRecommendations, templateRecommendations, DAMM_INITIATIVES } from "./recommendations";
+export type { RecommendationContext, RecommendationProposal, RecInsight, DammInitiative, DraftOptions } from "./recommendations";

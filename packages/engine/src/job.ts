@@ -16,6 +16,8 @@ import { runAlarms, type AlarmReport, type AlarmThresholds } from "./alarms.ts";
 
 export { runInsights } from "./insights.ts";
 export { runAlarms } from "./alarms.ts";
+export { runRecommendations } from "./recommendations.ts";
+export type { RecommendationContext, RecommendationProposal, RecommendationOptions, RecommendationReport, DraftFn } from "./recommendations.ts";
 
 export interface JobOptions {
   now?: number;

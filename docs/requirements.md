@@ -132,7 +132,7 @@ The guide says "Publicar a Typeform". AGENTS.md decides to ignore Typeform: the 
 ### R-FLOW-8 Recommend and close the loop
 | ID | Requirement | Status | Evidence / gap |
 |----|-------------|--------|----------------|
-| R-FLOW-8a | Proposes **concrete actions** | partial | `recomanacio` seeded. Generation is blocked. |
+| R-FLOW-8a | Proposes **concrete actions** | done | `runRecommendations` + `draftRecommendations` draft 1 to 3 proposals per open alarm (template or LLM). Jan: show them (C9). |
 | R-FLOW-8b | Proposes a **new follow-up micro-survey** | done | `createDraftedFollowUp`: need for the signal's collective, AI-drafted questions, human review |
 | R-FLOW-8c | Recommendations are proposals, never automatic decisions | done | Approve or discard |
 | R-FLOW-8d | Results go back to the people who answered | done | Employee home lists approved actions for their collective (`approvedActionsForCompte`, n≥10 only) with period and follow-up badge |
@@ -198,7 +198,7 @@ D-S9 and D-S10. Each needs a named mitigation we can point at in the demo. "AI d
 | R-DIFF-5 | Comparability | Same item IDs across periods; change rule only on the same question | done |
 | R-DIFF-6 | Context: what event explains a change? | Need text and recommendations attached to the signal timeline | partial (16 timeline) |
 | R-DIFF-7 | Open text (languages, irony, several themes) | LLM clustering, multi-theme `comentari_tema` | blocked |
-| R-DIFF-8 | Actionability: an insight needs an owner and a plan | Recommendation with an approval, follow-up survey | partial (no owner field) |
+| R-DIFF-8 | Actionability: an insight needs an owner and a plan | Recommendation with an approval, follow-up survey | done (suggested owner and timeframe on `recomanacio`, C9; suggestions only, not tracked) |
 
 ### R-TENSION (D-S11)
 | ID | Tension | Status |
@@ -295,7 +295,7 @@ Bonus items named by the guide (G-§4 "Bonus") and the deck (D-S18), then our ow
 | N-1 | **Teams / M365 integration** | G bonus, D-S18, 10% criterion | Hits a weighted criterion directly | partial | Adaptive Card, optional webhook, `docs/teams-integration.md`. Roadmap: Graph for audience, Entra SSO without identity leakage. |
 | N-2 | **Representativeness indicator** | G bonus | Already built; name it as the bonus in the pitch | done | |
 | N-3 | **Experience for people without a computer** | G bonus, D-S18 | Plant and logistics, scenario B | partial | QR plus mobile done. Add a **kiosk mode**: shared tablet, no account, one answer per session with a rate limit, own `canal` value. |
-| N-4 | **Actionable wellbeing recommendations** | G bonus, D-S18 | Value for people | partial | Recommendations exist; make them concrete (owner, deadline, which initiative from D-S3). |
+| N-4 | **Actionable wellbeing recommendations** | G bonus, D-S18 | Value for people | done (engine side) | Proposals name a Damm initiative, a suggested owner and timeframe, and cite n and confidence. UI in C9. |
 | N-5 | **Dynamic follow-up questions** | G bonus | Ties to R-FLOW-2e | missing | A low score triggers an open "why?" question in the same session. |
 | N-6 | **Multi-language** | G bonus | Catalan, Spanish, English at minimum; plant staff | missing | i18n on the employee app first; the AI translates approved questions with human review. |
 | N-7 | **Full cycle in one platform** | D-S18 | Already our architecture | done | Say it explicitly. |

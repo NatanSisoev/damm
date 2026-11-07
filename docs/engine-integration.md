@@ -267,6 +267,20 @@ Status changes:
 - **Today:** alarms are written by each job run, at most every 10 minutes. The dashboard picks them up when it reads, so a page load or a 60-second poll of `alarmCounts` for the header badge is enough for the demo.
 - **Planned:** a weekly digest of warnings and an immediate push or email for critical alarms. These will be an `onReport` hook on the scheduler (`report.alarms.opened > 0`). Not built yet.
 
+## Recommendations
+
+Job code only, never a request handler:
+
+```ts
+import { runEngineJob, runRecommendations } from "@damm/engine/job";
+import { draftRecommendations } from "@damm/ai";
+
+runEngineJob(db);
+await runRecommendations(db, { now: Date.now(), draft: (ctx) => draftRecommendations(ctx) });
+```
+
+It inserts `recomanacio` rows (`estat = 'proposada'`, `senyal_id`, `titol`, `iniciativa`, `responsable_suggerit`, `termini_suggerit`, `justificacio`, `limits`, `font`) for open alarms that have none. Safe to re-run. `pnpm --filter @damm/engine run job` and the demo builder already do this (template mode unless an LLM key is set). Show the fields on the signal page; HR only approves or discards, there is no "done" state. See contract change C9.
+
 ## Seeded data
 
 The engine works with the seed as it is:

@@ -197,7 +197,16 @@ CREATE TABLE recomanacio (
   text                     TEXT NOT NULL,
   estat                    TEXT NOT NULL DEFAULT 'proposada' CHECK (estat IN ('proposada','aprovada','descartada')),
   seguiment_necessitat_id  INTEGER REFERENCES necessitat(id),  -- follow-up survey
-  creat                    TEXT NOT NULL DEFAULT (datetime('now'))
+  creat                    TEXT NOT NULL DEFAULT (datetime('now')),
+  -- Drafted proposals (C9). `text` holds the concrete action. Owner and timeframe are suggestions, never tracked;
+  -- there is deliberately no done/completed column: HR only approves or discards.
+  titol                    TEXT,
+  iniciativa               TEXT,                               -- Damm initiative the proposal uses
+  responsable_suggerit     TEXT,
+  termini_suggerit         TEXT,
+  justificacio             TEXT,                               -- cites n and confidence
+  limits                   TEXT,                               -- honest limits line ("correlació, no causa")
+  font                     TEXT CHECK (font IS NULL OR font IN ('llm','template'))
 );
 
 -- Engine (Natan, packages/engine; see docs/engine.md) ------------------------------
