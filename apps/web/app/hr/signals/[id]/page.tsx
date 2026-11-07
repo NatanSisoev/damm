@@ -55,7 +55,7 @@ export default async function SignalPage({ params }: { params: Promise<{ id: str
         <SignalBadges tipus={signal.tipus} severity={signal.severity} status={signal.status} />
         <span className="badge num">{signal.periode}</span>
         <span className="badge num">n={signal.n}</span>
-        {signal.confianca !== null && <span className="badge num">confiança {Math.round(signal.confianca * 100)}%</span>}
+        {signal.confianca !== null && <span className="badge num">confiança {Math.round(signal.confianca <= 1 ? signal.confianca * 100 : signal.confianca)}%</span>}
       </div>
 
       <div className="mb-6 flex flex-wrap items-center gap-2">
