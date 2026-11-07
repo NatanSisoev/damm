@@ -113,10 +113,10 @@ The guide says "Publicar a Typeform". AGENTS.md decides to ignore Typeform: the 
 | ID | Requirement | Status | Evidence / gap |
 |----|-------------|--------|----------------|
 | R-FLOW-6a | Read the responses (through the API) | done | `POST /api/responses` → `resposta` |
-| R-FLOW-6b | **Group comments by theme** | partial | `tema`/`comentari_tema` from the seed. Real clustering is blocked. |
-| R-FLOW-6c | **Summarise** | partial | Theme labels only. No per-theme summary text. |
+| R-FLOW-6b | **Group comments by theme** | done (engine) | `runCommentAnalysis` (`packages/engine/src/comments.ts`) fills `tema`/`comentari_tema`, multi-theme, no LLM key needed; 91.2 % top-1 on the seed (engine.md section 12). HR display: C10 (Jan). |
+| R-FLOW-6c | **Summarise** | done (engine) | `tema.resum`: Catalan template per theme, period and collective, LLM optional. HR display: C10 (Jan). |
 | R-FLOW-6d | Detect **trends** | done | Trends with the change rule (task 17) |
-| R-FLOW-6e | Detect **weak signals** | partial | `senyal` seeded, drilldown done (16). Detection is blocked. |
+| R-FLOW-6e | Detect **weak signals** | partial | Score weak signals: `feble` alarm. Comment themes: `emergent` alarm (rise of 10 points or more, n at least 10). Themes below n = 10 are suppressed, so a sub-threshold weak signal in comments stays hidden by design. Drilldown done (16). |
 | R-FLOW-6f | **Compare collectives or periods** | done | Results by collective and period |
 
 ### R-FLOW-7 Visualise (simple dashboard)
@@ -166,11 +166,11 @@ At least one must run end to end in the final demo; ideally all three (G-§5).
 | Step | Expected | Status |
 |------|----------|--------|
 | C1 | About 500 open comments on wellbeing, leadership, communication, tools, organisation and development | done (seed) |
-| C2 | Group them | partial (seeded themes) |
-| C3 | Summarise them | missing (no summary text per theme) |
-| C4 | Detect **emerging themes compared with a previous period** | partial (October theme seeded; the "new vs previous" view needs checking) |
-| C5 | Propose areas for action | partial |
-| C6 | **Explain the limits of the analysis** | missing: task 18 (methodology page) plus a short per-screen note |
+| C2 | Group them | done (engine: lexicon classifier, 15 themes, multi-theme) |
+| C3 | Summarise them | done (engine: `tema.resum`); HR display: C10 (Jan) |
+| C4 | Detect **emerging themes compared with a previous period** | done (engine: `emergent` alarm on the October shift-communication theme); HR display: C10 (Jan) |
+| C5 | Propose areas for action | partial (themes and emergent alarms feed the AI recommendations; the proposals are the recommendations module) |
+| C6 | **Explain the limits of the analysis** | partial: limits written in engine.md section 12 for the methodology page (task 18); the per-screen note is still to do (Jan) |
 
 ## 5. Bias and analysis-difficulty coverage
 
@@ -197,7 +197,7 @@ D-S9 and D-S10. Each needs a named mitigation we can point at in the demo. "AI d
 | R-DIFF-4 | Prioritisation (frequent ≠ most relevant) | Signals ranked by effect and n, not by volume | blocked (signal criteria, Natan) |
 | R-DIFF-5 | Comparability | Same item IDs across periods; change rule only on the same question | done |
 | R-DIFF-6 | Context: what event explains a change? | Need text and recommendations attached to the signal timeline | partial (16 timeline) |
-| R-DIFF-7 | Open text (languages, irony, several themes) | LLM clustering, multi-theme `comentari_tema` | blocked |
+| R-DIFF-7 | Open text (languages, irony, several themes) | Multi-theme `comentari_tema`; Catalan, Spanish and English lexicon with accent and typo tolerance; optional LLM classifier; irony is not handled and is stated as a limit (engine.md section 12) | done (engine), limits documented |
 | R-DIFF-8 | Actionability: an insight needs an owner and a plan | Recommendation with an approval, follow-up survey | partial (no owner field) |
 
 ### R-TENSION (D-S11)
@@ -307,7 +307,7 @@ Bonus items named by the guide (G-§4 "Bonus") and the deck (D-S18), then our ow
 | N-13 | Participation by channel chart | G-§6.2 | Uses the `canal` field we already store | missing | Small: one aggregate by `canal` with suppression. |
 | N-14 | Initiative ↔ domain mapping | D-S3 | Turns results into "is our policy working?" | missing | R-DOM-5 |
 | N-15 | Retention and purge job | G-§8 | Closes R-PRIV-8 | missing | Document the period; a script deletes old `resposta` rows after aggregation. |
-| N-16 | Accuracy of the theme classifier against `resposta_seed` | G-§6.2 | A number that proves analysis quality | blocked | After the real clustering lands. |
+| N-16 | Accuracy of the theme classifier against `resposta_seed` | G-§6.2 | A number that proves analysis quality | done | `pnpm --filter @damm/engine run comments:eval`: 91.2 % top-1, 97.4 % recall, 84.8 % precision (engine.md section 12, with the template-data caveat). |
 | N-17 | Demo reset and presenter mode | ours | Demo reliability | deferred | Task 15, after 8 Nov 09:00 |
 | N-18 | Question reordering and conditional logic in review | G-§4 | Closes R-FLOW-3c and R-FLOW-2e | missing | Needs an `ordre` field (shared contract). |
 

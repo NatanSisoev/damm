@@ -4,6 +4,7 @@ import { DatabaseSync } from "node:sqlite";
 import { existsSync } from "node:fs";
 import { resolve } from "node:path";
 import { runEngineJob } from "../src/job.ts";
+import { runCommentAnalysisSync } from "../src/comments.ts";
 
 // A relative DB_PATH is relative to where you ran the command, else to the repo root. Never creates a new file.
 const given = process.env.DB_PATH ?? "data/app.db";
@@ -15,5 +16,7 @@ if (!path) {
 const db = new DatabaseSync(path);
 db.exec("PRAGMA foreign_keys = ON");
 const report = runEngineJob(db);
-console.log(JSON.stringify(report, null, 2));
+// Deterministic comment themes, summaries and emergent alarms (use `run comments` for the optional LLM path).
+const comments = runCommentAnalysisSync(db, { now: Date.now() });
+console.log(JSON.stringify({ ...report, comments }, null, 2));
 db.close();

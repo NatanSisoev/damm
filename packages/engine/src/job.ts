@@ -18,6 +18,8 @@ export { runInsights } from "./insights.ts";
 export { runAlarms } from "./alarms.ts";
 // Not called by runEngineJob or the scheduler: run it after the job, at most a few times a day (it calls the LLM).
 export { runNarrative } from "./narrative.ts";
+export { runCommentAnalysis, runCommentAnalysisSync } from "./comments.ts";
+export type { CommentOptions, CommentReport } from "./comments.ts";
 
 export interface JobOptions {
   now?: number;

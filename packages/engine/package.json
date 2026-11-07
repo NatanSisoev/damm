@@ -8,6 +8,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./job": "./src/job.ts",
+    "./comments": "./src/comments.ts",
     "./hr": "./src/hr.ts",
     "./core": "./src/core.ts"
   },
@@ -19,6 +20,8 @@
     "sim": "node --experimental-strip-types --experimental-sqlite --no-warnings sim/run.ts",
     "tune": "node --experimental-strip-types --experimental-sqlite --no-warnings sim/tune.ts",
     "health": "node --experimental-strip-types --experimental-sqlite --no-warnings scripts/health.ts",
+    "comments": "node --experimental-strip-types --experimental-sqlite --no-warnings scripts/comments.ts",
+    "comments:eval": "node --experimental-strip-types --experimental-sqlite --no-warnings scripts/comments-eval.ts",
     "demo": "node --experimental-strip-types --experimental-sqlite --no-warnings demo/build-demo.ts"
   },
   "dependencies": {
