@@ -32,7 +32,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="ca" className={`${inter.variable} ${geistMono.variable} ${alfa.variable} ${hanken.variable} h-full antialiased`}>
+    <html lang="ca" suppressHydrationWarning className={`${inter.variable} ${geistMono.variable} ${alfa.variable} ${hanken.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
         {children}
         <ServiceWorkerRegister />
