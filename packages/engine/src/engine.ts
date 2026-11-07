@@ -63,6 +63,8 @@ export interface Engine {
   submitAnswers(accountId: string, answers: AnswerInput[], opts?: { channel?: Canal }): SubmitResult;
 }
 
+const DAY_MS = 86_400_000;
+
 const SCALES: Partial<Record<QuestionType, { min: number; max: number }>> = {
   scale5: { min: 1, max: 5 },
   scale10: { min: 0, max: 10 },
@@ -176,11 +178,13 @@ export function createEngine(opts: EngineOptions): Engine {
       const qs = store.questionsByIds(db, rows.map((r) => r.pregunta_id));
       const done = new Set<number>();
 
-      for (const a of answers) {
-        const row = byQuestion.get(a.preguntaId);
-        const q = qs.get(a.preguntaId);
+      for (const a of Array.isArray(answers) ? answers : []) {
+        // Anything that is not an answer object (null, a number, a string) cannot belong to today's batch.
+        const id = (a as Partial<AnswerInput> | null)?.preguntaId;
+        const row = typeof id === "number" ? byQuestion.get(id) : undefined;
+        const q = typeof id === "number" ? qs.get(id) : undefined;
         if (!row || !q) {
-          result.rejected.push({ questionId: a.preguntaId, reason: "not_in_todays_batch" });
+          result.rejected.push({ questionId: id as number, reason: "not_in_todays_batch" });
           continue;
         }
         if (row.answered_at !== null || done.has(a.preguntaId)) {
@@ -193,8 +197,9 @@ export function createEngine(opts: EngineOptions): Engine {
           continue;
         }
         const { score, valorNum, valueJson } = parsed.value;
-        const comment = a.comentari && a.comentari.trim() ? redact(a.comentari.trim()) : null;
-        const answerMs = typeof a.answerMs === "number" && a.answerMs >= 0 ? Math.round(a.answerMs) : null;
+        const comment = typeof a.comentari === "string" && a.comentari.trim() ? redact(a.comentari.trim()) : null;
+        // A day is the longest answer time worth keeping; NaN, infinity and absurd values are dropped, not stored.
+        const answerMs = typeof a.answerMs === "number" && Number.isFinite(a.answerMs) && a.answerMs >= 0 && a.answerMs <= DAY_MS ? Math.round(a.answerMs) : null;
 
         run(
           db,
