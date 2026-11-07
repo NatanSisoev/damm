@@ -7,13 +7,22 @@ import {
   getRepresentativeness,
   getTrends,
   listThemes,
+  CHANGE_MIN_DELTA,
+  CHANGE_MIN_N,
+  PRECISION_MODERADA_MIN_N,
+  PRECISION_SOLIDA_MIN_N,
+  type Change,
   type RepRow,
   type TrendCell,
+  type TrendRow,
 } from "@damm/db/hr";
 
 const pct = (v: number) => `${(v * 100).toFixed(1)}%`;
 const gapLabel = (g: number) => `${g >= 0 ? "+" : "−"}${Math.abs(g * 100).toFixed(1)} pp`;
 const suppressedHint = `Menys de ${MIN_GROUP_SIZE} respondents`;
+const complementaryHint = "Ocult per protegir un grup petit: no es pot deduir per resta";
+const hintFor = (motiu: "primari" | "complementari" | null) => (motiu === "complementari" ? complementaryHint : suppressedHint);
+
 
 function Bar({ value, tone }: { value: number; tone: "chart" | "muted" }) {
   return (
@@ -44,8 +53,8 @@ function RepTable({ rows, byShift }: { rows: RepRow[]; byShift: boolean }) {
             {r.suprimit ? (
               <td colSpan={3}>
                 <span className="flex items-center gap-2">
-                  <SuppressedBadge title={suppressedHint} />
-                  <span className="text-xs text-subtle">{suppressedHint}</span>
+                  <SuppressedBadge title={hintFor(r.motiu)} />
+                  <span className="text-xs text-subtle">{hintFor(r.motiu)}</span>
                 </span>
               </td>
             ) : (
@@ -91,14 +100,34 @@ function Sparkline({ cells }: { cells: TrendCell[] }) {
   );
 }
 
-function TrendTable({ periodes, rows }: { periodes: string[]; rows: { domini: string; cells: TrendCell[] }[] }) {
+function ChangeBadge({ canvi }: { canvi: Change }) {
+  if (canvi.label === "sense canvi clar") {
+    return (
+      <span
+        className="text-xs text-subtle"
+        title={`Només es parla de canvi si |Δ| ≥ ${CHANGE_MIN_DELTA} i els dos períodes tenen n ≥ ${CHANGE_MIN_N}`}
+      >
+        sense canvi clar
+      </span>
+    );
+  }
+  const up = canvi.label === "puja";
   return (
-    <table className="table min-w-[32rem]">
+    <span className="badge num" title={`Δ ${canvi.delta! >= 0 ? "+" : "−"}${Math.abs(canvi.delta!).toFixed(1)}`}>
+      {up ? "↑ puja" : "↓ baixa"} {canvi.delta! >= 0 ? "+" : "−"}{Math.abs(canvi.delta!).toFixed(1)}
+    </span>
+  );
+}
+
+function TrendTable({ periodes, rows }: { periodes: string[]; rows: TrendRow[] }) {
+  return (
+    <table className="table min-w-[36rem]">
       <thead>
         <tr>
           <th>Domini</th>
           {periodes.map((p) => <th key={p} className="text-right">{p}</th>)}
           <th className="text-right">Tendència</th>
+          <th className="text-right">Canvi</th>
         </tr>
       </thead>
       <tbody>
@@ -107,10 +136,22 @@ function TrendTable({ periodes, rows }: { periodes: string[]; rows: { domini: st
             <td className="font-medium">{r.domini}</td>
             {r.cells.map((c, i) => (
               <td key={i} className="num text-right">
-                {c.suprimit ? <SuppressedBadge title={suppressedHint} /> : c.mitjana === null ? <span className="text-subtle">–</span> : c.mitjana.toFixed(1)}
+                {c.suprimit ? (
+                  <SuppressedBadge title={hintFor(c.motiu)} />
+                ) : c.mitjana === null ? (
+                  <span className="text-subtle">–</span>
+                ) : (
+                  <div>
+                    <div>{c.mitjana.toFixed(1)}</div>
+                    <div className={`text-[11px] whitespace-nowrap ${c.precisio === "indicativa" ? "text-warn" : "text-subtle"}`}>
+                      n={c.n} · {c.precisio}
+                    </div>
+                  </div>
+                )}
               </td>
             ))}
             <td className="text-right"><Sparkline cells={r.cells} /></td>
+            <td className="text-right"><ChangeBadge canvi={r.canvi} /></td>
           </tr>
         ))}
       </tbody>
@@ -238,6 +279,11 @@ export default async function ResultsPage({ searchParams }: { searchParams: Prom
         <Card title="Tendències per domini" meta="Mitjana 1–5 per període · tots els col·lectius" flush={!!overall}>
           {overall ? (
             <>
+              <p className="border-b border-line px-5 py-3 text-xs text-subtle">
+                Cada mitjana mostra la seva n i una precisió: <span className="font-medium">indicativa</span> (n &lt; {PRECISION_MODERADA_MIN_N}),{" "}
+                <span className="font-medium">moderada</span> ({PRECISION_MODERADA_MIN_N}–{PRECISION_SOLIDA_MIN_N - 1}) o{" "}
+                <span className="font-medium">sòlida</span> (n ≥ {PRECISION_SOLIDA_MIN_N}). Un canvi només és «puja» o «baixa» si |Δ| ≥ {CHANGE_MIN_DELTA} i els dos períodes tenen n ≥ {CHANGE_MIN_N}; si no, «sense canvi clar».
+              </p>
               <TrendTable periodes={trends.periodes} rows={overall.rows} />
               {perCollective.map((s) => (
                 <details key={s.scope} className="group border-t border-line">

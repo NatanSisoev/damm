@@ -4,6 +4,7 @@ import crypto from "node:crypto";
 import type { Agregat, Recomanacio, Senyal } from "@damm/shared";
 import { MIN_GROUP_SIZE } from "@damm/shared";
 import { getDb } from "./connection";
+import { classifyChange, complementarySuppression, precisionBand, type Change, type HideReason, type PrecisionBand } from "./hr-rigour";
 
 export interface DraftQuestion {
   id: number;
@@ -94,24 +95,44 @@ export function listPublications() {
     .all() as { id: number; codi: string; url: string; textNl: string }[];
 }
 
-export interface AggregateRow extends Omit<Agregat, "collectiuId" | "tornId" | "dominiId"> {
+export interface AggregateRow extends Omit<Agregat, "collectiuId" | "tornId" | "dominiId" | "n" | "mitjana"> {
   collectiu: string | null;
   torn: string | null;
   domini: string | null;
+  n: number | null; // null when suppressed
+  mitjana: number | null; // null when suppressed
+  precisio: PrecisionBand | null;
+  motiu: HideReason;
 }
 
-/** Suppression is re-enforced on read, whatever the job wrote. */
+/** Suppression is re-enforced on read, whatever the job wrote. Complementary suppression is applied per parent. */
 export function listAggregates(): AggregateRow[] {
-  return (getDb()
+  const rows = (getDb()
     .prepare(
       `SELECT a.periode, c.nom AS collectiu, t.nom AS torn, d.nom AS domini, a.n, a.mitjana, a.suprimit
        FROM agregat a LEFT JOIN collectiu c ON c.id = a.collectiu_id
        LEFT JOIN torn t ON t.id = a.torn_id LEFT JOIN domini d ON d.id = a.domini_id
        ORDER BY a.periode DESC, c.nom, t.nom, d.nom`,
     )
-    .all() as any[]).map((r) => {
-    const hidden = r.n < MIN_GROUP_SIZE || !!r.suprimit;
-    return { ...r, suprimit: hidden, mitjana: hidden ? null : r.mitjana };
+    .all() as any[]);
+  // Siblings: shifts share (periode, collectiu, domini); collectives share (periode, domini). Totals have no siblings.
+  const groups = new Map<string, number[]>();
+  rows.forEach((r, i) => {
+    const key = r.torn ? `t|${r.periode}|${r.collectiu}|${r.domini}` : r.collectiu ? `c|${r.periode}|${r.domini}` : `x|${i}`;
+    groups.set(key, [...(groups.get(key) ?? []), i]);
+  });
+  const reason: HideReason[] = new Array(rows.length).fill(null);
+  for (const idx of groups.values()) {
+    const res = complementarySuppression(idx.map((i) => ({ n: rows[i].n, primary: !!rows[i].suprimit })));
+    idx.forEach((i, k) => (reason[i] = res[k]));
+  }
+  return rows.map((r, i) => {
+    const hidden = reason[i] !== null;
+    return {
+      ...r, suprimit: hidden, motiu: reason[i],
+      n: hidden ? null : r.n, mitjana: hidden ? null : r.mitjana,
+      precisio: hidden ? null : precisionBand(r.n),
+    };
   });
 }
 
@@ -170,6 +191,7 @@ export interface RepRow {
   collectiu: string;
   torn: string | null;
   suprimit: boolean;
+  motiu: HideReason;
   respondents: number | null; // null when suppressed
   respShare: number | null; // 0..1, among visible segments of the same group
   popShare: number | null;
@@ -182,19 +204,24 @@ export interface Representativeness {
   torns: RepRow[];
 }
 
-function buildRep(
-  items: { collectiu: string; torn: string | null; resp: number; pop: number; hidden: boolean }[],
-): RepRow[] {
-  const visible = items.filter((i) => !i.hidden && i.resp >= MIN_GROUP_SIZE && i.pop >= MIN_GROUP_SIZE);
+interface RepItem { collectiu: string; torn: string | null; resp: number; pop: number; hidden: boolean }
+
+/** Primary hiding (small, flagged, no row or tiny population), then complementary suppression among the siblings. */
+function buildRep(items: RepItem[]): RepRow[] {
+  const primary = items.map((i) => i.hidden || i.resp < MIN_GROUP_SIZE || i.pop < MIN_GROUP_SIZE);
+  const reasons = complementarySuppression(
+    items.map((i, k) => ({ n: i.hidden && i.resp === 0 ? null : i.resp, primary: primary[k] })),
+  ).map((r, k) => (primary[k] && r === null ? ("primari" as const) : r));
+  const visible = items.filter((_, k) => reasons[k] === null);
   const respTotal = visible.reduce((s, i) => s + i.resp, 0);
   const popTotal = visible.reduce((s, i) => s + i.pop, 0);
-  return items.map((i) => {
-    if (!visible.includes(i)) {
-      return { collectiu: i.collectiu, torn: i.torn, suprimit: true, respondents: null, respShare: null, popShare: null, gap: null };
+  return items.map((i, k) => {
+    if (reasons[k] !== null) {
+      return { collectiu: i.collectiu, torn: i.torn, suprimit: true, motiu: reasons[k], respondents: null, respShare: null, popShare: null, gap: null };
     }
     const respShare = i.resp / respTotal;
     const popShare = i.pop / popTotal;
-    return { collectiu: i.collectiu, torn: i.torn, suprimit: false, respondents: i.resp, respShare, popShare, gap: respShare - popShare };
+    return { collectiu: i.collectiu, torn: i.torn, suprimit: false, motiu: null, respondents: i.resp, respShare, popShare, gap: respShare - popShare };
   });
 }
 
@@ -240,14 +267,21 @@ export function getRepresentativeness(): Representativeness {
   return { periode: p.p, collectius, torns: shiftRows };
 }
 
-export interface TrendCell { mitjana: number | null; suprimit: boolean }
+export interface TrendCell {
+  mitjana: number | null;
+  n: number | null; // null when suppressed
+  precisio: PrecisionBand | null;
+  suprimit: boolean;
+  motiu: HideReason;
+}
+export interface TrendRow { domini: string; cells: TrendCell[]; canvi: Change }
 export interface TrendSeries {
   scope: string; // "Tots" or a collective name
-  rows: { domini: string; cells: TrendCell[] }[];
+  rows: TrendRow[];
 }
 export interface Trends { periodes: string[]; series: TrendSeries[] }
 
-/** Mean score per domain per period, overall and per collective. Suppression re-enforced on read. */
+/** Mean score per domain per period, overall and per collective. Suppression re-enforced on read, including complementary suppression of collectives under "Tots". */
 export function getTrends(): Trends {
   const db = getDb();
   const periodes = (db.prepare("SELECT DISTINCT periode FROM agregat ORDER BY periode").all() as { periode: string }[]).map((r) => r.periode);
@@ -258,20 +292,40 @@ export function getTrends(): Trends {
        WHERE torn_id IS NULL AND domini_id IS NOT NULL`,
     )
     .all() as { periode: string; c: number | null; d: number; n: number; mitjana: number | null; suprimit: number }[];
-  const scopes: { id: number | null; nom: string }[] = [{ id: null, nom: "Tots" }, ...listCollectius().map((c) => ({ id: c.id, nom: c.nom }))];
+  const cols = listCollectius();
+  const scopes: { id: number | null; nom: string }[] = [{ id: null, nom: "Tots" }, ...cols.map((c) => ({ id: c.id, nom: c.nom }))];
+  const find = (per: string, c: number | null, d: number) => rows.find((x) => x.periode === per && x.c === c && x.d === d);
+
+  // reason[scope id|"all"][periode][domini]
+  const reasonOf = new Map<string, HideReason>();
+  for (const per of periodes) {
+    for (const d of doms) {
+      const total = find(per, null, d.id);
+      if (total) reasonOf.set(`${per}|null|${d.id}`, total.n < MIN_GROUP_SIZE || total.suprimit ? "primari" : null);
+      const present = cols.filter((c) => find(per, c.id, d.id));
+      const res = complementarySuppression(present.map((c) => {
+        const r = find(per, c.id, d.id)!;
+        return { n: r.n, primary: !!r.suprimit };
+      }));
+      present.forEach((c, k) => reasonOf.set(`${per}|${c.id}|${d.id}`, res[k]));
+    }
+  }
+
   const series = scopes
-    .map((s) => ({
-      scope: s.nom,
-      rows: doms.map((d) => ({
-        domini: d.nom,
-        cells: periodes.map((per): TrendCell => {
-          const r = rows.find((x) => x.periode === per && x.c === s.id && x.d === d.id);
-          if (!r) return { mitjana: null, suprimit: false };
-          const hidden = r.n < MIN_GROUP_SIZE || !!r.suprimit;
-          return { mitjana: hidden ? null : r.mitjana, suprimit: hidden };
-        }),
-      })),
-    }))
+    .map((s) => {
+      const trendRows = doms.map((d): TrendRow => {
+        const cells = periodes.map((per): TrendCell => {
+          const r = find(per, s.id, d.id);
+          if (!r) return { mitjana: null, n: null, precisio: null, suprimit: false, motiu: null };
+          const motiu = reasonOf.get(`${per}|${s.id}|${d.id}`) ?? null;
+          if (motiu) return { mitjana: null, n: null, precisio: null, suprimit: true, motiu };
+          return { mitjana: r.mitjana, n: r.n, precisio: precisionBand(r.n), suprimit: false, motiu: null };
+        });
+        const last = cells.length - 1;
+        return { domini: d.nom, cells, canvi: classifyChange(cells[last - 1], cells[last]) };
+      });
+      return { scope: s.nom, rows: trendRows };
+    })
     .filter((s) => s.rows.some((r) => r.cells.some((c) => c.mitjana !== null || c.suprimit)));
   return { periodes, series };
 }
@@ -308,7 +362,7 @@ function csvCell(v: string | number | null): string {
 
 /** CSV of the aggregates behind the results page. Suppressed segments carry no numbers and `suprimit=1`. */
 export function exportResultsCsv(): string {
-  const header = ["tipus", "periode", "collectiu", "torn", "domini", "respondents", "resp_pct", "pop_pct", "diferencia_pp", "mitjana", "suprimit"];
+  const header = ["tipus", "periode", "collectiu", "torn", "domini", "respondents", "resp_pct", "pop_pct", "diferencia_pp", "mitjana", "suprimit", "n", "precisio", "canvi"];
   const lines: (string | number | null)[][] = [header];
   const pct = (v: number | null) => (v === null ? null : +(v * 100).toFixed(1));
 
@@ -319,7 +373,7 @@ export function exportResultsCsv(): string {
       lines.push([
         tipus, rep.periode, r.collectiu, r.torn, null,
         hide ? null : r.respondents, hide ? null : pct(r.respShare), hide ? null : pct(r.popShare), hide ? null : pct(r.gap),
-        null, hide ? 1 : 0,
+        null, hide ? 1 : 0, hide ? null : r.respondents, null, null,
       ]);
     }
   }
@@ -330,7 +384,11 @@ export function exportResultsCsv(): string {
       row.cells.forEach((c, i) => {
         const hide = c.suprimit || c.mitjana === null;
         if (!c.suprimit && c.mitjana === null) return; // no data for this cell
-        lines.push(["tendencia", trends.periodes[i], s.scope, null, row.domini, null, null, null, null, hide ? null : +c.mitjana!.toFixed(2), hide ? 1 : 0]);
+        const last = i === row.cells.length - 1;
+        lines.push([
+          "tendencia", trends.periodes[i], s.scope, null, row.domini, null, null, null, null,
+          hide ? null : +c.mitjana!.toFixed(2), hide ? 1 : 0, hide ? null : c.n, hide ? null : c.precisio, last && !hide ? row.canvi.label : null,
+        ]);
       });
     }
   }
@@ -372,7 +430,8 @@ export function getHrOverview(): HrOverview {
          WHERE periode = ? AND collectiu_id IS NOT NULL AND torn_id IS NULL AND domini_id IS NULL`,
       )
       .all(p.p) as { n: number; suprimit: number }[];
-    const visible = rows.filter((r) => r.n >= MIN_GROUP_SIZE && !r.suprimit);
+    const hide = complementarySuppression(rows.map((r) => ({ n: r.n, primary: !!r.suprimit })));
+    const visible = rows.filter((_, k) => hide[k] === null);
     respondents = visible.length ? visible.reduce((s, r) => s + r.n, 0) : null;
   }
   const signals = listSignals();
