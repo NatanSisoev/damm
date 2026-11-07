@@ -51,7 +51,8 @@ export type InsightKind =
   | "trajectory_mix"
   | "followup_confirmation"
   | "segment_gap"
-  | "action_effect";
+  | "action_effect"
+  | "narrative";
 
 /** pair/choice options carry an oriented score (1 = best); ranking options carry the domain they stand for. */
 export interface ScoredOption {

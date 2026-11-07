@@ -15,6 +15,7 @@
     "test": "node --experimental-strip-types --experimental-sqlite --no-warnings --test \"test/**/*.test.ts\"",
     "typecheck": "tsc -p .",
     "job": "node --experimental-strip-types --experimental-sqlite --no-warnings scripts/job.ts",
+    "narrative": "node --experimental-strip-types --experimental-sqlite --no-warnings scripts/narrative.ts",
     "sim": "node --experimental-strip-types --experimental-sqlite --no-warnings sim/run.ts",
     "tune": "node --experimental-strip-types --experimental-sqlite --no-warnings sim/tune.ts",
     "health": "node --experimental-strip-types --experimental-sqlite --no-warnings scripts/health.ts",
