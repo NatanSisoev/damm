@@ -23,7 +23,7 @@ export const metadata: Metadata = {
 
 // Paper ink: same as the manifest theme_color and the icon background.
 export const viewport: Viewport = {
-  themeColor: "#17211a",
+  themeColor: "#0a0a0a",
 };
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
