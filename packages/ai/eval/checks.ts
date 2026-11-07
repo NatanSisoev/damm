@@ -15,7 +15,7 @@ export interface CheckResult {
   warnings: { check: string; detail: string }[];
 }
 
-import { norm, words, jaccard, NOT_CATALAN, IDENTIFYING, LEADING, WH, YN_STARTS, leadingIn, identifyingIn } from "../src/quality";
+import { norm, words, jaccard, NOT_CATALAN, IDENTIFYING, LEADING, WH, YN_STARTS, leadingIn, identifyingIn, catalanErrorsIn, genderedIn, genderMixIn, anchorsClash } from "../src/quality";
 export { leadingIn, identifyingIn };
 void IDENTIFYING; void LEADING;
 
@@ -55,8 +55,15 @@ export function runChecks(c: EvalCase, s: DraftSurvey): CheckResult {
   for (const t of all) {
     const bad = NOT_CATALAN.find((r) => r.test(t));
     if (bad) fail("catalan", `"${t.slice(0, 70)}" matches ${bad.source.slice(0, 30)}`);
-    else if (!CATALAN_TELLS.test(t)) warn("catalan", `no Catalan markers: "${t.slice(0, 60)}"`);
+    else if (words(t).length >= 4 && !CATALAN_TELLS.test(t)) warn("catalan", `no Catalan markers: "${t.slice(0, 60)}"`);
+    const errs = catalanErrorsIn(t);
+    if (errs.length) fail("catalan-errors", `"${t.slice(0, 70)}": ${errs[0]}`);
   }
+
+  // 5b. gender: no gendered self-description, never a mix of masculine and feminine
+  const qTexts = s.questions.map((q) => q.text);
+  if (genderMixIn(qTexts)) fail("gender-mix", `masculine and feminine forms in one survey: ${qTexts.filter((t) => genderedIn(t).length).map((t) => `"${t.slice(0, 50)}"`).join(", ")}`);
+  else for (const t of qTexts) if (genderedIn(t).length) warn("gender", `gendered wording: "${t.slice(0, 60)}"`);
 
   // 6. exclusions
   const forbid = (c.expect?.forbid ?? []).map((f) => new RegExp(f, "i"));
@@ -98,6 +105,7 @@ export function runChecks(c: EvalCase, s: DraftSurvey): CheckResult {
     if (q.type === "scale5" || q.type === "scale10") {
       if (!q.low || !q.high) fail("anchors", `missing low/high: "${q.text}"`);
       else if (words(q.low).length > 4 || words(q.high).length > 4 || q.low === q.high) fail("anchors", `bad anchors "${q.low}" / "${q.high}"`);
+      else if (anchorsClash(q.text, q.low, q.high)) fail("anchor-wording", `labels "${q.low}".."${q.high}" do not fit "${q.text.slice(0, 60)}"`);
     } else if (q.low || q.high) warn("anchors", `anchors on ${q.type}`);
   }
 
@@ -111,6 +119,8 @@ export function runChecks(c: EvalCase, s: DraftSurvey): CheckResult {
     if (q.type !== "open" && !/[?]$/.test(q.text.trim()) && !/\.\.\.|:$/.test(q.text)) warn("format", `no question mark: "${q.text}"`);
   }
 
+  const claimed = s.intro.match(/\b(\d+)\s+(preguntes?|qüestions?)\b/i);
+  if (claimed && Number(claimed[1]) !== s.questions.length) fail("intro-count", `intro says ${claimed[1]} but there are ${s.questions.length}`);
   // 13. intro and title
   if (!/an[òo]nim|confiden|agregat|grups/i.test(s.intro)) warn("intro", "intro does not mention anonymity");
   if (words(s.title).length > 10) warn("title", "title longer than 10 words");

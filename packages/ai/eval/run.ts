@@ -83,7 +83,7 @@ async function evalCase(c: EvalCase): Promise<Row> {
   if (useJudge) {
     try {
       row.judged = await judge(c.need, survey);
-      row.judgeAvg = avg(Object.values(row.judged.scores));
+      row.judgeAvg = row.judged.overall;
     } catch { /* judge unavailable: leave blank */ }
   }
   if (doRedraft && survey.source === "llm") {
@@ -103,7 +103,7 @@ async function evalCase(c: EvalCase): Promise<Row> {
       const sim = (a: string, b: string) => { const A = tok(a), B = tok(b); let i = 0; for (const w of A) if (B.has(w)) i++; return A.size + B.size ? i / (A.size + B.size - i) : 0; };
       const different = sim(cur.text, r.question.text) < 0.6 && !others.some((o) => sim(o.text, r.question.text) >= 0.6);
       let after: number | undefined;
-      if (useJudge) { try { after = avg(Object.values((await judge(c.need, replaced)).scores)); } catch { /* skip */ } }
+      if (useJudge) { try { after = (await judge(c.need, replaced)).overall; } catch { /* skip */ } }
       row.redraft = { original: cur.text, replacement: `${r.question.text} [${r.question.type}${r.question.low ? `, ${r.question.low}..${r.question.high}` : ""}]`, source: r.source, different, checkFailures: rc.failures.map((f) => `${f.check}: ${f.detail}`), judgeAvgBefore: row.judgeAvg, judgeAvgAfter: after, ms: rms };
     }
   }
@@ -112,13 +112,17 @@ async function evalCase(c: EvalCase): Promise<Row> {
 }
 
 async function main() {
+  if (flag("controls")) {
+    for (const k of CONTROLS) { const j = await judge(k.need, k.survey); console.log(k.id, j.overall.toFixed(2), JSON.stringify(j.scores), "\n  ", j.issues.join("\n   ")); }
+    return;
+  }
   const rows = await pool(cases, concurrency, evalCase);
 
   // judge calibration
   const controls: { id: string; avg: number; scores: Record<string, number> }[] = [];
   if (useJudge && !only) {
     for (const k of CONTROLS) {
-      try { const j = await judge(k.need, k.survey); controls.push({ id: k.id, avg: avg(Object.values(j.scores)), scores: j.scores }); } catch { /* skip */ }
+      try { const j = await judge(k.need, k.survey); controls.push({ id: k.id, avg: j.overall, scores: j.scores }); } catch { /* skip */ }
     }
   }
 

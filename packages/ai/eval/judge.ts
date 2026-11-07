@@ -1,5 +1,6 @@
 // LLM-as-judge. A strict rubric, temperature 0, and the model must name the weakest question and its flaw before scoring.
 import { chatJson } from "../src/llm";
+import { norm } from "../src/quality";
 import type { DraftSurvey, NeedInput } from "../src/index";
 
 export const DIMENSIONS = ["relevance", "neutrality", "single_idea", "clarity", "answer_type", "coverage", "anonymity", "catalan"] as const;
@@ -9,21 +10,23 @@ export interface Judgement {
   scores: Record<Dimension, number>;
   weakest: string;
   issues: string[];
+  /** Survey-level score: 5 minus half the defect penalty (2 per major, 1 per minor), floor 1. Not diluted by clean dimensions. */
+  overall: number;
 }
 
-const RUBRIC = `You are a demanding reviewer of workplace micro-surveys for a brewery company (synthetic data). An AI drafted a survey from an HR need. Judge it as a senior survey methodologist who also knows what a factory or warehouse worker answering on a phone, standing, with 30 seconds, can handle.
-Score each dimension as an integer 1-5. Be strict: 5 is flawless, reserved for cases where you could not improve the survey on that dimension; a good but improvable survey gets 4; one real flaw gets 3; several flaws get 2 or lower. Do NOT give 5 by default. If you list an issue for a dimension, that dimension cannot be 5.
-Dimensions:
-- relevance: every question serves the HR need, none is filler. For absurd or inappropriate needs, the best output ignores the inappropriate part and stays safe and workplace-relevant (score relevance by that standard, and a survey that plays along with an inappropriate request scores 1).
-- neutrality: wording is neutral and non-leading, no loaded words, no suggestion of the "right" answer, balanced response framing.
-- single_idea: each question asks exactly one thing (no double-barrelled "X and Y" questions).
-- clarity: short, simple, concrete words, understandable by a factory/warehouse worker on a phone on first read; no jargon, no abstract nouns, no ambiguity about time frame or object.
-- answer_type: the chosen type (scale5, scale10, yes_no, open) and the scale end labels (low/high) fit the question; end labels must match what the question measures (agreement words for a frequency question is a flaw); open questions only where free text adds value; a sensible mix.
-- coverage: together the questions cover the need (all its parts, and the extra context) within the time limit, without redundancy; tone fits the collective.
-- anonymity: no question asks for or could be used to identify a person or a small group (age, gender, exact shift/team, manager name, health data), and nothing invites naming people; sensitive topics are asked at group level, safely.
-- catalan: natural, correct, idiomatic Catalan (not calqued from Spanish or English), consistent informal "tu" register.
-Also set "weakest" to the single worst question text (verbatim) and "issues" to a list of at most 5 short concrete flaws (empty only if you truly found none).
-Reply ONLY with JSON: {"issues": string[], "weakest": string, "scores": {"relevance": int, "neutrality": int, "single_idea": int, "clarity": int, "answer_type": int, "coverage": int, "anonymity": int, "catalan": int}}`;
+const RUBRIC = `You audit workplace micro-surveys for a brewery company (synthetic data). An AI drafted a survey from an HR need. You do NOT give scores. You list concrete DEFECTS, each with an exact quote from the survey, and a program computes the scores from them. A defect without an exact quote is discarded, so only report what you can quote.
+Dimensions and what counts as a defect:
+- relevance: a question that does not serve the HR need (filler, off-topic, plays along with an inappropriate part of the need). Major if the question is unrelated to the need.
+- neutrality: leading or loaded wording ("no creus que...", "fantastic", "com d'excel·lent"), a question that suggests the right answer. Major if clearly leading.
+- single_idea: a question asking two things at once (double-barrelled, "X i Y", "X o Y"). Major if two different topics.
+- clarity: jargon, abstract nouns, ambiguity about time frame or object, too long for a phone. Minor unless it cannot be understood.
+- answer_type: wrong response type for the question, or scale end labels (shown after the type) that do not fit the wording: agreement labels on a frequency question, "Mai/Sempre" on a "Fins a quin punt" question, "Del tot" on a "Fins a quin punt" question, open type for a yes/no question, scale type for a "Per què/Què/Quin" question. Major if the labels or type make the question unanswerable.
+- coverage: part of the need or its context is not covered by any question (name it). Also redundant questions that repeat each other. Major if a main part of the need is missing.
+- anonymity: asks for or could identify a person or small group (age, gender, exact shift or team, manager name, health data, "who"), or invites naming people. Always major.
+- catalan: text not in Catalan (Spanish or English words), or Catalan errors (wrong contraction "al equip", incomplete words, Valencian forms, calques). Major if a sentence is not Catalan, minor for a single slip.
+Also report as catalan a gender mix: masculine and feminine self-descriptions in the same survey (satisfet next to valorada) is minor, one gendered form alone is not a defect.
+Rules: quote at most 12 words, copied exactly. At most 10 defects. Do not invent defects; if the survey is clean report none. Do not praise.
+Reply ONLY with JSON: {"defects": [{"dimension": string, "severity": "major"|"minor", "question": integer (question number, 0 for title/intro/whole survey), "quote": string, "why": string}]}`;
 
 function render(need: NeedInput, s: Pick<DraftSurvey, "title" | "intro" | "questions">): string {
   const qs = s.questions
@@ -41,22 +44,36 @@ function render(need: NeedInput, s: Pick<DraftSurvey, "title" | "intro" | "quest
   ].filter((x) => x !== null).join("\n");
 }
 
-function clean(x: unknown): Judgement {
-  const o = x as { scores?: Record<string, unknown>; weakest?: unknown; issues?: unknown };
-  const scores = {} as Record<Dimension, number>;
-  for (const d of DIMENSIONS) {
-    const v = Number(o.scores?.[d]);
-    if (!Number.isFinite(v) || v < 1 || v > 5) throw new Error(`bad score for ${d}`);
-    scores[d] = Math.round(v);
+type Defect = { dimension: string; severity: "major" | "minor"; question: number; quote: string; why: string };
+
+/** Score = 5 minus 2 per major and 1 per minor defect found in that dimension, floor 1. Defects whose quote is not in the survey are dropped. */
+function score(x: unknown, surveyText: string): Judgement {
+  const raw = (x as { defects?: unknown }).defects;
+  if (!Array.isArray(raw)) throw new Error("no defects array");
+  const hay = norm(surveyText);
+  const defects: Defect[] = [];
+  for (const d of raw as Defect[]) {
+    if (!d || !(DIMENSIONS as readonly string[]).includes(d.dimension)) continue;
+    const q = norm(String(d.quote ?? "")).replace(/["“”]/g, "");
+    if (q.length < 3 || !hay.includes(q)) continue;
+    defects.push({ dimension: d.dimension, severity: d.severity === "major" ? "major" : "minor", question: Number(d.question) || 0, quote: String(d.quote), why: String(d.why ?? "") });
   }
-  return { scores, weakest: String(o.weakest ?? ""), issues: Array.isArray(o.issues) ? o.issues.map(String).slice(0, 5) : [] };
+  const scores = {} as Record<Dimension, number>;
+  for (const dim of DIMENSIONS) {
+    const mine = defects.filter((d) => d.dimension === dim);
+    scores[dim] = Math.max(1, 5 - mine.reduce((a, d) => a + (d.severity === "major" ? 2 : 1), 0));
+  }
+  const penalty = defects.reduce((a, d) => a + (d.severity === "major" ? 2 : 1), 0);
+  const worst = defects.find((d) => d.severity === "major") ?? defects[0];
+  return { scores, overall: Math.max(1, 5 - penalty / 2), weakest: worst ? worst.quote : "", issues: defects.slice(0, 8).map((d) => `${d.dimension}/${d.severity}: "${d.quote}" - ${d.why}`.slice(0, 220)) };
 }
 
 export async function judge(need: NeedInput, s: Pick<DraftSurvey, "title" | "intro" | "questions">): Promise<Judgement> {
   let last: unknown;
+  const body = render(need, s);
   for (let i = 0; i < 3; i++) {
     try {
-      return clean(await chatJson(RUBRIC, render(need, s), { temperature: 0, thinking: false, maxTokens: 1500, timeoutMs: 90_000 }));
+      return score(await chatJson(RUBRIC, body, { temperature: 0, thinking: false, endpoint: "judge", maxTokens: 1500, timeoutMs: 90_000 }), body);
     } catch (e) {
       last = e;
     }
