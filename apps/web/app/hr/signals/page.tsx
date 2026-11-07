@@ -1,3 +1,4 @@
+import "./alarms.css";
 import Link from "next/link";
 import { MIN_GROUP_SIZE } from "@damm/shared";
 import { getTrends, listCollectius, listDomains, listRecommendations, listTorns } from "@damm/db/hr";
@@ -22,8 +23,19 @@ const SEV_LABEL: Record<string, string> = { critical: "Crítica", warning: "Aví
 
 type Row = AlarmView & { segment: string; domain: string | null; drop: number; detail: string };
 
-export default async function AlarmsPage({ searchParams }: { searchParams: Promise<{ estat?: string }> }) {
-  const { estat } = await searchParams;
+type Params = { estat?: string; tipus?: string; gravetat?: string; collectiu?: string; domini?: string; torn?: string; periode?: string; audiencia?: string; ordre?: string; q?: string };
+
+const SORTS = [
+  { key: "gravetat", label: "Gravetat" },
+  { key: "caiguda", label: "Mida del canvi" },
+  { key: "mostra", label: "Mida del grup (n)" },
+  { key: "recent", label: "Més recents" },
+  { key: "grup", label: "Grup (A–Z)" },
+] as const;
+
+export default async function AlarmsPage({ searchParams }: { searchParams: Promise<Params> }) {
+  const sp = await searchParams;
+  const { estat } = sp;
   const tab = TABS.find((t) => t.key === estat) ?? TABS[0];
 
   const trends = getTrends();
@@ -44,7 +56,40 @@ export default async function AlarmsPage({ searchParams }: { searchParams: Promi
     const like = { tipus: a.type, descripcio: a.description };
     return { ...a, segment: signalSegment({ collectiu: col, torn: shift }), domain: a.domainId ? domains.get(a.domainId) ?? null : null, drop: signalDrop(like), detail: signalDetail(like) };
   };
-  const rows = inTab.map(toRow);
+  const tabRows = inTab.map(toRow);
+
+  // Filters (GET form, so the URL is shareable). Options come from what exists in this tab.
+  const f = {
+    tipus: sp.tipus ?? "", gravetat: sp.gravetat ?? "", collectiu: sp.collectiu ?? "", domini: sp.domini ?? "",
+    torn: sp.torn ?? "", periode: sp.periode ?? "", audiencia: sp.audiencia ?? "", q: (sp.q ?? "").trim().toLowerCase(),
+  };
+  const sort = SORTS.find((x) => x.key === sp.ordre)?.key ?? "gravetat";
+  const uniq = <T,>(xs: T[]) => [...new Set(xs)];
+  const opts = {
+    tipus: uniq(tabRows.map((r) => r.type)),
+    periode: uniq(tabRows.map((r) => r.periode)).sort().reverse(),
+    collectiu: uniq(tabRows.map((r) => r.collectiuId).filter((x): x is number => x != null)),
+    domini: uniq(tabRows.map((r) => r.domainId).filter((x): x is number => x != null)),
+    torn: uniq(tabRows.map((r) => r.tornId).filter((x): x is number => x != null)),
+  };
+  const rows = tabRows.filter((r) =>
+    (!f.tipus || r.type === f.tipus) &&
+    (!f.gravetat || r.severity === f.gravetat) &&
+    (!f.collectiu || (f.collectiu === "tots" ? r.collectiuId == null : String(r.collectiuId) === f.collectiu)) &&
+    (!f.domini || String(r.domainId) === f.domini) &&
+    (!f.torn || String(r.tornId) === f.torn) &&
+    (!f.periode || r.periode === f.periode) &&
+    (!f.audiencia || r.audience === f.audiencia) &&
+    (!f.q || `${r.segment} ${r.domain ?? ""} ${r.detail} ${signalTypeLabel(r.type)}`.toLowerCase().includes(f.q)),
+  );
+  const activeFilters = Object.values(f).filter(Boolean).length;
+  const tabHref = (key: string) => {
+    const qs = new URLSearchParams();
+    if (key !== "obertes") qs.set("estat", key);
+    for (const [k, v] of Object.entries(sp)) if (k !== "estat" && v) qs.set(k, v);
+    const str = qs.toString();
+    return str ? `/hr/signals?${str}` : "/hr/signals";
+  };
 
   // Data quality: one note, not one card per alarm.
   const lowConf = rows.filter((r) => r.type === "low_confidence");
@@ -60,12 +105,19 @@ export default async function AlarmsPage({ searchParams }: { searchParams: Promi
   const declines = new Set(rows.filter((r) => r.type === "sustained_decline").map(key));
   const actionable = rows.filter((r) => !NON_ACTIONABLE.has(r.type) && !(r.type === "feble" && declines.has(key(r))));
   const good = rows.filter((r) => r.type === "improvement");
-  const order = (a: Row, b: Row) => (SEV_RANK[a.severity] ?? 3) - (SEV_RANK[b.severity] ?? 3) || b.drop - a.drop || b.n - a.n;
+  const bySeverity = (a: Row, b: Row) => (SEV_RANK[a.severity] ?? 3) - (SEV_RANK[b.severity] ?? 3) || b.drop - a.drop || b.n - a.n;
+  const order =
+    sort === "caiguda" ? (a: Row, b: Row) => b.drop - a.drop || bySeverity(a, b)
+    : sort === "mostra" ? (a: Row, b: Row) => b.n - a.n || bySeverity(a, b)
+    : sort === "recent" ? (a: Row, b: Row) => b.createdAt.localeCompare(a.createdAt) || bySeverity(a, b)
+    : sort === "grup" ? (a: Row, b: Row) => a.segment.localeCompare(b.segment, "ca") || bySeverity(a, b)
+    : bySeverity;
   actionable.sort(order);
 
   const groups = new Map<string, Row[]>();
   for (const r of actionable) groups.set(r.segment, [...(groups.get(r.segment) ?? []), r]);
   const grouped = [...groups.entries()].sort((a, b) => order(a[1][0], b[1][0]));
+  good.sort(order);
 
   const sparkFor = (r: Row): number[] | null => {
     const scope = trends.series.find((s) => s.scope === (r.collectiuId ? colNames.get(r.collectiuId) : "Tots"));
@@ -91,7 +143,7 @@ export default async function AlarmsPage({ searchParams }: { searchParams: Promi
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <nav className="segmented" aria-label="Estat de les alarmes">
           {TABS.map((t) => (
-            <Link key={t.key} href={t.key === "obertes" ? "/hr/signals" : `/hr/signals?estat=${t.key}`} aria-current={t.key === tab.key ? "true" : undefined}>
+            <Link key={t.key} href={tabHref(t.key)} aria-current={t.key === tab.key ? "true" : undefined}>
               {t.label} <span className="num ml-1.5 text-xs opacity-70">{counts[t.key]}</span>
             </Link>
           ))}
@@ -108,8 +160,37 @@ export default async function AlarmsPage({ searchParams }: { searchParams: Promi
         </p>
       </div>
 
+      {all.length > 0 && (
+        <form method="get" action="/hr/signals" className="alarm-filters mb-5" aria-label="Filtres d'alarmes">
+          {tab.key !== "obertes" && <input type="hidden" name="estat" value={tab.key} />}
+          <Select name="tipus" label="Tipus" value={f.tipus} options={opts.tipus.map((v) => [v, signalTypeLabel(v)])} />
+          <Select name="gravetat" label="Gravetat" value={f.gravetat} options={[["critical", "Crítica"], ["warning", "Avís"], ["info", "Info"]]} />
+          <Select name="collectiu" label="Col·lectiu" value={f.collectiu} options={[...opts.collectiu.map((v) => [String(v), colNames.get(v) ?? `#${v}`] as [string, string]), ["tots", "Tota l'empresa"]]} />
+          <Select name="domini" label="Domini" value={f.domini} options={opts.domini.map((v) => [String(v), domains.get(v) ?? `#${v}`])} />
+          <Select name="torn" label="Torn" value={f.torn} options={opts.torn.map((v) => [String(v), torns.get(v) ?? `#${v}`])} />
+          <Select name="periode" label="Període" value={f.periode} options={opts.periode.map((v) => [v, v])} />
+          <Select name="audiencia" label="Visibilitat" value={f.audiencia} options={[["hr_manager", "També el responsable"], ["hr", "Només persones"]]} />
+          <label className="alarm-filter">
+            <span>Cerca</span>
+            <input className="input" type="search" name="q" defaultValue={sp.q ?? ""} placeholder="Grup, domini, text…" />
+          </label>
+          <label className="alarm-filter">
+            <span>Ordena per</span>
+            <select className="input" name="ordre" defaultValue={sort}>
+              {SORTS.map((o) => <option key={o.key} value={o.key}>{o.label}</option>)}
+            </select>
+          </label>
+          <div className="alarm-filter-actions">
+            <button className="btn btn-primary" type="submit">Aplica</button>
+            {(activeFilters > 0 || sort !== "gravetat") && <Link className="btn" href={tab.key === "obertes" ? "/hr/signals" : `/hr/signals?estat=${tab.key}`}>Neteja</Link>}
+          </div>
+        </form>
+      )}
+
       {all.length === 0 ? (
         <Empty>Cap alarma. Prem «Recalcula ara» perquè l&apos;anàlisi torni a mirar les dades.</Empty>
+      ) : rows.length === 0 ? (
+        <Empty>Cap alarma amb aquests filtres. Prova de treure&apos;n algun.</Empty>
       ) : (
         <div className="space-y-6">
           {grouped.map(([segment, items]) => (
@@ -160,6 +241,18 @@ export default async function AlarmsPage({ searchParams }: { searchParams: Promi
         </div>
       )}
     </>
+  );
+}
+
+function Select({ name, label, value, options }: { name: string; label: string; value: string; options: [string, string][] }) {
+  return (
+    <label className="alarm-filter">
+      <span>{label}</span>
+      <select className="input" name={name} defaultValue={value}>
+        <option value="">Tots</option>
+        {options.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+      </select>
+    </label>
   );
 }
 

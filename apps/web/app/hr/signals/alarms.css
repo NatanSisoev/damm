@@ -1,0 +1,6 @@
+/* Alarmes: filter bar */
+.alarm-filters { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px 12px; }
+.alarm-filter { display: flex; flex-direction: column; gap: 3px; min-width: 130px; }
+.alarm-filter > span { font-size: 11px; color: var(--subtle, #666); text-transform: uppercase; letter-spacing: .04em; }
+.alarm-filter .input { padding-block: 5px; font-size: 13px; }
+.alarm-filter-actions { display: flex; gap: 8px; }
