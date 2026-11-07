@@ -19,13 +19,13 @@ Every answered closed question becomes one observation `(domain, facet, item, sc
 
 | `tipus` | UI | Raw value | `score` | Noise σ (default) |
 |---|---|---|---|---|
-| `escala10` | rate 0–10 | `valor_num` 0..10 | x / 10 | 0.10 |
-| `escala5` | Likert / 5 faces | `valor_num` 1..5 | (x − 1) / 4 | 0.12 |
-| `swipe` | yes/no, true/false | `valor_num` 0/1 | 0 or 1 | 0.25 |
+| `scale10` | rate 0–10 | `valor_num` 0..10 | x / 10 | 0.10 |
+| `scale5` | Likert or 5 faces | `valor_num` 1..5 | (x − 1) / 4 | 0.12 |
+| `yes_no` | yes/no, true/false | `valor_num` 0/1 | 0 or 1 | 0.25 |
 | `pair` | this or that (2 statements) | `valor_num` = option index | `options[i].score` | 0.22 |
 | `choice` | pick the most representative of 3–5 statements | `valor_num` = option index | `options[i].score` | 0.17 |
 | `ranking` | order 3–5 statements | `value_json` = option indices, best first | **no score** (see below) | – |
-| `obert` | free text only | `comentari` | **no score**, goes to themes | – |
+| `open` | free text only | `comentari` | **no score**, goes to themes | – |
 
 Rules:
 - **Polarity.** `pregunta.polarity = -1` for negatively worded items ("I feel overloaded"): `score = 1 − score`. Option scores of `pair`/`choice` are already oriented and ignore polarity.
@@ -89,7 +89,7 @@ All six domains stay active. Per person per day:
 
 For each (collective, shift, format) keep `Beta(α, β)` (`format_stats`). Reward = a *good answer*: not careless (answer time ≥ `min_answer_ms` 1500 ms, and not the same raw value on all of the day's batch). Per decision, for each eligible format f draw `θ_f ~ Beta(α_f, β_f)` and pick `argmax θ_f · pref(collective, f)`, where `pref` comes from `format_preference` (HR; 0 = banned, default 1).
 
-Example: HR sets Fàbriques to swipe 3, escala5 2, pair 1, ranking 0. The engine never shows rankings in Fàbriques and leans to swipes, but if night shift turns out to answer `escala5` carefully and rush through swipes, the Beta for swipe drops and `escala5` wins more often. Formats with little data have wide Betas and still get tried.
+Example: HR sets Fàbriques to yes_no 3, scale5 2, pair 1, ranking 0. The engine never shows rankings in Fàbriques and leans to yes/no, but if night shift turns out to answer `scale5` carefully and rush through yes/no, the Beta for yes_no drops and `scale5` wins more often. Formats with little data have wide Betas and still get tried.
 
 When non-response is modelled later, the same Thompson step gets an "answered" reward. Nothing else changes.
 
@@ -171,3 +171,28 @@ packages/engine/src/
 ```
 
 All selection and scoring functions are pure (state in, decision out) and take a seeded RNG, so they are unit-testable and reproducible.
+
+## 11. Learning: how the engine trains
+
+The engine has no offline training step that it depends on. It is a set of **Bayesian models that learn online**: every answer updates them immediately and in closed form, in a few microseconds.
+
+| What it learns | From | Where |
+|---|---|---|
+| each person's level per domain | that person's answers (Kalman filter) | `person_domain_state` |
+| each item's wording bias | everyone's answers to that item | `item_stats` |
+| which formats get careful answers per collective × shift | answer quality (Beta counts) | `format_stats` |
+| segment score, confidence and consensus | person levels, recomputed by the job | `agregat` |
+
+On top of that it can be trained beforehand in three ways, none of which changes the code:
+
+1. **Priors (warm start).** `engine_config.priors` holds what the engine believes before it sees data: the prior level and variance, a per-domain prior level, and per-format Beta priors. These can be fitted on other datasets, for example public workplace surveys such as Eurofound's European Working Conditions Survey, a previous deployment, or the synthetic seed. The engine then starts from those beliefs instead of from flat ones, and real answers override them as they arrive. Strong priors are worth a few dozen answers; weak ones fade after a handful.
+2. **Replay (bootstrap).** `runEngineJob` replays all stored `resposta` rows in time order. On a new database it rebuilds `person_domain_state` and `item_stats` from history, so importing old data or seeding gives a trained engine on day one.
+3. **Hyperparameter tuning (offline).** `half_life_days`, `process_noise_per_day`, `followup_z`, the noise per type and the shrinkage are tuned by replaying data with known ground truth: the synthetic seed with its hidden biases (`resposta_seed`), or a simulator. The goal is to maximise how fast the planted signals (the October theme, the Logística weak signal, the night-shift gap) are detected while keeping false alarms low. The winning values are stored in `engine_config`, and the job records `engine_version`.
+
+Why this design rather than a big pre-trained model:
+- the data volume is small (hundreds of people);
+- every number must be explainable to HR and in the demo;
+- anonymity rules out pooling individual-level external data;
+- and the engine has to adapt to each company and collective from its own answers.
+
+A neural or gradient-boosted model can later replace any single component behind the same interfaces (for example a learned answer-propensity model in the Thompson step) without changing the rest.

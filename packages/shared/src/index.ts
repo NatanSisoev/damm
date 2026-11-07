@@ -20,7 +20,11 @@ export type Torn = (typeof TORNS)[number];
 
 export const PERIODES_SEED = ["2026-08", "2026-09", "2026-10"] as const;
 
-export type PreguntaTipus = "escala5" | "escala10" | "swipe" | "pair" | "choice" | "ranking" | "obert";
+/** Question (answer) types. Values are English and stable; see docs/question-types.md. */
+export const QUESTION_TYPES = ["scale5", "scale10", "yes_no", "pair", "choice", "ranking", "open"] as const;
+export type QuestionType = (typeof QUESTION_TYPES)[number];
+/** @deprecated use QuestionType */
+export type PreguntaTipus = QuestionType;
 export type PreguntaEstat = "draft" | "aprovada" | "retirada";
 export type NecessitatEstat = "oberta" | "publicada" | "tancada";
 export type Canal = "app" | "mobil_qr";
@@ -74,7 +78,7 @@ export interface Pregunta {
   dominiId: number;
   collectiuId: number | null;
   text: string;
-  tipus: PreguntaTipus;
+  tipus: QuestionType;
   necessitatId: number | null;
   estat: PreguntaEstat;
   prioritat: number;
@@ -95,7 +99,7 @@ export interface PoolNextResponse {
 // --- API: POST /api/responses ------------------------------------------------
 export interface RespostaInput {
   preguntaId: number;
-  valorNum?: number | null; // scales: the value; swipe: 0/1; pair/choice: option index
+  valorNum?: number | null; // scale5: 1..5, scale10: 0..10, yes_no: 0/1; pair/choice: option index
   valueJson?: number[] | null; // ranking: option indices, best first
   answerMs?: number | null; // time from display to answer
   comentari?: string | null; // redacted server-side before insert

@@ -82,7 +82,7 @@ CREATE TABLE pregunta (
   domini_id      INTEGER NOT NULL REFERENCES domini(id),
   collectiu_id   INTEGER REFERENCES collectiu(id),  -- NULL = all collectives
   text           TEXT NOT NULL,
-  tipus          TEXT NOT NULL CHECK (tipus IN ('escala5','escala10','swipe','pair','choice','ranking','obert')),
+  tipus          TEXT NOT NULL CHECK (tipus IN ('scale5','scale10','yes_no','pair','choice','ranking','open')), -- QuestionType in @damm/shared
   facet          TEXT,                              -- what the item really asks; items with the same facet are interchangeable wordings
   polarity       INTEGER NOT NULL DEFAULT 1 CHECK (polarity IN (1,-1)), -- -1 = negatively worded, score is flipped
   options_json   TEXT,                              -- pair/choice: [{"label","score"}]; ranking: [{"label","domain_id"}]
@@ -111,7 +111,7 @@ CREATE TABLE resposta (
   pregunta_id  INTEGER NOT NULL REFERENCES pregunta(id),
   valor_num    REAL,                                 -- NULL for open questions and ranking; option index for pair/choice
   value_json   TEXT,                                 -- ranking: option indices, best first, e.g. [2,0,3,1]
-  score        REAL,                                 -- engine-normalised 0..1, 1 = best; NULL for ranking/obert (see docs/engine.md)
+  score        REAL,                                 -- engine-normalised 0..1, 1 = best; NULL for ranking/open (see docs/engine.md)
   answer_ms    INTEGER,                              -- time from display to answer, for careless-answer detection
   comentari    TEXT,                                 -- redacted text only
   canal        TEXT NOT NULL DEFAULT 'app' CHECK (canal IN ('app','mobil_qr')),
