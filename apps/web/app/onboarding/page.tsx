@@ -15,9 +15,6 @@ export default async function OnboardingPage({ searchParams }: { searchParams: P
       {valid ? (
         <>
           <OnboardingForm codi={codi} empresa={info.empresa} collectiu={info.collectiu} />
-          <p className="text-center text-sm">
-            Ja tens compte? <Link href="/login" className="underline">Inicia la sessió</Link>
-          </p>
         </>
       ) : (
         <div className="space-y-2">
@@ -25,6 +22,7 @@ export default async function OnboardingPage({ searchParams }: { searchParams: P
           <p className="text-sm opacity-70">
             Aquest codi no existeix o ja no està actiu. Comprova l&apos;enllaç o demana un codi nou al teu equip.
           </p>
+          <Link href="/join" className="inline-block underline text-sm">Introdueix un altre codi</Link>
         </div>
       )}
     </main>

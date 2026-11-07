@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState } from "react";
 import { registerAction, type OnboardingState } from "./actions";
 import { RecoveryCodeScreen } from "./recovery-code";
@@ -36,6 +37,9 @@ export function OnboardingForm({ codi, empresa, collectiu }: { codi: string; emp
       <button disabled={pending} className="w-full rounded bg-black px-4 py-3 text-white disabled:opacity-40 dark:bg-white dark:text-black">
         Crea el compte
       </button>
+      <p className="text-center text-sm">
+        Ja tens compte? <Link href="/login" className="underline">Inicia la sessió</Link>
+      </p>
     </form>
   );
 }
