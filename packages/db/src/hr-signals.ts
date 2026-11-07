@@ -3,7 +3,7 @@
 // Every figure re-applies the minimum group size on read.
 import { MIN_GROUP_SIZE } from "@damm/shared";
 import { getDb } from "./connection";
-import { getShiftTrend, getTrends, type TrendCell } from "./hr-repository";
+import { RECOMMENDATION_COLUMNS, getShiftTrend, getTrends, type TrendCell } from "./hr-repository";
 import type { Change } from "./hr-rigour";
 
 // Snippets: stored redacted text only, no metadata returned next to them, never from themes under the minimum size.
@@ -17,6 +17,7 @@ export interface SignalHeader {
   collectiu: string | null;
   collectiuId: number | null;
   tornId: number | null;
+  dominiId: number | null;
   domini: string | null;
   torn: string | null;
   periode: string;
@@ -47,7 +48,17 @@ export interface SignalRecommendation {
   text: string;
   estat: string;
   seguimentNecessitatId: number | null;
+  /** Drafted proposal fields (C11); null on older rows. */
+  titol: string | null;
+  iniciativa: string | null;
+  responsableSuggerit: string | null;
+  terminiSuggerit: string | null;
+  justificacio: string | null;
+  limits: string | null;
+  font: "llm" | "template" | null;
+  aprovadaEl: string | null;
 }
+
 
 export interface SignalFollowUp {
   necessitatId: number;
@@ -85,7 +96,7 @@ export function getSignalDetail(id: number): SignalDetail | null {
   const db = getDb();
   const row = db
     .prepare(
-      `SELECT s.id, s.tipus, s.descripcio, s.collectiu_id AS collectiuId, s.torn_id AS tornId, c.nom AS collectiu,
+      `SELECT s.id, s.tipus, s.descripcio, s.collectiu_id AS collectiuId, s.torn_id AS tornId, s.domini_id AS dominiId, c.nom AS collectiu,
               d.nom AS domini, t.nom AS torn,
               s.periode, s.n, s.confianca, s.suprimit, s.severity, s.status
        FROM senyal s
@@ -145,8 +156,7 @@ export function getSignalDetail(id: number): SignalDetail | null {
   // --- Recommendations and follow-up needs.
   const recommendations = db
     .prepare(
-      `SELECT id, text, estat, seguiment_necessitat_id AS seguimentNecessitatId
-       FROM recomanacio WHERE senyal_id = ? ORDER BY id`,
+      `SELECT ${RECOMMENDATION_COLUMNS} FROM recomanacio WHERE senyal_id = ? ORDER BY id`,
     )
     .all(id) as SignalRecommendation[];
 

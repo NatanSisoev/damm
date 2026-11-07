@@ -3,6 +3,7 @@ import Link from "next/link";
 import { MIN_GROUP_SIZE } from "@damm/shared";
 import { ChangeBadge, Sparkline } from "./trend";
 import { Card, Empty } from "./ui";
+import { RecommendationBody } from "./recommendation-card";
 import { approveRecommendationAction, discardRecommendationAction, followUpAction, setAlarmStatusAction } from "./actions";
 import type { Headline, Heatmap, HeatCell, NarrativeView, ReachGap, SegmentTrend, ThemesByDomain } from "./analytics";
 import { segHref } from "./analytics";
@@ -76,7 +77,7 @@ export function ReviewedButton({ alarmId }: { alarmId: number }) {
 
 // ---------- proposals ----------
 
-export function ProposalsCard({ proposals }: { proposals: { id: number; text: string }[] }) {
+export function ProposalsCard({ proposals }: { proposals: (Parameters<typeof RecommendationBody>[0]["r"] & { id: number })[] }) {
   return (
     <Card title="Recomanacions proposades" meta={<span className="num">{proposals.length}</span>}>
       {proposals.length === 0 ? (
@@ -86,7 +87,7 @@ export function ProposalsCard({ proposals }: { proposals: { id: number; text: st
           {proposals.map((r) => (
             <li key={r.id} className="py-3">
               <div className="mb-1 text-xs font-medium text-subtle">Proposta de la IA · decideix una persona</div>
-              <p className="text-[14px]">{r.text}</p>
+              <RecommendationBody r={r} />
               <div className="mt-2 flex flex-wrap gap-2">
                 <form action={discardRecommendationAction}>
                   <input type="hidden" name="id" value={r.id} />

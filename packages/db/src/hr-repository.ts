@@ -3,6 +3,7 @@
 import type { Agregat, Recomanacio, Senyal } from "@damm/shared";
 import { MIN_GROUP_SIZE } from "@damm/shared";
 import { getDb } from "./connection";
+import type { SignalRecommendation } from "./hr-signals";
 import { classifyChange, complementarySuppression, precisionBand, type Change, type HideReason, type PrecisionBand } from "./hr-rigour";
 
 export interface DraftQuestion {
@@ -297,13 +298,16 @@ export function listSignals(): (Omit<Senyal, "collectiuId"> & { collectiu: strin
     .map((r) => ({ ...r, suprimit: false }));
 }
 
-export function listRecommendations(): Recomanacio[] {
+/** SQL column list that maps `recomanacio` onto `SignalRecommendation`. */
+export const RECOMMENDATION_COLUMNS = `id, text, estat, seguiment_necessitat_id AS seguimentNecessitatId, titol, iniciativa,
+  responsable_suggerit AS responsableSuggerit, termini_suggerit AS terminiSuggerit, justificacio, limits, font, aprovada_el AS aprovadaEl`;
+
+type RecommendationRow = Recomanacio & Omit<SignalRecommendation, "id" | "text" | "estat" | "seguimentNecessitatId">;
+
+export function listRecommendations(): RecommendationRow[] {
   return getDb()
-    .prepare(
-      `SELECT id, senyal_id AS senyalId, text, estat, seguiment_necessitat_id AS seguimentNecessitatId
-       FROM recomanacio ORDER BY id`,
-    )
-    .all() as Recomanacio[];
+    .prepare(`SELECT senyal_id AS senyalId, ${RECOMMENDATION_COLUMNS} FROM recomanacio ORDER BY id`)
+    .all() as RecommendationRow[];
 }
 
 /** Recommendations still waiting for a human decision (badge in the HR sidebar). */
