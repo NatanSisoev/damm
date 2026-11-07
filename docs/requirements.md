@@ -113,8 +113,8 @@ The guide says "Publicar a Typeform". AGENTS.md decides to ignore Typeform: the 
 | ID | Requirement | Status | Evidence / gap |
 |----|-------------|--------|----------------|
 | R-FLOW-6a | Read the responses (through the API) | done | `POST /api/responses` → `resposta` |
-| R-FLOW-6b | **Group comments by theme** | done (engine) | `runCommentAnalysis` (`packages/engine/src/comments.ts`) fills `tema`/`comentari_tema`, multi-theme, no LLM key needed; 91.2 % top-1 on the seed (engine.md section 12). HR display: C10 (Jan). |
-| R-FLOW-6c | **Summarise** | done (engine) | `tema.resum`: Catalan template per theme, period and collective, LLM optional. HR display: C10 (Jan). |
+| R-FLOW-6b | **Group comments by theme** | done (engine) | `runCommentAnalysis` (`packages/engine/src/comments.ts`) fills `tema`/`comentari_tema`, multi-theme, no LLM key needed; 91.2 % top-1 on the seed (engine.md section 12). Wired into `POST /api/jobs/run` and the seed. HR display: C10 (Jan). |
+| R-FLOW-6c | **Summarise** | done (engine) | `tema.resum`: Catalan template per theme, period and collective, LLM optional. Wired into `POST /api/jobs/run` and the seed. HR display: C10 (Jan). |
 | R-FLOW-6d | Detect **trends** | done | Trends with the change rule (task 17). HR UI audit (c1c7422): delta shown with two decimals, chart footnote states the scale (1-5 or 0-10), badge title explains the 0,30 threshold. |
 | R-FLOW-6e | Detect **weak signals** | partial | Score weak signals: `feble` alarm. Comment themes: `emergent` alarm (rise of 10 points or more, n at least 10). Themes below n = 10 are suppressed, so a sub-threshold weak signal in comments stays hidden by design. Drilldown done (16). |
 | R-FLOW-6f | **Compare collectives or periods** | done | Results by collective and period |
@@ -132,7 +132,7 @@ The guide says "Publicar a Typeform". AGENTS.md decides to ignore Typeform: the 
 ### R-FLOW-8 Recommend and close the loop
 | ID | Requirement | Status | Evidence / gap |
 |----|-------------|--------|----------------|
-| R-FLOW-8a | Proposes **concrete actions** | done | `runRecommendations` + `draftRecommendations` draft 1 to 3 proposals per open alarm (template or LLM). Jan: show them (C11). |
+| R-FLOW-8a | Proposes **concrete actions** | done | `runRecommendations` + `draftRecommendations` draft 1 to 3 proposals per open alarm (template or LLM). Run by `POST /api/jobs/run` and the seed. Jan: show them (C11). |
 | R-FLOW-8b | Proposes a **new follow-up micro-survey** | done | `createDraftedFollowUp`: need for the signal's collective, AI-drafted questions, human review |
 | R-FLOW-8c | Recommendations are proposals, never automatic decisions | done | Approve or discard |
 | R-FLOW-8e | "Tornar a escoltar": how perception evolves after the action | partial | Engine done: `action_effect` insight, anchored on `recomanacio.aprovada_el` or a `context_event`; no "done" state; n≥10 in both windows; worded "since X", correlation not cause. `improvement` alarm uses the same anchors. Open: HR UI (Jan, C13) |

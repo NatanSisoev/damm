@@ -37,7 +37,7 @@ export default async function ManagerCollectivePage({ params }: { params: Promis
   const rep = getRepresentativeness();
   const repRows = rep.collectius.filter((r) => r.collectiu === collectiu.nom);
   const shiftRows = rep.torns.filter((r) => r.collectiu === collectiu.nom);
-  const themes = listThemes().filter((t) => !t.suprimit);
+  const themes = listThemes({ collectiuId: collectiu.id }).filter((t) => !t.suprimit);
   const signals = listManagerSignals(collectiu.id);
   const recs = listManagerRecommendations(collectiu.id);
   // Viewer comes from the route's collective, never from a request parameter; managers only get their own hr_manager alarms.
