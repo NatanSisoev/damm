@@ -11,6 +11,7 @@
   "dependencies": {
     "@damm/ai": "workspace:*",
     "@damm/db": "workspace:*",
+    "@damm/engine": "workspace:*",
     "@damm/shared": "workspace:*",
     "next": "16.4.5",
     "qrcode": "^1.5.4",

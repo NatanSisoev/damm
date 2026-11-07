@@ -1,12 +1,13 @@
 import { z } from "zod";
 import { getCompteId } from "@/lib/session";
-import { saveResponses } from "@damm/db/employee";
+import { getEngine } from "@/lib/engine";
+import { EngineError } from "@damm/engine";
 import type { PostResponsesRequest } from "@damm/shared";
 
 export const dynamic = "force-dynamic";
 
-// Mirrors PostResponsesRequest from @damm/shared. Per-question rules (approved, visible to the
-// account's collective, value within the scale, one answer per day) are enforced in saveResponses.
+// Mirrors PostResponsesRequest from @damm/shared. Per-question rules (in today's batch, value for the
+// type, one answer per day, comment redaction) are enforced by @damm/engine submitAnswers.
 const bodySchema = z.object({
   respostes: z
     .array(
@@ -24,11 +25,10 @@ const bodySchema = z.object({
 }) satisfies z.ZodType<PostResponsesRequest>;
 
 const STATUS = {
-  pregunta_invalida: 400,
-  valor_invalid: 400,
-  comentari_obligatori: 400,
-  ja_respost: 409,
-  redaccio_fallida: 500,
+  not_in_todays_batch: 400,
+  invalid_value: 400,
+  missing_comment: 400,
+  already_answered: 409,
 } as const;
 
 // Request bodies and comments are never logged.
@@ -45,7 +45,14 @@ export async function POST(request: Request) {
   const parsed = bodySchema.safeParse(json);
   if (!parsed.success) return Response.json({ error: "peticio_invalida" }, { status: 400 });
 
-  const res = saveResponses(compteId, parsed.data.respostes, parsed.data.canal ?? "app");
-  if (!res.ok) return Response.json({ error: res.error }, { status: STATUS[res.error] });
+  let result;
+  try {
+    result = getEngine().submitAnswers(compteId, parsed.data.respostes, { channel: parsed.data.canal ?? "app" });
+  } catch (e) {
+    if (e instanceof EngineError) return Response.json({ error: "no_autenticat" }, { status: 401 });
+    throw e;
+  }
+  const bad = result.rejected[0];
+  if (bad) return Response.json({ error: bad.reason, preguntaId: bad.questionId }, { status: STATUS[bad.reason] });
   return new Response(null, { status: 204 });
 }

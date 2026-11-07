@@ -50,7 +50,7 @@ export function SwipeInput({
         }}
       >
         {text}
-        <p className="mt-3 text-xs font-normal text-subtle">Llisca a la dreta per «Sí», a l&apos;esquerra per «No»</p>
+        <p className="mt-3 text-sm font-normal text-muted">Llisca a la dreta per «Sí», a l&apos;esquerra per «No»</p>
       </div>
       <div className="mt-4 grid grid-cols-2 gap-3" role="radiogroup" aria-label="Resposta">
         <button
@@ -59,7 +59,7 @@ export function SwipeInput({
           aria-checked={value === 0}
           onClick={() => onChange(0)}
           className={`h-14 rounded-xl border text-base font-semibold ${
-            value === 0 ? "border-accent bg-accent text-white" : "border-line-strong bg-surface text-ink"
+            value === 0 ? "border-accent bg-accent text-[color:var(--on-accent)]" : "border-line-strong bg-surface text-ink"
           }`}
         >
           No
@@ -70,7 +70,7 @@ export function SwipeInput({
           aria-checked={value === 1}
           onClick={() => onChange(1)}
           className={`h-14 rounded-xl border text-base font-semibold ${
-            value === 1 ? "border-good bg-good text-white" : "border-line-strong bg-surface text-ink"
+            value === 1 ? "border-good bg-good text-[color:var(--on-accent)]" : "border-line-strong bg-surface text-ink"
           }`}
         >
           Sí
