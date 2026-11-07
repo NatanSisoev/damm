@@ -519,6 +519,28 @@ function buildRep(items: RepItem[]): RepRow[] {
   });
 }
 
+/**
+ * Respondent counts per (collective, shift) for one period.
+ * Prefers the all-domains rows (domini_id NULL). The engine writes per-domain rows only, so otherwise the largest
+ * per-domain n of the segment is used: a lower bound of the distinct respondents, never an over-count.
+ */
+function segmentCounts(db: ReturnType<typeof getDb>, periode: string): { c: number; t: number | null; n: number; suprimit: number }[] {
+  const all = db
+    .prepare(
+      `SELECT collectiu_id AS c, torn_id AS t, domini_id AS d, n FROM agregat
+       WHERE periode = ? AND collectiu_id IS NOT NULL`,
+    )
+    .all(periode) as { c: number; t: number | null; d: number | null; n: number }[];
+  const best = new Map<string, { c: number; t: number | null; n: number; whole: boolean }>();
+  for (const r of all) {
+    const k = `${r.c}|${r.t}`;
+    const cur = best.get(k);
+    const whole = r.d === null;
+    if (!cur || (whole && !cur.whole) || (whole === cur.whole && r.n > cur.n)) best.set(k, { c: r.c, t: r.t, n: r.n, whole });
+  }
+  return [...best.values()].map((b) => ({ c: b.c, t: b.t, n: b.n, suprimit: b.n < MIN_GROUP_SIZE ? 1 : 0 }));
+}
+
 /** Response share vs synthetic population share for the latest period. Shares are computed among visible segments only, so suppressed counts cannot be recovered by subtraction. */
 export function getRepresentativeness(): Representativeness {
   const db = getDb();
@@ -529,12 +551,7 @@ export function getRepresentativeness(): Representativeness {
   const pop = db
     .prepare("SELECT collectiu_id AS c, torn_id AS t, COUNT(*) AS n FROM empleat_sintetic GROUP BY collectiu_id, torn_id")
     .all() as { c: number; t: number | null; n: number }[];
-  const resp = db
-    .prepare(
-      `SELECT collectiu_id AS c, torn_id AS t, n, suprimit FROM agregat
-       WHERE periode = ? AND collectiu_id IS NOT NULL AND domini_id IS NULL`,
-    )
-    .all(p.p) as { c: number; t: number | null; n: number; suprimit: number }[];
+  const resp = segmentCounts(db, p.p);
 
   const popC = (c: number) => pop.filter((x) => x.c === c).reduce((s, x) => s + x.n, 0);
   const collectius = buildRep(
@@ -731,12 +748,7 @@ export function getHrOverview(): HrOverview {
   let coveredPopulation: number | null = null;
   let excludedCollectius = 0;
   if (p.p) {
-    const rows = db
-      .prepare(
-        `SELECT collectiu_id AS c, n, suprimit FROM agregat
-         WHERE periode = ? AND collectiu_id IS NOT NULL AND torn_id IS NULL AND domini_id IS NULL`,
-      )
-      .all(p.p) as { c: number; n: number; suprimit: number }[];
+    const rows = segmentCounts(db, p.p).filter((r) => r.t === null);
     const hide = complementarySuppression(rows.map((r) => ({ n: r.n, primary: !!r.suprimit })));
     const visible = rows.filter((_, k) => hide[k] === null);
     excludedCollectius = listCollectius().length - visible.length;

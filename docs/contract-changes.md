@@ -19,6 +19,17 @@ What changed and why.
 
 ---
 
+## C11 · 2026-11-07 · Jan · HR respondent counts fall back to per-domain aggregates
+
+- `@damm/db/hr` `getRepresentativeness()` and `getHrOverview()` no longer require `agregat` rows with `domini_id IS NULL`. They use those rows when present and otherwise the largest per-domain `n` of each (collective, shift) as a lower bound of distinct respondents (`segmentCounts` in `hr-repository.ts`).
+- Why: `packages/engine/src/job.ts` writes per-domain rows only, so on an engine-built DB Inici showed "—" for participation and every segment showed "Suprimit · Menys de 10 persones han respost" even with n=80 (`docs/hr-ui-audit.md` HR-X-1, HR-ENG-1). No schema change.
+
+Action items:
+- [x] Jan: HR side fallback (done 2026-11-07).
+- [ ] Natan: in `snapshot` of `job.ts`, emit per (collective, shift) and company-level rows with `domini_id = NULL` and `n` = distinct respondents across domains (the `respondents` sets and `count()` already exist). Then the fallback is no longer used and `n` is exact.
+
+---
+
 ## C10 · 2026-11-07 · Jan · Published needs are added to today's batch past the cap
 
 - New in `@damm/db/employee`: `addPublishedNeedsToDay(compteId, day)`. For an account whose batch for `day` already exists, it appends every approved, non-follow-up question of a `publicada` need for the account's collective (or all collectives) that the account never answered and that is not in today's batch, as extra `assignment` rows (`reason='need'`, slots after the engine's). `apps/web/lib/engine.ts` `getTodaysBatch` calls it after `getDailyBatch`; `GET /api/pool/next` uses `getTodaysBatch`.
