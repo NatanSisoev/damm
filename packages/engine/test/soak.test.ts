@@ -136,6 +136,7 @@ test("soak: 6 months of daily answers, scheduler running weekly on a fake clock"
     assert.ok(biggest <= 2 * Math.max(smallest, 1) + 20, `${table}: rows per period vary ${smallest}..${biggest}, looks like accumulation`);
   }
   // Reruns with no new data change nothing (no runaway rows), neither now nor ten minutes later.
+  assert.ok(sched.runNow() !== null); // absorbs answers that arrived after the last weekly tick
   const settled = counts(db);
   for (const dt of [0, 600_000, 600_000]) {
     clock.now += dt;
