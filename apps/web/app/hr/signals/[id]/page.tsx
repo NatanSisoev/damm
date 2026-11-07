@@ -5,11 +5,7 @@ import { CHANGE_MIN_DELTA, CHANGE_MIN_N, getSignalDetail, type Change, type Sign
 import { Card, Empty, PageHeader, SuppressedBadge } from "../../ui";
 import { approveFromSignalAction, discardFromSignalAction, followUpFromSignalAction } from "./actions";
 
-const TIPUS: Record<string, string> = {
-  emergent: "Emergent",
-  feble: "Senyal feble",
-  baixa_participacio: "Baixa participació",
-};
+import { SignalBadges, signalTypeLabel } from "../../signal-labels";
 const ESTAT: Record<string, string> = { proposada: "", aprovada: "badge-good", descartada: "" };
 const suppressedHint = `Menys de ${MIN_GROUP_SIZE} respondents`;
 
@@ -76,13 +72,13 @@ export default async function SignalPage({ params }: { params: Promise<{ id: str
   return (
     <>
       <PageHeader
-        title={TIPUS[signal.tipus] ?? signal.tipus}
+        title={signalTypeLabel(signal.tipus)}
         subtitle={signal.descripcio}
         actions={<Link href="/hr/recommendations" className="btn">← Senyals i recomanacions</Link>}
       />
 
       <div className="mb-6 flex flex-wrap items-center gap-2">
-        <span className="badge badge-warn">{TIPUS[signal.tipus] ?? signal.tipus}</span>
+        <SignalBadges tipus={signal.tipus} severity={signal.severity} status={signal.status} />
         <span className="badge">{signal.collectiu ?? "Tots els col·lectius"}</span>
         <span className="badge num">{signal.periode}</span>
         <span className="badge num">n={signal.n}</span>

@@ -2,7 +2,7 @@
 // (reads `pregunta`, reads/writes the caller's own `resposta`).
 // No email, phone or name: an account is an opaque id, a username and salted hashes.
 import { randomBytes, randomUUID, scrypt, timingSafeEqual } from "node:crypto";
-import type { Canal, PreguntaTipus } from "@damm/shared";
+import type { Canal, PreguntaTipus, RankingOption, ScoredOption } from "@damm/shared";
 import { getDb } from "./connection";
 
 const KEYLEN = 64;
@@ -194,9 +194,26 @@ export function deletePushSubscription(compteId: string): void {
 
 export const DAILY_QUESTION_LIMIT = 2;
 
-export type PoolQuestion = { id: number; dominiId: number; text: string; tipus: PreguntaTipus };
+type QuestionOptions = ScoredOption[] | RankingOption[] | null;
+export type PoolQuestion = { id: number; dominiId: number; text: string; tipus: PreguntaTipus; options: QuestionOptions };
 
-export type AnswerInput = { preguntaId: number; valorNum?: number | null; comentari?: string | null };
+function parseOptions(raw: string | null): QuestionOptions {
+  if (!raw) return null;
+  try {
+    const v: unknown = JSON.parse(raw);
+    return Array.isArray(v) && v.length ? (v as QuestionOptions) : null;
+  } catch {
+    return null;
+  }
+}
+
+export type AnswerInput = {
+  preguntaId: number;
+  valorNum?: number | null;
+  comentari?: string | null;
+  valueJson?: number[] | null; // ranking: option indices, best first
+  answerMs?: number | null;
+};
 export type SaveError = "pregunta_invalida" | "valor_invalid" | "comentari_obligatori" | "ja_respost" | "redaccio_fallida";
 
 /** `YYYY-MM-DD` and `YYYY-MM` from the server clock (UTC, same clock as SQLite's datetime('now')). */
@@ -231,7 +248,7 @@ export function nextQuestionsForToday(compteId: string): PoolQuestion[] {
   if (remaining <= 0) return [];
   const rows = getDb()
     .prepare(
-      `SELECT p.id, p.domini_id AS dominiId, p.text, p.tipus
+      `SELECT p.id, p.domini_id AS dominiId, p.text, p.tipus, p.options_json AS optionsJson
        FROM pregunta p
        WHERE p.estat = 'aprovada'
          AND (p.collectiu_id IS NULL OR p.collectiu_id = @collectiu)
@@ -243,7 +260,9 @@ export function nextQuestionsForToday(compteId: string): PoolQuestion[] {
        LIMIT @limit`,
     )
     .all({ collectiu: collectiuId, compte: compteId, dia: serverDate().dia, limit: remaining });
-  return rows as PoolQuestion[];
+  return (rows as (Omit<PoolQuestion, "options"> & { optionsJson: string | null })[]).map(
+    ({ optionsJson, ...q }) => ({ ...q, options: parseOptions(optionsJson) }),
+  );
 }
 
 // --- PII redaction (regex, local, deterministic) ------------------------------------------
@@ -283,20 +302,39 @@ export function redactPii(input: string): string {
   return out;
 }
 
-const SCALE_MAX: Record<PreguntaTipus, number | null> = {
-  escala5: 5,
-  escala10: 10,
-  swipe: 1,
-  ranking: 5,
-  obert: null,
-};
+/** Inclusive range of `valor_num` per type. pair/choice store the chosen option index. */
+function valueRange(tipus: PreguntaTipus, optionCount: number): [number, number] | null {
+  switch (tipus) {
+    case "scale5":
+      return [1, 5];
+    case "scale10":
+      return [1, 10];
+    case "yes_no":
+      return [0, 1];
+    case "ranking":
+      return [1, 5];
+    case "pair":
+    case "choice":
+      return optionCount >= 2 ? [0, optionCount - 1] : null;
+    case "open":
+      return null;
+  }
+}
 
-function validValue(tipus: PreguntaTipus, v: number | null | undefined): number | null | "invalid" {
-  if (tipus === "obert") return v == null ? null : "invalid";
+function validValue(tipus: PreguntaTipus, optionCount: number, v: number | null | undefined): number | null | "invalid" {
+  if (tipus === "open") return v == null ? null : "invalid";
   if (v == null || !Number.isFinite(v)) return "invalid";
-  const max = SCALE_MAX[tipus]!;
-  const min = tipus === "swipe" ? 0 : 1;
-  return Number.isInteger(v) && v >= min && v <= max ? v : "invalid";
+  const range = valueRange(tipus, optionCount);
+  if (!range) return "invalid";
+  return Number.isInteger(v) && v >= range[0] && v <= range[1] ? v : "invalid";
+}
+
+/** Ranking order: a permutation of the option indices, best first. Other types store nothing. */
+function validOrder(tipus: PreguntaTipus, optionCount: number, order: number[] | null | undefined): string | null | "invalid" {
+  if (order == null) return null;
+  if (tipus !== "ranking" || order.length !== optionCount) return "invalid";
+  const sorted = [...order].sort((a, b) => a - b);
+  return sorted.every((x, i) => x === i) ? JSON.stringify(order) : "invalid";
 }
 
 /**
@@ -314,15 +352,15 @@ export function saveResponses(
   const { dia, periode } = serverDate();
 
   const getQ = db.prepare(
-    `SELECT tipus FROM pregunta
+    `SELECT tipus, options_json FROM pregunta
      WHERE id = ? AND estat = 'aprovada' AND (collectiu_id IS NULL OR collectiu_id = ?)`,
   );
   const already = db.prepare(
     "SELECT 1 FROM resposta WHERE compte_id = ? AND pregunta_id = ? AND date(data) = ?",
   );
   const insert = db.prepare(
-    `INSERT INTO resposta (compte_id, pregunta_id, valor_num, comentari, canal, periode)
-     VALUES (?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO resposta (compte_id, pregunta_id, valor_num, value_json, comentari, canal, periode, answer_ms)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
   );
 
   const run = db.transaction(
@@ -331,16 +369,20 @@ export function saveResponses(
       for (const a of respostes) {
         if (seen.has(a.preguntaId)) return { ok: false, error: "ja_respost", preguntaId: a.preguntaId };
         seen.add(a.preguntaId);
-        const q = getQ.get(a.preguntaId, collectiuId) as { tipus: PreguntaTipus } | undefined;
+        const q = getQ.get(a.preguntaId, collectiuId) as { tipus: PreguntaTipus; options_json: string | null } | undefined;
         if (!q) return { ok: false, error: "pregunta_invalida", preguntaId: a.preguntaId };
         if (already.get(compteId, a.preguntaId, dia)) {
           return { ok: false, error: "ja_respost", preguntaId: a.preguntaId };
         }
-        const valor = validValue(q.tipus, a.valorNum);
+        const optionCount = parseOptions(q.options_json)?.length ?? 0;
+        const valor = validValue(q.tipus, optionCount, a.valorNum);
         if (valor === "invalid") return { ok: false, error: "valor_invalid", preguntaId: a.preguntaId };
+        const order = validOrder(q.tipus, optionCount, a.valueJson);
+        if (order === "invalid") return { ok: false, error: "valor_invalid", preguntaId: a.preguntaId };
+        const answerMs = a.answerMs != null && Number.isInteger(a.answerMs) && a.answerMs >= 0 ? a.answerMs : null;
 
         let comentari: string | null = null;
-        if (q.tipus === "obert") {
+        if (q.tipus === "open") {
           const raw = (a.comentari ?? "").trim();
           if (!raw) return { ok: false, error: "comentari_obligatori", preguntaId: a.preguntaId };
           try {
@@ -349,7 +391,7 @@ export function saveResponses(
             return { ok: false, error: "redaccio_fallida", preguntaId: a.preguntaId };
           }
         }
-        insert.run(compteId, a.preguntaId, valor, comentari, canal, periode);
+        insert.run(compteId, a.preguntaId, valor, order, comentari, canal, periode, answerMs);
       }
       return { ok: true };
     },

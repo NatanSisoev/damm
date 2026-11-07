@@ -14,6 +14,8 @@ const bodySchema = z.object({
         preguntaId: z.number().int().positive(),
         valorNum: z.number().finite().nullish(),
         comentari: z.string().max(1000).nullish(),
+        valueJson: z.array(z.number().int().min(0)).max(20).nullish(),
+        answerMs: z.number().int().min(0).max(86_400_000).nullish(),
       }),
     )
     .min(1)

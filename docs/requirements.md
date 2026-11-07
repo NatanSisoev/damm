@@ -68,7 +68,7 @@ G-§4 is the authoritative list ("Tots els equips han de cobrir aquest recorregu
 | R-FLOW-1b | Target collective | done | Collective select, or "Tots" |
 | R-FLOW-1c | Context | partial | Only free text. There is no separate context field. |
 | R-FLOW-1d | Maximum duration | done | `durada_max_s`, default 120 s |
-| R-FLOW-1e | **What must not be asked** ("què no s'ha de preguntar") | missing | No field. It must also reach the AI prompt and the quality checker (19). Needs a `necessitat` column, so it is shared contract: tell Natan. |
+| R-FLOW-1e | **What must not be asked** ("què no s'ha de preguntar") | partial | The column exists (`necessitat.exclusions`, on main). The need form, the AI prompt and the quality checker (19) do not use it yet: in progress on the need-AI branch. |
 
 ### R-FLOW-2 Generate the survey with AI
 | ID | Requirement | Status | Evidence / gap |
@@ -76,7 +76,7 @@ G-§4 is the authoritative list ("Tots els equips han de cobrir aquest recorregu
 | R-FLOW-2a | Proposes a **title** | missing | `packages/ai` blocked |
 | R-FLOW-2b | Proposes an **introduction** | missing | blocked |
 | R-FLOW-2c | **3 to 6 questions** | partial | Drafts are seeded. Real generation is blocked. |
-| R-FLOW-2d | **Answer type** per question | partial | Types exist (`escala5`, `escala10`, `swipe`, `ranking`, `obert`). The AI does not pick them yet. |
+| R-FLOW-2d | **Answer type** per question | partial | Types exist (`scale5`, `scale10`, `yes_no`, `pair`, `choice`, `ranking`, `open`, C2) and the answer UI renders all of them. The AI does not pick them yet. |
 | R-FLOW-2e | **Conditional logic** | missing | Not in the schema or the UI. Minimal version: "if score ≤ 2, ask the open follow-up". |
 | R-FLOW-2f | **Estimated time** | missing | Can be computed deterministically from types (for example 8 s per scale and 30 s per open question) and checked against R-FLOW-1d. |
 | R-FLOW-2g | Adapted to the collective in **tone, length and channel** | blocked | Prompt design is in `packages/ai`. S14 asks for "to proper" (a warm tone). |
@@ -317,4 +317,4 @@ Everything flagged `blocked`, or `missing` with a schema touch, collected so it 
 - `packages/ai`: title, intro, 3 to 6 questions, types, conditional logic, tone per collective, honouring "what not to ask" (R-FLOW-2*).
 - `packages/analysis`: clustering, summaries per theme, emerging vs previous period, signal criteria with effect size and n (R-FLOW-6*, R-DIFF-4, R-DIFF-7).
 - `packages/engine`: frequency, anti-saturation, oversampling of under-represented groups (R-FLOW-5c/e/f).
-- Schema: `necessitat.excloure` (R-FLOW-1e), a question order field (R-FLOW-3c), conditional logic (R-FLOW-2e), the `decisio` table and `font` fields (R-PRIV-10), an owner on `recomanacio` (R-DIFF-8), a manager-segment aggregate (N-8).
+- Schema: a question order field (R-FLOW-3c), conditional logic (R-FLOW-2e), the `decisio` table and `font` fields (R-PRIV-10), an owner on `recomanacio` (R-DIFF-8), a manager-segment aggregate (N-8).

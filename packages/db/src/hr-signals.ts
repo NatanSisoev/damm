@@ -19,6 +19,8 @@ export interface SignalHeader {
   periode: string;
   n: number;
   confianca: number | null;
+  severity: string | null;
+  status: string | null;
 }
 
 export interface SignalTrendRow {
@@ -80,7 +82,7 @@ export function getSignalDetail(id: number): SignalDetail | null {
   const row = db
     .prepare(
       `SELECT s.id, s.tipus, s.descripcio, s.collectiu_id AS collectiuId, c.nom AS collectiu,
-              s.periode, s.n, s.confianca, s.suprimit
+              s.periode, s.n, s.confianca, s.suprimit, s.severity, s.status
        FROM senyal s LEFT JOIN collectiu c ON c.id = s.collectiu_id WHERE s.id = ?`,
     )
     .get(id) as (SignalHeader & { suprimit: number }) | undefined;

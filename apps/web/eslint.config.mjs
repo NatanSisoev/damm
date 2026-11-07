@@ -21,6 +21,11 @@ const eslintConfig = defineConfig([
                 "Anonymity boundary: HR code must not import the @damm/db root (it exposes getDb and raw tables). Use @damm/db/hr.",
             },
             {
+              name: "@damm/engine",
+              message:
+                "Anonymity boundary: the engine root reads per-account state. HR code may only import @damm/engine/hr.",
+            },
+            {
               name: "better-sqlite3",
               message:
                 "Anonymity boundary: HR code must not open the database directly. Use @damm/db/hr.",
@@ -38,7 +43,12 @@ const eslintConfig = defineConfig([
                 "Anonymity boundary: HR code may only import @damm/db/hr (aggregates and the analytics view), never the join, account or response repositories.",
             },
             {
-              group: ["**/packages/db/**", "**/join-repository*", "**/response-repository*", "**/resposta-repository*", "**/compte-repository*", "**/account-repository*", "**/connection"],
+              group: ["@damm/engine/*", "!@damm/engine/hr"],
+              message:
+                "Anonymity boundary: HR code may only import @damm/engine/hr, never the engine job or its per-account modules.",
+            },
+            {
+              group: ["**/packages/engine/**", "**/packages/db/**", "**/join-repository*", "**/response-repository*", "**/resposta-repository*", "**/compte-repository*", "**/account-repository*", "**/connection"],
               message:
                 "Anonymity boundary: HR code must not reach into packages/db internals or raw response/account repositories. Use @damm/db/hr.",
             },
