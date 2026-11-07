@@ -1,15 +1,21 @@
 "use server";
 
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { recoverAccount, verifyLogin } from "@damm/db/employee";
 import { createSession } from "@/lib/session";
 
 export type LoginState = { error?: string; recoveryCode?: string };
 
+async function clientIp(): Promise<string> {
+  const h = await headers();
+  return h.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+}
+
 const TOO_MANY = "Massa intents. Torna-ho a provar d'aquí a una estona.";
 
 export async function loginAction(_prev: LoginState, formData: FormData): Promise<LoginState> {
-  const res = await verifyLogin(String(formData.get("username") ?? ""), String(formData.get("password") ?? ""));
+  const res = await verifyLogin(String(formData.get("username") ?? ""), String(formData.get("password") ?? ""), await clientIp());
   if (!res.ok) {
     return { error: res.error === "massa_intents" ? TOO_MANY : "Usuari o contrasenya incorrectes." };
   }
@@ -22,6 +28,7 @@ export async function recoverAction(_prev: LoginState, formData: FormData): Prom
     username: String(formData.get("username") ?? ""),
     recoveryCode: String(formData.get("code") ?? ""),
     newPassword: String(formData.get("password") ?? ""),
+    clientIp: await clientIp(),
   });
   if (!res.ok) {
     if (res.error === "massa_intents") return { error: TOO_MANY };

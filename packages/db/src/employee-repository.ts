@@ -5,6 +5,7 @@ import { randomBytes, randomUUID, scrypt, timingSafeEqual } from "node:crypto";
 import type { Canal, PreguntaTipus, RankingOption, ScoredOption } from "@damm/shared";
 import { getDb } from "./connection";
 import { madridDay, type MadridDay } from "./madrid-day";
+import { redactPii } from "./pii";
 
 const KEYLEN = 64;
 const USERNAME_RE = /^[a-z0-9._-]{3,30}$/;
@@ -48,24 +49,51 @@ function normalizeRecoveryCode(raw: string): string {
   return raw.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
 }
 
-// In-memory attempt limiter per username (prototype: single process).
-const MAX_ATTEMPTS = 5;
+// In-memory attempt limiter (prototype: single process). Failures are counted per username AND client
+// IP, so a stranger who spams a known username only locks out their own IP, not the real user on
+// another one. A separate per-IP cap throttles one client trying many usernames. The same limiter
+// serves login and recovery; the answer is identical for existing and unknown usernames.
+const MAX_ATTEMPTS = 5; // per (username, ip)
+const MAX_ATTEMPTS_PER_IP = 20; // per ip, across usernames
 const WINDOW_MS = 15 * 60 * 1000;
+const MAX_TRACKED = 10_000;
 const attempts = new Map<string, { n: number; first: number }>();
 
-function blocked(key: string): boolean {
+function limiterKeys(username: string, ip: string | undefined): [string, string] {
+  const addr = (ip ?? "").trim().slice(0, 64) || "unknown";
+  return [`u:${username}|${addr}`, `ip:${addr}`];
+}
+function over(key: string, max: number): boolean {
   const a = attempts.get(key);
   if (!a) return false;
   if (Date.now() - a.first > WINDOW_MS) {
     attempts.delete(key);
     return false;
   }
-  return a.n >= MAX_ATTEMPTS;
+  return a.n >= max;
 }
-function fail(key: string) {
+function bump(key: string) {
   const a = attempts.get(key);
   if (!a || Date.now() - a.first > WINDOW_MS) attempts.set(key, { n: 1, first: Date.now() });
   else a.n += 1;
+}
+function blocked(username: string, ip: string | undefined): boolean {
+  const [k, kip] = limiterKeys(username, ip);
+  return over(k, MAX_ATTEMPTS) || over(kip, MAX_ATTEMPTS_PER_IP);
+}
+function fail(username: string, ip: string | undefined) {
+  if (attempts.size > MAX_TRACKED) {
+    const now = Date.now();
+    for (const [k, v] of attempts) if (now - v.first > WINDOW_MS) attempts.delete(k);
+    if (attempts.size > MAX_TRACKED) attempts.clear(); // under flood, fail open on memory rather than grow
+  }
+  const [k, kip] = limiterKeys(username, ip);
+  bump(k);
+  bump(kip);
+}
+// Success clears only this (username, ip) counter; the per-IP counter keeps counting.
+function succeed(username: string, ip: string | undefined) {
+  attempts.delete(limiterKeys(username, ip)[0]);
 }
 
 interface CompteRow {
@@ -123,20 +151,22 @@ export async function registerAccount(input: {
 export async function verifyLogin(
   usernameRaw: string,
   password: string,
+  clientIp?: string,
 ): Promise<{ ok: true; compteId: string } | { ok: false; error: LoginError }> {
   const username = normalizeUsername(usernameRaw);
-  if (blocked(username)) return { ok: false, error: "massa_intents" };
+  const ip = clientIp;
+  if (blocked(username, ip)) return { ok: false, error: "massa_intents" };
   const row = findByUsername(username);
   if (!row) {
     await dummyWork(password);
-    fail(username);
+    fail(username, ip);
     return { ok: false, error: "credencials" };
   }
   if (!(await matches(password, row.salt, row.password_hash))) {
-    fail(username);
+    fail(username, ip);
     return { ok: false, error: "credencials" };
   }
-  attempts.delete(username);
+  succeed(username, ip);
   return { ok: true, compteId: row.id };
 }
 
@@ -145,20 +175,22 @@ export async function recoverAccount(input: {
   username: string;
   recoveryCode: string;
   newPassword: string;
+  clientIp?: string;
 }): Promise<{ ok: true; compteId: string; recoveryCode: string } | { ok: false; error: RecoverError }> {
   const username = normalizeUsername(input.username);
-  if (blocked(username)) return { ok: false, error: "massa_intents" };
+  const ip = input.clientIp;
+  if (blocked(username, ip)) return { ok: false, error: "massa_intents" };
   if (input.newPassword.length < MIN_PASSWORD_LENGTH) return { ok: false, error: "password_curta" };
 
   const row = findByUsername(username);
   const code = normalizeRecoveryCode(input.recoveryCode);
   if (!row || !row.recovery_hash) {
     await dummyWork(code);
-    fail(username);
+    fail(username, ip);
     return { ok: false, error: "credencials" };
   }
   if (!(await matches(code, row.salt, row.recovery_hash))) {
-    fail(username);
+    fail(username, ip);
     return { ok: false, error: "credencials" };
   }
 
@@ -174,10 +206,10 @@ export async function recoverAccount(input: {
     )
     .run(passwordHash, salt, recoveryHash, row.id, row.recovery_hash);
   if (res.changes !== 1) {
-    fail(username);
+    fail(username, ip);
     return { ok: false, error: "credencials" };
   }
-  attempts.delete(username);
+  succeed(username, ip);
   return { ok: true, compteId: row.id, recoveryCode };
 }
 
@@ -266,42 +298,8 @@ export function nextQuestionsForToday(compteId: string): PoolQuestion[] {
   );
 }
 
-// --- PII redaction (regex, local, deterministic) ------------------------------------------
-// Runs before anything is stored. Best-effort: it catches the common shapes below, it is not a
-// guarantee. The human-facing note in the UI still tells people not to include personal data.
-
-const NAME_WORD = String.raw`\p{Lu}[\p{L}'’-]*`;
-const EM_DIC_RE = new RegExp(
-  String.raw`\b([Ee]m\s+dic|[Ee]m\s+diuen|[Ee]l\s+meu\s+nom\s+és)\s+(?:(?:en|na|el|la)\s+)?(\p{L}[\p{L}'’-]*)((?:\s+(?:de\s+|del\s+|de\s+la\s+|i\s+)?${NAME_WORD}){0,2})`,
-  "gu",
-);
-const NOT_A_NAME = new Set(["que", "això", "així", "per", "a", "de", "com", "quan", "si", "no", "molt"]);
-
-function digitsIn(s: string): number {
-  return s.replace(/\D/g, "").length;
-}
-
-export function redactPii(input: string): string {
-  let out = input;
-  // Emails.
-  out = out.replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, "[correu]");
-  // IBAN-like account numbers.
-  out = out.replace(/\b[A-Z]{2}\d{2}(?:[ -]?[A-Z0-9]{4}){3,7}(?:[ -]?[A-Z0-9]{1,4})?\b/g, "[compte]");
-  // DNI (8 digits + letter) and NIE (X/Y/Z + 7 digits + letter), with optional separators.
-  out = out.replace(/\b\d{8}[ -]?[A-Z]\b/gi, "[DNI]");
-  out = out.replace(/\b[XYZ][ -]?\d{7}[ -]?[A-Z]\b/gi, "[DNI]");
-  // Phones: 9 to 15 digits, optionally with +/00 prefix and space, dot or dash separators.
-  out = out.replace(/(?<![\w])(?:\+|00)?\d(?:[\d \t.-]{6,}\d)(?![\w])/g, (m) => {
-    const n = digitsIn(m);
-    return n >= 9 && n <= 15 ? "[telèfon]" : m;
-  });
-  // Names introduced by "em dic ...".
-  out = out.replace(EM_DIC_RE, (m, lead: string, first: string, rest: string) => {
-    if (NOT_A_NAME.has(first.toLowerCase())) return m;
-    return `${lead} [nom]`;
-  });
-  return out;
-}
+// PII redaction lives in ./pii.ts (ca/es/en); re-exported for existing importers.
+export { redactPii };
 
 /** Inclusive range of `valor_num` per type. pair/choice store the chosen option index. */
 function valueRange(tipus: PreguntaTipus, optionCount: number): [number, number] | null {

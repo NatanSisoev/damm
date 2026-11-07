@@ -46,8 +46,8 @@ All six are done and merged into `jan/dev` (2026-11-07): items 1 to 3 in `claude
 | 26 | The mobile HR nav has issues, there's a hardcoded red, and ChangeBadge and Sparkline are duplicated in `signals/[id]`. | J |
 | 27 | The radar's fixed 1 to 5 scale hides small changes. | J |
 | 28 | Accessibility gaps: focus states, labels on the scale buttons, contrast on subtle text. | J |
-| 29 | The login rate limit lets anyone lock out a known username. | J |
-| 30 | PII redaction only catches Catalan name patterns. Theme snippets depend on it. | J |
+| 29 | The login rate limit lets anyone lock out a known username. **Done 2026-11-07:** failures are counted per username and client IP (5 each), plus a per-IP cap of 20 across usernames; login and recovery share it, and the real user on another IP is unaffected. IP comes from the first `x-forwarded-for` hop, else `unknown`. | J |
+| 30 | PII redaction only catches Catalan name patterns. Theme snippets depend on it. **Done 2026-11-07:** `packages/db/src/pii.ts` covers ca/es/en self-introductions, titles, relation and "with Name Surname" patterns, emails, phones, DNI/NIE and employee-number IDs (`[id]`); collective and domain names are excluded. `pnpm --filter @damm/db run redaction-check` runs 45 examples. | J |
 
 ## Proposed order
 
