@@ -11,6 +11,9 @@ import {
   type PoolQuestion,
 } from "./question-renderer";
 
+// Same cap the server applies (DAILY_QUESTION_LIMIT in @damm/db/employee).
+const DAILY_QUESTION_LIMIT = 2;
+
 type Phase = "loading" | "answering" | "done" | "error";
 
 // Shows today's questions one at a time. Each answer is sent as soon as it is confirmed, so
@@ -100,10 +103,20 @@ export function AnswerFlow() {
   }
   if (phase === "done" || !q) {
     return (
-      <div className="py-16 text-center">
-        <h2 className="text-xl font-semibold">Res més per avui</h2>
-        <p className="mt-2 text-muted">
-          {answeredAny ? "Gràcies! Les teves respostes són anònimes." : "Torna demà per noves preguntes."}
+      <div className="card px-6 py-12 text-center">
+        <div
+          aria-hidden
+          className="mx-auto mb-4 flex size-12 items-center justify-center rounded-full bg-good-soft text-good"
+        >
+          <svg viewBox="0 0 24 24" className="size-6" fill="none" stroke="currentColor" strokeWidth="2.2">
+            <path d="m5 12.5 4.5 4.5L19 7.5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </div>
+        <h2 className="text-xl font-semibold">Avui ja has acabat</h2>
+        <p className="mt-2 text-muted">Tornem demà amb un parell de preguntes.</p>
+        <p className="mt-4 text-sm text-subtle">
+          {answeredAny ? "Gràcies! Les teves respostes són anònimes. " : ""}Mai et farem més de{" "}
+          {DAILY_QUESTION_LIMIT} preguntes al dia.
         </p>
       </div>
     );
@@ -115,7 +128,7 @@ export function AnswerFlow() {
       <div className="mb-6">
         <div className="mb-2 flex items-baseline justify-between text-sm text-muted">
           <span className="num">
-            {index + 1} de {questions.length}
+            Pregunta {index + 1} de {questions.length}
           </span>
           <span className="badge">Anònim</span>
         </div>
