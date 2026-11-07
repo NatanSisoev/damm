@@ -19,7 +19,7 @@ Requirement IDs come from `docs/requirements.md` (R-PRIV-*, R-FLOW-*).
 | HR-X-5 | P1 | 6 | Dot decimals in manager TrendTable ("3.1", "−0.3", "|Δ| ≥ 0.3") and methodology ("0.3"). | Format with comma. | FIXED 6b0de7b, afb1105, 5edc29e |
 | HR-X-6 | P1 | 6 | Jargon "motor": "Què destaca el motor", "Del motor, amb la seva n i confiança". Copy guide: "resum de l'anàlisi". | Reword. | FIXED 6b0de7b, afb1105 |
 | HR-X-7 | P1 | 7 | `.btn` is 32px high, chips, `summary` and text links 16–36px at 390px. Counts of controls below 44px: signals 75, recommendations 25, needs and publish 14, Inici 9. | Global `@media (max-width: 767px)` rule in hr.css, `min-height: 44px` for `.btn`, chips, `summary`, link-buttons. | FIXED c0a9fee |
-| HR-X-8 | P1 | 1, 8 | The demo need and questions are in English (log). | Check the drafting prompt forces Catalan (`packages/ai`). Record only. | DEFERRED not verified: check the drafting prompt in packages/ai forces Catalan |
+| HR-X-8 | P1 | 1, 8 | The demo need and questions are in English (log). | Check the drafting prompt forces Catalan (`packages/ai`). Record only. | FIXED (diagnosed): `packages/ai` already forces Catalan. The English text is the seeded demo need in `packages/engine/demo/build-demo.ts`. NEEDS-DECISION Natan: translate the seeded need and its two questions (and `comments.ts`) to Catalan and rebuild the demo DB. |
 | HR-X-9 | P1 | 2 | Insight says "el consens baixa 17%, ara 57%", alarm says "ha caigut 17 punts (74 → 57)". The relative drop would be 23%. | Wording is engine text. Say "punts" in both. | NEEDS-DECISION Natan: change the insight template in `packages/engine` to "punts". |
 | HR-X-10 | P1 | 2 | Headline "Lideratge a Logística: mati 4,2 vs tarda 5,8, n=30" next to an alarm for Logística matí n=42. The headline n is the smaller segment and unlabelled. | Label "n més petita". | DEFERRED not reached: label the headline n as «n més petita» |
 
@@ -37,9 +37,10 @@ Requirement IDs come from `docs/requirements.md` (R-PRIV-*, R-FLOW-*).
 
 | ID | Sev | Lens | Finding | Fix | Status |
 |---|---|---|---|---|---|
-| HR-NEED-1 | P1 | 8 | The only need is English text (HR-X-8). | Record. | DEFERRED same as HR-X-8 |
+| HR-NEED-1 | P1 | 8 | The only need is English text (HR-X-8). | Record. | NEEDS-DECISION Natan: same as HR-X-8, translate the seed need in `packages/engine/demo/build-demo.ts` |
 | HR-NEED-2 | P1 | 8 | AI drafting call: check loading and error states exist and are Catalan. R-FLOW-2. | Verify in the form. | DEFERRED not verified in the form |
 | HR-NEED-3 | P2 | 7 | Controls under 44px at 390px (HR-X-7). | Global rule. | FIXED c0a9fee |
+| HR-NEED-4 | P1 | 1, 2, 3, 4, 6, 7, 8 | `/hr/needs` redesign (Jan priority): the form took the top of the page and "Nova necessitat" was not a button; filters were a loose row with zero counts; cards had no dates, collective, participation or results link; "Codis d'invitació" was unclear; closing a need had no confirm. | Header with one-line subtitle and primary "+ Nova necessitat" CTA (opens the form via `?nova=1`); segmented control with counts, zero-count tabs disabled; card facts (collective, created, published, participation with `<10` suppression and a red bar); compact question list with domain dot, type and answers; "Veure resultats", "Enllaços i QR del col·lectiu" to `/hr/publish#<codi>`; close confirm explaining the questions leave the pool; per-tab empty states with CTA; actions stack at 390px, no horizontal scroll. `NeedCard` extended (contract entry C12). | FIXED (this commit) |
 
 ## Publicació (`publish`, poster, Teams)
 

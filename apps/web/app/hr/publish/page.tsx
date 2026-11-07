@@ -29,7 +29,7 @@ export default async function PublishPage() {
       ) : (
         <div className="grid gap-4 xl:grid-cols-2">
           {items.map((c) => (
-            <Card key={c.codi} title={c.collectiu} meta={
+            <Card key={c.codi} className="scroll-mt-20" id={c.codi} title={c.collectiu} meta={
               c.showsCount ? (
                 <span className="num" title={c.comptesSuppressed ? `Menys de ${MIN_GROUP_SIZE} comptes` : undefined}>
                   {c.comptesSuppressed ? `<${MIN_GROUP_SIZE}` : c.comptes} comptes al col·lectiu

@@ -19,6 +19,13 @@ What changed and why.
 
 ---
 
+## C12 · 2026-11-07 · Jan · NeedCard carries dates, per-question answer counts and participation
+
+`NeedCard` (`@damm/db/hr`, read-only HR type) gains `publicat`, `responses`, `population`, `publications[].creat` and `approved[].answers`. Counts come from `v_resposta_analitica` and are `null` under the minimum group size. No schema change.
+
+- [x] Jan: the Necessitats page shows them (done 2026-11-07).
+- [x] Natan: nothing to do.
+
 ## C11 · 2026-11-07 · Jan · HR respondent counts fall back to per-domain aggregates
 
 - `@damm/db/hr` `getRepresentativeness()` and `getHrOverview()` no longer require `agregat` rows with `domini_id IS NULL`. They use those rows when present and otherwise the largest per-domain `n` of each (collective, shift) as a lower bound of distinct respondents (`segmentCounts` in `hr-repository.ts`).

@@ -397,8 +397,14 @@ export interface NeedCard {
   /** Card state shown on the Necessitats page, derived from necessitat.estat and the question states. */
   state: NeedState;
   nDraft: number;
-  approved: { id: number; domini: string; tipus: string; text: string }[];
-  publications: { id: number; codi: string; url: string; collectiu: string }[];
+  approved: { id: number; domini: string; tipus: string; text: string; /** Answers so far; null when under the minimum group size. */ answers: number | null }[];
+  publications: { id: number; codi: string; url: string; collectiu: string; creat: string }[];
+  /** Date of the first publication (join code) row; null when none was recorded. */
+  publicat: string | null;
+  /** Most answers any one question has, i.e. a lower bound of respondents. Null when under the minimum group size. */
+  responses: number | null;
+  /** Synthetic population of the target collective (whole company when the need has none). */
+  population: number;
 }
 
 /**
@@ -416,21 +422,37 @@ export function listNeedCards(): NeedCard[] {
        FROM necessitat n LEFT JOIN collectiu c ON c.id = n.collectiu_id
        ORDER BY n.id DESC`,
     )
-    .all() as (Omit<NeedCard, "state" | "approved" | "publications"> & { estat: string })[];
+    .all() as (Omit<NeedCard, "state" | "approved" | "publications" | "publicat" | "responses" | "population"> & { estat: string })[];
   const approved = db.prepare(
     `SELECT p.id, d.nom AS domini, p.tipus, p.text FROM pregunta p JOIN domini d ON d.id = p.domini_id
      WHERE p.necessitat_id = ? AND p.estat = 'aprovada' ORDER BY p.ordre, p.id`,
   );
+  const answerCount = db.prepare("SELECT COUNT(*) AS n FROM v_resposta_analitica WHERE pregunta_id = ?");
+  const popAll = (db.prepare("SELECT COUNT(*) AS n FROM empleat_sintetic").get() as { n: number }).n;
+  const popOf = db.prepare("SELECT COUNT(*) AS n FROM empleat_sintetic es JOIN collectiu c ON c.id = es.collectiu_id WHERE c.nom = ?");
   const pubs = db.prepare(
-    `SELECT pu.id, pu.codi_join AS codi, pu.qr_url AS url, c.nom AS collectiu
+    `SELECT pu.id, pu.codi_join AS codi, pu.qr_url AS url, c.nom AS collectiu, pu.creat
      FROM publicacio pu JOIN joincode j ON j.codi = pu.codi_join JOIN collectiu c ON c.id = j.collectiu_id
      WHERE pu.necessitat_id = ? ORDER BY pu.id`,
   );
   return needs.map(({ estat, ...n }) => {
-    const ap = approved.all(n.id) as NeedCard["approved"];
+    const ap = (approved.all(n.id) as Omit<NeedCard["approved"][number], "answers">[]).map((q) => {
+      const c = (answerCount.get(q.id) as { n: number }).n;
+      return { ...q, answers: c >= MIN_GROUP_SIZE ? c : null };
+    });
+    const most = Math.max(0, ...ap.map((q) => (answerCount.get(q.id) as { n: number }).n));
+    const pubList = pubs.all(n.id) as NeedCard["publications"];
     const state: NeedState =
       estat === "tancada" ? "tancada" : estat === "publicada" ? "publicada" : n.nDraft === 0 && ap.length > 0 ? "llesta" : "esborrany";
-    return { ...n, state, approved: ap, publications: pubs.all(n.id) as NeedCard["publications"] };
+    return {
+      ...n,
+      state,
+      approved: ap,
+      publications: pubList,
+      publicat: pubList[0]?.creat ?? null,
+      responses: most >= MIN_GROUP_SIZE ? most : null,
+      population: n.collectiu ? (popOf.get(n.collectiu) as { n: number }).n : popAll,
+    };
   });
 }
 

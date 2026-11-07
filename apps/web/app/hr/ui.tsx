@@ -13,10 +13,10 @@ export function PageHeader({ title, subtitle, actions }: { title: string; subtit
 }
 
 export function Card({
-  title, meta, children, className = "", flush = false,
-}: { title?: ReactNode; meta?: ReactNode; children: ReactNode; className?: string; flush?: boolean }) {
+  title, meta, children, className = "", flush = false, id,
+}: { id?: string; title?: ReactNode; meta?: ReactNode; children: ReactNode; className?: string; flush?: boolean }) {
   return (
-    <section className={`card ${className}`}>
+    <section id={id} className={`card ${className}`}>
       {(title || meta) && (
         <div className="card-header">
           {title && <h2 className="section-title">{title}</h2>}
