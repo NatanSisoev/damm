@@ -10,6 +10,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@damm/ai':
+        specifier: workspace:*
+        version: link:../../packages/ai
       '@damm/db':
         specifier: workspace:*
         version: link:../../packages/db
@@ -60,6 +63,15 @@ importers:
         specifier: ^5
         version: 5.9.3
 
+  packages/ai:
+    dependencies:
+      '@damm/shared':
+        specifier: workspace:*
+        version: link:../shared
+      zod:
+        specifier: ^4.6.7
+        version: 4.6.7
+
   packages/db:
     dependencies:
       '@damm/shared':
@@ -75,6 +87,19 @@ importers:
       tsx:
         specifier: ^4.0.0
         version: 4.23.15
+
+  packages/engine:
+    dependencies:
+      '@damm/shared':
+        specifier: workspace:*
+        version: link:../shared
+    devDependencies:
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.20.5
+      typescript:
+        specifier: ^5.8.0
+        version: 5.9.3
 
   packages/seed:
     dependencies:

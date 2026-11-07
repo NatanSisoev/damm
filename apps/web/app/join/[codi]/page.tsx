@@ -29,6 +29,9 @@ export default async function JoinPage({ params }: { params: Promise<{ codi: str
           >
             Continua
           </Link>
+          <p className="text-center text-sm">
+            <Link href="/privacitat" className="underline">Com tractem les teves dades</Link>
+          </p>
         </>
       ) : (
         <div className="space-y-2">
@@ -36,6 +39,7 @@ export default async function JoinPage({ params }: { params: Promise<{ codi: str
           <p className="text-sm opacity-70">
             Aquest codi no existeix o ja no està actiu. Comprova l&apos;enllaç o demana un codi nou al teu equip.
           </p>
+          <Link href="/join" className="inline-block underline text-sm">Torna a provar amb un altre codi</Link>
         </div>
       )}
     </main>

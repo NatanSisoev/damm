@@ -41,10 +41,10 @@ Checklist:
 | --- | --- |
 | Status | ✅ Works now |
 | Who | HR person (presenter 1) |
-| URL | `http://localhost:3000/hr/need` |
+| URL | `http://localhost:3000/hr/needs` |
 | Click | On the page "Quina necessitat vols escoltar?", fill the "Necessitat" box (placeholder: "Ex.: Volem saber com viuen els equips de planta el nou sistema de torns."). Pick the "Col·lectiu", set "Durada màxima per persona (segons)". Click "Desar necessitat". |
 | Audience should notice | The need is plain language, no survey-design skill needed. A note says "Després passaràs a Revisió." |
-| Fallback | If the form errors, go to `/hr/review`: the fixture already holds a need (Fàbriques) with its drafts. |
+| Fallback | If the form errors, go to `/hr/needs`: the fixture already holds a need (Fàbriques) with its drafts. |
 
 Suggested text: "Volem saber com viuen els equips de planta el nou sistema de torns."
 
@@ -54,7 +54,7 @@ Suggested text: "Volem saber com viuen els equips de planta el nou sistema de to
 | --- | --- |
 | Status | 🔶 Needs Natan. `createNeedAction` only saves the need and redirects. Draft generation (`packages/ai`) is not wired, so a new need gets no drafts today. |
 | Who | HR person |
-| URL | `http://localhost:3000/hr/review` |
+| URL | `http://localhost:3000/hr/needs` |
 | Click | Open the "Esborranys pendents" list. Each card is marked "Proposta de la IA". |
 | Audience should notice | The questions are proposals. The banner reads "La IA proposa, una persona decideix." and the page states "Cap pregunta entra al grup fins que una persona l'aprova." |
 | Fallback | AI or LLM down, slow, or not landed: use the three seeded drafts of the fixture need. Say "these are the drafts the AI proposed earlier" and carry on. Never wait on the gateway on stage. |
@@ -65,7 +65,7 @@ Suggested text: "Volem saber com viuen els equips de planta el nou sistema de to
 | --- | --- |
 | Status | ✅ Works now (on fixture drafts) |
 | Who | HR person |
-| URL | `http://localhost:3000/hr/review` |
+| URL | `http://localhost:3000/hr/needs` |
 | Click | Edit one question's text in the "Text de la pregunta" box and click "Desar text". Click "Aprovar" on two drafts. Click "Descartar" on the third. |
 | Audience should notice | A human edited and decided. Approved questions move to "Llestes per publicar". Questions linked to a need get top priority in the pool (priority 100). |
 | Fallback | If an action fails, reload the page; state is in the DB. If all drafts are already approved from a rehearsal, reset the DB. |
@@ -76,7 +76,7 @@ Suggested text: "Volem saber com viuen els equips de planta el nou sistema de to
 | --- | --- |
 | Status | ✅ Works now |
 | Who | HR person |
-| URL | `http://localhost:3000/hr/review` |
+| URL | `http://localhost:3000/hr/needs` |
 | Click | Click "Publicar amb enllaç i QR". The page shows the join link `<PUBLIC_BASE_URL>/join/<codi>` and a QR. The item then appears under "Publicades". |
 | Audience should notice | "Publish" means the approved questions enter the survey pool and a join link and QR are generated. There is no external survey tool. |
 | Fallback | QR does not scan: type the link into the phone browser. Phone cannot reach the laptop: show the QR and link on the projector and continue step 5 from a laptop browser in a private window at `/join/<codi>`. |
@@ -124,10 +124,10 @@ Talking point for the suppression: Logística night shift has 6 respondents in t
 | --- | --- |
 | Status | Button and redirect ✅ Works now. The follow-up questions themselves are 🔶 Needs Natan (AI drafting). |
 | Who | HR person |
-| URL | `http://localhost:3000/hr/recommendations`, then `/hr/review` |
-| Click | On the approved recommendation click "Crear enquesta de seguiment". The recommendation gets a "Seguiment creat" badge and the follow-up need shows up in `/hr/review`. |
+| URL | `http://localhost:3000/hr/recommendations`, then `/hr/needs` |
+| Click | On the approved recommendation click "Crear enquesta de seguiment". The recommendation gets a "Seguiment creat" badge and the follow-up need shows up in `/hr/needs`. |
 | Audience should notice | The loop closes: signal → recommendation → a new need → drafts → approval → publish, always with a person approving. |
-| Fallback | No follow-up drafts appear: say the AI drafts for follow-ups arrive with the AI work, and show the need created in `/hr/review`. |
+| Fallback | No follow-up drafts appear: say the AI drafts for follow-ups arrive with the AI work, and show the need created in `/hr/needs`. |
 
 ## Anonymity close (1 minute, no clicking)
 

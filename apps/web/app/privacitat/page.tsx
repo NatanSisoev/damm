@@ -1,4 +1,3 @@
-import { redirect } from "next/navigation";
 import { MIN_GROUP_SIZE } from "@damm/shared";
 import { getCompteId } from "@/lib/session";
 import { EmployeeShell } from "../(employee)/components/shell";
@@ -21,9 +20,15 @@ const list = "list-disc space-y-1.5 pl-5 text-muted";
 // Plain-language transparency page. Every claim maps to code: see packages/db/schema.sql
 // (compte, resposta, v_resposta_analitica, push_subscripcio) and employee-repository.ts.
 export default async function PrivacyPage() {
-  if (!(await getCompteId())) redirect("/login");
+  // Public on purpose: people deciding whether to join must be able to read it.
+  const loggedIn = Boolean(await getCompteId());
   return (
-    <EmployeeShell back title="Privadesa">
+    <EmployeeShell
+      back
+      backHref={loggedIn ? "/" : "/login"}
+      backLabel={loggedIn ? "Inici" : "Inicia la sessió"}
+      title="Privadesa"
+    >
       <h1 className="page-title">Com tractem les teves dades</h1>
       <p className="mt-1 text-subtle">
         Aquesta enquesta serveix per escoltar els equips i millorar coses, no per controlar ningú.
@@ -33,7 +38,12 @@ export default async function PrivacyPage() {
         <ul className={list}>
           <li>Les teves respostes a les preguntes de cada dia.</li>
           <li>El teu col·lectiu (ve del codi d&apos;invitació) i, si s&apos;ha indicat, el tipus de centre i el torn.</li>
-          <li>Un nom d&apos;usuari que tries tu i una contrasenya, que es guarda xifrada (mai en clar).</li>
+          <li>Un nom d&apos;usuari que tries tu i una contrasenya, que es guarda amb hash i sal (mai en clar ni recuperable).</li>
+          <li>El temps que tardes a respondre cada pregunta, només per detectar respostes fetes sense llegir.</li>
+          <li>
+            Un identificador intern opac que enllaça les teves respostes al llarg del temps. Serveix només per a
+            l&apos;anàlisi agregada de tendències i mai es mostra per persona.
+          </li>
           <li>Cap correu, cap telèfon i cap nom real.</li>
         </ul>
       </Section>

@@ -88,3 +88,19 @@ export const EXTRA: Record<string, { domini: string; item: QItem }[]> = {
     { domini: "Condicions i organització", item: { text: "El model híbrid de teletreball funciona per a tu?", tipus: "scale5" } },
   ],
 };
+
+/** Scale anchors (low, high). Stored in options_json as two scored labels so the UI can show them. */
+export function anchorsOf(item: QItem): [string, string] | null {
+  if (item.tipus === "scale5") {
+    if (/^Com valores el teu nivell d'energia/.test(item.text)) return ["Molt baix", "Molt alt"];
+    if (/^Gestiones bé/.test(item.text)) return ["Gens bé", "Molt bé"];
+    if (/(t'escolta|feedback útil|Se't explica|Se't reconeix|informació de l'empresa)/.test(item.text)) return ["Mai", "Sempre"];
+    return ["Gens d'acord", "Totalment d'acord"];
+  }
+  if (item.tipus === "scale10") {
+    if (/recomanaries/.test(item.text)) return ["Gens probable", "Molt probable"];
+    if (/(com és el teu benestar|com valores)/.test(item.text)) return ["Molt dolent", "Excel·lent"];
+    return ["Gens", "Del tot"];
+  }
+  return null;
+}

@@ -16,9 +16,55 @@ const DAILY_QUESTION_LIMIT = 2;
 
 type Phase = "loading" | "answering" | "done" | "error";
 
+// In-progress answers live on this device only (never sent anywhere until the person submits).
+// Keyed by account and question id; every access is guarded because storage can be blocked.
+const DRAFT_PREFIX = "damm:draft:v1:";
+const draftKey = (compteId: string, qid: number) => `${DRAFT_PREFIX}${compteId}:${qid}`;
+
+function loadDraft(compteId: string, qid: number): AnswerDraft {
+  try {
+    const raw = window.localStorage.getItem(draftKey(compteId, qid));
+    if (!raw) return EMPTY_DRAFT;
+    const v = JSON.parse(raw) as Partial<AnswerDraft>;
+    return {
+      valorNum: typeof v.valorNum === "number" ? v.valorNum : null,
+      comentari: typeof v.comentari === "string" ? v.comentari : "",
+      valueJson: Array.isArray(v.valueJson) && v.valueJson.every((n) => typeof n === "number") ? v.valueJson : null,
+    };
+  } catch {
+    return EMPTY_DRAFT;
+  }
+}
+
+function saveDraft(compteId: string, qid: number, d: AnswerDraft) {
+  try {
+    const empty = d.valorNum === null && d.valueJson === null && d.comentari === "";
+    if (empty) window.localStorage.removeItem(draftKey(compteId, qid));
+    else window.localStorage.setItem(draftKey(compteId, qid), JSON.stringify(d));
+  } catch {
+    /* storage unavailable: the draft just won't survive a reload */
+  }
+}
+
+/** Drops this account's drafts for questions that are no longer in today's pool. */
+function pruneDrafts(compteId: string, keep: number[]) {
+  try {
+    const mine = `${DRAFT_PREFIX}${compteId}:`;
+    const keepKeys = new Set(keep.map((id) => draftKey(compteId, id)));
+    const stale: string[] = [];
+    for (let i = 0; i < window.localStorage.length; i++) {
+      const k = window.localStorage.key(i);
+      if (k && k.startsWith(mine) && !keepKeys.has(k)) stale.push(k);
+    }
+    for (const k of stale) window.localStorage.removeItem(k);
+  } catch {
+    /* ignore */
+  }
+}
+
 // Shows today's questions one at a time. Each answer is sent as soon as it is confirmed, so
-// leaving halfway loses nothing. The account is identified by the session cookie only.
-export function AnswerFlow() {
+// leaving halfway loses nothing; the answer being typed is kept in localStorage until sent. The account is identified by the session cookie only.
+export function AnswerFlow({ compteId }: { compteId: string }) {
   const router = useRouter();
   const [phase, setPhase] = useState<Phase>("loading");
   const [questions, setQuestions] = useState<PoolQuestion[]>([]);
@@ -27,6 +73,8 @@ export function AnswerFlow() {
   const [sending, setSending] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [answeredAny, setAnsweredAny] = useState(false);
+  const [attempt, setAttempt] = useState(0);
+  const [offline, setOffline] = useState(false);
 
   useEffect(() => {
     let live = true;
@@ -39,16 +87,34 @@ export function AnswerFlow() {
         if (!res.ok) throw new Error(String(res.status));
         const body = (await res.json()) as PoolNextResponse;
         if (!live) return;
+        pruneDrafts(compteId, body.preguntes.map((p) => p.id));
         setQuestions(body.preguntes);
+        setIndex(0);
+        setDraft(body.preguntes[0] ? loadDraft(compteId, body.preguntes[0].id) : EMPTY_DRAFT);
         setPhase(body.preguntes.length ? "answering" : "done");
       })
-      .catch(() => live && setPhase("error"));
+      .catch(() => {
+        if (!live) return;
+        setOffline(typeof navigator !== "undefined" && navigator.onLine === false);
+        setPhase("error");
+      });
     return () => {
       live = false;
     };
-  }, [router]);
+  }, [router, compteId, attempt]);
 
   const q = questions[index];
+
+  function retryLoad() {
+    setOffline(false);
+    setPhase("loading");
+    setAttempt((n) => n + 1);
+  }
+
+  function changeDraft(d: AnswerDraft) {
+    setDraft(d);
+    if (q) saveDraft(compteId, q.id, d);
+  }
   // Time from display to answer, for careless-answer detection (C1 answer_ms).
   const shownAt = useRef(0);
   useEffect(() => {
@@ -84,28 +150,48 @@ export function AnswerFlow() {
       }
       // 409: already answered today (another tab); treat as done and move on.
       if (res.status !== 204 && res.status !== 409) {
-        setMessage("No s'ha pogut enviar. Torna-ho a provar.");
+        setMessage("No s'ha pogut enviar la resposta. La teva resposta continua aquí: torna-ho a provar.");
         return;
       }
       setAnsweredAny(true);
-      setDraft(EMPTY_DRAFT);
-      if (index + 1 < questions.length) setIndex(index + 1);
+      saveDraft(compteId, q.id, EMPTY_DRAFT);
+      const nextQ = questions[index + 1];
+      setDraft(nextQ ? loadDraft(compteId, nextQ.id) : EMPTY_DRAFT);
+      if (nextQ) setIndex(index + 1);
       else setPhase("done");
     } catch {
-      setMessage("Sense connexió. Torna-ho a provar.");
+      setMessage(
+        navigator.onLine === false
+          ? "Sense connexió. La teva resposta continua aquí: torna-ho a provar quan tornis a tenir xarxa."
+          : "No hem pogut connectar amb el servidor. La teva resposta continua aquí: torna-ho a provar.",
+      );
     } finally {
       setSending(false);
     }
   }
 
   if (phase === "loading") {
-    return <p className="py-16 text-center text-muted">Carregant…</p>;
+    return (
+      <div role="status" aria-busy="true" aria-live="polite" className="py-4">
+        <span className="sr-only">Carregant les preguntes d&apos;avui…</span>
+        <div aria-hidden className="animate-pulse">
+          <div className="mb-6 h-1.5 rounded-full bg-surface-muted" />
+          <div className="mb-3 h-6 w-4/5 rounded bg-surface-muted" />
+          <div className="mb-8 h-6 w-3/5 rounded bg-surface-muted" />
+          <div className="h-14 rounded-xl bg-surface-muted" />
+        </div>
+      </div>
+    );
   }
   if (phase === "error") {
     return (
       <div className="py-16 text-center">
-        <p className="text-muted">No s&apos;han pogut carregar les preguntes.</p>
-        <button type="button" className="btn mt-4 h-11" onClick={() => window.location.reload()}>
+        <p role="alert" className="text-muted">
+          {offline
+            ? "Sembla que no tens connexió. Comprova la xarxa i torna-ho a provar."
+            : "No s'han pogut carregar les preguntes."}
+        </p>
+        <button type="button" className="btn mt-4 h-11" onClick={retryLoad}>
           Torna-ho a provar
         </button>
       </div>
@@ -150,7 +236,7 @@ export function AnswerFlow() {
         </div>
       </div>
 
-      <QuestionRenderer question={q} draft={draft} onChange={setDraft} />
+      <QuestionRenderer question={q} draft={draft} onChange={changeDraft} />
 
       <div className="mt-auto pt-8">
         {message && (
@@ -164,7 +250,7 @@ export function AnswerFlow() {
           disabled={!isAnswerable(q, draft) || sending}
           className="h-14 w-full rounded-xl bg-accent text-base font-semibold text-white transition-colors hover:bg-accent-hover disabled:opacity-40"
         >
-          {sending ? "Enviant…" : last ? "Envia" : "Envia i continua"}
+          {sending ? "Enviant…" : message ? "Torna-ho a provar" : last ? "Envia" : "Envia i continua"}
         </button>
       </div>
     </div>

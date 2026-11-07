@@ -3,9 +3,10 @@ import { notFound } from "next/navigation";
 import { MIN_GROUP_SIZE } from "@damm/shared";
 import { CHANGE_MIN_DELTA, CHANGE_MIN_N, getSignalDetail, type Change, type SignalTimelineStep } from "@damm/db/hr";
 import { Card, Empty, PageHeader, SuppressedBadge } from "../../ui";
+import { setSignalStatusAction } from "../../actions";
 import { approveFromSignalAction, discardFromSignalAction, followUpFromSignalAction } from "./actions";
 
-import { SignalBadges, signalTypeLabel } from "../../signal-labels";
+import { STATUS_LABELS, STATUS_ORDER, SignalBadges, signalTypeLabel } from "../../signal-labels";
 const ESTAT: Record<string, string> = { proposada: "", aprovada: "badge-good", descartada: "" };
 const suppressedHint = `Menys de ${MIN_GROUP_SIZE} respondents`;
 
@@ -83,6 +84,19 @@ export default async function SignalPage({ params }: { params: Promise<{ id: str
         <span className="badge num">{signal.periode}</span>
         <span className="badge num">n={signal.n}</span>
         {signal.confianca !== null && <span className="badge num">confiança {Math.round(signal.confianca * 100)}%</span>}
+      </div>
+
+      <div className="mb-6 flex flex-wrap items-center gap-2">
+        <span className="text-xs font-medium text-subtle">Estat del senyal:</span>
+        {STATUS_ORDER.map((st) => (
+          <form key={st} action={setSignalStatusAction}>
+            <input type="hidden" name="id" value={signal.id} />
+            <input type="hidden" name="status" value={st} />
+            <button className={`btn ${signal.status === st ? "btn-primary" : ""}`} disabled={signal.status === st} aria-pressed={signal.status === st}>
+              {STATUS_LABELS[st]}
+            </button>
+          </form>
+        ))}
       </div>
 
       <Card title="Del senyal a l'acció" className="mb-6">
@@ -210,7 +224,7 @@ export default async function SignalPage({ params }: { params: Promise<{ id: str
                   <li key={f.necessitatId} className="rounded-lg border border-line p-4">
                     <div className="mb-2 flex flex-wrap items-center gap-2">
                       <span className={`badge ${f.published ? "badge-good" : "badge-warn"}`}>{f.published ? "Publicada" : "Sense publicar"}</span>
-                      <Link href="/hr/review" className="ml-auto text-xs text-accent-ink hover:underline">Revisar i publicar →</Link>
+                      <Link href="/hr/needs" className="ml-auto text-xs text-accent-ink hover:underline">Revisar i publicar →</Link>
                     </div>
                     <p className="text-[13px] font-medium">{f.textNl}</p>
                     {f.questions.length > 0 ? (
