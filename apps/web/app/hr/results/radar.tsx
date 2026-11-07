@@ -4,16 +4,22 @@ import { MIN_GROUP_SIZE } from "@damm/shared";
 // (never narrower than 1 point, always inside 1-5) and is labelled, so small changes stay visible.
 // A suppressed value (n<10) is a gap in the shape, never drawn as 0.
 
-export type RadarSeries = { label: string; values: (number | null)[]; tone: "primary" | "compare" };
+// `color` is a CSS colour (a var(--co-N) token); `dashed` marks a comparison period.
+export type RadarSeries = {
+  label: string;
+  values: (number | null)[];
+  color?: string;
+  dashed?: boolean;
+  /** Legacy two-series styling (manager page): used when `color` is not set. */
+  tone?: "primary" | "compare";
+};
+
+const colorOf = (s: RadarSeries) => s.color ?? (s.tone === "compare" ? "var(--chart-2)" : "var(--chart-1)");
+const dashedOf = (s: RadarSeries) => s.dashed ?? s.tone === "compare";
 
 const SIZE = 420;
 const C = SIZE / 2;
 const R = 130;
-const TONES = {
-  primary: "stroke-chart-1 fill-chart-1",
-  compare: "stroke-chart-2 fill-chart-2",
-};
-const SWATCH = { primary: "bg-chart-1", compare: "bg-chart-2" };
 
 const angle = (i: number, n: number) => -Math.PI / 2 + (i * 2 * Math.PI) / n;
 const fmt = (v: number) => v.toLocaleString("ca", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
@@ -51,7 +57,6 @@ function wrapLabel(s: string): string[] {
 function Shape({ s, n, sc }: { s: RadarSeries; n: number; sc: Scale }) {
   const pts = s.values.map((v, i) => (v === null ? null : point(i, n, v, sc)));
   const complete = pts.every((p) => p !== null);
-  const tone = TONES[s.tone];
   // Edges only between neighbouring axes that both have a value.
   const edges = pts.flatMap((p, i) => {
     const q = pts[(i + 1) % n];
@@ -62,24 +67,25 @@ function Shape({ s, n, sc }: { s: RadarSeries; n: number; sc: Scale }) {
       {complete && (
         <polygon
           points={pts.map((p) => `${p!.x},${p!.y}`).join(" ")}
-          className={`${tone} stroke-0`}
-          fillOpacity={0.12}
+          fill={colorOf(s)}
+          stroke="none"
+          fillOpacity={0.1}
         />
       )}
       {edges.map(({ p, q, key }) => (
         <line
           key={key}
           x1={p.x} y1={p.y} x2={q.x} y2={q.y}
-          className={tone}
+          stroke={colorOf(s)}
           strokeWidth={2}
           strokeLinecap="round"
-          strokeDasharray={s.tone === "compare" ? "5 4" : undefined}
+          strokeDasharray={dashedOf(s) ? "5 4" : undefined}
         />
       ))}
       {pts.map((p, i) =>
         p ? (
           <g key={i}>
-            <circle cx={p.x} cy={p.y} r={4.5} className={`${tone} stroke-surface`} strokeWidth={2} />
+            <circle cx={p.x} cy={p.y} r={4.5} fill={colorOf(s)} className="stroke-surface" strokeWidth={2} />
             <circle cx={p.x} cy={p.y} r={12} fill="transparent">
               <title>{`${s.label}: ${s.values[i]!.toFixed(1)}`}</title>
             </circle>
@@ -100,8 +106,8 @@ export function Radar({ axes, series }: { axes: string[]; series: RadarSeries[] 
         {series.map((s) => (
           <span key={s.label} className="flex items-center gap-2">
             <span
-              className={`inline-block h-0.5 w-5 ${SWATCH[s.tone]}`}
-              style={s.tone === "compare" ? { maskImage: "repeating-linear-gradient(90deg,#000 0 5px,transparent 5px 9px)" } : undefined}
+              className="inline-block h-0.5 w-5"
+              style={{ background: colorOf(s), ...(dashedOf(s) ? { maskImage: "repeating-linear-gradient(90deg,#000 0 5px,transparent 5px 9px)" } : {}) }}
             />
             {s.label}
           </span>

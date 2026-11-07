@@ -1,6 +1,7 @@
 // Deterministic template used when the LLM is unavailable, so the demo never breaks.
 import type { Domini } from "@damm/shared";
 import { violatesExclusions } from "./exclusions";
+import { anchorsFor } from "./quality";
 import type { DraftQuestion, DraftType, NeedInput } from "./types";
 
 type T = { text: string; type: DraftType; domain: Domini; reason: string };
@@ -69,6 +70,10 @@ function titleOf(objective: string): string {
   return t.length > 80 ? t.slice(0, 77).trimEnd() + "…" : t;
 }
 
+function withAnchors(t: T): DraftQuestion {
+  return t.type === "scale5" || t.type === "scale10" ? { ...t, ...anchorsFor(t.text) } : { ...t };
+}
+
 export function fallbackQuestions(need: NeedInput, exclude: string[] = []): DraftQuestion[] {
   const short = isShortTone(need.collective);
   const corpus = `${need.objective} ${need.context ?? ""}`;
@@ -87,7 +92,7 @@ export function fallbackQuestions(need: NeedInput, exclude: string[] = []): Draf
     out.push(t);
     seen.add(t.text);
   }
-  return out;
+  return out.map(withAnchors);
 }
 
 export function fallbackSurvey(need: NeedInput) {
@@ -107,5 +112,6 @@ export function fallbackReplacement(need: NeedInput, current: DraftQuestion, oth
   const pool = [...(/torn/i.test(`${need.objective} ${need.context ?? ""}`) ? SHIFTS : []), ...GENERIC[current.domain], ...Object.values(GENERIC).flat()];
   const sameType = (t: T) => t.type === current.type;
   const ok = (t: T) => !used.includes(t.text) && !violatesExclusions(t.text, need.exclusions);
-  return pool.find((t) => ok(t) && t.domain === current.domain && sameType(t)) ?? pool.find((t) => ok(t) && sameType(t)) ?? pool.find(ok) ?? null;
+  const f = pool.find((t) => ok(t) && t.domain === current.domain && sameType(t)) ?? pool.find((t) => ok(t) && sameType(t)) ?? pool.find(ok);
+  return f ? withAnchors(f) : null;
 }

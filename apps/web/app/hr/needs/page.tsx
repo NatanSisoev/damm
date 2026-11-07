@@ -1,5 +1,5 @@
 import Link from "next/link";
-import QRCode from "qrcode";
+import { MIN_GROUP_SIZE } from "@damm/shared";
 import { listCollectius, listNeedCards, listNeedDrafts, type NeedCard, type NeedState } from "@damm/db/hr";
 import { closeNeedAction, publishAction } from "../actions";
 import { Card, Empty, PageHeader } from "../ui";
@@ -11,8 +11,8 @@ export const dynamic = "force-dynamic";
 
 const STATES: { key: NeedState; label: string; hint: string }[] = [
   { key: "esborrany", label: NEED_STATUS.esborrany.label, hint: "La IA ha proposat preguntes; falta que una persona les revisi i les aprovi." },
-  { key: "llesta", label: NEED_STATUS.llesta.label, hint: "Totes les preguntes estan revisades. Falta publicar-la amb enllaç i QR." },
-  { key: "publicada", label: NEED_STATUS.publicada.label, hint: "Les preguntes són al grup de preguntes i l'enllaç ja es pot compartir." },
+  { key: "llesta", label: NEED_STATUS.llesta.label, hint: "Totes les preguntes estan revisades. Falta publicar-la: les preguntes entren al grup i s'avisa el col·lectiu amb una notificació." },
+  { key: "publicada", label: NEED_STATUS.publicada.label, hint: "Les preguntes són al grup de preguntes i el col·lectiu ha rebut una notificació al mòbil." },
   { key: "tancada", label: NEED_STATUS.tancada.label, hint: "Decisió de l'equip: no hi entren noves respostes de seguiment." },
 ];
 const LABEL = Object.fromEntries(STATES.map((s) => [s.key, s.label])) as Record<NeedState, string>;
@@ -20,8 +20,8 @@ const LABEL = Object.fromEntries(STATES.map((s) => [s.key, s.label])) as Record<
 type Filter = NeedState | "totes";
 const isFilter = (v: string | undefined): v is Filter => v === "totes" || STATES.some((s) => s.key === v);
 
-export default async function NeedsPage({ searchParams }: { searchParams: Promise<{ estat?: string }> }) {
-  const { estat } = await searchParams;
+export default async function NeedsPage({ searchParams }: { searchParams: Promise<{ estat?: string; publicada?: string; avis?: string }> }) {
+  const { estat, publicada, avis } = await searchParams;
   const filter: Filter = isFilter(estat) ? estat : "totes";
   const all = listNeedCards();
   const drafts = new Map(listNeedDrafts().map((g) => [g.id, g]));
@@ -36,6 +36,7 @@ export default async function NeedsPage({ searchParams }: { searchParams: Promis
         title="Necessitats"
         subtitle="Cada necessitat segueix el seu camí: esborrany, llesta per publicar, publicada i tancada. Cap pregunta arriba al grup sense que una persona l'aprovi."
       />
+      {publicada && avis && /^(off|<?\d+)$/.test(avis) && <PublishNotice avis={avis} />}
       <details open={all.length === 0} className="card mb-6 group">
         <summary className="card-header cursor-pointer list-none">
           <h2 className="section-title">Nova necessitat</h2>
@@ -72,8 +73,7 @@ export default async function NeedsPage({ searchParams }: { searchParams: Promis
   );
 }
 
-async function NeedItem({ n, draft }: { n: NeedCard; draft?: ReturnType<typeof listNeedDrafts>[number] }) {
-  const qrs = await Promise.all(n.publications.map((p) => QRCode.toDataURL(p.url, { margin: 1, width: 192 })));
+function NeedItem({ n, draft }: { n: NeedCard; draft?: ReturnType<typeof listNeedDrafts>[number] }) {
   const state = STATES.find((s) => s.key === n.state)!;
   return (
     <Card
@@ -104,33 +104,17 @@ async function NeedItem({ n, draft }: { n: NeedCard; draft?: ReturnType<typeof l
           </div>
         )}
 
-        {n.publications.length > 0 && (
-          <ul className="grid gap-4 sm:grid-cols-2">
-            {n.publications.map((p, i) => (
-              <li key={p.id} className="flex gap-4 rounded-lg border border-line p-4">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={qrs[i]} alt={`QR de ${p.url}`} width={96} height={96} className="shrink-0 rounded-md border border-line bg-white p-1" />
-                <div className="min-w-0 space-y-2">
-                  <span className="badge">{p.collectiu}</span>
-                  <p className="text-xs text-subtle">Codi d&apos;accés <span className="badge num ml-1 font-mono">{p.codi}</span></p>
-                  <a href={p.url} className="block truncate font-mono text-xs text-accent-ink hover:underline">{p.url}</a>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-
         {(n.state === "esborrany" && n.approved.length > 0 || n.state === "llesta" || n.state === "publicada") && (
           <div className="flex flex-wrap items-center justify-end gap-2 border-t border-line pt-4">
             {n.state !== "publicada" && (
               <form action={publishAction}>
                 <input type="hidden" name="id" value={n.id} />
-                <button className="btn btn-primary">Publicar amb enllaç i QR</button>
+                <button className="btn btn-primary">Publicar i avisar per notificació</button>
               </form>
             )}
             {n.state === "publicada" && (
               <>
-                <Link href="/hr/publish" className="btn btn-ghost">Cartell i enllaços de tots els col·lectius</Link>
+                <Link href="/hr/publish" className="btn btn-ghost">Codis d&apos;accés per apuntar-s&apos;hi</Link>
                 <form action={closeNeedAction}>
                   <input type="hidden" name="id" value={n.id} />
                   <button className="btn">Tanca la necessitat</button>
@@ -156,5 +140,20 @@ async function NeedItem({ n, draft }: { n: NeedCard; draft?: ReturnType<typeof l
         )}
       </div>
     </Card>
+  );
+}
+
+/** Result of the last publish: an aggregate device count only, never who was notified. */
+function PublishNotice({ avis }: { avis: string }) {
+  const text =
+    avis === "off"
+      ? "Necessitat publicada. Les preguntes ja són al grup, però les notificacions estan desactivades en aquest servidor (falten les claus VAPID), així que no s'ha avisat ningú."
+      : avis.startsWith("<")
+        ? `Necessitat publicada. S'han enviat notificacions a menys de ${MIN_GROUP_SIZE} dispositius: no en mostrem el nombre exacte.`
+        : `Necessitat publicada. S'han enviat notificacions a ${avis} dispositius del col·lectiu.`;
+  return (
+    <p role="status" className="mb-6 rounded-lg border border-line-strong px-3 py-2 text-sm">
+      {text}
+    </p>
   );
 }

@@ -19,6 +19,25 @@ What changed and why.
 
 ---
 
+## C10 · 2026-11-07 · Jan · Published needs are added to today's batch past the cap
+
+- New in `@damm/db/employee`: `addPublishedNeedsToDay(compteId, day)`. For an account whose batch for `day` already exists, it appends every approved, non-follow-up question of a `publicada` need for the account's collective (or all collectives) that the account never answered and that is not in today's batch, as extra `assignment` rows (`reason='need'`, slots after the engine's). `apps/web/lib/engine.ts` `getTodaysBatch` calls it after `getDailyBatch`; `GET /api/pool/next` uses `getTodaysBatch`.
+- Why: Jan wants an employee who logs in or taps the push after a publish to see that need's questions at once. The engine freezes the day's batch on the first request and caps needs at `maxNeedsPerDay` (1) and the day at `questionsPerDay` (3), so a need published later only showed up tomorrow, one question a day.
+- No schema change. This is a second writer of the engine-owned `assignment` table, from the web layer.
+
+Action items:
+- [ ] Natan: in `approvedQuestionsFor` / `selectBatch`, serve need questions only when their `necessitat` is `publicada` (today an `aprovada` question is served while the need is still `oberta`, before HR publishes; seen in the browser 2026-11-07).
+- [ ] Natan: in `getDailyBatch`, top up an existing day's batch with unanswered questions of `publicada` needs, past `questionsPerDay` and `maxNeedsPerDay`; then tell Jan so `addPublishedNeedsToDay` and `getTodaysBatch` can be removed.
+
+## C9 · 2026-11-07 · Jan · Publishing a need sends web push, no per-need join code
+
+- `publishNecessitat(necessitatId)` in `@damm/db/hr` no longer takes a base URL, no longer creates `joincode` or `publicacio` rows, and returns `boolean` (false when the need is not `oberta` or has no approved question). Join codes stay per collective for onboarding (`/hr/publish`).
+- New in `@damm/db/employee`: `savePushSubscription`, `hasPushSubscription`, `listPushTargetsForNecessitat` (endpoints and keys for the need's collective, or all), `deletePushSubscriptionByEndpoint`. HR code never imports them; it calls `notifyNeedPublished(id)` in `apps/web/lib/push.ts` and gets an aggregate device count only.
+- No schema change. The engine still serves every `aprovada` question whatever the need's state.
+
+Action items:
+- [ ] Natan: none required; FYI if the engine or seed ever relied on a `publicacio` row per need.
+
 ## C8 · 2026-11-07 · Natan · Scheduler runs the narrative, engine hardening
 
 - `startEngineScheduler(db, { narrative: { complete: createComplete() } })` runs the LLM narrative after the job, at most every 6 hours (`everyMs`), in the background. It never blocks or breaks the job. Without the option the LLM is never called. `runNarrativeNow()` serves an HR "Regenerate summary" button. `createComplete` and `llmConfigFromEnv` are exported from `@damm/engine/job`.
@@ -26,16 +45,16 @@ What changed and why.
 - The job and narrative scripts resolve a relative `DB_PATH` from where they're run, else from the repo root, and never create a new database file.
 
 Action items:
-- [ ] Jan: in `instrumentation.ts`, pass `narrative: process.env.LLM_API_KEY ? { complete: createComplete() } : undefined` to `startEngineScheduler`.
-- [ ] Jan: rebuild existing databases (the `insight.kind` CHECK now includes `narrative`, see C7).
+- [x] Jan: in `instrumentation.ts`, pass `narrative: process.env.LLM_API_KEY ? { complete: createComplete() } : undefined` to `startEngineScheduler`. (done 2026-11-07, 978fe61; wired in `apps/web/lib/engine.ts`, where the scheduler starts)
+- [x] Jan: rebuild existing databases (the `insight.kind` CHECK now includes `narrative`, see C7). (done 2026-11-07, 978fe61; `data/demo.db` rebuilt, existing DBs must be rebuilt)
 
 ## C7 · 2026-11-07 · Natan · Narrative insights (LLM summaries and proposed recommendations)
 
 New `insight.kind = 'narrative'` (CHECK in `packages/db/schema.sql`, `InsightKind` in `packages/shared`, `InsightDetails.narrative` in `@damm/engine/hr`). One row per period × segment: company-wide (`collectiu_id` NULL) and one per collective. `detail` has `summary`, `highlights`, `suggestedActions`, `recommendationIds`, `model`, `inputHash`. Each suggested action is also inserted into `recomanacio` with `estat = 'proposada'` (and `senyal_id` when it clearly matches an open alarm). Nothing runs automatically yet: `runNarrative` is exported from `@damm/engine/job` but not called by `runEngineJob` or the scheduler; Natan wires it later. Existing databases need the new CHECK: rebuild with `pnpm --filter @damm/db run init` or the demo builder. Details: [engine-integration.md](engine-integration.md), "Narrative insights".
 
 Action items:
-- [ ] Jan: show the narrative card (summary, highlights, suggested actions) from `listInsights(db, viewer, { kind: "narrative" })`, company-wide on the overview and per collective on its page. Handle the case where there is no narrative row yet.
-- [ ] Jan: list `recomanacio` rows with `estat = 'proposada'` with Approve and Discard buttons (HR-only route, updates `estat` to `aprovada` / `descartada`). The engine never changes a recommendation a human has decided on. Label them as AI proposals.
+- [x] Jan: show the narrative card (summary, highlights, suggested actions) from `listInsights(db, viewer, { kind: "narrative" })`, company-wide on the overview and per collective on its page. Handle the case where there is no narrative row yet. (done 2026-11-07, 978fe61; overview and results, per collective via the heatmap segment selection; empty state "Encara no hi ha resum del motor")
+- [x] Jan: list `recomanacio` rows with `estat = 'proposada'` with Approve and Discard buttons (HR-only route, updates `estat` to `aprovada` / `descartada`). The engine never changes a recommendation a human has decided on. Label them as AI proposals. (done 2026-11-07, 978fe61; labelled "Proposta de la IA · decideix una persona")
 
 ## C6 · 2026-11-07 · Natan · Demo database, question bank, simulator
 

@@ -30,6 +30,18 @@
   --chart-1: #3d5a6c;
   --chart-2: #8a6d3b;
 
+  /* Diverging scale for the heatmap: warm = below company average, cool = above, grey midpoint. */
+  --div-neg: #b8431f;
+  --div-pos: #2a6f97;
+  --div-mid: #e3e5de;
+
+  /* Fixed cohort colours (colour follows the entity). Validated with the dataviz script. */
+  --co-1: #2a78d6;
+  --co-2: #eb6834;
+  --co-3: #1baf7a;
+  --co-4: #eda100;
+  --co-5: #e87ba4;
+
   font-family: var(--font-hanken), var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   background: var(--bg);
   color: var(--text);
@@ -61,6 +73,16 @@
 
     --chart-1: #8fb3c8;
     --chart-2: #d0aa68;
+
+    --div-neg: #e0745a;
+    --div-pos: #5fa3cf;
+    --div-mid: #2f352f;
+
+    --co-1: #3987e5;
+    --co-2: #d95926;
+    --co-3: #199e70;
+    --co-4: #c98500;
+    --co-5: #d55181;
   }
 }
 
@@ -173,3 +195,53 @@
     position: absolute; top: 4px; right: 6px; min-width: 16px; padding: 0 4px; font-size: 10px; line-height: 16px;
   }
 }
+
+/* Alarms: compact status menu */
+.alarm-status { position: relative; }
+.alarm-status > summary { list-style: none; cursor: pointer; }
+.alarm-status > summary::-webkit-details-marker { display: none; }
+.alarm-status-menu {
+  position: absolute; z-index: 10; left: 0; top: calc(100% + 4px); min-width: 9rem;
+  display: flex; flex-direction: column;
+  background: var(--surface); border: 1px solid var(--border-strong);
+}
+.alarm-status-menu button { width: 100%; text-align: left; padding: 8px 12px; font-size: 13px; }
+.alarm-status-menu button:hover { background: var(--surface-muted); }
+
+/* Heatmap (collectives x domains) */
+.hr-heat-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 44px;
+  min-width: 56px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  background: var(--div-mid);
+  border: 1px solid transparent;
+}
+.hr-heat-cell:hover { border-color: var(--text); }
+.hr-heat-on { border-color: var(--text); box-shadow: inset 0 0 0 1px var(--text); }
+.hr-heat-hatch {
+  background: repeating-linear-gradient(45deg, var(--border-strong) 0 1.5px, transparent 1.5px 6px), var(--surface);
+  opacity: 1;
+}
+.hr-heat-key { display: inline-block; width: 14px; height: 14px; border: 1px solid var(--border-strong); }
+.hr-heat-scale {
+  display: inline-block;
+  width: 96px;
+  height: 10px;
+  background: linear-gradient(90deg, color-mix(in oklab, var(--div-neg) 58%, var(--div-mid)), var(--div-mid), color-mix(in oklab, var(--div-pos) 58%, var(--div-mid)));
+}
+
+/* Radar cohort chips: 44px tap targets, wrap on phones. */
+.hr-chip {
+  display: inline-flex; min-height: 44px; align-items: center; gap: 0.5rem;
+  padding: 0 0.85rem; border: 1px solid var(--line); border-radius: 2px;
+  font-size: 13px; color: var(--text); background: transparent;
+}
+.hr-chip:hover { background: var(--surface-muted); }
+.hr-chip[aria-pressed="true"] { border-color: var(--text); background: var(--surface-muted); font-weight: 600; }
+.hr-chip[aria-disabled="true"] { opacity: 0.5; pointer-events: none; }
+.hr-chip-dot { width: 10px; height: 10px; border-radius: 9999px; flex: none; }
