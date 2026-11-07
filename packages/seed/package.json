@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "seed": "tsx src/seed.ts",
+    "seed:large": "tsx src/seed.ts --large",
     "comments": "tsx src/generate-comments.ts"
   },
   "dependencies": {

@@ -159,7 +159,7 @@ Commands (run from the repo root, pnpm 10):
 - Run: `pnpm dev`
 - Lint: `pnpm lint`
 - Build: `pnpm build`
-- Seed the dev DB (fresh, deterministic, ~1,200 synthetic employees, ~700 responses, ~500 comments): `pnpm --filter @damm/seed run seed`. Regenerate comments (template mode, or `-- --llm` with `LLM_BASE_URL`/`LLM_API_KEY`/`LLM_MODEL`): `pnpm --filter @damm/seed run comments`.
+- Seed the dev DB (fresh, deterministic, ~1,200 synthetic employees, ~700 responses, ~500 comments): `pnpm --filter @damm/seed run seed`. Large, lived-in variant (~660 accounts, ~18k responses, ~2.4k comments, writes `data/large.db`; run the app with `DB_PATH=data/large.db`): `pnpm --filter @damm/seed run seed:large`. Regenerate comments (template mode, or `-- --llm` with `LLM_BASE_URL`/`LLM_API_KEY`/`LLM_MODEL`): `pnpm --filter @damm/seed run comments`.
 - Test: no test suite yet.
 - Anonymity checks: `pnpm check:anonymity` fails if HR code or `@damm/db/hr` touches raw responses/accounts or the analytics view exposes `compte_id`; `pnpm lint` enforces the HR import rules (only `@damm/db/hr` and `@damm/shared`).
 
