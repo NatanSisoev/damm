@@ -1,0 +1,109 @@
+/*
+ * HR / manager theme ("Proposta mixta", tab D): restrained and neutral.
+ * Scoped to .hr-shell so the employee app and globals.css are untouched.
+ * Red (--brand-red) is only for the active nav tab and the participation bar.
+ * Everything else overrides the shared tokens with a neutral green-grey palette.
+ */
+.hr-shell {
+  --brand-red: #c8201a;
+
+  --bg: #eef0ea;
+  --surface: #fbfcf9;
+  --surface-muted: #e6e9e0;
+  --border: #d3d9cc;
+  --border-strong: #b9c1b0;
+  --text: #17211a;
+  --text-muted: #52604f;
+  --text-subtle: #5f6c5c;
+
+  /* Neutral instead of red: primary buttons, focus and "accent" badges use the ink colour. */
+  --accent: #17211a;
+  --accent-hover: #2c3a30;
+  --accent-soft: rgb(23 33 26 / 0.07);
+  --accent-text: #17211a;
+
+  --warn: #a3331f;
+  --warn-soft: #f6e7e2;
+  --good: #1d6b34;
+  --good-soft: #e3f0e6;
+
+  --chart-1: #3d5a6c;
+  --chart-2: #8a6d3b;
+
+  font-family: var(--font-hanken), var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+@media (prefers-color-scheme: dark) {
+  .hr-shell {
+    --brand-red: #ff7a6e;
+
+    --bg: #121512;
+    --surface: #1a1e1a;
+    --surface-muted: #232823;
+    --border: #2f362f;
+    --border-strong: #434c43;
+    --text: #eef1ea;
+    --text-muted: #b2bcaf;
+    --text-subtle: #97a393;
+
+    --accent: #eef1ea;
+    --accent-hover: #ffffff;
+    --accent-soft: rgb(238 241 234 / 0.1);
+    --accent-text: #eef1ea;
+
+    --warn: #ff9a86;
+    --warn-soft: rgb(255 122 110 / 0.12);
+    --good: #7fd194;
+    --good-soft: rgb(127 209 148 / 0.12);
+
+    --chart-1: #8fb3c8;
+    --chart-2: #d0aa68;
+  }
+}
+
+/* Square, flat components. */
+.hr-shell .card,
+.hr-shell .btn,
+.hr-shell .input,
+.hr-shell .segmented,
+.hr-shell .segmented > a {
+  border-radius: 2px;
+}
+.hr-shell .badge { border-radius: 2px; }
+.hr-shell .card { box-shadow: none; }
+.hr-shell .btn { box-shadow: none; }
+.hr-shell .btn-primary { color: var(--surface); }
+.hr-shell .page-title { font-weight: 800; letter-spacing: -0.01em; }
+.hr-shell .section-title { font-weight: 700; }
+.hr-shell :focus-visible { outline-color: var(--text); }
+
+/* Top bar */
+.hr-bar {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+.hr-tab {
+  display: inline-flex;
+  align-items: center;
+  height: 44px;
+  padding: 0 2px;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  color: var(--text-muted);
+  transition: color 120ms ease;
+}
+.hr-tab:hover { color: var(--text); }
+.hr-tab[aria-current="page"] {
+  color: var(--text);
+  font-weight: 700;
+  box-shadow: inset 0 -2px 0 var(--brand-red);
+}
+
+/* Participation bar: the other place red is used. */
+.hr-meter { height: 6px; background: var(--surface-muted); }
+.hr-meter > span { display: block; height: 100%; background: var(--brand-red); }
+.hr-meter-muted > span { background: var(--border-strong); }

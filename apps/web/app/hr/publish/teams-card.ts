@@ -1,3 +1,5 @@
+import { minutes } from "../labels";
+
 /**
  * Microsoft Adaptive Card (schema 1.5) for announcing a collective's survey link in Teams.
  * Pure function: no I/O, no personal data. Can move behind an API later.
@@ -16,7 +18,7 @@ export function buildTeamsCard(opts: { collectiu: string; url: string; minGroup:
     type: "AdaptiveCard",
     version: "1.5",
     body: [
-      { type: "TextBlock", text: "Escolta activa: 2 minuts", weight: "Bolder", size: "Large", wrap: true },
+      { type: "TextBlock", text: `Escolta activa: ${minutes(2)}`, weight: "Bolder", size: "Large", wrap: true },
       { type: "TextBlock", text: `Col·lectiu: ${opts.collectiu}`, isSubtle: true, spacing: "None", wrap: true },
       {
         type: "TextBlock",
