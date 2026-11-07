@@ -40,6 +40,9 @@ export default async function PublishPage() {
                     <Link href={`/hr/publish/${c.codi}/poster`} target="_blank" className="btn btn-primary">
                       Cartell per imprimir
                     </Link>
+                    <Link href={`/hr/publish/${c.codi}/teams`} className="btn btn-ghost">
+                      Publica a Teams
+                    </Link>
                   </div>
                 </div>
               </div>
