@@ -8,7 +8,7 @@ import {
   discardRecommendation, publishNecessitat, updateDraftText, closeNecessitat, setSignalStatus,
 } from "@damm/db/hr";
 import { createDraftedFollowUp } from "./follow-up";
-import { changeAlarmStatus, type AlarmStatus } from "@/lib/hr-engine";
+import { changeAlarmStatus, hrSetQuestionActive, type AlarmStatus } from "@/lib/hr-engine";
 import { notifyNeedPublished } from "@/lib/push";
 
 const HR_USER = "hr-demo"; // no auth in the prototype; approval is still an explicit human action
@@ -134,4 +134,10 @@ export async function recomputeAction() {
   const { getScheduler } = await import("@/lib/engine");
   await getScheduler().runNow();
   revalidatePath("/hr", "layout");
+}
+
+/** Pool control: a person retires a question from the rotation, or brings a previously approved one back. */
+export async function setQuestionActiveAction(formData: FormData) {
+  hrSetQuestionActive(Number(formData.get("id")), formData.get("active") === "1", HR_USER);
+  revalidatePath("/hr/pool");
 }

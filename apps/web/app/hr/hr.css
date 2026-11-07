@@ -184,3 +184,11 @@
   .hr-qmeta { margin-left: 0; text-align: left; width: 100%; }
   .hr-actions > * , .hr-actions form, .hr-actions .btn { width: 100%; }
 }
+
+/* Question pool: a data row and its detail row read as one block. */
+.pool-row > td { padding: 14px 12px 4px; vertical-align: top; border-bottom: 0; }
+.pool-detail { padding: 0 12px 14px; border-top: 0; }
+.pool-detail summary { padding: 6px 0; }
+.pool-group > td { padding: 0; background: var(--surface-muted); border-top: 1px solid var(--line-strong); }
+.pool-group-btn { display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px 12px; text-align: left; cursor: pointer; }
+.pool-group-head { display: inline-flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; }
