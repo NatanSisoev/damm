@@ -71,8 +71,12 @@ export default function MethodologyPage() {
               </tbody>
             </table>
           </div>
+          <p>
+            <strong>Dues escales.</strong> Les mitjanes, el mapa de calor i les tendències van d&apos;1 a 5. Les alarmes i els resums de l&apos;anàlisi usen una escala
+            de 0 a 10. Per passar d&apos;una a l&apos;altra: puntuació = (mitjana − 1) × 2,5. Així, una mitjana de 3,0 és un 5,0 sobre 10.
+          </p>
           <p><strong>Canvis entre períodes.</strong> Una mitjana només «puja» o «baixa» si es compleixen les dues condicions:</p>
-          <Formula>|mitjana actual − mitjana anterior| ≥ {CHANGE_MIN_DELTA} i n ≥ {CHANGE_MIN_N} als dos períodes</Formula>
+          <Formula>|mitjana actual − mitjana anterior| ≥ {String(CHANGE_MIN_DELTA).replace(".", ",")} i n ≥ {CHANGE_MIN_N} als dos períodes</Formula>
           <p>Si no, es mostra «sense canvi clar», perquè una diferència petita o amb poca gent pot ser només soroll.</p>
           <p>
             <strong>Marge d&apos;error.</strong> La plataforma no calcula ni mostra un interval de confiança: les bandes de precisió en fan la funció

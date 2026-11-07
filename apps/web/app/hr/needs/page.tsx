@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { MIN_GROUP_SIZE } from "@damm/shared";
 import { listCollectius, listNeedCards, listNeedDrafts, type NeedCard, type NeedState } from "@damm/db/hr";
+import { ConfirmButton } from "../confirm-button";
 import { closeNeedAction, publishAction } from "../actions";
 import { Card, Empty, PageHeader } from "../ui";
 import { NEED_STATUS } from "../labels";
@@ -117,7 +118,7 @@ function NeedItem({ n, draft }: { n: NeedCard; draft?: ReturnType<typeof listNee
                 <Link href="/hr/publish" className="btn btn-ghost">Codis d&apos;invitació</Link>
                 <form action={closeNeedAction}>
                   <input type="hidden" name="id" value={n.id} />
-                  <button className="btn">Tanca la necessitat</button>
+                  <ConfirmButton className="btn" message="Tanquem la necessitat? Deixa de rebre respostes i no es pot tornar a obrir.">Tanca la necessitat</ConfirmButton>
                 </form>
               </>
             )}
@@ -126,7 +127,7 @@ function NeedItem({ n, draft }: { n: NeedCard; draft?: ReturnType<typeof listNee
         {n.state === "llesta" && (
           <form action={closeNeedAction} className="text-right">
             <input type="hidden" name="id" value={n.id} />
-            <button className="btn btn-ghost">Tanca la necessitat</button>
+            <ConfirmButton className="btn btn-ghost" message="Tanquem la necessitat? Deixa de rebre respostes i no es pot tornar a obrir.">Tanca la necessitat</ConfirmButton>
           </form>
         )}
         {n.state === "esborrany" && n.approved.length === 0 && n.nDraft === 0 && (
@@ -135,7 +136,7 @@ function NeedItem({ n, draft }: { n: NeedCard; draft?: ReturnType<typeof listNee
         {n.state === "esborrany" && (
           <form action={closeNeedAction} className="text-right">
             <input type="hidden" name="id" value={n.id} />
-            <button className="btn btn-ghost">Tanca la necessitat</button>
+            <ConfirmButton className="btn btn-ghost" message="Tanquem la necessitat? Deixa de rebre respostes i no es pot tornar a obrir.">Tanca la necessitat</ConfirmButton>
           </form>
         )}
       </div>
