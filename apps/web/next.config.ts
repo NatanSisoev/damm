@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   /* config options here */
-  transpilePackages: ["@damm/shared", "@damm/db"],
+  transpilePackages: ["@damm/shared", "@damm/db", "@damm/ai"],
   serverExternalPackages: ["better-sqlite3"],
   cacheComponents: false,
   turbopack: {

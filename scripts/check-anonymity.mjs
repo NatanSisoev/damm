@@ -6,6 +6,8 @@
 //      imports/exports, i.e. hr-repository.ts) must not mention raw response/account data.
 //  (b) Nothing under apps/web/app/hr/** may import the DB root, other repositories or a driver.
 //  (c) The analytics view v_resposta_analitica must not expose compte_id in its output columns.
+//  (d) packages/ai takes plain input and returns plain output: it must not import @damm/db or a driver.
+//      This is what makes @damm/ai safe to import from HR code.
 //
 // The ESLint rule in apps/web/eslint.config.mjs enforces (b) at edit time; this script is the
 // CI/demo-friendly second line and also covers (a) and (c), which lint cannot see.
@@ -159,6 +161,18 @@ if (!view) {
   const at = view.index + view[0].indexOf(cols);
   if (/\bcompte_id\b/i.test(cols)) fail(`${rel(schemaPath)}:${lineOf(schema, at)}`, "v_resposta_analitica exposes compte_id in its SELECT list.");
   if (/(^|[\s,.])\*/.test(cols)) fail(`${rel(schemaPath)}:${lineOf(schema, at)}`, "v_resposta_analitica uses SELECT * / alias.* which could leak compte_id.");
+}
+
+// ---- (d) packages/ai stays free of the database ---------------------------------------------
+
+for (const file of walk(path.join(root, "packages/ai/src"))) {
+  const code = stripComments(fs.readFileSync(file, "utf8"));
+  const specRe = /(?:\bfrom\s*|\bimport\s*\(?\s*|\brequire\s*\(\s*)["']([^"']+)["']/g;
+  for (const m of code.matchAll(specRe)) {
+    if (m[1].startsWith("@damm/db") || ["better-sqlite3", "sqlite3", "node:sqlite"].includes(m[1])) {
+      fail(`${rel(file)}:${lineOf(code, m.index)}`, `packages/ai must not import "${m[1]}": it takes plain input and returns plain output.`);
+    }
+  }
 }
 
 // ---- result ---------------------------------------------------------------------------------
