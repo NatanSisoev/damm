@@ -13,7 +13,8 @@ export type AlarmType =
   | "polarisation"
   | "feble"
   | "low_confidence"
-  | "improvement";
+  | "improvement"
+  | "baixa_participacio";
 export type Severity = "info" | "warning" | "critical";
 export type Audience = "hr" | "hr_manager";
 
@@ -50,6 +51,12 @@ export interface AlarmThresholds {
   improvementTrigger: number;
   improvementClear: number;
   improvementMinConfidence: number;
+  /** baixa_participacio: response rate (respondents / population) below trigger, or share of respondents below
+   *  shareRatioTrigger × share of the population. Cleared only when both are back above the clear levels. */
+  participationTrigger: number;
+  participationClear: number;
+  shareRatioTrigger: number;
+  shareRatioClear: number;
 }
 
 export const ALARM_DEFAULTS: AlarmThresholds = {
@@ -75,6 +82,10 @@ export const ALARM_DEFAULTS: AlarmThresholds = {
   improvementTrigger: 0.5,
   improvementClear: 0.25,
   improvementMinConfidence: 60,
+  participationTrigger: 0.4,
+  participationClear: 0.45,
+  shareRatioTrigger: 0.7,
+  shareRatioClear: 0.8,
 };
 
 export const ALARM_SEVERITY: Record<AlarmType, Severity> = {
@@ -85,6 +96,7 @@ export const ALARM_SEVERITY: Record<AlarmType, Severity> = {
   feble: "info",
   low_confidence: "info",
   improvement: "info",
+  baixa_participacio: "warning",
 };
 
 export const ALARM_AUDIENCE: Record<AlarmType, Audience> = {
@@ -95,6 +107,7 @@ export const ALARM_AUDIENCE: Record<AlarmType, Audience> = {
   feble: "hr",
   low_confidence: "hr",
   improvement: "hr_manager",
+  baixa_participacio: "hr",
 };
 
 export interface AlarmOptions {
@@ -265,6 +278,34 @@ export function evalChangepointCluster(count: number, windowDays: number, t: Ala
   };
 }
 
+/** Counts for one non-nesting segment in the current period (respondents are distinct accounts, counted here only). */
+export interface ParticipationCounts {
+  respondents: number;
+  population: number;
+  totalRespondents: number;
+  totalPopulation: number;
+}
+
+const TORN_CA: Record<string, string> = { mati: "matí", tarda: "tarda", nit: "nit" };
+
+/** `where` is the Catalan place phrase, e.g. "al torn de nit de Fàbriques". */
+export function evalLowParticipation(c: ParticipationCounts, where: string, t: AlarmThresholds, minN: number): Evaluation {
+  const { respondents, population } = c;
+  if (population < minN || respondents < minN) return { ...NONE, suppressed: true, n: respondents };
+  const rate = respondents / population;
+  const ratio = c.totalRespondents > 0 && c.totalPopulation > 0 ? respondents / c.totalRespondents / (population / c.totalPopulation) : 1;
+  const pct = (x: number) => Math.round(x * 100);
+  return {
+    trigger: rate < t.participationTrigger || ratio < t.shareRatioTrigger,
+    clear: rate >= t.participationClear && ratio >= t.shareRatioClear,
+    n: respondents,
+    confidence: null,
+    description:
+      `Participació baixa ${where}: ${pct(rate)}% (n=${respondents} de ${population}). ` +
+      `Pes a la mostra ${pct(respondents / c.totalRespondents)}% davant ${pct(population / c.totalPopulation)}% de la plantilla.`,
+  };
+}
+
 /** Lideratge alarms go to HR only, never to the manager being assessed; company-wide alarms have no manager. */
 export function audienceFor(type: AlarmType, collectiuId: number | null, dominiId: number, leadershipId: number | null): Audience {
   if (dominiId === leadershipId || collectiuId === null) return "hr";
@@ -360,7 +401,7 @@ export function runAlarms(db: SqlDatabase, opts: AlarmOptions): AlarmReport {
      VALUES (?,?,?,?,?,?,?,?,?, 'open', ?,?, 0)`,
   );
 
-  const apply = (type: AlarmType, c: number | null, tn: number | null, d: number, e: Evaluation) => {
+  const apply = (type: AlarmType, c: number | null, tn: number | null, d: number | null, e: Evaluation) => {
     const k = alarmKey(type, c, tn, d);
     const act = active.get(k);
     if (e.suppressed) {
@@ -385,11 +426,46 @@ export function runAlarms(db: SqlDatabase, opts: AlarmOptions): AlarmReport {
     if (!e.trigger) return;
     const last = latest.get(k);
     if (last && toMs(nowSql) - toMs(last.created_at) < t.cooldownDays * 86_400_000) return;
-    insert.run(type, e.description, c, tn, d, current, e.n, e.confidence, ALARM_SEVERITY[type], audienceFor(type, c, d, leadershipId), nowSql);
+    insert.run(type, e.description, c, tn, d, current, e.n, e.confidence, ALARM_SEVERITY[type], d === null ? "hr" : audienceFor(type, c, d, leadershipId), nowSql);
     report.opened++;
   };
 
+  // Participation per non-nesting segment (same rule as changepoint_cluster, so counts cannot be differenced).
+  // Distinct respondents are counted here and leave only as per-segment totals; no account id is kept.
+  const segOf = (c: number, tn: number | null) => (shifted.has(c) ? segKey(c, tn, null) : segKey(c, null, null));
+  const popBySeg = new Map<string, { c: number; t: number | null; n: number }>();
+  for (const r of all<{ collectiu_id: number; torn_id: number | null; n: number }>(
+    db,
+    "SELECT collectiu_id, torn_id, COUNT(*) AS n FROM empleat_sintetic GROUP BY collectiu_id, torn_id",
+  )) {
+    const tn = shifted.has(r.collectiu_id) ? r.torn_id : null;
+    const k = segOf(r.collectiu_id, r.torn_id);
+    const e = popBySeg.get(k);
+    if (e) e.n += r.n;
+    else popBySeg.set(k, { c: r.collectiu_id, t: tn, n: r.n });
+  }
+  const respBySeg = new Map<string, number>();
+  for (const r of all<{ collectiu_id: number; torn_id: number | null; n: number }>(
+    db,
+    `SELECT c.collectiu_id, c.torn_id, COUNT(DISTINCT r.compte_id) AS n
+     FROM resposta r JOIN compte c ON c.id = r.compte_id WHERE r.periode = ? GROUP BY c.collectiu_id, c.torn_id`,
+    current,
+  ))
+    respBySeg.set(segOf(r.collectiu_id, r.torn_id), (respBySeg.get(segOf(r.collectiu_id, r.torn_id)) ?? 0) + r.n);
+  const names = {
+    c: new Map(all<{ id: number; nom: string }>(db, "SELECT id, nom FROM collectiu").map((r) => [r.id, r.nom])),
+    t: new Map(all<{ id: number; nom: string }>(db, "SELECT id, nom FROM torn").map((r) => [r.id, r.nom])),
+  };
+  const totalPop = [...popBySeg.values()].reduce((s, v) => s + v.n, 0);
+  const totalResp = [...popBySeg.keys()].reduce((s, k) => s + (respBySeg.get(k) ?? 0), 0);
+
   transaction(db, () => {
+    for (const [k, seg] of popBySeg) {
+      const cn = names.c.get(seg.c) ?? `col·lectiu ${seg.c}`;
+      const where = seg.t === null ? `a ${cn}` : `al torn de ${TORN_CA[names.t.get(seg.t) ?? ""] ?? names.t.get(seg.t) ?? seg.t} de ${cn}`;
+      const counts = { respondents: respBySeg.get(k) ?? 0, population: seg.n, totalRespondents: totalResp, totalPopulation: totalPop };
+      apply("baixa_participacio", seg.c, seg.t, null, evalLowParticipation(counts, where, t, minN));
+    }
     for (const h of hist.values()) {
       const cur = h.pts[h.pts.length - 1] ?? null;
       // Current period missing or below the minimum group size: nothing can be said about this segment.

@@ -106,7 +106,7 @@ The guide says "Publicar a Typeform". AGENTS.md decides to ignore Typeform: the 
 | R-FLOW-5b | QR access | done | `/join/[codi]` |
 | R-FLOW-5c | **Frequency** strategy (about 2 a day, no repeats 4 days in a row) | blocked | Pool stub today; engine is Natan's |
 | R-FLOW-5d | **Reminders** | missing | Push is task 4 (ready). Needs HTTPS (task 9). |
-| R-FLOW-5e | **Representativeness control** while collecting (warn when a group is under-sampled) | partial | Shown on results. Not yet acted on (engine oversampling is blocked). |
+| R-FLOW-5e | **Representativeness control** while collecting (warn when a group is under-sampled) | partial | Shown on results. The engine now raises a `baixa_participacio` alarm (C7); banner pending. Oversampling is still blocked. |
 | R-FLOW-5f | Does not saturate anyone | blocked | Engine rules |
 
 ### R-FLOW-6 Collect and analyse
@@ -150,7 +150,7 @@ At least one must run end to end in the final demo; ideally all three (G-§5).
 | A2 | The AI proposes **4 short questions with a warm tone** | blocked (seeded drafts stand in) |
 | A3 | HR **edits one** and approves | done |
 | A4 | Publish **with a QR for the plant** | done |
-| A5 | The system **warns that the night shift responds little** | partial: visible in representativeness; check it surfaces as an explicit alert |
+| A5 | The system **warns that the night shift responds little** | partial: engine emits a `baixa_participacio` alarm per collective × shift (C7); the explicit banner is Jan's |
 | A6 | Comments grouped into **communication** and **breaks** | partial: seeded October theme |
 | A7 | **2 actions** recommended plus a follow-up survey | partial: seeded recommendations; follow-up done |
 | A8 | Answers whether the change was understood, what difficulties it causes and what to reinforce (G-§5 A) | partial: depends on A2 question quality |
@@ -160,7 +160,7 @@ At least one must run end to end in the final demo; ideally all three (G-§5).
 |------|----------|--------|
 | B1 | Mobile experience, reached by QR, very short | done |
 | B2 | No computer, little email access, so no email-based flow | done (join code plus username, no email) |
-| B3 | A control that **warns when the sample is not representative** | partial: representativeness gap shown; make it an explicit warning banner per need/collective |
+| B3 | A control that **warns when the sample is not representative** | partial: engine emits `baixa_participacio` (C7); show it as an explicit warning banner per need/collective |
 
 ### R-SC-C Large volume of comments
 | Step | Expected | Status |
@@ -180,7 +180,7 @@ D-S9 and D-S10. Each needs a named mitigation we can point at in the demo. "AI d
 | ID | Bias | Our mitigation | Status |
 |----|------|----------------|--------|
 | R-BIAS-1 | Coverage | Representativeness against the 1,200 synthetic population, per collective and shift | done |
-| R-BIAS-2 | Non-response | Night shift under-response shown; engine oversampling of under-represented groups | partial (engine blocked) |
+| R-BIAS-2 | Non-response | Night shift under-response shown and alarmed (`baixa_participacio`, C7); engine oversampling of under-represented groups | partial (oversampling blocked) |
 | R-BIAS-3 | Self-selection | Push-driven continuous micro-questions rather than opt-in surveys; representativeness weighting | partial (push task 4) |
 | R-BIAS-4 | Wording | Question-quality checker (19); human approval | missing |
 | R-BIAS-5 | Social desirability | Anonymity promise plus `/privacitat`; **show the manager positivity gap** (seeded `MANAGER_BONUS`) | missing: the manager segment is not shown anywhere (option B, not started) |

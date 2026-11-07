@@ -240,7 +240,7 @@ setAlarmStatus(db, id, "acknowledged"); // HR route only
 
 `AlarmView` fields:
 - `id`, `type`;
-- `description`: an English sentence ready to display;
+- `description`: a sentence ready to display (English; Catalan for `baixa_participacio`);
 - `collectiuId`, `tornId`, `domainId`, `periode`, `n`, `confidence`;
 - `severity`, `status`, `audience`, `createdAt`.
 
@@ -300,6 +300,6 @@ Planted stories and what they produce:
 | A group of people whose view of their supervisor collapses, from 14 Oct | Logística morning shift, Lideratge | follow-ups, `changepoint_cluster` (critical, HR only), `followup_confirmation` |
 | The team splits in two, average unchanged, from 1 Oct | Oficines, Entorn i relacions | `polarisation` alarm and insight |
 | Managers answer more positively | everywhere | `segment_gap` (manager) |
-| Few night-shift accounts | Fàbriques and Logística night | suppressed segments (n < 10) |
+| Few night-shift accounts | Fàbriques and Logística night | suppressed segments (n < 10), `baixa_participacio` warning on the night shifts with at least 10 respondents (the demo uses `participationScale` 1.6 so the other shifts sit above the 40% rate) |
 
 The run is deterministic: the same seed gives the same database. `--seed` changes it, and `--days` makes it shorter.

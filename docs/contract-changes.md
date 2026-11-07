@@ -19,6 +19,18 @@ What changed and why.
 
 ---
 
+## C7 · 2026-11-07 · Natan · `baixa_participacio` alarm is now emitted
+
+No schema or API change. `runAlarms` now writes `senyal` rows with `tipus = 'baixa_participacio'`:
+- one per collective × shift (collective alone where it has no shifts), `domini_id` NULL, severity `warning`, audience `hr`;
+- triggers when the response rate (distinct respondents in the period over the synthetic population) is under 40%, or the segment's share of respondents is under 0.7 × its population share; clears at 45% and 0.8;
+- `descripcio` is a Catalan sentence, e.g. "Participació baixa al torn de nit de Fàbriques: 22% (n=18 de 82). ...", and `n` is the respondent count;
+- segments with a population or respondents under 10 are suppressed like every other alarm type.
+The demo builder now uses `participationScale` 1.6 so only the thin shifts trigger it.
+
+Action items:
+- [ ] Jan: show `baixa_participacio` alarms as an explicit representativeness warning banner on results/need pages (R-SC-A5, R-SC-B3)
+
 ## C6 · 2026-11-07 · Natan · Demo database, question bank, simulator
 
 No schema or API change.
