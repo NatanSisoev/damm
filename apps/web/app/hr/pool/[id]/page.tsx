@@ -26,7 +26,7 @@ export default async function QuestionPage({ params }: { params: Promise<{ id: s
     <div className="mx-auto max-w-6xl">
       <p className="mb-3 text-sm"><Link href="/hr/pool">← Banc de preguntes</Link></p>
       <PageHeader
-        title={`#${q.id} ${q.text}`}
+        title={q.text}
         subtitle={
           <span className="flex flex-wrap items-center gap-1.5">
             <span className={`badge ${st.cls}`}>{st.label}</span>

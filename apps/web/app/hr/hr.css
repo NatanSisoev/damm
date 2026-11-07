@@ -191,7 +191,7 @@
 .pool-row:hover { background: var(--surface-muted); }
 /* The question link stretches over the whole row, so the row is the click target. */
 .pool-link::after { content: ""; position: absolute; inset: 0; }
-.pool-link:hover { text-decoration: underline; }
+.pool-link, .pool-link:hover { text-decoration: none; }
 .pool-group > td { padding: 0; background: var(--surface-muted); border-top: 1px solid var(--line-strong); }
 .pool-group-btn { display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px 12px; text-align: left; cursor: pointer; }
 .pool-group-head { display: inline-flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; }
