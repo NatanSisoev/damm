@@ -31,7 +31,7 @@ export default async function OnboardingPage({ searchParams }: { searchParams: P
             <BrandHero title="Codi no vàlid" lede="Aquest codi no existeix o ja no està actiu. Comprova l'enllaç o demana un codi nou al teu equip." />
             <p className="px-4">
               <Link href="/join" className="btn">
-                Introdueix un altre codi
+                Escriu un altre codi
               </Link>
             </p>
           </>

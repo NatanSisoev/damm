@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "Escolta activa",
     short_name: "Escolta",
-    description: "Respon unes preguntes curtes cada dia, de forma anònima.",
+    description: "Respon unes quantes preguntes curtes cada dia, de manera anònima.",
     lang: "ca",
     start_url: "/",
     scope: "/",

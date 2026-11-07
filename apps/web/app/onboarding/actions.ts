@@ -7,7 +7,7 @@ export type OnboardingState = { error?: string; recoveryCode?: string };
 
 const ERRORS = {
   codi_invalid: "Aquest codi no és vàlid o ja no està actiu.",
-  username_invalid: "L'usuari ha de tenir entre 3 i 30 caràcters: lletres minúscules, xifres, punt, guió o guió baix.",
+  username_invalid: "El nom d'usuari té entre 3 i 30 caràcters: lletres minúscules, xifres, punt, guió o guió baix.",
   username_ocupat: "Aquest nom d'usuari ja existeix. Prova'n un altre.",
   password_curta: "La contrasenya ha de tenir almenys 8 caràcters.",
 } as const;

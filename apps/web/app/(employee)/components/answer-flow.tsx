@@ -159,7 +159,7 @@ export function AnswerFlow({ compteId }: { compteId: string }) {
     } catch {
       setMessage(
         navigator.onLine === false
-          ? "Sense connexió. La teva resposta continua aquí: torna-ho a provar quan tornis a tenir xarxa."
+          ? "Sense connexió. La teva resposta continua aquí: torna-ho a provar quan tornis a tenir connexió."
           : "No hem pogut connectar amb el servidor. La teva resposta continua aquí: torna-ho a provar.",
       );
     } finally {
@@ -185,7 +185,7 @@ export function AnswerFlow({ compteId }: { compteId: string }) {
       <div className="py-16 text-center">
         <p role="alert" className="text-muted">
           {offline
-            ? "Sembla que no tens connexió. Comprova la xarxa i torna-ho a provar."
+            ? "Sembla que no tens connexió. Comprova la connexió i torna-ho a provar."
             : "No s'han pogut carregar les preguntes."}
         </p>
         <button type="button" className="btn mt-4 h-11" onClick={retryLoad}>

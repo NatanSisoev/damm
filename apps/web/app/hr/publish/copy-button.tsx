@@ -20,7 +20,7 @@ export function CopyButton({ text }: { text: string }) {
   }
   return (
     <button type="button" onClick={copy} className="btn btn-ghost" aria-live="polite">
-      {done ? "Copiat" : "Còpia"}
+      {done ? "Copiat" : "Copia l'enllaç"}
     </button>
   );
 }

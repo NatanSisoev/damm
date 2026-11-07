@@ -44,7 +44,7 @@ export default function MethodologyPage() {
             {COLLECTIUS.join(", ")}) i per a cada torn ({TORNS.join(", ")}) calculem dos percentatges, sempre sobre el darrer període:
           </p>
           <ul className="list-disc space-y-1 pl-5">
-            <li><strong>Part de respostes</strong>: respondents del segment ÷ respondents de tots els segments visibles.</li>
+            <li><strong>Part de respostes</strong>: persones que han respost al segment ÷ persones que han respost a tots els segments visibles.</li>
             <li><strong>Part de població</strong>: persones del segment ÷ persones de tots els segments visibles (població sintètica, no dades reals).</li>
           </ul>
           <Formula>diferència = part de respostes − part de població (en punts percentuals, pp)</Formula>
@@ -57,12 +57,12 @@ export default function MethodologyPage() {
 
         <Section title="2. Precisió i marge d'error">
           <p>
-            Cada mitjana (escala 1–5) es mostra amb la seva <strong>n</strong>, el nombre de respondents, i una etiqueta de precisió que depèn només d&apos;aquesta n:
+            Cada mitjana (escala 1–5) es mostra amb la seva <strong>n</strong>, el nombre de persones que han respost, i una etiqueta de precisió que depèn només d&apos;aquesta n:
           </p>
           <div className="overflow-x-auto">
             <table className="table min-w-[28rem]">
               <thead>
-                <tr><th>Precisió</th><th>Respondents (n)</th><th>Com llegir-la</th></tr>
+                <tr><th>Precisió</th><th>Persones que han respost (n)</th><th>Com llegir-la</th></tr>
               </thead>
               <tbody>
                 <tr><td className="font-medium">Indicativa</td><td className="num">n &lt; {PRECISION_MODERADA_MIN_N}</td><td>Una pista, no una conclusió.</td></tr>
@@ -77,27 +77,27 @@ export default function MethodologyPage() {
           <p>
             <strong>Marge d&apos;error.</strong> La plataforma no calcula ni mostra un interval de confiança: les bandes de precisió en fan la funció
             de manera simplificada. Com a referència estadística general, el marge d&apos;error d&apos;una mitjana creix quan la n és petita (és proporcional a
-            1/√n) i, a més, correlació no és causa: una diferència entre grups no explica per si sola el motiu.
+            1/√n). A més, una diferència entre grups no n&apos;explica per si sola el motiu.
           </p>
         </Section>
 
         <Section title="3. Regla de supressió">
           <p>
-            Qualsevol segment (col·lectiu, torn, període, domini o tema de comentaris) amb <strong>menys de {MIN_GROUP_SIZE} respondents</strong> no es mostra enlloc: ni al
-            tauler, ni a les gràfiques, ni a l&apos;exportació CSV. Es veu com a «Suprimit».
+            Qualsevol segment (col·lectiu, torn, període, domini o tema de comentaris) amb <strong>menys de {MIN_GROUP_SIZE} persones que han respost</strong> no es mostra enlloc: ni al
+            panell, ni a les gràfiques, ni a l&apos;exportació CSV. Apareix com a «Suprimit».
           </p>
           <p>
             <strong>Per què.</strong> Amb grups tan petits seria fàcil endevinar qui ha dit què. A més, hi ha una supressió complementària: si només queda un segment
-            ocult, o els ocults sumen menys de {MIN_GROUP_SIZE}, s&apos;oculta també el germà visible més petit. Així ningú pot restar el total i recuperar el segment amagat.
+            ocult, o els ocults sumen menys de {MIN_GROUP_SIZE}, s&apos;oculta també el segment visible més petit del mateix grup. Així ningú pot restar el total i recuperar el segment amagat.
           </p>
         </Section>
 
         <Section title="4. Anonimat">
           <ul className="list-disc space-y-1 pl-5">
-            <li><strong>Només agregats.</strong> Mai es mostren respostes individuals; el panell de RRHH llegeix taules ja agregades.</li>
+            <li><strong>Només agregats.</strong> Mai es mostren respostes individuals; el panell de l&apos;equip de persones llegeix taules ja agregades.</li>
             <li><strong>Identificador opac.</strong> El compte d&apos;una persona és un identificador intern sense nom, correu ni telèfon.</li>
             <li><strong>Seguiment longitudinal limitat.</strong> L&apos;historial per compte només s&apos;utilitza per agrupar trajectòries; no es mostra per persona ni surt de la capa d&apos;anàlisi.</li>
-            <li><strong>Comentaris.</strong> Se&apos;n eliminen automàticament noms, correus i telèfons abans de desar-los.</li>
+            <li><strong>Comentaris.</strong> Abans de desar-los, s&apos;hi eliminen automàticament noms, correus i telèfons.</li>
             <li><strong>Administració.</strong> Només veu recomptes de comptes per col·lectiu, mai identitats.</li>
           </ul>
         </Section>
@@ -105,7 +105,7 @@ export default function MethodologyPage() {
         <Section title="5. La IA proposa, una persona decideix">
           <p>
             La IA redacta esborranys de preguntes, proposa recomanacions i enquestes de seguiment, però només com a proposta. Res no es publica ni s&apos;aplica
-            fins que una persona de RRHH ho revisa i ho aprova. El panell mai crida el model de llenguatge mentre es consulta: mostra només resultats ja calculats.
+            fins que una persona de l&apos;equip de persones ho revisa i ho aprova. El panell mai crida el model de llenguatge mentre es consulta: mostra només resultats ja calculats.
           </p>
         </Section>
 
@@ -114,7 +114,7 @@ export default function MethodologyPage() {
             <li><strong>Dades sintètiques.</strong> La població i les respostes són generades per a la demostració; no hi ha dades reals de Damm ni de cap persona.</li>
             <li>
               <strong>Biaixos deliberats a les dades.</strong> Hi ha poca resposta al torn de nit, positivitat de les persones responsables d&apos;equip, un tema emergent
-              a l&apos;octubre i un senyal feble a Logística (equips de protecció i calor). Existeixen per comprovar que la plataforma els detecta.
+              a l&apos;octubre i un senyal feble a Logística (equips de protecció i calor). Hi són per comprovar que la plataforma els detecta.
             </li>
             <li><strong>Períodes.</strong> Les dades cobreixen {PERIODES_SEED.length} períodes ({PERIODES_SEED.join(", ")}); amb tan poques mesures, una tendència és una indicació, no una prova.</li>
             <li><strong>Àmbit.</strong> {DOMINIS.length} dominis i {COLLECTIUS.length} col·lectius; cada col·lectiu respon un subconjunt diferent de preguntes per domini, per això no es comparen directament tots els ítems.</li>

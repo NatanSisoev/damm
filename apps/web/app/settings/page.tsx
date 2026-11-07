@@ -15,7 +15,7 @@ export default async function SettingsPage() {
     <EmployeeShell back title="Configuració">
       <h1 className="page-title">Configuració</h1>
       <p className="mt-1 text-subtle">
-        Les teves respostes són anònimes i només es mostren de forma agregada, en grups de 10 persones o més.
+        Les teves respostes són anònimes i només es mostren agregades, en grups de 10 persones o més.
       </p>
 
       <section className="card mt-6">

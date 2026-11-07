@@ -112,7 +112,7 @@ export default async function ResultsPage({ searchParams }: { searchParams: Prom
     <>
       <PageHeader
         title="Resultats"
-        subtitle={<>Sempre en agregat. Els segments amb menys de {MIN_GROUP_SIZE} respondents es mostren com a <span className="font-medium text-muted">Suprimit</span>.</>}
+        subtitle={<>Sempre en agregat. Els segments amb menys de {MIN_GROUP_SIZE} persones que han respost es mostren com a <span className="font-medium text-muted">Suprimit</span>.</>}
         actions={
           <>
             {rep.periode && <span className="badge num">{rep.periode}</span>}
@@ -123,10 +123,10 @@ export default async function ResultsPage({ searchParams }: { searchParams: Prom
 
       <div className="space-y-6">
         <HeadlineStrip headlines={getHeadlines()} />
-        <NarrativeCard narrative={companyNarrative} title="Resum del motor · tota l'empresa" />
+        <NarrativeCard narrative={companyNarrative} title="Resum de l'anàlisi · tota l'empresa" />
         <HeatmapCard map={heatmap} selected={{ seg: segValid, dom: domValid }} />
         <SegmentTrendCard trend={segmentTrend} />
-        {segValid && <NarrativeCard narrative={segNarrative} title={`Resum del motor · ${segValid}`} />}
+        {segValid && <NarrativeCard narrative={segNarrative} title={`Resum de l'anàlisi · ${segValid}`} />}
         <div className="grid gap-6 xl:grid-cols-2">
           <ThemesCard groups={getThemesByDomain(heatmap.domains)} />
           <div className="space-y-6">

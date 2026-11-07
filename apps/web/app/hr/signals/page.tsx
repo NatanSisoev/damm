@@ -155,7 +155,7 @@ export default async function AlarmsPage({ searchParams }: { searchParams: Promi
           )}
 
           <p className="text-xs text-subtle">
-            «Visible al responsable»: l&apos;alarma també arriba al responsable del col·lectiu. Les altres només les veu RH.
+            «Visible al responsable»: l&apos;alarma també arriba al responsable del col·lectiu. Les altres només les veu l&apos;equip de persones.
           </p>
         </div>
       )}

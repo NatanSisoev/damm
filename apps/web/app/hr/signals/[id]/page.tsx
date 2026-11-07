@@ -10,7 +10,7 @@ import { recommendationStatus } from "../../labels";
 import { ChangeBadge, Sparkline } from "../../trend";
 import { STATUS_LABELS, STATUS_ORDER, SignalBadges } from "../../signal-labels";
 import { signalDetail, signalHeadline } from "@/lib/signal-text";
-const suppressedHint = `Menys de ${MIN_GROUP_SIZE} respondents`;
+const suppressedHint = `Menys de ${MIN_GROUP_SIZE} persones han respost`;
 
 function Timeline({ steps }: { steps: SignalTimelineStep[] }) {
   return (
@@ -172,12 +172,12 @@ export default async function SignalPage({ params }: { params: Promise<{ id: str
                       <div className="mt-3 flex flex-wrap justify-end gap-2 border-t border-line pt-3">
                         {r.estat === "proposada" && (
                           <>
-                            <form action={discardFromSignalAction}><input type="hidden" name="id" value={r.id} /><input type="hidden" name="signal" value={signal.id} /><button className="btn">Descartar</button></form>
-                            <form action={approveFromSignalAction}><input type="hidden" name="id" value={r.id} /><input type="hidden" name="signal" value={signal.id} /><button className="btn btn-primary">Aprovar</button></form>
+                            <form action={discardFromSignalAction}><input type="hidden" name="id" value={r.id} /><input type="hidden" name="signal" value={signal.id} /><button className="btn">Descarta</button></form>
+                            <form action={approveFromSignalAction}><input type="hidden" name="id" value={r.id} /><input type="hidden" name="signal" value={signal.id} /><button className="btn btn-primary">Aprova</button></form>
                           </>
                         )}
                         {r.estat === "aprovada" && !r.seguimentNecessitatId && (
-                          <form action={followUpFromSignalAction}><input type="hidden" name="id" value={r.id} /><input type="hidden" name="signal" value={signal.id} /><button className="btn btn-primary">Crear enquesta de seguiment</button></form>
+                          <form action={followUpFromSignalAction}><input type="hidden" name="id" value={r.id} /><input type="hidden" name="signal" value={signal.id} /><button className="btn btn-primary">Crea l&apos;enquesta de seguiment</button></form>
                         )}
                       </div>
                     )}
@@ -196,7 +196,7 @@ export default async function SignalPage({ params }: { params: Promise<{ id: str
                   <li key={f.necessitatId} className="rounded-lg border border-line p-4">
                     <div className="mb-2 flex flex-wrap items-center gap-2">
                       <span className={`badge ${f.published ? "badge-good" : "badge-warn"}`}>{f.published ? "Publicada" : "Sense publicar"}</span>
-                      <Link href="/hr/needs" className="ml-auto text-xs text-accent-ink hover:underline">Revisar i publicar →</Link>
+                      <Link href="/hr/needs" className="ml-auto text-xs text-accent-ink hover:underline">Revisa i publica →</Link>
                     </div>
                     <p className="text-[13px] font-medium">{f.textNl}</p>
                     {f.questions.length > 0 ? (

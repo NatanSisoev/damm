@@ -114,7 +114,7 @@ export function NeedForm({ collectius }: { collectius: Collectiu[] }) {
       )}
       <div className="flex items-center justify-end gap-3 border-t border-line pt-4">
         <span className="text-xs text-subtle">{pending ? "La IA està redactant les preguntes…" : "Després podràs revisar i aprovar les preguntes a la mateixa targeta."}</span>
-        <button className="btn btn-primary" disabled={pending}>{pending ? "Generant…" : state && !state.field ? "Torna-ho a provar" : "Generar esborranys"}</button>
+        <button className="btn btn-primary" disabled={pending}>{pending ? "Generant…" : state && !state.field ? "Torna-ho a provar" : "Genera els esborranys"}</button>
       </div>
     </form>
   );

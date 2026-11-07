@@ -20,7 +20,7 @@ export default function HrHome() {
 
       <div className="space-y-6">
         <HeadlineStrip headlines={getHeadlines()} />
-        <NarrativeCard narrative={getNarrative("All")} title="Resum del motor · tota l'empresa" />
+        <NarrativeCard narrative={getNarrative("All")} title="Resum de l'anàlisi · tota l'empresa" />
 
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           <Stat
@@ -32,7 +32,7 @@ export default function HrHome() {
                 : `de ${o.coveredPopulation.toLocaleString("ca-ES")} persones${o.excludedCollectius > 0 ? ` (${o.excludedCollectius} col·lectiu ocult per n<${MIN_GROUP_SIZE})` : ""}`
             }
           />
-          <Stat label="Respondents" value={fmt(o.respondents)} hint={o.periode ?? "Sense període"} />
+          <Stat label="Han respost" value={fmt(o.respondents)} hint={o.periode ?? "Sense període"} />
           <Stat label="Necessitats obertes" value={o.openNeeds} hint="sense publicar" />
           <Stat label="Senyals" value={o.signalCount} hint={`n ≥ ${MIN_GROUP_SIZE}`} />
         </div>
