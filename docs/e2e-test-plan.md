@@ -115,7 +115,7 @@ Covers R-FLOW-1 to R-FLOW-8, R-CH-1, N-7. Preconditions: 1.1 to 1.3 done on the 
 
 | # | Flow | Action | Expected | Req | Result |
 |---|---|---|---|---|---|
-| M-1 | F-HR-1 | [B] Open `/hr` with no cookie | Redirect to `/hr-login?next=/hr`. Page "Portal de persones", text "Accés restringit a l'equip de persones. Escriu el codi d'accés de la demo.", field "Codi d'accés", button "Entra" | R-X-3 | ☐ |
+| M-1 | F-HR-1 | [B] Open `/hr` with no cookie | Redirect to `/hr-login?next=/hr`. Page "Accés de Recursos Humans", text "Accés restringit a l'equip de persones. Escriu el codi d'accés de la demo.", field "Codi d'accés", button "Entra" | R-X-3 | ☐ |
 | M-2 | F-HR-1 | [B] Enter a wrong code, press "Entra" | Stays on the page with the alert "Codi incorrecte." No `hr_access` cookie | R-PRIV-3 | ☐ |
 | M-3 | F-HR-1 | [B] Enter the right code (from `.env`), press "Entra" | Cookie `hr_access` set, lands on `/hr`. Nav: "Inici", "Necessitats", "Enllaços i QR", "Resultats", "Alarmes" (with a count badge), "Recomanacions", "Com es calcula?", "Vista de responsables" | R-X-3, R-PRIV-9 | ☐ |
 | M-4 | F-HR-2 | [B] "Necessitats", open "Nova necessitat", press the example "B · Logística des del mòbil" | Fields "Objectiu", "Context", "Què no s'ha de preguntar", "Col·lectiu" (Logística) and "Durada màxima per persona (segons)" (60) are filled | R-FLOW-1a to 1e | ☐ |

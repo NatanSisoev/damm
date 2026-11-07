@@ -7,12 +7,12 @@ export { domainLabel, collectiveLabel, shiftLabel } from "./names";
 export const hrDict = defineDict({
   ca: {
     // Shell
-    shell_subtitle: "Portal de persones",
+    shell_subtitle: "Recursos Humans",
     manager_view: "Vista de responsables",
     sections: "Seccions",
     logo_aria: "Escolta activa, inici",
     footer: "Dades sintètiques. Cap resposta individual. Grups de menys de {n} persones suprimits. La IA proposa, una persona decideix.",
-    manager_to_portal: "Portal de persones →",
+    manager_to_portal: "Recursos Humans →",
 
     // Nav
     nav_listen: "Escoltar",
@@ -278,7 +278,7 @@ export const hrDict = defineDict({
     nf_generate: "Genera els esborranys",
 
     // Login
-    login_title: "Portal de persones",
+    login_title: "Accés de Recursos Humans",
     login_intro: "Accés restringit a l'equip de persones. Escriu el codi d'accés de la demo.",
     login_code: "Codi d'accés",
     login_error: "Codi incorrecte.",
@@ -329,12 +329,12 @@ export const hrDict = defineDict({
     meth_s6_li4: "**Àmbit.** {domains} dominis i {collectives} col·lectius; cada col·lectiu respon un subconjunt diferent de preguntes per domini, per això no es comparen directament tots els ítems.",
   },
   es: {
-    shell_subtitle: "Portal de personas",
+    shell_subtitle: "Recursos Humanos",
     manager_view: "Vista de responsables",
     sections: "Secciones",
     logo_aria: "Escolta activa, inicio",
     footer: "Datos sintéticos. Ninguna respuesta individual. Grupos de menos de {n} personas suprimidos. La IA propone, una persona decide.",
-    manager_to_portal: "Portal de personas →",
+    manager_to_portal: "Recursos Humanos →",
 
     nav_listen: "Escuchar",
     nav_understand: "Entender",
@@ -586,7 +586,7 @@ export const hrDict = defineDict({
     nf_retry: "Inténtalo de nuevo",
     nf_generate: "Genera los borradores",
 
-    login_title: "Portal de personas",
+    login_title: "Acceso de Recursos Humanos",
     login_intro: "Acceso restringido al equipo de personas. Escribe el código de acceso de la demo.",
     login_code: "Código de acceso",
     login_error: "Código incorrecto.",
@@ -636,12 +636,12 @@ export const hrDict = defineDict({
     meth_s6_li4: "**Ámbito.** {domains} dominios y {collectives} colectivos; cada colectivo responde un subconjunto distinto de preguntas por dominio, por eso no se comparan directamente todos los ítems.",
   },
   en: {
-    shell_subtitle: "People portal",
+    shell_subtitle: "HR",
     manager_view: "Manager view",
     sections: "Sections",
     logo_aria: "Escolta activa, home",
     footer: "Synthetic data. No individual answers. Groups of fewer than {n} people are suppressed. AI proposes, a person decides.",
-    manager_to_portal: "People portal →",
+    manager_to_portal: "HR portal →",
 
     nav_listen: "Listen",
     nav_understand: "Understand",
@@ -893,7 +893,7 @@ export const hrDict = defineDict({
     nf_retry: "Try again",
     nf_generate: "Generate the drafts",
 
-    login_title: "People portal",
+    login_title: "HR access",
     login_intro: "Access is restricted to the people team. Enter the demo access code.",
     login_code: "Access code",
     login_error: "Wrong code.",
