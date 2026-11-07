@@ -88,7 +88,7 @@ G-§4 is the authoritative list ("Tots els equips han de cobrir aquest recorregu
 | R-FLOW-3b | HR can **delete** each question | done | `discardQuestionAction` |
 | R-FLOW-3c | HR can **reorder** questions | done | `moveDraftAction` with `pregunta.ordre` (C3 draft column, contract entry pending). |
 | R-FLOW-3d | HR **approves**. The AI never publishes without approval | done | `approveQuestionAction`; only `aprovada` enters the pool. |
-| R-FLOW-3e | Quality warnings before approval (bias in the wording, D-S9 #4) | missing | Task 19 (ready) |
+| R-FLOW-3e | Quality warnings before approval (bias in the wording, D-S9 #4) | done | `questionWarnings` (`packages/ai/src/quality.ts`, same rules as the AI repair loop) runs on every draft in `draft-review.tsx` and re-runs on the saved text after an HR edit; ca/es/en strings in `hr-draft-review.ts`. Warnings inform, they never block Approve. |
 
 ### R-FLOW-4 Publish
 The guide says "Publicar a Typeform". AGENTS.md decides to ignore Typeform: the app is the channel. The equivalent requirement is below. **Explain this choice on the pitch** (we own the anonymity boundary end to end).
@@ -105,8 +105,8 @@ The guide says "Publicar a Typeform". AGENTS.md decides to ignore Typeform: the 
 | R-FLOW-5a | Mobile **and PC** | done | Responsive PWA |
 | R-FLOW-5b | QR access | done | `/join/[codi]` |
 | R-FLOW-5c | **Frequency** strategy (about 2 a day, no repeats 4 days in a row) | blocked | Pool stub today; engine is Natan's |
-| R-FLOW-5d | **Reminders** | partial | Web push built: opt-in toggle (`/settings`, nudge on `/`), subscription in `push_subscripcio`, a publish notifies the collective, expired subscriptions (404/410) deleted. No daily reminder job yet. A real phone needs HTTPS (task 9). |
-| R-FLOW-5e | **Representativeness control** while collecting (warn when a group is under-sampled) | partial | Shown on results; the reach card links to a new need aimed at the gap (`/hr/needs?nova=1#nova`, c1c7422). The engine raises a `baixa_participacio` alarm (C9; banner pending) and can act on it with a time-boxed probe that samples a domain more in a segment (`startProbe`, C12) with progress. Indagar button and progress card on the signal page (51458d3). |
+| R-FLOW-5d | **Reminders** | partial | Web push built: opt-in toggle (`/settings`, nudge on `/`), subscription in `push_subscripcio`, a publish notifies the collective, expired subscriptions (404/410) deleted. Low-participation banner on a published need (`apps/web/app/hr/participation.ts`: under 30 % of the collective's population, or under the minimum group size) with a "Send a reminder" button (`remindNeedAction`, same push path as publish, aggregate device count only, `<10` under the minimum). No automatic daily reminder job yet. A real phone needs HTTPS (task 9). |
+| R-FLOW-5e | **Representativeness control** while collecting (warn when a group is under-sampled) | partial | Shown on results; the reach card links to a new need aimed at the gap (`/hr/needs?nova=1#nova`, c1c7422). The engine raises a `baixa_participacio` alarm (C9); the needs page now shows a participation banner with a reminder action and can act on it with a time-boxed probe that samples a domain more in a segment (`startProbe`, C12) with progress. Indagar button and progress card on the signal page (51458d3). |
 | R-FLOW-5f | Does not saturate anyone | blocked | Engine rules |
 
 ### R-FLOW-6 Collect and analyse
@@ -302,7 +302,7 @@ Bonus items named by the guide (G-§4 "Bonus") and the deck (D-S18), then our ow
 | N-7 | **Full cycle in one platform** | D-S18 | Already our architecture | done | Say it explicitly. |
 | N-8 | Manager segment in HR results (social desirability, R-BIAS-5) | ours | Shows we detect a seeded bias | missing (manager view `/manager/[collectiu]` audited, empty-state themes explained in c1c7422; the manager-bias segment itself is still open) | "Option B". Needs a db query on `es_manager` (Natan's area: flag). Only above n≥10. |
 | N-9 | Methodology page "Com calculem" | ours | Explainability, scenario C6 | missing | Task 18, ready |
-| N-10 | Question-quality checker | ours | Wording bias, R-BIAS-4 | missing | Task 19, ready |
+| N-10 | Question-quality checker | ours | Wording bias, R-BIAS-4 | done | Per-question warnings in the draft review, see R-FLOW-3e |
 | N-11 | Decision audit log and AI provenance | ours | Traceability, R-PRIV-10 | blocked | Task 21 |
 | N-12 | Installable PWA plus daily push reminder | ours | Reminders R-FLOW-5d, participation | partial | Installable: manifest, icons (Paper identity, ink `#17211a`), offline page, service worker with push and notification click. Subscribe and send on publish built; a daily reminder and the tunnel (9) are open. |
 | N-13 | Participation by channel chart | G-§6.2 | Uses the `canal` field we already store | missing | Small: one aggregate by `canal` with suppression. |

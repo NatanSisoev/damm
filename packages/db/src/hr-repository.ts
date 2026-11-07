@@ -92,6 +92,8 @@ export interface NeedDraftGroup {
   duradaMaxS: number | null;
   draftFont: "llm" | "fallback" | null;
   collectiu: string | null;
+  /** Topics the need says must not be asked about (free text), for the wording check. */
+  exclusions: string | null;
   questions: (DraftQuestion & { motiu: string | null; ordre: number; tipusAi: string })[];
 }
 
@@ -100,7 +102,7 @@ export function listNeedDrafts(): NeedDraftGroup[] {
   const db = getDb();
   const needs = db
     .prepare(
-      `SELECT n.id, n.text_nl AS textNl, n.titol, n.intro, n.durada_max_s AS duradaMaxS, n.draft_font AS draftFont, c.nom AS collectiu
+      `SELECT n.id, n.text_nl AS textNl, n.titol, n.intro, n.durada_max_s AS duradaMaxS, n.draft_font AS draftFont, n.exclusions, c.nom AS collectiu
        FROM necessitat n LEFT JOIN collectiu c ON c.id = n.collectiu_id
        WHERE EXISTS (SELECT 1 FROM pregunta p WHERE p.necessitat_id = n.id AND p.estat = 'draft')
        ORDER BY n.id DESC`,

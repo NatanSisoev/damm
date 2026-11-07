@@ -3,7 +3,8 @@ import Link from "next/link";
 import { MIN_GROUP_SIZE, type Lang } from "@damm/shared";
 import { listCollectius, listDomains, listNeedCards, listNeedDrafts, type NeedCard, type NeedState } from "@damm/db/hr";
 import { ConfirmButton } from "../confirm-button";
-import { closeNeedAction, publishAction } from "../actions";
+import { closeNeedAction, publishAction, remindNeedAction } from "../actions";
+import { LOW_PARTICIPATION_PCT, participationOf } from "../participation";
 import { Card, Empty, PageHeader } from "../ui";
 import { needStatus, questionTypeLabel } from "../labels";
 import { getTL } from "@/lib/i18n/server";
@@ -45,8 +46,8 @@ function StateBadge({ state, lang }: { state: NeedState; lang: Lang }) {
 
 const fmtDate = (d: string | null, lang: Lang) => (d ? new Date(d.replace(" ", "T") + "Z").toLocaleDateString(LOCALES[lang], { day: "numeric", month: "short", year: "numeric" }) : null);
 
-export default async function NeedsPage({ searchParams }: { searchParams: Promise<{ estat?: string; publicada?: string; avis?: string; nova?: string }> }) {
-  const { estat, publicada, avis, nova } = await searchParams;
+export default async function NeedsPage({ searchParams }: { searchParams: Promise<{ estat?: string; publicada?: string; recordatori?: string; avis?: string; nova?: string }> }) {
+  const { estat, publicada, recordatori, avis, nova } = await searchParams;
   const { t, lang } = await getTL(hrDict);
   const filter: Filter = isFilter(estat) ? estat : "totes";
   const all = listNeedCards();
@@ -70,6 +71,7 @@ export default async function NeedsPage({ searchParams }: { searchParams: Promis
         }
       />
       {publicada && avis && /^(off|<?\d+)$/.test(avis) && <PublishNotice avis={avis} t={t} />}
+      {recordatori && avis && /^(off|<?\d+)$/.test(avis) && <PublishNotice avis={avis} t={t} reminder />}
       {showForm && (
         <section id="nova" className="card mb-6">
           <div className="card-header">
@@ -162,6 +164,22 @@ function NeedItem({ n, draft, domainIdx, t, lang }: { n: NeedCard; draft?: Retur
             <span style={{ width: `${pct}%` }} />
           </div>
         )}
+        {n.state === "publicada" && (() => {
+          const part = participationOf(n);
+          if (!part.low) return null;
+          return (
+            <div role="status" className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-warn px-3 py-2 text-sm">
+              <div>
+                <p className="font-medium text-warn">{t("part_low_title")}</p>
+                <p className="mt-0.5">{part.pct == null ? t("part_low_few", { min: MIN_GROUP_SIZE }) : t("part_low_pct", { pct: part.pct, limit: LOW_PARTICIPATION_PCT })}</p>
+              </div>
+              <form action={remindNeedAction}>
+                <input type="hidden" name="id" value={n.id} />
+                <button className="btn">{t("remind_btn")}</button>
+              </form>
+            </div>
+          );
+        })()}
         {n.titol && <p className="text-sm text-subtle">{t("need_text_prefix", { text: n.textNl })}</p>}
         <p className="text-xs text-subtle">{t(state.hint)}</p>
 
@@ -218,13 +236,9 @@ function NeedItem({ n, draft, domainIdx, t, lang }: { n: NeedCard; draft?: Retur
 }
 
 /** Result of the last publish: an aggregate device count only, never who was notified. */
-function PublishNotice({ avis, t }: { avis: string; t: TFn<HrKey> }) {
-  const text =
-    avis === "off"
-      ? t("notice_off")
-      : avis.startsWith("<")
-        ? t("notice_few", { min: MIN_GROUP_SIZE })
-        : t("notice_n", { n: avis });
+function PublishNotice({ avis, t, reminder }: { avis: string; t: TFn<HrKey>; reminder?: boolean }) {
+  const k = reminder ? { off: "remind_off", few: "remind_few", n: "remind_n" } as const : { off: "notice_off", few: "notice_few", n: "notice_n" } as const;
+  const text = avis === "off" ? t(k.off) : avis.startsWith("<") ? t(k.few, { min: MIN_GROUP_SIZE }) : t(k.n, { n: avis });
   return (
     <p role="status" className="mb-6 rounded-lg border border-line-strong px-3 py-2 text-sm">
       {text}
