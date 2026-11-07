@@ -9,6 +9,7 @@ import { mulberry32, int, pick, shuffle, normal, chance, type Rng } from "./rng"
 import { THEMES } from "./themes";
 import { anchorsOf, BANK, EXTRA, type QItem } from "./questions";
 import { applyDashboardFixtures } from "./dashboard-fixtures";
+import { runEngineJob } from "@damm/engine/job";
 
 const root = path.resolve(__dirname, "../../..");
 const out = process.env.DB_PATH ?? path.join(root, "data/app.db");
@@ -296,4 +297,6 @@ line(`Responses per account (Fàbriques+Logística) by shift: ${night.map((x) =>
 const leak = one(`SELECT COUNT(*) n FROM resposta r JOIN pregunta p ON p.id=r.pregunta_id JOIN compte a ON a.id=r.compte_id WHERE p.collectiu_id <> a.collectiu_id`);
 line(`Responses to a question of another collective: ${leak.n}`);
 applyDashboardFixtures(db); // TEMPORARY until the analysis job exists
+const report = runEngineJob(db);
+console.log("engine job:", JSON.stringify(report));
 db.close();

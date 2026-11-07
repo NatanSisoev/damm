@@ -2,9 +2,7 @@
 // (reads `pregunta`, reads/writes the caller's own `resposta`).
 // No email, phone or name: an account is an opaque id, a username and salted hashes.
 import { randomBytes, randomUUID, scrypt, timingSafeEqual } from "node:crypto";
-import type { Canal, PreguntaTipus, RankingOption, ScoredOption } from "@damm/shared";
 import { getDb } from "./connection";
-import { madridDay, type MadridDay } from "./madrid-day";
 import { redactPii } from "./pii";
 
 const KEYLEN = 64;
@@ -213,6 +211,85 @@ export async function recoverAccount(input: {
   return { ok: true, compteId: row.id, recoveryCode };
 }
 
+export type ChangePasswordError = "credencials" | "password_curta" | "massa_intents";
+export type AccountActionError = "credencials" | "massa_intents";
+
+async function checkCurrentPassword(
+  compteId: string,
+  password: string,
+  ip: string | undefined,
+): Promise<{ ok: true; row: CompteRow & { username: string } } | { ok: false; error: AccountActionError }> {
+  const row = getDb()
+    .prepare("SELECT id, username, password_hash, salt, recovery_hash FROM compte WHERE id = ?")
+    .get(compteId) as (CompteRow & { username: string }) | undefined;
+  if (!row) return { ok: false, error: "credencials" };
+  const key = row.username;
+  if (blocked(key, ip)) return { ok: false, error: "massa_intents" };
+  if (!(await matches(password, row.salt, row.password_hash))) {
+    fail(key, ip);
+    return { ok: false, error: "credencials" };
+  }
+  succeed(key, ip);
+  return { ok: true, row };
+}
+
+// Changes the password after checking the current one. The salt is kept (it is shared with the
+// recovery hash, so the recovery code stays valid); only the password hash changes.
+export async function changePassword(input: {
+  compteId: string;
+  currentPassword: string;
+  newPassword: string;
+  clientIp?: string;
+}): Promise<{ ok: true } | { ok: false; error: ChangePasswordError }> {
+  if (input.newPassword.length < MIN_PASSWORD_LENGTH) return { ok: false, error: "password_curta" };
+  const check = await checkCurrentPassword(input.compteId, input.currentPassword, input.clientIp);
+  if (!check.ok) return check;
+  const passwordHash = (await hashSecret(input.newPassword, check.row.salt)).toString("hex");
+  getDb().prepare("UPDATE compte SET password_hash = ? WHERE id = ?").run(passwordHash, check.row.id);
+  return { ok: true };
+}
+
+// Replaces the recovery code with a new one (the old one stops working). Needs the password.
+// Returns the new code once; only its hash is stored.
+export async function regenerateRecoveryCode(input: {
+  compteId: string;
+  currentPassword: string;
+  clientIp?: string;
+}): Promise<{ ok: true; recoveryCode: string } | { ok: false; error: AccountActionError }> {
+  const check = await checkCurrentPassword(input.compteId, input.currentPassword, input.clientIp);
+  if (!check.ok) return check;
+  const recoveryCode = newRecoveryCode();
+  const recoveryHash = (await hashSecret(normalizeRecoveryCode(recoveryCode), check.row.salt)).toString("hex");
+  getDb().prepare("UPDATE compte SET recovery_hash = ? WHERE id = ?").run(recoveryHash, check.row.id);
+  return { ok: true, recoveryCode };
+}
+
+// Deletes the account (and its push subscription, assignments and per-person state by cascade).
+// Answers already given stay as anonymous data: `resposta.compte_id` has no cascade and the
+// analytics view joins `compte`, so they are re-pointed to an anonymous tombstone row with the
+// same collective / centre / shift / manager flag. The tombstone has no usable username
+// or password and is excluded from the admin account counts (ids start with 'deleted:').
+export async function deleteAccount(input: {
+  compteId: string;
+  currentPassword: string;
+  clientIp?: string;
+}): Promise<{ ok: true } | { ok: false; error: AccountActionError }> {
+  const check = await checkCurrentPassword(input.compteId, input.currentPassword, input.clientIp);
+  if (!check.ok) return check;
+  const db = getDb();
+  const tombId = `deleted:${randomUUID()}`;
+  db.transaction(() => {
+    db.prepare(
+      `INSERT INTO compte (id, collectiu_id, centre_tipus_id, torn_id, es_manager, username, password_hash, salt, recovery_hash)
+       SELECT ?, collectiu_id, centre_tipus_id, torn_id, es_manager, ?, '', '', NULL FROM compte WHERE id = ?`,
+    ).run(tombId, `~${tombId}`, input.compteId);
+    db.prepare("UPDATE resposta SET compte_id = ? WHERE compte_id = ?").run(tombId, input.compteId);
+    db.prepare("DELETE FROM push_subscripcio WHERE compte_id = ?").run(input.compteId);
+    db.prepare("DELETE FROM compte WHERE id = ?").run(input.compteId);
+  })();
+  return { ok: true };
+}
+
 export function compteExists(compteId: string): boolean {
   return getDb().prepare("SELECT 1 FROM compte WHERE id = ?").get(compteId) !== undefined;
 }
@@ -222,178 +299,8 @@ export function deletePushSubscription(compteId: string): void {
 }
 
 // --- Answer flow -------------------------------------------------------------------------
-// Employee side only: reads `pregunta` and the caller's own `resposta` rows, writes `resposta`.
-// Nothing here returns another account's data or any aggregate.
+// Question selection and answer validation live in @damm/engine (createEngine); the web routes
+// inject `redactPii` below. Nothing here reads questions or stores answers any more.
 
-export const DAILY_QUESTION_LIMIT = 2;
-
-type QuestionOptions = ScoredOption[] | RankingOption[] | null;
-export type PoolQuestion = { id: number; dominiId: number; text: string; tipus: PreguntaTipus; options: QuestionOptions };
-
-function parseOptions(raw: string | null): QuestionOptions {
-  if (!raw) return null;
-  try {
-    const v: unknown = JSON.parse(raw);
-    return Array.isArray(v) && v.length ? (v as QuestionOptions) : null;
-  } catch {
-    return null;
-  }
-}
-
-export type AnswerInput = {
-  preguntaId: number;
-  valorNum?: number | null;
-  comentari?: string | null;
-  valueJson?: number[] | null; // ranking: option indices, best first
-  answerMs?: number | null;
-};
-export type SaveError = "pregunta_invalida" | "valor_invalid" | "comentari_obligatori" | "ja_respost" | "redaccio_fallida";
-
-/** "Today" in Europe/Madrid, with the UTC bounds used to match `resposta.data` (stored in UTC). */
-function serverDate(now = new Date()): MadridDay {
-  return madridDay(now);
-}
-
-function collectiuOf(compteId: string): number | undefined {
-  const row = getDb().prepare("SELECT collectiu_id FROM compte WHERE id = ?").get(compteId) as
-    | { collectiu_id: number }
-    | undefined;
-  return row?.collectiu_id;
-}
-
-function answeredToday(compteId: string, day: MadridDay): number {
-  const row = getDb()
-    .prepare("SELECT COUNT(*) AS n FROM resposta WHERE compte_id = ? AND data >= ? AND data < ?")
-    .get(compteId, day.startUtc, day.endUtc) as { n: number };
-  return row.n;
-}
-
-/**
- * Stub selection until packages/engine lands: approved questions visible to the account's
- * collective, highest `prioritat` first, none answered today, capped so the account never gets
- * more than DAILY_QUESTION_LIMIT questions per day in total.
- */
-export function nextQuestionsForToday(compteId: string): PoolQuestion[] {
-  const collectiuId = collectiuOf(compteId);
-  if (collectiuId === undefined) return [];
-  const day = serverDate();
-  const remaining = DAILY_QUESTION_LIMIT - answeredToday(compteId, day);
-  if (remaining <= 0) return [];
-  const rows = getDb()
-    .prepare(
-      `SELECT p.id, p.domini_id AS dominiId, p.text, p.tipus, p.options_json AS optionsJson
-       FROM pregunta p
-       WHERE p.estat = 'aprovada'
-         AND (p.collectiu_id IS NULL OR p.collectiu_id = @collectiu)
-         AND NOT EXISTS (
-           SELECT 1 FROM resposta r
-           WHERE r.compte_id = @compte AND r.pregunta_id = p.id AND r.data >= @from AND r.data < @to
-         )
-       ORDER BY p.prioritat DESC, p.id ASC
-       LIMIT @limit`,
-    )
-    .all({ collectiu: collectiuId, compte: compteId, from: day.startUtc, to: day.endUtc, limit: remaining });
-  return (rows as (Omit<PoolQuestion, "options"> & { optionsJson: string | null })[]).map(
-    ({ optionsJson, ...q }) => ({ ...q, options: parseOptions(optionsJson) }),
-  );
-}
-
-// PII redaction lives in ./pii.ts (ca/es/en); re-exported for existing importers.
+// PII redaction lives in ./pii.ts (ca/es/en); re-exported for the web routes.
 export { redactPii };
-
-/** Inclusive range of `valor_num` per type. pair/choice store the chosen option index. */
-function valueRange(tipus: PreguntaTipus, optionCount: number): [number, number] | null {
-  switch (tipus) {
-    case "scale5":
-      return [1, 5];
-    case "scale10":
-      return [0, 10];
-    case "yes_no":
-      return [0, 1];
-    case "ranking":
-      return [1, 5];
-    case "pair":
-    case "choice":
-      return optionCount >= 2 ? [0, optionCount - 1] : null;
-    case "open":
-      return null;
-  }
-}
-
-function validValue(tipus: PreguntaTipus, optionCount: number, v: number | null | undefined): number | null | "invalid" {
-  if (tipus === "open") return v == null ? null : "invalid";
-  if (v == null || !Number.isFinite(v)) return "invalid";
-  const range = valueRange(tipus, optionCount);
-  if (!range) return "invalid";
-  return Number.isInteger(v) && v >= range[0] && v <= range[1] ? v : "invalid";
-}
-
-/** Ranking order: a permutation of the option indices, best first. Other types store nothing. */
-function validOrder(tipus: PreguntaTipus, optionCount: number, order: number[] | null | undefined): string | null | "invalid" {
-  if (order == null) return null;
-  if (tipus !== "ranking" || order.length !== optionCount) return "invalid";
-  const sorted = [...order].sort((a, b) => a - b);
-  return sorted.every((x, i) => x === i) ? JSON.stringify(order) : "invalid";
-}
-
-/**
- * Validates every answer against its question and stores them in one transaction: either all
- * rows land or none. `periode` comes from the server date, never from the client.
- */
-export function saveResponses(
-  compteId: string,
-  respostes: AnswerInput[],
-  canal: Canal = "app",
-): { ok: true } | { ok: false; error: SaveError; preguntaId?: number } {
-  const db = getDb();
-  const collectiuId = collectiuOf(compteId);
-  if (collectiuId === undefined) return { ok: false, error: "pregunta_invalida" };
-  const { periode, startUtc, endUtc } = serverDate();
-
-  const getQ = db.prepare(
-    `SELECT tipus, options_json FROM pregunta
-     WHERE id = ? AND estat = 'aprovada' AND (collectiu_id IS NULL OR collectiu_id = ?)`,
-  );
-  const already = db.prepare(
-    "SELECT 1 FROM resposta WHERE compte_id = ? AND pregunta_id = ? AND data >= ? AND data < ?",
-  );
-  const insert = db.prepare(
-    `INSERT INTO resposta (compte_id, pregunta_id, valor_num, value_json, comentari, canal, periode, answer_ms)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-  );
-
-  const run = db.transaction(
-    (): { ok: true } | { ok: false; error: SaveError; preguntaId?: number } => {
-      const seen = new Set<number>();
-      for (const a of respostes) {
-        if (seen.has(a.preguntaId)) return { ok: false, error: "ja_respost", preguntaId: a.preguntaId };
-        seen.add(a.preguntaId);
-        const q = getQ.get(a.preguntaId, collectiuId) as { tipus: PreguntaTipus; options_json: string | null } | undefined;
-        if (!q) return { ok: false, error: "pregunta_invalida", preguntaId: a.preguntaId };
-        if (already.get(compteId, a.preguntaId, startUtc, endUtc)) {
-          return { ok: false, error: "ja_respost", preguntaId: a.preguntaId };
-        }
-        const optionCount = parseOptions(q.options_json)?.length ?? 0;
-        const valor = validValue(q.tipus, optionCount, a.valorNum);
-        if (valor === "invalid") return { ok: false, error: "valor_invalid", preguntaId: a.preguntaId };
-        const order = validOrder(q.tipus, optionCount, a.valueJson);
-        if (order === "invalid") return { ok: false, error: "valor_invalid", preguntaId: a.preguntaId };
-        const answerMs = a.answerMs != null && Number.isInteger(a.answerMs) && a.answerMs >= 0 ? a.answerMs : null;
-
-        let comentari: string | null = null;
-        if (q.tipus === "open") {
-          const raw = (a.comentari ?? "").trim();
-          if (!raw) return { ok: false, error: "comentari_obligatori", preguntaId: a.preguntaId };
-          try {
-            comentari = redactPii(raw);
-          } catch {
-            return { ok: false, error: "redaccio_fallida", preguntaId: a.preguntaId };
-          }
-        }
-        insert.run(compteId, a.preguntaId, valor, order, comentari, canal, periode, answerMs);
-      }
-      return { ok: true };
-    },
-  );
-  return run();
-}

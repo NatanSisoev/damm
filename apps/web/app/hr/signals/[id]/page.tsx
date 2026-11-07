@@ -1,13 +1,14 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { MIN_GROUP_SIZE } from "@damm/shared";
-import { CHANGE_MIN_DELTA, CHANGE_MIN_N, getSignalDetail, type Change, type SignalTimelineStep } from "@damm/db/hr";
+import { getSignalDetail, type SignalTimelineStep } from "@damm/db/hr";
 import { Card, Empty, PageHeader, SuppressedBadge } from "../../ui";
 import { setSignalStatusAction } from "../../actions";
 import { approveFromSignalAction, discardFromSignalAction, followUpFromSignalAction } from "./actions";
 
+import { recommendationStatus } from "../../labels";
+import { ChangeBadge, Sparkline } from "../../trend";
 import { STATUS_LABELS, STATUS_ORDER, SignalBadges, signalTypeLabel } from "../../signal-labels";
-const ESTAT: Record<string, string> = { proposada: "", aprovada: "badge-good", descartada: "" };
 const suppressedHint = `Menys de ${MIN_GROUP_SIZE} respondents`;
 
 function Timeline({ steps }: { steps: SignalTimelineStep[] }) {
@@ -35,35 +36,6 @@ function Timeline({ steps }: { steps: SignalTimelineStep[] }) {
   );
 }
 
-function ChangeBadge({ canvi }: { canvi: Change }) {
-  if (canvi.label === "sense canvi clar") {
-    return (
-      <span className="badge" title={`Només es parla de canvi si |Δ| ≥ ${CHANGE_MIN_DELTA} i els dos períodes tenen n ≥ ${CHANGE_MIN_N}`}>
-        sense canvi clar
-      </span>
-    );
-  }
-  const up = canvi.label === "puja";
-  return (
-    <span className="badge num">
-      {up ? "↑ puja" : "↓ baixa"} {canvi.delta! >= 0 ? "+" : "−"}{Math.abs(canvi.delta!).toFixed(1)}
-    </span>
-  );
-}
-
-function Sparkline({ values }: { values: (number | null)[] }) {
-  const w = 80, h = 24;
-  const pts = values
-    .map((v, i) => (v === null ? null : { x: (i / Math.max(1, values.length - 1)) * (w - 8) + 4, y: h - 4 - ((v - 1) / 4) * (h - 8) }))
-    .filter((p): p is { x: number; y: number } => p !== null);
-  return (
-    <svg width={w} height={h} role="img" aria-label="Tendència" className="inline-block">
-      {pts.length > 1 && <polyline points={pts.map((p) => `${p.x},${p.y}`).join(" ")} fill="none" className="stroke-chart-1" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />}
-      {pts.map((p, i) => <circle key={i} cx={p.x} cy={p.y} r="2.5" className="fill-chart-1" />)}
-    </svg>
-  );
-}
-
 export default async function SignalPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const detail = Number.isInteger(Number(id)) ? getSignalDetail(Number(id)) : null;
@@ -75,7 +47,7 @@ export default async function SignalPage({ params }: { params: Promise<{ id: str
       <PageHeader
         title={signalTypeLabel(signal.tipus)}
         subtitle={signal.descripcio}
-        actions={<Link href="/hr/recommendations" className="btn">← Senyals i recomanacions</Link>}
+        actions={<Link href="/hr/recommendations" className="btn">← Recomanacions</Link>}
       />
 
       <div className="mb-6 flex flex-wrap items-center gap-2">
@@ -192,7 +164,7 @@ export default async function SignalPage({ params }: { params: Promise<{ id: str
                 {recommendations.map((r) => (
                   <li key={r.id} className={`rounded-lg border border-line p-4 ${r.estat === "descartada" ? "opacity-60" : ""}`}>
                     <div className="mb-2 flex items-center gap-2">
-                      <span className={`badge ${ESTAT[r.estat] ?? ""}`}>{r.estat}</span>
+                      <span className={`badge ${recommendationStatus(r.estat).cls}`}>{recommendationStatus(r.estat).label}</span>
                       {r.seguimentNecessitatId && <span className="badge badge-accent">Seguiment creat</span>}
                     </div>
                     <p>{r.text}</p>

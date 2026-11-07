@@ -16,6 +16,9 @@ importers:
       '@damm/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@damm/engine':
+        specifier: workspace:*
+        version: link:../../packages/engine
       '@damm/shared':
         specifier: workspace:*
         version: link:../../packages/shared
@@ -103,6 +106,9 @@ importers:
 
   packages/seed:
     dependencies:
+      '@damm/engine':
+        specifier: workspace:*
+        version: link:../engine
       '@damm/shared':
         specifier: workspace:*
         version: link:../shared

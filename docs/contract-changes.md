@@ -28,7 +28,7 @@ No schema or API change.
 - **Engine speed:** segment statistics are now cached per collective per day, so batch requests no longer scan every person.
 
 Action items:
-- [ ] Jan: build the demo DB once and check every HR page with `DB_PATH=data/demo.db`. The cards and alarms listed in "Demo data" should all appear.
+- [x] Jan: build the demo DB once and check every HR page with `DB_PATH=data/demo.db`. The cards and alarms listed in "Demo data" should all appear. (done 2026-11-07, d154995)
 - [ ] Jan (optional): use `loadQuestionBank` in the seed instead of the old Catalan bank, if you want English questions there too.
 
 ## C5 · 2026-11-07 · Natan · Read API for insights and alarms, job scheduler
@@ -46,10 +46,10 @@ New in `@damm/engine/job`: `startEngineScheduler(db, { intervalMs })` runs the j
 Full contract, the card table and an `instrumentation.ts` snippet: [engine-integration.md](engine-integration.md), sections "Running the engine on the server" and "Reading insights and alarms". No schema change.
 
 Action items:
-- [ ] Jan: start the scheduler once in `apps/web/instrumentation.ts`, as in engine-integration.md, with the app's shared DB connection.
-- [ ] Jan: HR pages read insights and alarms only through `listInsights`, `listAlarms` and `alarmCounts`, with the viewer taken from the session. Status buttons call `setAlarmStatus` from an HR-only route.
-- [ ] Jan: header badge from `alarmCounts` (poll every ~60 s or refresh on page load).
-- [ ] Jan (optional): a "Recalculate now" button calling `scheduler.runNow()` from an HR-only route.
+- [x] Jan: start the scheduler once in `apps/web/instrumentation.ts`, as in engine-integration.md, with the app's shared DB connection. (done 2026-11-07, fb4293b)
+- [x] Jan: HR pages read insights and alarms only through `listInsights`, `listAlarms` and `alarmCounts`, with the viewer taken from the session. Status buttons call `setAlarmStatus` from an HR-only route. (done 2026-11-07, d154995)
+- [x] Jan: header badge from `alarmCounts` (poll every ~60 s or refresh on page load). (done 2026-11-07, d154995)
+- [x] Jan (optional): a "Recalculate now" button calling `scheduler.runNow()` from an HR-only route. (done 2026-11-07, d154995)
 
 ## C4 · 2026-11-07 · Natan · Engine job writes insights and alarms
 
@@ -63,9 +63,9 @@ What the dashboard reads:
   - Lideratge alarms always have `audience = 'hr'`.
 
 Action items:
-- [ ] Jan: show the insight cards on the HR results page, reading `insight` through `@damm/db/hr`.
-- [ ] Jan: the signals page lists engine alarms with severity and lets HR move them to `acknowledged`, `action_linked` or `resolved`.
-- [ ] Jan: managers see only `audience = 'hr_manager'` alarms for their own collective.
+- [x] Jan: show the insight cards on the HR results page, reading `insight` through `@damm/db/hr`. (done 2026-11-07, d154995)
+- [x] Jan: the signals page lists engine alarms with severity and lets HR move them to `acknowledged`, `action_linked` or `resolved`. (done 2026-11-07, d154995)
+- [x] Jan: managers see only `audience = 'hr_manager'` alarms for their own collective. (done 2026-11-07, d154995)
 
 ## C3 · 2026-11-07 · Natan · `@damm/engine` package
 
@@ -81,9 +81,9 @@ New workspace package `packages/engine` (`@damm/engine`), API as in [engine-inte
 - The root `package.json`, `pnpm-workspace.yaml` and `packages/shared/package.json` on Natan's branch are byte-identical to `jan/dev`, so they merge cleanly.
 
 Action items:
-- [ ] Jan: after merging, run `pnpm install` so `pnpm-lock.yaml` picks up `@damm/engine` (its devDependencies are `typescript` and `@types/node`).
-- [ ] Jan: add `"@damm/engine": "workspace:*"` to `apps/web` dependencies, and to `transpilePackages` in the Next config if the other workspace packages are listed there.
-- [ ] Jan: the C2 items for routing `pool/next`, `responses` and the job through the engine are now unblocked.
+- [x] Jan: after merging, run `pnpm install` so `pnpm-lock.yaml` picks up `@damm/engine` (its devDependencies are `typescript` and `@types/node`). (done 2026-11-07, fb4293b)
+- [x] Jan: add `"@damm/engine": "workspace:*"` to `apps/web` dependencies, and to `transpilePackages` in the Next config if the other workspace packages are listed there. (done 2026-11-07, fb4293b)
+- [x] Jan: the C2 items for routing `pool/next`, `responses` and the job through the engine are now unblocked. (done 2026-11-07, fb4293b)
 
 ## C2 · 2026-11-07 · Natan · English question types, engine integration API
 
@@ -106,8 +106,8 @@ Question (answer) type values are now English. Engine API defined in [engine-int
 
 Action items:
 - [x] Jan: replace `escala5`/`escala10`/`swipe`/`obert` with `scale5`/`scale10`/`yes_no`/`open` in the seed (`packages/seed/src/questions.ts`, `seed.ts`), `employee-repository.ts` and the answer UI (`question-renderer.tsx`, `answer-flow.tsx`). (done 2026-11-07, d3b4db5)
-- [ ] Jan: once `@damm/engine` is on main, route `GET /api/pool/next` and `POST /api/responses` through `createEngine({ db, redact })` (engine-integration.md), and drop the selection and validation logic in `employee-repository.ts`.
-- [ ] Jan: stop writing `agregat` in `packages/db/src/init.ts` and call `runEngineJob(db)` after seeding instead.
+- [x] Jan: once `@damm/engine` is on main, route `GET /api/pool/next` and `POST /api/responses` through `createEngine({ db, redact })` (engine-integration.md), and drop the selection and validation logic in `employee-repository.ts`. (done 2026-11-07, fb4293b)
+- [x] Jan: stop writing `agregat` in `packages/db/src/init.ts` and call `runEngineJob(db)` after seeding instead. (done 2026-11-07, fb4293b)
 - [x] Jan: add `@damm/engine` and `@damm/engine/job` to the HR import ban and to `scripts/check-anonymity.mjs`. HR code may import only `@damm/engine/hr`. (done 2026-11-07, f47df99)
 
 ## C1 · 2026-11-07 · Natan · Engine tables, new question types, alarms

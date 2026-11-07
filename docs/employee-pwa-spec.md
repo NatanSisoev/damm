@@ -15,7 +15,7 @@ Scope: the employee side only (onboarding, answering, push). Anything the HR sid
 3. `/login`: username and password. "He perdut la contrasenya" takes the recovery code and sets a new password; the used recovery code is cleared and a new one is shown.
 4. `/` (home): today's questions, one at a time, with progress ("1 de 2"). Empty state: "Res més per avui".
 5. Question renderers per `tipus`: `escala5`, `escala10`, `swipe`, `ranking`, `obert` (free text with a short note that it is anonymous and should not include personal data).
-6. `/settings`: enable or disable notifications, log out (deletes the push subscription), "Esborra el meu compte".
+6. `/settings`: enable or disable notifications, change password, regenerate the recovery code (shown once), log out (deletes the push subscription), "Vull esborrar el compte" (confirm with password; answers stay as anonymous data).
 
 ## Accounts
 

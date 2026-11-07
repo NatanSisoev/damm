@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
-import { Geist_Mono, Inter } from "next/font/google";
+import { Alfa_Slab_One, Geist_Mono, Hanken_Grotesk, Inter } from "next/font/google";
 import "./globals.css";
+import "./brand.css";
 import { ServiceWorkerRegister } from "./(employee)/components/sw-register";
 
 const inter = Inter({
@@ -12,6 +13,10 @@ const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
 });
+
+// Employee brand fonts (used only inside `.brand`, see brand.css). Display is not preloaded.
+const alfa = Alfa_Slab_One({ variable: "--font-alfa", subsets: ["latin"], weight: "400", display: "swap", preload: false });
+const hanken = Hanken_Grotesk({ variable: "--font-hanken", subsets: ["latin"], display: "swap" });
 
 export const metadata: Metadata = {
   title: "Escolta activa",
@@ -27,7 +32,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="ca" className={`${inter.variable} ${geistMono.variable} h-full antialiased`}>
+    <html lang="ca" className={`${inter.variable} ${geistMono.variable} ${alfa.variable} ${hanken.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
         {children}
         <ServiceWorkerRegister />

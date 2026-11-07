@@ -3,16 +3,17 @@ import QRCode from "qrcode";
 import { listCollectius, listNeedCards, listNeedDrafts, type NeedCard, type NeedState } from "@damm/db/hr";
 import { closeNeedAction, publishAction } from "../actions";
 import { Card, Empty, PageHeader } from "../ui";
+import { NEED_STATUS } from "../labels";
 import { DraftReview } from "./draft-review";
 import { NeedForm } from "./need-form";
 
 export const dynamic = "force-dynamic";
 
 const STATES: { key: NeedState; label: string; hint: string }[] = [
-  { key: "esborrany", label: "Esborrany", hint: "La IA ha proposat preguntes; falta que una persona les revisi i les aprovi." },
-  { key: "llesta", label: "Llesta per publicar", hint: "Totes les preguntes estan revisades. Falta publicar-la amb enllaç i QR." },
-  { key: "publicada", label: "Publicada", hint: "Les preguntes són al grup de preguntes i l'enllaç ja es pot compartir." },
-  { key: "tancada", label: "Tancada", hint: "Decisió de l'equip: no hi entren noves respostes de seguiment." },
+  { key: "esborrany", label: NEED_STATUS.esborrany.label, hint: "La IA ha proposat preguntes; falta que una persona les revisi i les aprovi." },
+  { key: "llesta", label: NEED_STATUS.llesta.label, hint: "Totes les preguntes estan revisades. Falta publicar-la amb enllaç i QR." },
+  { key: "publicada", label: NEED_STATUS.publicada.label, hint: "Les preguntes són al grup de preguntes i l'enllaç ja es pot compartir." },
+  { key: "tancada", label: NEED_STATUS.tancada.label, hint: "Decisió de l'equip: no hi entren noves respostes de seguiment." },
 ];
 const LABEL = Object.fromEntries(STATES.map((s) => [s.key, s.label])) as Record<NeedState, string>;
 

@@ -12,7 +12,7 @@ export function SendButton({ codi }: { codi: string }) {
         {pending ? "Enviant…" : "Envia al canal"}
       </button>
       {state && (
-        <span role="status" className={`text-sm ${state.ok ? "text-subtle" : "text-red-700"}`}>
+        <span role="status" className={`text-sm ${state.ok ? "text-subtle" : "text-warn"}`}>
           {state.message}
         </span>
       )}
