@@ -54,7 +54,7 @@ G-§3.2.
 | ID | User | What they need | Status | Evidence / gap |
 |----|------|----------------|--------|----------------|
 | R-U-1 | **Primary**: People/HR person who wants to understand a concrete situation and act | Need → drafts → approval → publish → results → recommendation | partial | `/hr/*`. Real AI and analysis are blocked. |
-| R-U-2 | **Respondent**: anyone at Damm (plant, logistics, sales, office, manager), little time, on a phone | Fast mobile answering, anonymity they can believe | done | PWA onboarding, answering, done state (2 a day max, day follows Europe/Madrid), in-progress answers kept on the device across reloads, loading and retry states, `/privacitat` and a shared mobile shell (44px targets). Push (task 4) still open. |
+| R-U-2 | **Respondent**: anyone at Damm (plant, logistics, sales, office, manager), little time, on a phone | Fast mobile answering, anonymity they can believe | done | PWA onboarding, answering, done state (2 a day max, day follows Europe/Madrid), in-progress answers kept on the device across reloads, loading and retry states, `/privacitat` and a shared mobile shell (44px targets). Push opt-in in `/settings` and on the home screen; a publish notifies the collective (no daily reminder yet). |
 | R-U-3 | **Secondary**: team leads and management who receive aggregated results and recommendations | done (collective level) | `/manager` and `/manager/[collectiu]` (`apps/web/app/manager`): read-only, one collective, behind `HR_ACCESS_CODE`. Shows domain profile, trend, representativeness, company-wide themes, `hr_manager` signals and HR-approved recommendations only; `hr` (Lideratge) signals never shown; segments under 10 suppressed. No team concept, so no finer scope (N-6, N-8). | No team concept exists (only collective, centre type and shift), so a manager view carries re-identification risk. Proposal: collective-level read-only share or the Teams card (`/hr/publish/[codi]/teams`). See N-6. |
 
 ## 3. Functional flow (minimum)
@@ -94,8 +94,8 @@ G-§4 is the authoritative list ("Tots els equips han de cobrir aquest recorregu
 The guide says "Publicar a Typeform". AGENTS.md decides to ignore Typeform: the app is the channel. The equivalent requirement is below. **Explain this choice on the pitch** (we own the anonymity boundary end to end).
 | ID | Requirement | Status | Evidence / gap |
 |----|-------------|--------|----------------|
-| R-FLOW-4a | Publishing makes the approved questions live | done | `publishNecessitat`, pool |
-| R-FLOW-4b | A shareable **link** | done | `/hr/publish`, join URL per collective |
+| R-FLOW-4a | Publishing makes the approved questions live | done | `publishNecessitat` sets `publicada`; `notifyNeedPublished` (`apps/web/lib/push.ts`) sends web push to the need's collective and returns only a device count (`<10` under 10). Button "Publicar i avisar per notificació" on `/hr/needs`. |
+| R-FLOW-4b | A shareable **link** | done | `/hr/publish`, onboarding join URL per collective (not per need: a need reaches people by push) |
 | R-FLOW-4c | A **QR** | done | Server-side SVG plus a printable A4 poster |
 | R-FLOW-4d | Publish via **API** / M365 integration (D-S13) | done | `/hr/publish/[codi]/teams`: Adaptive Card preview, copyable JSON, optional send to `TEAMS_WEBHOOK_URL`. The webhook send is not yet tested against a real Teams channel. |
 
@@ -105,7 +105,7 @@ The guide says "Publicar a Typeform". AGENTS.md decides to ignore Typeform: the 
 | R-FLOW-5a | Mobile **and PC** | done | Responsive PWA |
 | R-FLOW-5b | QR access | done | `/join/[codi]` |
 | R-FLOW-5c | **Frequency** strategy (about 2 a day, no repeats 4 days in a row) | blocked | Pool stub today; engine is Natan's |
-| R-FLOW-5d | **Reminders** | missing | Push is task 4 (ready). Needs HTTPS (task 9). |
+| R-FLOW-5d | **Reminders** | partial | Web push built: opt-in toggle (`/settings`, nudge on `/`), subscription in `push_subscripcio`, a publish notifies the collective, expired subscriptions (404/410) deleted. No daily reminder job yet. A real phone needs HTTPS (task 9). |
 | R-FLOW-5e | **Representativeness control** while collecting (warn when a group is under-sampled) | partial | Shown on results. Not yet acted on (engine oversampling is blocked). |
 | R-FLOW-5f | Does not saturate anyone | blocked | Engine rules |
 
@@ -181,7 +181,7 @@ D-S9 and D-S10. Each needs a named mitigation we can point at in the demo. "AI d
 |----|------|----------------|--------|
 | R-BIAS-1 | Coverage | Representativeness against the 1,200 synthetic population, per collective and shift | done |
 | R-BIAS-2 | Non-response | Night shift under-response shown; engine oversampling of under-represented groups | partial (engine blocked) |
-| R-BIAS-3 | Self-selection | Push-driven continuous micro-questions rather than opt-in surveys; representativeness weighting | partial (push task 4) |
+| R-BIAS-3 | Self-selection | Push-driven continuous micro-questions rather than opt-in surveys; representativeness weighting | partial (push on publish built; no daily reminder) |
 | R-BIAS-4 | Wording | Question-quality checker (19); human approval | missing |
 | R-BIAS-5 | Social desirability | Anonymity promise plus `/privacitat`; **show the manager positivity gap** (seeded `MANAGER_BONUS`) | missing: the manager segment is not shown anywhere (option B, not started) |
 | R-BIAS-6 | Timing | The engine spreads questions over days and shifts; trend change rule | partial |
@@ -303,7 +303,7 @@ Bonus items named by the guide (G-§4 "Bonus") and the deck (D-S18), then our ow
 | N-9 | Methodology page "Com calculem" | ours | Explainability, scenario C6 | missing | Task 18, ready |
 | N-10 | Question-quality checker | ours | Wording bias, R-BIAS-4 | missing | Task 19, ready |
 | N-11 | Decision audit log and AI provenance | ours | Traceability, R-PRIV-10 | blocked | Task 21 |
-| N-12 | Installable PWA plus daily push reminder | ours | Reminders R-FLOW-5d, participation | partial | Installable: manifest, icons, offline page, service worker (push stub). Push subscribe and send still open (task 4), then the tunnel (9). |
+| N-12 | Installable PWA plus daily push reminder | ours | Reminders R-FLOW-5d, participation | partial | Installable: manifest, icons, offline page, service worker with push and notification click. Subscribe and send on publish built; a daily reminder and the tunnel (9) are open. |
 | N-13 | Participation by channel chart | G-§6.2 | Uses the `canal` field we already store | missing | Small: one aggregate by `canal` with suppression. |
 | N-14 | Initiative ↔ domain mapping | D-S3 | Turns results into "is our policy working?" | missing | R-DOM-5 |
 | N-15 | Retention and purge job | G-§8 | Closes R-PRIV-8 | missing | Document the period; a script deletes old `resposta` rows after aggregation. |

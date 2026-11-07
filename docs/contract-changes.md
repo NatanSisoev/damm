@@ -19,6 +19,15 @@ What changed and why.
 
 ---
 
+## C9 · 2026-11-07 · Jan · Publishing a need sends web push, no per-need join code
+
+- `publishNecessitat(necessitatId)` in `@damm/db/hr` no longer takes a base URL, no longer creates `joincode` or `publicacio` rows, and returns `boolean` (false when the need is not `oberta` or has no approved question). Join codes stay per collective for onboarding (`/hr/publish`).
+- New in `@damm/db/employee`: `savePushSubscription`, `hasPushSubscription`, `listPushTargetsForNecessitat` (endpoints and keys for the need's collective, or all), `deletePushSubscriptionByEndpoint`. HR code never imports them; it calls `notifyNeedPublished(id)` in `apps/web/lib/push.ts` and gets an aggregate device count only.
+- No schema change. The engine still serves every `aprovada` question whatever the need's state.
+
+Action items:
+- [ ] Natan: none required; FYI if the engine or seed ever relied on a `publicacio` row per need.
+
 ## C8 · 2026-11-07 · Natan · Scheduler runs the narrative, engine hardening
 
 - `startEngineScheduler(db, { narrative: { complete: createComplete() } })` runs the LLM narrative after the job, at most every 6 hours (`everyMs`), in the background. It never blocks or breaks the job. Without the option the LLM is never called. `runNarrativeNow()` serves an HR "Regenerate summary" button. `createComplete` and `llmConfigFromEnv` are exported from `@damm/engine/job`.

@@ -17,7 +17,7 @@ A manual runbook for the full loop plus a catalogue of smaller scenarios. Rework
 
 | Feature | Where tested | Flow |
 |---|---|---|
-| Web push (`/api/push/*`, toggle in `/settings`, send job) | M-12, M-13, S-30 to S-32 | F-EMP-9, F-JOB-4 |
+| Web push (toggle in `/settings` and on `/`, send on publish) | M-12, M-13, S-30 to S-32 | F-EMP-9, F-JOB-4 |
 | Named HR users, per-person audit (one shared access code; approver is the constant `hr-demo`) | S-75, S-89 | F-HR-1, F-PRIV-5 |
 | Manager scoping (any collective reachable behind the HR gate), manager role, centre or shift question in onboarding | M-23, S-72, S-89 | F-MGR-1, F-MGR-2, F-EMP-2 |
 | Configurable retention (only delete-account exists) | S-25, S-89 | F-EMP-10, F-PRIV-5 |
@@ -44,7 +44,7 @@ Fill `.env` by hand. Never paste values into this document, a ticket or a chat. 
 | `LLM_BASE_URL`, `LLM_API_KEY`, `LLM_MODEL` | AI drafts (LLM-ON) | Drafts fall back to templates, badge "Plantilla de reserva" (LLM-OFF) |
 | `SESSION_SECRET` | Employee session cookie `damm_session` | Set it, or sessions are not stable across restarts |
 | `PUBLIC_BASE_URL` | Base of join links and QR (default `http://localhost:3000`). Missing from `.env.example`, see Findings | Links point to localhost |
-| `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | Web push | Not built, no effect |
+| `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | Web push (generate with `npx web-push generate-vapid-keys`) | Push off: no toggle, publish says notifications are off |
 | `TEAMS_WEBHOOK_URL` | Real post of the Teams card | Not built, no effect |
 
 ### 1.2 Database
@@ -122,7 +122,7 @@ Covers R-FLOW-1 to R-FLOW-8, R-CH-1, N-7. Preconditions: 1.1 to 1.3 done on the 
 | M-5 | F-HR-2 | [B] Press "Generar esborranys" | Button "Generant…" and text "La IA està redactant les preguntes…". Redirect to `/hr/needs`. A card in state "Esborrany" with badge "Proposta de la IA" (or "Plantilla de reserva" if LLM-OFF), 3 to 6 questions, estimated time "~N s de 60 s". [T] `sqlite3 data/demo.db "select estat, generada_per_ia from pregunta where necessitat_id=(select max(id) from necessitat)"` shows only `draft`, none `aprovada` | R-FLOW-2a to 2g, R-X-3 | ☐ |
 | M-6 | F-HR-3 | [B] In the draft: edit one text and press "Desar text"; move one with the up or down control; press "Regenerar" on one; press "Descartar" on one; edit title and introduction and press "Desar títol i introducció" | Each change survives a reload. A discarded question leaves the draft list (`estat = 'retirada'` in the DB). Order follows the move. An over-long set shows "Atenció: el temps estimat … supera la durada màxima" (see S-65) | R-FLOW-3a to 3c | ☐ |
 | M-7 | F-HR-3 | [B] Press "Aprovar" on every remaining question | Each moves to "Preguntes aprovades"; when none is left to review the need shows "Llesta per publicar". [T] `select estat, prioritat, aprovada_per, aprovada_el from pregunta where necessitat_id=(select max(id) from necessitat)`: `aprovada`, `100`, `hr-demo`, a timestamp | R-FLOW-3d, R-X-3, R-PRIV-7, R-PRIV-10 | ☐ |
-| M-8 | F-HR-4 | [B] Press "Publicar amb enllaç i QR" | State "Publicada". For a Logística need, one new `joincode` (8 hex characters) and one `publicacio` row; link `<PUBLIC_BASE_URL>/join/<CODE>`; a QR on the card | R-FLOW-4a to 4c | ☐ |
+| M-8 | F-HR-4 | [B] Press "Publicar i avisar per notificació" | State "Publicada"; a notice "S'han enviat notificacions a … dispositius del col·lectiu." ("menys de 10" under 10; "notificacions desactivades" without VAPID keys). No new `joincode` or `publicacio` row. With M-12 done on a Logística account, that browser shows "Escolta activa" | R-FLOW-4a, R-FLOW-5d | ☐ |
 | M-9 | F-HR-4 | [B] Open "Enllaços i QR" (`/hr/publish`). For Logística press "Copia", open "Cartell per imprimir" (`/hr/publish/<codi>/poster`) and "Publica a Teams" (`/hr/publish/<codi>/teams`) | Title "Enllaços i QR per col·lectiu", one card per collective with code, link, QR, "comptes al col·lectiu" (a count under 10 reads "<10"). The poster is an A4 page. The Teams page shows the Adaptive Card payload titled "Escolta activa"; sending to Teams is not built (ABS, N-1 roadmap in `docs/teams-integration.md`) | R-FLOW-4b to 4d, N-1 | ☐ |
 
 ### Phase B. Employee side
@@ -133,8 +133,8 @@ Use the mobile preset. Create the account with the join code of the need's colle
 |---|---|---|---|---|---|
 | M-10 | F-EMP-1 | [B] Open `/join/<LOG>` with no cookie. [P] Jan also scans the QR on a phone | Eyebrow = company, title "Benvinguda", lede "Et donem la benvinguda a {empresa}. Les teves respostes són anònimes i només es mostren de forma agregada.", "Col·lectiu" card showing Logística, note "Anònim de debò. No et demanem nom ni correu. Només veiem grups de 10 persones o més.", link "Com tractem les teves dades", button "Continua". Press "Continua": URL `/onboarding?codi=<LOG>` | R-FLOW-5b, R-PRIV-13 | ☐ |
 | M-11 | F-EMP-2 | [B] On `/onboarding` fill "Nom d'usuari" `usuari.prova`, "Contrasenya" and "Repeteix la contrasenya" with a test password of 8+ characters, press "Crea el compte" | Cookie `damm_session` set. Title "Compte creat" and a recovery code in groups of 4 with "Desa'l ara. Aquest codi només el veuràs una vegada." The continue button is disabled until "L'he desat en un lloc segur" is ticked; then it goes to `/`. No email, phone or name field anywhere. [T] `compte` has one new row with hex `password_hash`, `salt`, `recovery_hash` and no recovery code in plain text | R-PRIV-4, R-PRIV-13 | ☐ |
-| M-12 | F-EMP-9 | [B] Open `/settings` on the mobile preset | Panels in order: "Privadesa", "Canvia la contrasenya", "Codi de recuperació", "Sessió", "Esborra el compte". **No push toggle and no permission prompt** (ABS). [P] Jan: on a phone, no notification permission is requested anywhere in the app | R-FLOW-5d, N-12 | ☐ ABS |
-| M-13 | F-EMP-9, F-JOB-4 | [T] `curl -i http://localhost:3000/api/push/subscribe` and `/api/push/send` | 404 for both (routes do not exist). [B] Leave the app open on the home page: no notification arrives (ABS) | R-FLOW-5d | ☐ ABS |
+| M-12 | F-EMP-9 | [B] Open `/settings` on the mobile preset (VAPID keys set) and press "Activa les notificacions" | Card "Notificacions"; no prompt before the tap; after allowing, "Desactiva les notificacions" shows. [T] `select count(*) from push_subscripcio` = 1 for this account | R-FLOW-5d, N-12 | ☐ |
+| M-13 | F-EMP-9 | [B] After M-8, click the notification | The app focuses or opens at `/` with today's questions. [P] Jan: on a phone over the HTTPS tunnel, the same notification arrives | R-FLOW-5d | ☐ |
 | M-14 | F-EMP-5 | [B] Open `/` and answer today's questions. For an open question type "Truqueu al 600123456, sóc l'Anna Puig" | "Carregant les preguntes d'avui…", then "Pregunta 1 de N", badge "Anònim", progress bar, submit "Envia i continua" (last: "Envia"), "Enviant…" while sending, `POST /api/responses` answers 204. N is 3 by default. The new Logística need's question is in the batch (HR need comes after any follow-up and before monitoring). [T] the stored `comentari` is `[nom]` and `[telèfon]` in place of the name and the number, no raw text | R-FLOW-5a, R-FLOW-6a, R-PRIV-1 | ☐ |
 | M-15 | F-EMP-5 | [B] After the last answer, then reload `/` | h2 "Gràcies", lede "Has respost les {n} preguntes d'avui. Demà en tens de noves.", note "🔒 Anònim de debò. No et demanem nom ni correu. Només veiem grups de 10 persones o més.", then the card "Has dit, hem fet". Reload gives the same batch, nothing left to answer. A replayed `POST` gives 409 `already_answered` (S-43) | R-FLOW-5c, R-FLOW-5f | ☐ |
 
@@ -158,7 +158,7 @@ Use the mobile preset. Create the account with the join code of the need's colle
 | M-23 | F-MGR-1, F-MGR-2 | [B] Open `/manager`, then each of the four collectives, then `/manager/Inexistent` | `/manager`: title "Vista de responsables", subtitle "Tria el col·lectiu del qual vols veure els resultats.", card "Col·lectius" with the read-only note and four links. Each `/manager/<name>` opens (**all four reachable, no 403: ABS of scoping, N-8**) with cards "Perfil per domini", "Recomanacions aprovades" (only `aprovada`, only that collective), "Què destaca el motor" (at most 8; empty text "Encara no hi ha prou respostes per destacar res (cal n ≥ 10)."), "Tendència per domini", "Representativitat", "Temes dels comentaris" (labelled "Tota l'empresa, no només aquest col·lectiu"), "Senyals del col·lectiu" (empty "Cap senyal per a aquest col·lectiu."). HR-only alarms (`audience` HR, for example the Lideratge changepoint of Logística morning) never appear. `/manager/Inexistent`: 404 | R-U-3, N-8, R-FLOW-6, R-FLOW-7 | ☐ |
 | M-24 | F-HR-9, F-EMP-5 | [B] In `/hr/needs` press "Tanca la necessitat" on the test need. Filter `/hr/needs?estat=tancada`. Then open a **new account** of the same collective (fresh cookie window, `<LOG>`) and look at `/` | Card shows "Tancada" and the hint "Decisió de l'equip: no hi entren noves respostes de seguiment."; the filter lists it. **KG (F-HR-9 B1):** the new account still receives the closed need's question, because the pool ignores `necessitat.estat`. Record `KG` when it is served; `F` only if the page crashes. Closing twice is a no-op; the join code stays active (S-14) | R-FLOW-8c, R-DEL | ☐ KG |
 
-That makes 25 steps (M-1 to M-24 plus M-20b). The old phone-dependent push steps M-12 and M-13 are now absence checks.
+That makes 25 steps (M-1 to M-24 plus M-20b). Push steps M-12 and M-13 need VAPID keys in `.env`; a real phone also needs the HTTPS tunnel.
 
 ## 3. Further scenarios
 
@@ -208,13 +208,13 @@ IDs are `S-n`. Each row has the flow, requirements, mode, steps and the expected
 | S-28 | F-EMP-3 B3, F-PRIV-4 | R-PRIV-3 | [B]+[T] Log in, keep the tab, delete that account from another tab (S-25), reload the first tab | The still-valid cookie is treated as logged out: redirect to `/login`; `GET /api/pool/next` returns 401 `no_autenticat` | ☐ |
 | S-29 | F-EMP-4 step 4 | R-PRIV-4 | [B] Use a recovery code once (S-23), then try the same code again | "Usuari o codi de recuperació incorrectes." A used code never works twice | ☐ |
 
-### 3.4 Pushes (not built: tested as absent)
+### 3.4 Pushes
 
 | ID | Flow | Req | Steps | Expected | Result |
 |---|---|---|---|---|---|
-| S-30 | F-EMP-9 | R-FLOW-5d, N-12 | [B] Use the employee app for a full answer cycle on the mobile preset; call `Notification.permission` with `javascript_tool` | No permission prompt appears; the value stays `default`. The app works with no nag | ☐ ABS |
-| S-31 | F-EMP-9 | R-FLOW-5d, N-12 | [P] Jan: iPhone Safari, PWA not added to the home screen, open the app | Nothing breaks; no push explanation is shown (not built); no prompt | ☐ SKIP-P |
-| S-32 | F-EMP-9, F-JOB-4 | R-FLOW-5d | [T] `sqlite3 data/demo.db "select count(*) from push_subscripcio"` after logging in and out | 0 rows, and no job sends anything. Logout would delete a row if one existed | ☐ ABS |
+| S-30 | F-EMP-9 | R-FLOW-5d, N-12 | [B] Use the employee app for a full answer cycle without touching the push button; call `Notification.permission` with `javascript_tool` | No permission prompt appears; the value stays `default`. Only the compact "Notificacions" card offers it | ☐ |
+| S-31 | F-EMP-9 | R-FLOW-5d, N-12 | [P] Jan: iPhone Safari, PWA not added to the home screen, open `/settings` | Nothing breaks; "Aquest navegador no admet notificacions. A l'iPhone, afegeix l'app a la pantalla d'inici…"; no prompt | ☐ SKIP-P |
+| S-32 | F-EMP-9, F-JOB-4 | R-FLOW-5d, R-PRIV-1 | [T] After M-12, log out and run `select count(*) from push_subscripcio` | The account's row is gone. No scheduled job sends anything (F-JOB-4 absent). `/hr/needs` HTML never contains an endpoint or account id | ☐ |
 
 ### 3.5 Question pacing and answer API
 
@@ -315,7 +315,7 @@ Every flow in `docs/user-flows.md` has at least one case. Cases cite the flow in
 | F-EMP-6 Failure handling | S-50 to S-53, S-55 |
 | F-EMP-7 Settings and privacy page | M-12, S-76 |
 | F-EMP-8 "Has dit, hem fet" | M-15, M-22, S-87 |
-| F-EMP-9 Push (absent) | M-12, M-13, S-30 to S-32 |
+| F-EMP-9 Push | M-12, M-13, S-30 to S-32 |
 | F-EMP-10 Account management | S-24 to S-26 |
 | F-HR-1 Enter the portal | M-1 to M-3, S-70, S-71, S-73, S-75, S-79, S-89 |
 | F-HR-2 Need and AI drafts | M-4, M-5, S-60 to S-61, S-63 to S-65 |
