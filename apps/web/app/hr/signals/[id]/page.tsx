@@ -5,7 +5,9 @@ import { getSignalDetail, listCollectius, listContextEvents, listDomains, listTo
 import { hrInsights, hrListProbes, type ProbeView } from "@/lib/hr-engine";
 import { Card, Empty, PageHeader, SuppressedBadge } from "../../ui";
 import { setSignalStatusAction } from "../../actions";
+import "../alarms.css";
 import { generateRecommendationsAction } from "../actions";
+import { GenerateButton } from "../generate-button";
 import { addContextEventAction, approveFromSignalAction, discardFromSignalAction, followUpFromSignalAction, startProbeAction, stopProbeAction } from "./actions";
 
 import { recommendationStatus } from "../../labels";
@@ -249,16 +251,22 @@ export default async function SignalPage({ params, searchParams }: { params: Pro
         <div className="space-y-6">
           <Card id="recomanacions" title="Recomanacions" meta={<span className="num">{recommendations.length}</span>}>
             {recommendations.length === 0 ? (
-              <div className="space-y-3">
-                <Empty>Encara no hi ha recomanacions per a aquest senyal.</Empty>
-                {signal.dominiId != null && (
-                  <form action={generateRecommendationsAction} className="text-center">
+              signal.dominiId != null ? (
+                <div className="gen-panel">
+                  <span className="gen-panel-mark" aria-hidden>
+                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" strokeLinecap="round"><path d="M8 1.5 9.6 6.4 14.5 8 9.6 9.6 8 14.5 6.4 9.6 1.5 8 6.4 6.4Z" /></svg>
+                  </span>
+                  <h3>Encara no hi ha cap recomanació</h3>
+                  <p>Proposa fins a 3 accions concretes per a aquest senyal, amb responsable i termini suggerits.</p>
+                  <form action={generateRecommendationsAction}>
                     <input type="hidden" name="signal" value={signal.id} />
-                    <button className="btn btn-primary" type="submit">Genera recomanacions</button>
-                    <p className="mt-2 text-xs text-subtle">Proposa fins a 3 accions. Una persona les aprova o descarta.</p>
+                    <GenerateButton variant="panel" />
                   </form>
-                )}
-              </div>
+                  <small>Una persona les aprova o les descarta.</small>
+                </div>
+              ) : (
+                <Empty>Aquest senyal no té un domini concret, així que no es poden proposar recomanacions.</Empty>
+              )
             ) : (
               <ul className="space-y-3">
                 {recommendations.map((r) => (
