@@ -293,3 +293,22 @@ Action items:
 - [ ] Natan: make `runAlarms` and `latestInsightPeriod` use the latest period with n of at least 10 (not the newest), and reinstate alarms in the engine job itself, so the HR-side workaround can go and the CLI job behaves the same.
 - [x] Jan: HR pages, job route, scheduler and publish use the above. (done 2026-11-07)
 
+## 2026-11-07: Multi-language questions and portals, ca/es/en (N-6) (Jan)
+
+Additive and backward compatible. Catalan stays canonical; a missing translation falls back to Catalan (`text`).
+
+- `pregunta.text_i18n` (new, nullable TEXT): JSON `{"ca","es","en"}`. NULL means "use `text`".
+- Options inside `options_json` may carry an optional `i18n: {es:{label}, en:{label}}` (scale anchors, pair, choice, ranking). `ScoredOption` and `RankingOption` in `@damm/shared` gain `i18n?`; `Pregunta` gains `textI18n`.
+- `compte.lang` (new, `ca|es|en`, default `ca`): the only language data kept per account. It is never in `v_resposta_analitica`, and push targets expose the language but never the account id.
+- `@damm/shared` exports `LANGS`, `Lang`, `pickText`, `negotiateLang`, `parseTranslations`. `getConnection` runs an idempotent `ensureI18nColumns` so existing DBs gain the columns on start.
+- `GET /api/pool/next` returns text and option labels already in the account's language. The engine still returns only `text` and `options[].label`; the app merges translations by question id and option index (`getQuestionTranslations`).
+- `docs/i18n/question-bank-translations.json`: ca/es/en text and options for the 163 questions of `packages/engine/fixtures/question-bank.json`, keyed by question id. `applyBankTranslations` (called from `apps/web/instrumentation.ts`) backfills rows with NULL `text_i18n` by normalised text, so the engine bank works without touching `packages/engine`.
+- `@damm/ai` drafts es/en in a second pass (`translateQuestionTexts`, `withTranslations`); HR edits them in the draft review before approval. `updateDraftText` and `DraftInput` carry them. A failed pass leaves es/en empty and warns HR.
+- Not translated (data, not UI): AI/analysis text stored in the DB (theme names, signal titles, recommendation text, need text). Drafted scale anchors are not stored for DB drafts.
+
+Action items:
+- [x] Jan: employee PWA, HR portal and manager view dictionaries; language switchers; push per language; draft review with editable es/en. (done 2026-11-07)
+- [ ] Natan: adopt `docs/i18n/question-bank-translations.json` in the engine bank (bank loader and `question-bank.json`) and make the bank Catalan-first (it is English today), so the backfill by text can go.
+- [ ] Natan: when the engine writes `pregunta` rows, set `text_i18n` and option `i18n` from the bank, and keep `compte.lang` out of anything the engine returns.
+- [ ] Natan (optional): translate the engine's insight and alarm texts (`agregat`/`senyal` titles) per language, or store keys instead of sentences.
+

@@ -1,0 +1,2413 @@
+{
+ "version": 1,
+ "languages": [
+  "ca",
+  "es",
+  "en"
+ ],
+ "source": "packages/engine/fixtures/question-bank.json (index + facet + type must match)",
+ "questions": [
+  {
+   "index": 0,
+   "facet": "workload",
+   "type": "scale5",
+   "text": {
+    "ca": "La meva càrrega de feina és assumible.",
+    "es": "Mi carga de trabajo es asumible.",
+    "en": "My workload is manageable."
+   }
+  },
+  {
+   "index": 1,
+   "facet": "workload",
+   "type": "scale5",
+   "text": {
+    "ca": "Sovint sento que tinc massa feina.",
+    "es": "A menudo siento que tengo demasiado trabajo.",
+    "en": "I often feel overloaded at work."
+   }
+  },
+  {
+   "index": 2,
+   "facet": "workload",
+   "type": "scale10",
+   "text": {
+    "ca": "Del 0 al 10, com d'assumible és la teva càrrega de feina aquesta setmana?",
+    "es": "Del 0 al 10, ¿cómo de llevadera es tu carga de trabajo esta semana?",
+    "en": "From 0 to 10, how manageable is your workload this week?"
+   }
+  },
+  {
+   "index": 3,
+   "facet": "workload",
+   "type": "yes_no",
+   "text": {
+    "ca": "Aquesta setmana, has acabat les tasques sense anar amb presses?",
+    "es": "Esta semana, ¿has terminado tus tareas sin ir con prisas?",
+    "en": "This week, did you finish your tasks without rushing?"
+   }
+  },
+  {
+   "index": 4,
+   "facet": "workload",
+   "type": "pair",
+   "text": {
+    "ca": "Què s'assembla més a la teva setmana?",
+    "es": "¿Qué se parece más a tu semana?",
+    "en": "Which is closer to your week?"
+   },
+   "options": [
+    {
+     "ca": "Puc portar la feina al dia",
+     "es": "Puedo llevar mi trabajo al día",
+     "en": "I can keep up with my work"
+    },
+    {
+     "ca": "Hi ha més feina de la que puc assumir",
+     "es": "Hay más trabajo del que puedo asumir",
+     "en": "There is more work than I can handle"
+    }
+   ]
+  },
+  {
+   "index": 5,
+   "facet": "workload",
+   "type": "scale10",
+   "text": {
+    "ca": "Fa uns dies ens vas dir que tenies una càrrega de feina pesada. Del 0 al 10, com d'assumible és ara?",
+    "es": "Hace unos días nos dijiste que tenías una carga de trabajo pesada. Del 0 al 10, ¿cómo de llevadera es ahora?",
+    "en": "A few days ago you told us your workload was heavy. From 0 to 10, how manageable is it now?"
+   }
+  },
+  {
+   "index": 6,
+   "facet": "stress_level",
+   "type": "scale5",
+   "text": {
+    "ca": "Sento una pressió constant a la feina.",
+    "es": "Siento una presión constante en el trabajo.",
+    "en": "I feel under constant pressure at work."
+   }
+  },
+  {
+   "index": 7,
+   "facet": "stress_level",
+   "type": "scale10",
+   "text": {
+    "ca": "Del 0 al 10, com de tranquils són últimament els teus dies de feina?",
+    "es": "Del 0 al 10, ¿cómo de tranquilos son últimamente tus días de trabajo?",
+    "en": "From 0 to 10, how calm are your work days lately?"
+   }
+  },
+  {
+   "index": 8,
+   "facet": "stress_level",
+   "type": "yes_no",
+   "text": {
+    "ca": "L'estrès de la feina t'ha seguit fins a casa aquesta setmana?",
+    "es": "¿Te ha acompañado el estrés del trabajo hasta casa esta semana?",
+    "en": "Did work stress follow you home this week?"
+   }
+  },
+  {
+   "index": 9,
+   "facet": "stress_level",
+   "type": "choice",
+   "text": {
+    "ca": "Com descriuries l'estrès a la feina últimament?",
+    "es": "¿Cómo describirías el estrés en el trabajo últimamente?",
+    "en": "How would you describe stress at work lately?"
+   },
+   "options": [
+    {
+     "ca": "Poc, ho porto amb calma",
+     "es": "Poco, lo llevo con calma",
+     "en": "Low, I feel relaxed"
+    },
+    {
+     "ca": "Una mica, però ho gestiono",
+     "es": "Algo, pero lo gestiono",
+     "en": "Some, but I handle it"
+    },
+    {
+     "ca": "Molt, quasi cada dia",
+     "es": "Mucho, casi todos los días",
+     "en": "High, most days"
+    },
+    {
+     "ca": "Més del que puc suportar",
+     "es": "Más de lo que puedo aguantar",
+     "en": "Too much to cope with"
+    }
+   ]
+  },
+  {
+   "index": 10,
+   "facet": "stress_level",
+   "type": "scale10",
+   "text": {
+    "ca": "Fa uns dies ens vas dir que la feina et resultava estressant. Del 0 al 10, quanta calma sents ara?",
+    "es": "Hace unos días nos dijiste que el trabajo te resultaba estresante. Del 0 al 10, ¿cuánta calma sientes ahora?",
+    "en": "A few days ago you told us work felt stressful. From 0 to 10, how calm do you feel now?"
+   }
+  },
+  {
+   "index": 11,
+   "facet": "energy_after_work",
+   "type": "scale5",
+   "text": {
+    "ca": "Després de la feina em queda prou energia per a la meva vida.",
+    "es": "Después del trabajo me queda energía suficiente para mi vida.",
+    "en": "I have enough energy left after work for my own life."
+   }
+  },
+  {
+   "index": 12,
+   "facet": "energy_after_work",
+   "type": "scale10",
+   "text": {
+    "ca": "Del 0 al 10, quanta energia tens al final d'una jornada?",
+    "es": "Del 0 al 10, ¿cuánta energía tienes al final de una jornada?",
+    "en": "From 0 to 10, how much energy do you have at the end of a work day?"
+   }
+  },
+  {
+   "index": 13,
+   "facet": "energy_after_work",
+   "type": "yes_no",
+   "text": {
+    "ca": "Normalment acabes la jornada sense forces?",
+    "es": "¿Sueles terminar la jornada sin fuerzas?",
+    "en": "Do you usually finish your work day feeling exhausted?"
+   }
+  },
+  {
+   "index": 14,
+   "facet": "energy_after_work",
+   "type": "pair",
+   "text": {
+    "ca": "Al final del dia, sobretot em sento…",
+    "es": "Al final del día, sobre todo me siento…",
+    "en": "At the end of the day, I mostly feel…"
+   },
+   "options": [
+    {
+     "ca": "Amb cansament, però bé",
+     "es": "Con cansancio, pero bien",
+     "en": "Tired but fine"
+    },
+    {
+     "ca": "Sense gens d'energia",
+     "es": "Sin nada de energía",
+     "en": "Completely drained"
+    }
+   ]
+  },
+  {
+   "index": 15,
+   "facet": "energy_after_work",
+   "type": "scale5",
+   "text": {
+    "ca": "Fa uns dies ens vas dir que acabaves la feina sense forces. Ara tens prou energia?",
+    "es": "Hace unos días nos dijiste que acababas el trabajo sin fuerzas. ¿Tienes suficiente energía ahora?",
+    "en": "A few days ago you told us you felt drained after work. Do you have enough energy now?"
+   }
+  },
+  {
+   "index": 16,
+   "facet": "field_travel",
+   "type": "scale5",
+   "text": {
+    "ca": "Els desplaçaments que implica la meva feina són raonables.",
+    "es": "Los desplazamientos que implica mi trabajo son razonables.",
+    "en": "The amount of travel in my job is reasonable."
+   }
+  },
+  {
+   "index": 17,
+   "facet": "field_travel",
+   "type": "scale10",
+   "text": {
+    "ca": "Del 0 al 10, quant et cansen els desplaçaments de la feina?",
+    "es": "Del 0 al 10, ¿cuánto te cansan los desplazamientos del trabajo?",
+    "en": "From 0 to 10, how tiring is the travel in your job?"
+   }
+  },
+  {
+   "index": 18,
+   "facet": "field_travel",
+   "type": "yes_no",
+   "text": {
+    "ca": "Aquesta setmana, conduir o viatjar t'ha deixat sense forces per treballar bé?",
+    "es": "Esta semana, ¿conducir o viajar te ha dejado sin fuerzas para trabajar bien?",
+    "en": "This week, did driving or travelling leave you too tired to work well?"
+   }
+  },
+  {
+   "index": 19,
+   "facet": "field_travel",
+   "type": "choice",
+   "text": {
+    "ca": "Com és el temps que passes a la carretera?",
+    "es": "¿Cómo es el tiempo que pasas en la carretera?",
+    "en": "How is the time you spend on the road?"
+   },
+   "options": [
+    {
+     "ca": "Bé, encaixa amb la feina",
+     "es": "Bien, encaja con mi trabajo",
+     "en": "Fine, it fits my work"
+    },
+    {
+     "ca": "Llarg, però acceptable",
+     "es": "Largo, pero aceptable",
+     "en": "Long, but acceptable"
+    },
+    {
+     "ca": "Massa llarg quasi cada setmana",
+     "es": "Demasiado largo casi todas las semanas",
+     "en": "Too long most weeks"
+    },
+    {
+     "ca": "M'esgota",
+     "es": "Me agota",
+     "en": "It is wearing me out"
+    }
+   ]
+  },
+  {
+   "index": 20,
+   "facet": "field_travel",
+   "type": "yes_no",
+   "text": {
+    "ca": "Fa uns dies ens vas dir que els desplaçaments t'esgotaven. Ha millorat?",
+    "es": "Hace unos días nos dijiste que los desplazamientos te agotaban. ¿Ha mejorado?",
+    "en": "A few days ago you told us travel was wearing you out. Has it eased?"
+   }
+  },
+  {
+   "index": 21,
+   "facet": "priorities",
+   "type": "ranking",
+   "text": {
+    "ca": "Ordena què milloraria més el teu benestar a la feina (primer, el més important).",
+    "es": "Ordena qué mejoraría más tu bienestar en el trabajo (primero, lo más importante).",
+    "en": "Order what would most improve your well-being at work (most important first)."
+   },
+   "options": [
+    {
+     "ca": "Menys pressió de temps",
+     "es": "Menos presión de tiempo",
+     "en": "Less time pressure"
+    },
+    {
+     "ca": "Un responsable que em doni suport",
+     "es": "Un responsable que me apoye",
+     "en": "A manager who supports me"
+    },
+    {
+     "ca": "Més oportunitats per aprendre",
+     "es": "Más oportunidades para aprender",
+     "en": "More chances to learn"
+    },
+    {
+     "ca": "Millors equips i condicions",
+     "es": "Mejores equipos y condiciones",
+     "en": "Better equipment and conditions"
+    }
+   ]
+  },
+  {
+   "index": 22,
+   "facet": "priorities",
+   "type": "ranking",
+   "text": {
+    "ca": "Què t'ajudaria a estar millor a la feina? Ordena-ho de més a menys útil.",
+    "es": "¿Qué te ayudaría a estar mejor en el trabajo? Ordénalo de más a menos útil.",
+    "en": "Which would help you feel better at work? Order from most to least helpful."
+   },
+   "options": [
+    {
+     "ca": "Menys càrrega de feina",
+     "es": "Menos carga de trabajo",
+     "en": "A lighter workload"
+    },
+    {
+     "ca": "Sentir-me part de l'equip",
+     "es": "Sentirme parte del equipo",
+     "en": "Feeling part of the team"
+    },
+    {
+     "ca": "Una relació més fàcil amb la gent de la feina",
+     "es": "Una relación más fácil con la gente del trabajo",
+     "en": "Easier relations with colleagues"
+    },
+    {
+     "ca": "Un horari més previsible",
+     "es": "Un horario más predecible",
+     "en": "A more predictable schedule"
+    }
+   ]
+  },
+  {
+   "index": 23,
+   "facet": "priorities",
+   "type": "ranking",
+   "text": {
+    "ca": "Ordena-ho segons quant afecta la teva energia.",
+    "es": "Ordénalo según cuánto afecta a tu energía.",
+    "en": "Order these by how much they affect your energy."
+   },
+   "options": [
+    {
+     "ca": "La quantitat de feina",
+     "es": "La cantidad de trabajo",
+     "en": "Amount of work"
+    },
+    {
+     "ca": "El suport del meu responsable",
+     "es": "El apoyo de mi responsable",
+     "en": "Support from my manager"
+    },
+    {
+     "ca": "Les preocupacions pel meu futur aquí",
+     "es": "Las preocupaciones por mi futuro aquí",
+     "en": "Worries about my future here"
+    },
+    {
+     "ca": "L'horari de treball",
+     "es": "El horario de trabajo",
+     "en": "Working hours"
+    }
+   ]
+  },
+  {
+   "index": 24,
+   "facet": "open_feedback",
+   "type": "open",
+   "text": {
+    "ca": "Digues una cosa que faria els teus dies de feina menys cansats.",
+    "es": "Dinos una cosa que haría tus días de trabajo menos cansados.",
+    "en": "What is one thing that would make your work days less tiring?"
+   }
+  },
+  {
+   "index": 25,
+   "facet": "open_feedback",
+   "type": "open",
+   "text": {
+    "ca": "Hi ha res a la teva feina que et causi estrès i es pugui evitar?",
+    "es": "¿Hay algo en tu trabajo que te cause estrés y se pueda evitar?",
+    "en": "Is there anything that adds avoidable stress to your job?"
+   }
+  },
+  {
+   "index": 26,
+   "facet": "open_feedback",
+   "type": "open",
+   "text": {
+    "ca": "Què t'ajuda a estar bé a la feina?",
+    "es": "¿Qué te ayuda a estar bien en el trabajo?",
+    "en": "What helps you stay well at work?"
+   }
+  },
+  {
+   "index": 27,
+   "facet": "manager_listens",
+   "type": "scale10",
+   "text": {
+    "ca": "Del 0 al 10, quant t'escolta el teu responsable?",
+    "es": "Del 0 al 10, ¿cuánto te escucha tu responsable?",
+    "en": "From 0 to 10, how much does your manager listen to you?"
+   }
+  },
+  {
+   "index": 28,
+   "facet": "manager_listens",
+   "type": "scale5",
+   "text": {
+    "ca": "El meu responsable té en compte el que li dic.",
+    "es": "Mi responsable tiene en cuenta lo que le digo.",
+    "en": "My manager takes into account what I tell them."
+   }
+  },
+  {
+   "index": 29,
+   "facet": "manager_listens",
+   "type": "yes_no",
+   "text": {
+    "ca": "Quan has plantejat un problema, el teu responsable hi ha fet alguna cosa?",
+    "es": "Cuando planteaste un problema, ¿tu responsable hizo algo al respecto?",
+    "en": "When you raised a problem, did your manager act on it?"
+   }
+  },
+  {
+   "index": 30,
+   "facet": "manager_listens",
+   "type": "pair",
+   "text": {
+    "ca": "Què s'assembla més a la teva experiència?",
+    "es": "¿Qué se parece más a tu experiencia?",
+    "en": "Which is closer to your experience?"
+   },
+   "options": [
+    {
+     "ca": "El meu responsable m'escolta",
+     "es": "Mi responsable me escucha",
+     "en": "My manager listens to me"
+    },
+    {
+     "ca": "Parlar amb el meu responsable no serveix de res",
+     "es": "Hablar con mi responsable no sirve de nada",
+     "en": "Talking to my manager is pointless"
+    }
+   ]
+  },
+  {
+   "index": 31,
+   "facet": "manager_listens",
+   "type": "scale5",
+   "text": {
+    "ca": "El meu responsable fa poc cas de la meva opinió.",
+    "es": "Mi responsable hace poco caso a mi opinión.",
+    "en": "My manager rarely pays attention to my opinion."
+   }
+  },
+  {
+   "index": 32,
+   "facet": "manager_listens",
+   "type": "scale10",
+   "text": {
+    "ca": "Fa uns dies ens vas dir que no senties que t'escoltessin. Del 0 al 10, com ho veus ara?",
+    "es": "Hace unos días nos dijiste que no sentías que te escucharan. Del 0 al 10, ¿cómo lo ves ahora?",
+    "en": "A few days ago you told us you did not feel listened to. From 0 to 10, how do you see it now?"
+   }
+  },
+  {
+   "index": 33,
+   "facet": "feedback_quality",
+   "type": "scale5",
+   "text": {
+    "ca": "Rebo comentaris útils sobre la meva feina.",
+    "es": "Recibo comentarios útiles sobre mi trabajo.",
+    "en": "I get useful feedback on my work."
+   }
+  },
+  {
+   "index": 34,
+   "facet": "feedback_quality",
+   "type": "scale10",
+   "text": {
+    "ca": "Del 0 al 10, com d'útils són els comentaris que reps del teu responsable?",
+    "es": "Del 0 al 10, ¿cómo de útiles son los comentarios que recibes de tu responsable?",
+    "en": "From 0 to 10, how useful is the feedback you get from your manager?"
+   }
+  },
+  {
+   "index": 35,
+   "facet": "feedback_quality",
+   "type": "yes_no",
+   "text": {
+    "ca": "L'últim mes, has rebut algun comentari que t'hagi ajudat a millorar?",
+    "es": "En el último mes, ¿has recibido algún comentario que te haya ayudado a mejorar?",
+    "en": "In the last month, did you get feedback that helped you improve?"
+   }
+  },
+  {
+   "index": 36,
+   "facet": "feedback_quality",
+   "type": "choice",
+   "text": {
+    "ca": "Cada quant et diuen com ho estàs fent?",
+    "es": "¿Cada cuánto te dicen cómo lo estás haciendo?",
+    "en": "How often do you hear how you are doing?"
+   },
+   "options": [
+    {
+     "ca": "Regularment, i m'ajuda",
+     "es": "Con regularidad, y me ayuda",
+     "en": "Regularly, and it helps"
+    },
+    {
+     "ca": "De tant en tant",
+     "es": "A veces",
+     "en": "Sometimes"
+    },
+    {
+     "ca": "Poques vegades",
+     "es": "Pocas veces",
+     "en": "Rarely"
+    },
+    {
+     "ca": "Mai",
+     "es": "Nunca",
+     "en": "Never"
+    }
+   ]
+  },
+  {
+   "index": 37,
+   "facet": "feedback_quality",
+   "type": "yes_no",
+   "text": {
+    "ca": "Fa uns dies ens vas dir que gairebé no rebies comentaris. N'has rebut algun des de llavors?",
+    "es": "Hace unos días nos dijiste que casi no recibías comentarios. ¿Has recibido alguno desde entonces?",
+    "en": "A few days ago you told us you rarely got feedback. Have you received any since?"
+   }
+  },
+  {
+   "index": 38,
+   "facet": "fair_treatment",
+   "type": "scale5",
+   "text": {
+    "ca": "El meu responsable tracta tot l'equip amb justícia.",
+    "es": "Mi responsable trata a todo el equipo con justicia.",
+    "en": "My manager treats everyone on the team fairly."
+   }
+  },
+  {
+   "index": 39,
+   "facet": "fair_treatment",
+   "type": "scale5",
+   "text": {
+    "ca": "Algunes persones del meu equip tenen favors que les altres no tenen.",
+    "es": "Algunas personas de mi equipo reciben favores que otras no reciben.",
+    "en": "Some people on my team get favours that others do not."
+   }
+  },
+  {
+   "index": 40,
+   "facet": "fair_treatment",
+   "type": "scale10",
+   "text": {
+    "ca": "Del 0 al 10, com de just és el repartiment de tasques i torns al teu equip?",
+    "es": "Del 0 al 10, ¿cómo de justo es el reparto de tareas y turnos en tu equipo?",
+    "en": "From 0 to 10, how fairly are tasks and shifts shared out in your team?"
+   }
+  },
+  {
+   "index": 41,
+   "facet": "fair_treatment",
+   "type": "pair",
+   "text": {
+    "ca": "Què s'assembla més al teu equip?",
+    "es": "¿Qué se parece más a tu equipo?",
+    "en": "Which is closer to your team?"
+   },
+   "options": [
+    {
+     "ca": "Les decisions semblen justes",
+     "es": "Las decisiones parecen justas",
+     "en": "Decisions feel fair"
+    },
+    {
+     "ca": "Les decisions semblen arbitràries",
+     "es": "Las decisiones parecen arbitrarias",
+     "en": "Decisions feel arbitrary"
+    }
+   ]
+  },
+  {
+   "index": 42,
+   "facet": "fair_treatment",
+   "type": "scale10",
+   "text": {
+    "ca": "Fa uns dies ens vas dir que les decisions no et semblaven justes. Del 0 al 10, com et semblen ara?",
+    "es": "Hace unos días nos dijiste que las decisiones no te parecían justas. Del 0 al 10, ¿cómo de justas te parecen ahora?",
+    "en": "A few days ago you told us decisions did not feel fair. From 0 to 10, how fair do they feel now?"
+   }
+  },
+  {
+   "index": 43,
+   "facet": "trust_leadership",
+   "type": "scale5",
+   "text": {
+    "ca": "Confio en les persones que dirigeixen l'empresa.",
+    "es": "Confío en las personas que dirigen la empresa.",
+    "en": "I trust the people who lead this company."
+   }
+  },
+  {
+   "index": 44,
+   "facet": "trust_leadership",
+   "type": "scale10",
+   "text": {
+    "ca": "Del 0 al 10, quanta confiança tens en les decisions que es prenen per sobre del teu responsable?",
+    "es": "Del 0 al 10, ¿cuánta confianza tienes en las decisiones que se toman por encima de tu responsable?",
+    "en": "From 0 to 10, how much do you trust the decisions made above your manager?"
+   }
+  },
+  {
+   "index": 45,
+   "facet": "trust_leadership",
+   "type": "yes_no",
+   "text": {
+    "ca": "Entens per què es prenen aquí les decisions importants?",
+    "es": "¿Entiendes por qué se toman aquí las decisiones importantes?",
+    "en": "Do you understand why important decisions are made here?"
+   }
+  },
+  {
+   "index": 46,
+   "facet": "trust_leadership",
+   "type": "choice",
+   "text": {
+    "ca": "Fins a quin punt la direcció explica les seves decisions?",
+    "es": "¿Hasta qué punto explica la dirección sus decisiones?",
+    "en": "How well does leadership explain its decisions?"
+   },
+   "options": [
+    {
+     "ca": "Amb claredat, ho entenc",
+     "es": "Con claridad, lo entiendo",
+     "en": "Clearly, I understand"
+    },
+    {
+     "ca": "En part",
+     "es": "En parte",
+     "en": "Partly"
+    },
+    {
+     "ca": "Poques vegades",
+     "es": "Pocas veces",
+     "en": "Rarely"
+    },
+    {
+     "ca": "Gens",
+     "es": "Nada",
+     "en": "Not at all"
+    }
+   ]
+  },
+  {
+   "index": 47,
+   "facet": "trust_leadership",
+   "type": "scale5",
+   "text": {
+    "ca": "Fa uns dies ens vas dir que les decisions eren difícils d'entendre. Ara ho tens més clar?",
+    "es": "Hace unos días nos dijiste que las decisiones eran difíciles de entender. ¿Lo tienes más claro ahora?",
+    "en": "A few days ago you told us decisions were hard to understand. Is that clearer now?"
+   }
+  },
+  {
+   "index": 48,
+   "facet": "priorities",
+   "type": "ranking",
+   "text": {
+    "ca": "Ordena què esperes més del teu responsable (primer, el més important).",
+    "es": "Ordena lo que más esperas de tu responsable (primero, lo más importante).",
+    "en": "Order what you most want from your manager (most important first)."
+   },
+   "options": [
+    {
+     "ca": "Que m'escolti",
+     "es": "Que me escuche",
+     "en": "Listening to me"
+    },
+    {
+     "ca": "Comentaris clars",
+     "es": "Comentarios claros",
+     "en": "Clear feedback"
+    },
+    {
+     "ca": "Oportunitats per créixer",
+     "es": "Oportunidades para crecer",
+     "en": "Chances to grow"
+    },
+    {
+     "ca": "Que protegeixi el meu temps de descans",
+     "es": "Que proteja mi tiempo de descanso",
+     "en": "Protecting my time off"
+    }
+   ]
+  },
+  {
+   "index": 49,
+   "facet": "priorities",
+   "type": "ranking",
+   "text": {
+    "ca": "Què faria que el teu responsable fos de més ajuda? Ordena per importància.",
+    "es": "¿Qué haría que tu responsable fuera de más ayuda? Ordena por importancia.",
+    "en": "What would make your manager more helpful? Order by importance."
+   },
+   "options": [
+    {
+     "ca": "Més temps amb l'equip",
+     "es": "Más tiempo con el equipo",
+     "en": "More time with the team"
+    },
+    {
+     "ca": "Prioritats més clares",
+     "es": "Prioridades más claras",
+     "en": "Clearer priorities"
+    },
+    {
+     "ca": "Reconèixer la feina ben feta",
+     "es": "Reconocer el trabajo bien hecho",
+     "en": "Recognising good work"
+    },
+    {
+     "ca": "Donar suport al meu desenvolupament",
+     "es": "Apoyar mi desarrollo",
+     "en": "Supporting my development"
+    }
+   ]
+  },
+  {
+   "index": 50,
+   "facet": "priorities",
+   "type": "ranking",
+   "text": {
+    "ca": "Ordena què fa créixer la teva confiança en els líders.",
+    "es": "Ordena lo que hace crecer tu confianza en los líderes.",
+    "en": "Order what builds your trust in leaders."
+   },
+   "options": [
+    {
+     "ca": "Comunicació sincera",
+     "es": "Comunicación sincera",
+     "en": "Honest communication"
+    },
+    {
+     "ca": "Decisions justes",
+     "es": "Decisiones justas",
+     "en": "Fair decisions"
+    },
+    {
+     "ca": "Complir les promeses",
+     "es": "Cumplir las promesas",
+     "en": "Keeping promises"
+    },
+    {
+     "ca": "Presència visible al centre",
+     "es": "Presencia visible en el centro",
+     "en": "Visible presence on site"
+    }
+   ]
+  },
+  {
+   "index": 51,
+   "facet": "open_feedback",
+   "type": "open",
+   "text": {
+    "ca": "Què podria fer diferent el teu responsable?",
+    "es": "¿Qué podría hacer diferente tu responsable?",
+    "en": "What is one thing your manager could do differently?"
+   }
+  },
+  {
+   "index": 52,
+   "facet": "open_feedback",
+   "type": "open",
+   "text": {
+    "ca": "Explica'ns un cop que un responsable t'hagi ajudat de debò. Sense noms, si us plau.",
+    "es": "Cuéntanos alguna vez en que un responsable te ayudó de verdad. Sin nombres, por favor.",
+    "en": "Tell us about a time a manager really helped you. No names, please."
+   }
+  },
+  {
+   "index": 53,
+   "facet": "open_feedback",
+   "type": "open",
+   "text": {
+    "ca": "Què voldries que els líders expliquessin millor?",
+    "es": "¿Qué te gustaría que los líderes explicaran mejor?",
+    "en": "What would you like leaders to explain better?"
+   }
+  },
+  {
+   "index": 54,
+   "facet": "growth_path",
+   "type": "choice",
+   "text": {
+    "ca": "Quina frase descriu millor el teu creixement aquí?",
+    "es": "¿Qué frase describe mejor tu crecimiento aquí?",
+    "en": "Which sentence best describes your growth here?"
+   },
+   "options": [
+    {
+     "ca": "Tinc un camí clar i m'hi ajuden",
+     "es": "Tengo un camino claro y me ayudan con él",
+     "en": "I have a clear path and get help with it"
+    },
+    {
+     "ca": "Hi ha oportunitats, però les he de buscar jo",
+     "es": "Hay oportunidades, pero tengo que buscarlas yo",
+     "en": "There are opportunities, but I must find them myself"
+    },
+    {
+     "ca": "No sé com podria créixer",
+     "es": "No sé cómo podría crecer",
+     "en": "I do not know how I could grow"
+    },
+    {
+     "ca": "Aquí no hi ha manera de créixer",
+     "es": "Aquí no hay manera de crecer",
+     "en": "There is no way to grow here"
+    }
+   ]
+  },
+  {
+   "index": 55,
+   "facet": "growth_path",
+   "type": "scale5",
+   "text": {
+    "ca": "Veig futur per a mi en aquesta empresa.",
+    "es": "Veo futuro para mí en esta empresa.",
+    "en": "I can see a future for myself in this company."
+   }
+  },
+  {
+   "index": 56,
+   "facet": "growth_path",
+   "type": "scale10",
+   "text": {
+    "ca": "Del 0 al 10, com de clar tens el teu proper pas a l'empresa?",
+    "es": "De 0 a 10, ¿cómo de claro tienes tu siguiente paso en la empresa?",
+    "en": "From 0 to 10, how clear is your next step in the company?"
+   }
+  },
+  {
+   "index": 57,
+   "facet": "growth_path",
+   "type": "yes_no",
+   "text": {
+    "ca": "Saps què hauries de fer per pujar de categoria o canviar de funció?",
+    "es": "¿Sabes qué tendrías que hacer para ascender o cambiar de puesto?",
+    "en": "Do you know what you would need to do to move up or change role?"
+   }
+  },
+  {
+   "index": 58,
+   "facet": "growth_path",
+   "type": "pair",
+   "text": {
+    "ca": "Quina d'aquestes frases s'acosta més a com et sents?",
+    "es": "¿Cuál de estas frases se acerca más a cómo te sientes?",
+    "en": "Which is closer to how you feel?"
+   },
+   "options": [
+    {
+     "ca": "Aquí puc créixer",
+     "es": "Aquí puedo crecer",
+     "en": "I can grow here"
+    },
+    {
+     "ca": "Al meu lloc no puc avançar",
+     "es": "En mi puesto no puedo avanzar",
+     "en": "I am stuck in my role"
+    }
+   ]
+  },
+  {
+   "index": 59,
+   "facet": "growth_path",
+   "type": "scale10",
+   "text": {
+    "ca": "Fa uns dies ens vas dir que no tenies clar el pas següent. Del 0 al 10, com de clar el tens ara?",
+    "es": "Hace unos días nos dijiste que no tenías claro tu siguiente paso. De 0 a 10, ¿cómo de claro lo tienes ahora?",
+    "en": "A few days ago you told us your next step was unclear. From 0 to 10, how clear is it now?"
+   }
+  },
+  {
+   "index": 60,
+   "facet": "training_access",
+   "type": "scale5",
+   "text": {
+    "ca": "Rebo la formació que necessito per fer bé la meva feina.",
+    "es": "Recibo la formación que necesito para hacer bien mi trabajo.",
+    "en": "I get the training I need to do my job well."
+   }
+  },
+  {
+   "index": 61,
+   "facet": "training_access",
+   "type": "yes_no",
+   "text": {
+    "ca": "En els últims sis mesos, has pogut fer alguna formació?",
+    "es": "En los últimos seis meses, ¿has podido hacer alguna formación?",
+    "en": "In the last six months, did you have the chance to attend any training?"
+   }
+  },
+  {
+   "index": 62,
+   "facet": "training_access",
+   "type": "scale10",
+   "text": {
+    "ca": "Del 0 al 10, com de fàcil és accedir a una formació quan la demanes?",
+    "es": "De 0 a 10, ¿cómo de fácil es conseguir una formación cuando la pides?",
+    "en": "From 0 to 10, how easy is it to get training when you ask?"
+   }
+  },
+  {
+   "index": 63,
+   "facet": "training_access",
+   "type": "scale5",
+   "text": {
+    "ca": "Em costa trobar temps per formar-me.",
+    "es": "Me cuesta encontrar tiempo para formarme.",
+    "en": "It is hard to find time for training."
+   }
+  },
+  {
+   "index": 64,
+   "facet": "training_access",
+   "type": "yes_no",
+   "text": {
+    "ca": "Fa uns dies ens vas dir que era difícil accedir a formació. Has tingut alguna oportunitat des de llavors?",
+    "es": "Hace unos días nos dijiste que era difícil acceder a formación. ¿Has tenido alguna oportunidad desde entonces?",
+    "en": "A few days ago you told us training was hard to get. Have you had any chance since?"
+   }
+  },
+  {
+   "index": 65,
+   "facet": "skill_use",
+   "type": "scale5",
+   "text": {
+    "ca": "La meva feina em permet aprofitar les meves habilitats.",
+    "es": "Mi trabajo me permite aprovechar mis habilidades.",
+    "en": "My job lets me use my skills."
+   }
+  },
+  {
+   "index": 66,
+   "facet": "skill_use",
+   "type": "scale10",
+   "text": {
+    "ca": "Del 0 al 10, quant del que saps fer aprofita la teva feina?",
+    "es": "De 0 a 10, ¿cuánto de lo que sabes hacer aprovecha tu trabajo?",
+    "en": "From 0 to 10, how much of your ability does your job use?"
+   }
+  },
+  {
+   "index": 67,
+   "facet": "skill_use",
+   "type": "pair",
+   "text": {
+    "ca": "La meva feina és sobretot…",
+    "es": "Mi trabajo es sobre todo…",
+    "en": "My work is mostly…"
+   },
+   "options": [
+    {
+     "ca": "Interessant i variada",
+     "es": "Interesante y variado",
+     "en": "Interesting and varied"
+    },
+    {
+     "ca": "Repetitiva i monòtona",
+     "es": "Repetitivo y monótono",
+     "en": "Repetitive and dull"
+    }
+   ]
+  },
+  {
+   "index": 68,
+   "facet": "skill_use",
+   "type": "yes_no",
+   "text": {
+    "ca": "Sents que fas una feina per sota del que saps fer?",
+    "es": "¿Sientes que haces un trabajo por debajo de lo que sabes hacer?",
+    "en": "Do you feel you do work below your abilities?"
+   }
+  },
+  {
+   "index": 69,
+   "facet": "skill_use",
+   "type": "scale5",
+   "text": {
+    "ca": "Fa uns dies ens vas dir que no s'aprofitaven les teves habilitats. Ha canviat alguna cosa?",
+    "es": "Hace unos días nos dijiste que no se aprovechaban tus habilidades. ¿Ha cambiado algo?",
+    "en": "A few days ago you told us your skills were not being used. Has that changed?"
+   }
+  },
+  {
+   "index": 70,
+   "facet": "learning_support",
+   "type": "scale5",
+   "text": {
+    "ca": "Aquí els companys comparteixen amb mi el que saben.",
+    "es": "Aquí mis compañeros comparten conmigo lo que saben.",
+    "en": "Colleagues here share what they know with me."
+   }
+  },
+  {
+   "index": 71,
+   "facet": "learning_support",
+   "type": "scale10",
+   "text": {
+    "ca": "Del 0 al 10, quant suport sents quan aprens una cosa nova?",
+    "es": "De 0 a 10, ¿cuánto apoyo sientes cuando aprendes algo nuevo?",
+    "en": "From 0 to 10, how supported do you feel when learning something new?"
+   }
+  },
+  {
+   "index": 72,
+   "facet": "learning_support",
+   "type": "yes_no",
+   "text": {
+    "ca": "Quan vas començar una tasca nova, algú et va ensenyar com fer-la?",
+    "es": "Cuando empezaste una tarea nueva, ¿alguien te enseñó cómo hacerla?",
+    "en": "When you started a new task, did someone show you how?"
+   }
+  },
+  {
+   "index": 73,
+   "facet": "learning_support",
+   "type": "choice",
+   "text": {
+    "ca": "Quan aprenc alguna cosa nova a la feina…",
+    "es": "Cuando aprendo algo nuevo en el trabajo…",
+    "en": "When I learn something new at work…"
+   },
+   "options": [
+    {
+     "ca": "Tinc temps i ajuda",
+     "es": "Tengo tiempo y ayuda",
+     "en": "I get time and help"
+    },
+    {
+     "ca": "Tinc ajuda, però poc temps",
+     "es": "Tengo ayuda, pero poco tiempo",
+     "en": "I get help, but little time"
+    },
+    {
+     "ca": "Aprenc sobretot pel meu compte",
+     "es": "Aprendo sobre todo por mi cuenta",
+     "en": "I mostly learn alone"
+    },
+    {
+     "ca": "No tinc cap suport",
+     "es": "No tengo ningún apoyo",
+     "en": "I get no support"
+    }
+   ]
+  },
+  {
+   "index": 74,
+   "facet": "learning_support",
+   "type": "scale10",
+   "text": {
+    "ca": "Fa uns dies ens vas dir que et costava aprendre coses noves. Quant suport sents ara, del 0 al 10?",
+    "es": "Hace unos días nos dijiste que te costaba aprender cosas nuevas. ¿Cuánto apoyo sientes ahora, de 0 a 10?",
+    "en": "A few days ago you told us learning new things was a struggle. How supported do you feel now, from 0 to 10?"
+   }
+  },
+  {
+   "index": 75,
+   "facet": "priorities",
+   "type": "ranking",
+   "text": {
+    "ca": "Ordena què t'ajudaria més a desenvolupar-te (el més important primer).",
+    "es": "Ordena lo que más te ayudaría a desarrollarte (lo más importante primero).",
+    "en": "Order what would help your development most (most important first)."
+   },
+   "options": [
+    {
+     "ca": "Formació pagada",
+     "es": "Formación pagada",
+     "en": "Paid training"
+    },
+    {
+     "ca": "Un mentor o una mentora",
+     "es": "Un mentor o una mentora",
+     "en": "A mentor"
+    },
+    {
+     "ca": "Temps per aprendre durant la jornada",
+     "es": "Tiempo para aprender durante la jornada",
+     "en": "Time to learn during work"
+    },
+    {
+     "ca": "Oportunitats de canviar de funció",
+     "es": "Oportunidades de cambiar de puesto",
+     "en": "Chances to change role"
+    }
+   ]
+  },
+  {
+   "index": 76,
+   "facet": "priorities",
+   "type": "ranking",
+   "text": {
+    "ca": "Què t'ajudaria més a créixer? Ordena-ho per importància.",
+    "es": "¿Qué te ayudaría más a crecer? Ordénalo por importancia.",
+    "en": "Which would help you grow most? Order by importance."
+   },
+   "options": [
+    {
+     "ca": "Opinió del meu responsable sobre la meva feina",
+     "es": "La opinión de mi responsable sobre mi trabajo",
+     "en": "Feedback from my manager"
+    },
+    {
+     "ca": "Noves responsabilitats",
+     "es": "Nuevas responsabilidades",
+     "en": "New responsibilities"
+    },
+    {
+     "ca": "Aprendre dels companys",
+     "es": "Aprender de mis compañeros",
+     "en": "Learning from colleagues"
+    },
+    {
+     "ca": "Criteris clars per ascendir",
+     "es": "Criterios claros de ascenso",
+     "en": "Clear promotion criteria"
+    }
+   ]
+  },
+  {
+   "index": 77,
+   "facet": "priorities",
+   "type": "ranking",
+   "text": {
+    "ca": "Ordena què fa que valgui la pena quedar-se en una feina.",
+    "es": "Ordena lo que hace que merezca la pena quedarse en un trabajo.",
+    "en": "Order what makes a job worth staying in."
+   },
+   "options": [
+    {
+     "ca": "Aprendre coses noves",
+     "es": "Aprender cosas nuevas",
+     "en": "Learning something new"
+    },
+    {
+     "ca": "Un bon equip",
+     "es": "Un buen equipo",
+     "en": "Good team"
+    },
+    {
+     "ca": "Sou i condicions justos",
+     "es": "Sueldo y condiciones justos",
+     "en": "Fair pay and conditions"
+    },
+    {
+     "ca": "Un responsable que es preocupa per la seva gent",
+     "es": "Un responsable que se preocupa por su gente",
+     "en": "A manager who cares"
+    }
+   ]
+  },
+  {
+   "index": 78,
+   "facet": "open_feedback",
+   "type": "open",
+   "text": {
+    "ca": "Quina habilitat t'agradaria aprendre l'any que ve?",
+    "es": "¿Qué habilidad te gustaría aprender el año que viene?",
+    "en": "What skill would you like to learn in the next year?"
+   }
+  },
+  {
+   "index": 79,
+   "facet": "open_feedback",
+   "type": "open",
+   "text": {
+    "ca": "Què et frena en el teu desenvolupament aquí?",
+    "es": "¿Qué frena tu desarrollo aquí?",
+    "en": "What gets in the way of your development here?"
+   }
+  },
+  {
+   "index": 80,
+   "facet": "open_feedback",
+   "type": "open",
+   "text": {
+    "ca": "Quina formació et facilitaria la feina del dia a dia?",
+    "es": "¿Qué formación te facilitaría el trabajo del día a día?",
+    "en": "What training would make your daily work easier?"
+   }
+  },
+  {
+   "index": 81,
+   "facet": "belonging",
+   "type": "scale5",
+   "text": {
+    "ca": "Em sento part d'aquesta empresa.",
+    "es": "Me siento parte de esta empresa.",
+    "en": "I feel I belong in this company."
+   }
+  },
+  {
+   "index": 82,
+   "facet": "belonging",
+   "type": "scale10",
+   "text": {
+    "ca": "Del 0 al 10, quant et sents part de l'empresa?",
+    "es": "De 0 a 10, ¿cuánto te sientes parte de la empresa?",
+    "en": "From 0 to 10, how much do you feel part of the company?"
+   }
+  },
+  {
+   "index": 83,
+   "facet": "belonging",
+   "type": "pair",
+   "text": {
+    "ca": "Quina d'aquestes frases s'acosta més a com et sents?",
+    "es": "¿Cuál de estas frases se acerca más a cómo te sientes?",
+    "en": "Which is closer to how you feel?"
+   },
+   "options": [
+    {
+     "ca": "Em sento part de l'equip",
+     "es": "Me siento parte del equipo",
+     "en": "I feel part of the team"
+    },
+    {
+     "ca": "Em sento al marge",
+     "es": "Me siento al margen",
+     "en": "I feel like an outsider"
+    }
+   ]
+  },
+  {
+   "index": 84,
+   "facet": "belonging",
+   "type": "yes_no",
+   "text": {
+    "ca": "Et sents al marge a la feina?",
+    "es": "¿Te sientes al margen en el trabajo?",
+    "en": "Do you feel like an outsider at work?"
+   }
+  },
+  {
+   "index": 85,
+   "facet": "belonging",
+   "type": "scale10",
+   "text": {
+    "ca": "Fa uns dies ens vas dir que no et senties part de l'equip. Del 0 al 10, com et sents ara?",
+    "es": "Hace unos días nos dijiste que no te sentías parte del equipo. De 0 a 10, ¿cómo te sientes ahora?",
+    "en": "A few days ago you told us you did not feel part of the team. From 0 to 10, how do you feel now?"
+   }
+  },
+  {
+   "index": 86,
+   "facet": "recognition",
+   "type": "pair",
+   "text": {
+    "ca": "Quina frase s'acosta més a com et sents?",
+    "es": "¿Qué frase se acerca más a cómo te sientes?",
+    "en": "Which sentence is closer to how you feel?"
+   },
+   "options": [
+    {
+     "ca": "La meva feina es valora",
+     "es": "Mi trabajo se valora",
+     "en": "My work is valued"
+    },
+    {
+     "ca": "La meva feina passa desapercebuda",
+     "es": "Mi trabajo pasa desapercibido",
+     "en": "My work goes unnoticed"
+    }
+   ]
+  },
+  {
+   "index": 87,
+   "facet": "recognition",
+   "type": "scale5",
+   "text": {
+    "ca": "Aquí es reconeix el meu esforç.",
+    "es": "Aquí se reconoce mi esfuerzo.",
+    "en": "My efforts are recognised here."
+   }
+  },
+  {
+   "index": 88,
+   "facet": "recognition",
+   "type": "scale10",
+   "text": {
+    "ca": "Del 0 al 10, quant sents que es valora el que fas?",
+    "es": "De 0 a 10, ¿cuánto sientes que se valora lo que haces?",
+    "en": "From 0 to 10, how valued do you feel for what you do?"
+   }
+  },
+  {
+   "index": 89,
+   "facet": "recognition",
+   "type": "yes_no",
+   "text": {
+    "ca": "Durant l'últim mes, algú t'ha donat les gràcies per la teva feina?",
+    "es": "En el último mes, ¿alguien te ha dado las gracias por tu trabajo?",
+    "en": "In the last month, did anyone thank you for your work?"
+   }
+  },
+  {
+   "index": 90,
+   "facet": "recognition",
+   "type": "scale5",
+   "text": {
+    "ca": "Ningú s'adona de quan faig bé la feina.",
+    "es": "Nadie se da cuenta de cuando hago bien mi trabajo.",
+    "en": "Nobody notices when I do a good job."
+   }
+  },
+  {
+   "index": 91,
+   "facet": "recognition",
+   "type": "yes_no",
+   "text": {
+    "ca": "Fa uns dies ens vas dir que la teva feina passava desapercebuda. Des de llavors, algú te l'ha reconegut?",
+    "es": "Hace unos días nos dijiste que tu trabajo pasaba desapercibido. ¿Te lo ha reconocido alguien desde entonces?",
+    "en": "A few days ago you told us your work went unnoticed. Has anyone recognised it since?"
+   }
+  },
+  {
+   "index": 92,
+   "facet": "values_fit",
+   "type": "scale5",
+   "text": {
+    "ca": "Els valors de l'empresa es noten en com treballem cada dia.",
+    "es": "Los valores de la empresa se notan en cómo trabajamos día a día.",
+    "en": "The company values are visible in how we work day to day."
+   }
+  },
+  {
+   "index": 93,
+   "facet": "values_fit",
+   "type": "scale10",
+   "text": {
+    "ca": "Del 0 al 10, quant coincideix el dia a dia aquí amb el que l'empresa diu que defensa?",
+    "es": "De 0 a 10, ¿cuánto coincide el día a día aquí con lo que la empresa dice defender?",
+    "en": "From 0 to 10, how closely does daily life here match what the company says it stands for?"
+   }
+  },
+  {
+   "index": 94,
+   "facet": "values_fit",
+   "type": "yes_no",
+   "text": {
+    "ca": "Creus que la nostra manera de treballar encaixa amb els valors de l'empresa?",
+    "es": "¿Crees que nuestra forma de trabajar encaja con los valores de la empresa?",
+    "en": "Do you feel the way we work matches the company values?"
+   }
+  },
+  {
+   "index": 95,
+   "facet": "values_fit",
+   "type": "choice",
+   "text": {
+    "ca": "El que diu l'empresa i el que passa cada dia…",
+    "es": "Lo que dice la empresa y lo que pasa a diario…",
+    "en": "What the company says and what happens day to day…"
+   },
+   "options": [
+    {
+     "ca": "Coincideixen bé",
+     "es": "Coinciden bien",
+     "en": "Match well"
+    },
+    {
+     "ca": "Coincideixen força",
+     "es": "Coinciden bastante",
+     "en": "Match mostly"
+    },
+    {
+     "ca": "Sovint no coincideixen",
+     "es": "A menudo no coinciden",
+     "en": "Often differ"
+    },
+    {
+     "ca": "Rarament coincideixen",
+     "es": "Rara vez coinciden",
+     "en": "Rarely match"
+    }
+   ]
+  },
+  {
+   "index": 96,
+   "facet": "values_fit",
+   "type": "scale10",
+   "text": {
+    "ca": "Fa uns dies ens vas dir que el que es diu i el que es fa no coincidien. Del 0 al 10, fins a quin punt coincideixen ara?",
+    "es": "Hace unos días nos dijiste que lo que se dice y lo que se hace no coincidían. De 0 a 10, ¿cuánto coinciden ahora?",
+    "en": "A few days ago you told us words and actions did not match. From 0 to 10, how well do they match now?"
+   }
+  },
+  {
+   "index": 97,
+   "facet": "pride",
+   "type": "scale5",
+   "text": {
+    "ca": "Treballar en aquesta empresa m'omple d'orgull.",
+    "es": "Trabajar en esta empresa me llena de orgullo.",
+    "en": "I am proud to work for this company."
+   }
+  },
+  {
+   "index": 98,
+   "facet": "pride",
+   "type": "scale10",
+   "text": {
+    "ca": "Del 0 al 10, amb quina probabilitat recomanaries treballar aquí a una amistat?",
+    "es": "De 0 a 10, ¿con qué probabilidad recomendarías trabajar aquí a un amigo o una amiga?",
+    "en": "From 0 to 10, how likely are you to recommend working here to a friend?"
+   }
+  },
+  {
+   "index": 99,
+   "facet": "pride",
+   "type": "yes_no",
+   "text": {
+    "ca": "Diries a les teves amistats que aquest és un bon lloc per treballar?",
+    "es": "¿Les dirías a tus amistades que este es un buen sitio para trabajar?",
+    "en": "Would you tell friends this is a good place to work?"
+   }
+  },
+  {
+   "index": 100,
+   "facet": "pride",
+   "type": "pair",
+   "text": {
+    "ca": "Quan explico on treballo, sento…",
+    "es": "Cuando cuento dónde trabajo, siento…",
+    "en": "Telling people where I work, I feel…"
+   },
+   "options": [
+    {
+     "ca": "Orgull",
+     "es": "Orgullo",
+     "en": "Proud"
+    },
+    {
+     "ca": "Indiferència",
+     "es": "Indiferencia",
+     "en": "Indifferent"
+    }
+   ]
+  },
+  {
+   "index": 101,
+   "facet": "pride",
+   "type": "scale10",
+   "text": {
+    "ca": "Fa uns dies ens vas dir que no senties gaire orgull de treballar aquí. Del 0 al 10, com ho sents ara?",
+    "es": "Hace unos días nos dijiste que no sentías mucho orgullo de trabajar aquí. De 0 a 10, ¿cómo lo sientes ahora?",
+    "en": "A few days ago you told us you were not that proud of working here. From 0 to 10, how do you feel now?"
+   }
+  },
+  {
+   "index": 102,
+   "facet": "priorities",
+   "type": "ranking",
+   "text": {
+    "ca": "Ordena què et fa sentir més part de l'empresa (el més important primer).",
+    "es": "Ordena lo que más te hace sentir parte de la empresa (lo más importante primero).",
+    "en": "Order what makes you feel most part of the company (most important first)."
+   },
+   "options": [
+    {
+     "ca": "Que em reconeguin la feina",
+     "es": "Que reconozcan mi trabajo",
+     "en": "Being recognised"
+    },
+    {
+     "ca": "Bona relació amb els companys",
+     "es": "Buena relación con los compañeros",
+     "en": "Good relations with colleagues"
+    },
+    {
+     "ca": "Un responsable que em valora",
+     "es": "Un responsable que me valora",
+     "en": "A manager who values me"
+    },
+    {
+     "ca": "Condicions estables i justes",
+     "es": "Condiciones estables y justas",
+     "en": "Stable, fair conditions"
+    }
+   ]
+  },
+  {
+   "index": 103,
+   "facet": "priorities",
+   "type": "ranking",
+   "text": {
+    "ca": "Què reforçaria més l'esperit d'equip? Ordena-ho per importància.",
+    "es": "¿Qué reforzaría más el espíritu de equipo? Ordénalo por importancia.",
+    "en": "Which would strengthen team spirit most? Order by importance."
+   },
+   "options": [
+    {
+     "ca": "Moments per estar junts com a equip",
+     "es": "Momentos para estar juntos como equipo",
+     "en": "Team moments together"
+    },
+    {
+     "ca": "Objectius compartits",
+     "es": "Objetivos compartidos",
+     "en": "Shared goals"
+    },
+    {
+     "ca": "Aprendre junts",
+     "es": "Aprender juntos",
+     "en": "Learning together"
+    },
+    {
+     "ca": "Rotació justa de torns i tasques",
+     "es": "Rotación justa de turnos y tareas",
+     "en": "Fair shift and task rotation"
+    }
+   ]
+  },
+  {
+   "index": 104,
+   "facet": "priorities",
+   "type": "ranking",
+   "text": {
+    "ca": "Ordena què valores més de treballar aquí.",
+    "es": "Ordena lo que más valoras de trabajar aquí.",
+    "en": "Order what you value most about working here."
+   },
+   "options": [
+    {
+     "ca": "Les persones",
+     "es": "Las personas",
+     "en": "The people"
+    },
+    {
+     "ca": "L'estabilitat de la feina",
+     "es": "La estabilidad del empleo",
+     "en": "Job security"
+    },
+    {
+     "ca": "La marca",
+     "es": "La marca",
+     "en": "The brand"
+    },
+    {
+     "ca": "Les oportunitats de créixer",
+     "es": "Las oportunidades de crecer",
+     "en": "Chances to grow"
+    }
+   ]
+  },
+  {
+   "index": 105,
+   "facet": "open_feedback",
+   "type": "open",
+   "text": {
+    "ca": "Què et fa sentir orgull de treballar aquí?",
+    "es": "¿Qué te hace sentir orgullo de trabajar aquí?",
+    "en": "What makes you proud of working here?"
+   }
+  },
+  {
+   "index": 106,
+   "facet": "open_feedback",
+   "type": "open",
+   "text": {
+    "ca": "Què et faria sentir més part de l'empresa?",
+    "es": "¿Qué te haría sentir más parte de la empresa?",
+    "en": "What would make you feel more part of the company?"
+   }
+  },
+  {
+   "index": 107,
+   "facet": "open_feedback",
+   "type": "open",
+   "text": {
+    "ca": "Hi ha alguna cosa que diem valorar i que no veus a la pràctica?",
+    "es": "¿Hay algo que decimos valorar y que no ves en la práctica?",
+    "en": "Is there something we say we value that you do not see in practice?"
+   }
+  },
+  {
+   "index": 108,
+   "facet": "team_cooperation",
+   "type": "scale5",
+   "text": {
+    "ca": "A l'equip ens ajudem els uns als altres.",
+    "es": "En mi equipo nos ayudamos unos a otros.",
+    "en": "People on my team help each other out."
+   }
+  },
+  {
+   "index": 109,
+   "facet": "team_cooperation",
+   "type": "scale10",
+   "text": {
+    "ca": "Del 0 al 10, com de bé treballa plegat el teu equip?",
+    "es": "De 0 a 10, ¿cómo de bien trabaja tu equipo en conjunto?",
+    "en": "From 0 to 10, how well does your team work together?"
+   }
+  },
+  {
+   "index": 110,
+   "facet": "team_cooperation",
+   "type": "yes_no",
+   "text": {
+    "ca": "Aquesta setmana, algú de l'equip t'ha ajudat quan ho has necessitat?",
+    "es": "Esta semana, ¿alguien del equipo te ha echado una mano cuando lo has necesitado?",
+    "en": "This week, did a colleague help you when you needed it?"
+   }
+  },
+  {
+   "index": 111,
+   "facet": "team_cooperation",
+   "type": "pair",
+   "text": {
+    "ca": "El meu equip és sobretot…",
+    "es": "Mi equipo es sobre todo…",
+    "en": "My team is mostly…"
+   },
+   "options": [
+    {
+     "ca": "Col·laboratiu",
+     "es": "Colaborador",
+     "en": "Cooperative"
+    },
+    {
+     "ca": "Cadascú va a la seva",
+     "es": "Cada uno va a lo suyo",
+     "en": "Everyone for themselves"
+    }
+   ]
+  },
+  {
+   "index": 112,
+   "facet": "team_cooperation",
+   "type": "scale10",
+   "text": {
+    "ca": "Fa uns dies ens vas dir que l'equip no treballava bé en conjunt. Del 0 al 10, com ho veus ara?",
+    "es": "Hace unos días nos dijiste que tu equipo no trabajaba bien en conjunto. Del 0 al 10, ¿cómo lo ves ahora?",
+    "en": "A few days ago you told us your team was not working well together. From 0 to 10, how is it now?"
+   }
+  },
+  {
+   "index": 113,
+   "facet": "communication_flow",
+   "type": "scale5",
+   "text": {
+    "ca": "Rebo a temps la informació que necessito per fer la meva feina.",
+    "es": "Recibo a tiempo la información que necesito para hacer mi trabajo.",
+    "en": "I get the information I need to do my job on time."
+   }
+  },
+  {
+   "index": 114,
+   "facet": "communication_flow",
+   "type": "scale5",
+   "text": {
+    "ca": "Sovint m'assabento dels canvis a última hora.",
+    "es": "Muchas veces me entero de los cambios a última hora.",
+    "en": "I often find out about changes at the last minute."
+   }
+  },
+  {
+   "index": 115,
+   "facet": "communication_flow",
+   "type": "scale10",
+   "text": {
+    "ca": "Del 0 al 10, com d'al corrent estàs del que passa?",
+    "es": "Del 0 al 10, ¿cómo de al corriente estás de lo que pasa?",
+    "en": "From 0 to 10, how well informed do you feel about what is going on?"
+   }
+  },
+  {
+   "index": 116,
+   "facet": "communication_flow",
+   "type": "choice",
+   "text": {
+    "ca": "Com t'assabentes normalment dels canvis que t'afecten?",
+    "es": "¿Cómo te enteras normalmente de los cambios que te afectan?",
+    "en": "How do you usually find out about changes that affect you?"
+   },
+   "options": [
+    {
+     "ca": "A temps i directament",
+     "es": "A tiempo y directamente",
+     "en": "In good time, directly"
+    },
+    {
+     "ca": "A temps, però per altres companys",
+     "es": "A tiempo, pero por otros compañeros",
+     "en": "In time, but through colleagues"
+    },
+    {
+     "ca": "Tard",
+     "es": "Tarde",
+     "en": "Late"
+    },
+    {
+     "ca": "Sovint no me n'assabento",
+     "es": "Muchas veces no me entero",
+     "en": "I often do not find out"
+    }
+   ]
+  },
+  {
+   "index": 117,
+   "facet": "communication_flow",
+   "type": "scale10",
+   "text": {
+    "ca": "Fa uns dies ens vas dir que et faltava informació. Del 0 al 10, com d'al corrent estàs ara?",
+    "es": "Hace unos días nos dijiste que te faltaba información. Del 0 al 10, ¿cómo de al corriente estás ahora?",
+    "en": "A few days ago you told us you were poorly informed. From 0 to 10, how well informed do you feel now?"
+   }
+  },
+  {
+   "index": 118,
+   "facet": "safe_to_speak",
+   "type": "scale5",
+   "text": {
+    "ca": "Puc dir que alguna cosa em preocupa sense por de les conseqüències.",
+    "es": "Puedo plantear una preocupación sin miedo a las consecuencias.",
+    "en": "I can raise a concern without fear of consequences."
+   }
+  },
+  {
+   "index": 119,
+   "facet": "safe_to_speak",
+   "type": "yes_no",
+   "text": {
+    "ca": "Si alguna cosa anés malament, sentiries que pots dir-ho amb seguretat?",
+    "es": "Si algo fuera mal, ¿sentirías que puedes decirlo con seguridad?",
+    "en": "If something was wrong, would you feel safe saying so?"
+   }
+  },
+  {
+   "index": 120,
+   "facet": "safe_to_speak",
+   "type": "scale10",
+   "text": {
+    "ca": "Del 0 al 10, quanta seguretat tens per dir el que penses a la feina?",
+    "es": "Del 0 al 10, ¿cuánta seguridad sientes para decir lo que piensas en el trabajo?",
+    "en": "From 0 to 10, how safe do you feel speaking up at work?"
+   }
+  },
+  {
+   "index": 121,
+   "facet": "safe_to_speak",
+   "type": "pair",
+   "text": {
+    "ca": "Si veig un problema, sento que…",
+    "es": "Si veo un problema, siento que…",
+    "en": "If I see a problem, I feel…"
+   },
+   "options": [
+    {
+     "ca": "Ho puc dir obertament",
+     "es": "Puedo decirlo abiertamente",
+     "en": "I can say it openly"
+    },
+    {
+     "ca": "És més segur callar",
+     "es": "Es más seguro callarse",
+     "en": "It is safer to keep quiet"
+    }
+   ]
+  },
+  {
+   "index": 122,
+   "facet": "safe_to_speak",
+   "type": "scale5",
+   "text": {
+    "ca": "Fa uns dies ens vas dir que costava parlar amb franquesa. Ara tens més seguretat per dir el que penses?",
+    "es": "Hace unos días nos dijiste que costaba hablar con franqueza. ¿Ahora sientes más seguridad para decir lo que piensas?",
+    "en": "A few days ago you told us it was hard to speak up. Do you feel safer saying what you think now?"
+   }
+  },
+  {
+   "index": 123,
+   "facet": "respect_colleagues",
+   "type": "scale5",
+   "text": {
+    "ca": "Aquí ens tractem amb respecte.",
+    "es": "Aquí nos tratamos con respeto.",
+    "en": "People here treat each other with respect."
+   }
+  },
+  {
+   "index": 124,
+   "facet": "respect_colleagues",
+   "type": "scale5",
+   "text": {
+    "ca": "Fa poc he vist actituds irrespectuoses a la feina.",
+    "es": "Hace poco he visto actitudes irrespetuosas en el trabajo.",
+    "en": "I have seen disrespectful behaviour at work recently."
+   }
+  },
+  {
+   "index": 125,
+   "facet": "respect_colleagues",
+   "type": "scale10",
+   "text": {
+    "ca": "Del 0 al 10, com de respectuós és l'ambient entre companys?",
+    "es": "Del 0 al 10, ¿cómo de respetuoso es el ambiente entre compañeros?",
+    "en": "From 0 to 10, how respectful is the atmosphere among colleagues?"
+   }
+  },
+  {
+   "index": 126,
+   "facet": "respect_colleagues",
+   "type": "yes_no",
+   "text": {
+    "ca": "La majoria de dies, l'ambient a la feina és agradable?",
+    "es": "¿La mayoría de los días el ambiente en el trabajo es agradable?",
+    "en": "Is the atmosphere at work pleasant most days?"
+   }
+  },
+  {
+   "index": 127,
+   "facet": "respect_colleagues",
+   "type": "scale10",
+   "text": {
+    "ca": "Fa uns dies ens vas dir que l'ambient no era respectuós. Del 0 al 10, com és ara?",
+    "es": "Hace unos días nos dijiste que el ambiente no era respetuoso. Del 0 al 10, ¿cómo es ahora?",
+    "en": "A few days ago you told us the atmosphere was not respectful. From 0 to 10, how is it now?"
+   }
+  },
+  {
+   "index": 128,
+   "facet": "priorities",
+   "type": "ranking",
+   "text": {
+    "ca": "Ordena què milloraria més les relacions a la feina (el més important primer).",
+    "es": "Ordena lo que más mejoraría las relaciones en el trabajo (lo más importante primero).",
+    "en": "Order what would improve working relationships most (most important first)."
+   },
+   "options": [
+    {
+     "ca": "Una comunicació més clara",
+     "es": "Una comunicación más clara",
+     "en": "Clearer communication"
+    },
+    {
+     "ca": "Més cooperació",
+     "es": "Más cooperación",
+     "en": "More cooperation"
+    },
+    {
+     "ca": "Un responsable que intervingui a temps",
+     "es": "Un responsable que intervenga a tiempo",
+     "en": "A manager who steps in early"
+    },
+    {
+     "ca": "Un repartiment de la feina més just",
+     "es": "Un reparto del trabajo más justo",
+     "en": "Fairer workload sharing"
+    }
+   ]
+  },
+  {
+   "index": 129,
+   "facet": "priorities",
+   "type": "ranking",
+   "text": {
+    "ca": "Què milloraria més el teu entorn de feina? Ordena-ho per importància.",
+    "es": "¿Qué mejoraría más tu entorno de trabajo? Ordénalo por importancia.",
+    "en": "Which would improve your work environment most? Order by importance."
+   },
+   "options": [
+    {
+     "ca": "Respecte entre companys",
+     "es": "Respeto entre compañeros",
+     "en": "Respect between colleagues"
+    },
+    {
+     "ca": "Millors espais per a reunions i descans",
+     "es": "Mejores espacios para reuniones y descanso",
+     "en": "Better meeting and break spaces"
+    },
+    {
+     "ca": "Activitats d'equip",
+     "es": "Actividades de equipo",
+     "en": "Team activities"
+    },
+    {
+     "ca": "Informació més ràpida",
+     "es": "Información más rápida",
+     "en": "Quicker information"
+    }
+   ]
+  },
+  {
+   "index": 130,
+   "facet": "priorities",
+   "type": "ranking",
+   "text": {
+    "ca": "Ordena què és més important per poder dir el que penses.",
+    "es": "Ordena lo que más importa para poder decir lo que piensas.",
+    "en": "Order what matters most for speaking up."
+   },
+   "options": [
+    {
+     "ca": "Que ens escoltin",
+     "es": "Que te escuchen",
+     "en": "Being listened to"
+    },
+    {
+     "ca": "Canals anònims",
+     "es": "Canales anónimos",
+     "en": "Anonymous channels"
+    },
+    {
+     "ca": "Veure que es fa alguna cosa",
+     "es": "Ver que se actúa",
+     "en": "Seeing action taken"
+    },
+    {
+     "ca": "Sentir que no s'assenyalarà ningú",
+     "es": "Sentir que no se culpará a nadie",
+     "en": "Feeling no one will be blamed"
+    }
+   ]
+  },
+  {
+   "index": 131,
+   "facet": "open_feedback",
+   "type": "open",
+   "text": {
+    "ca": "Què milloraria la comunicació al teu equip?",
+    "es": "¿Qué mejoraría la comunicación en tu equipo?",
+    "en": "What would improve communication in your team?"
+   }
+  },
+  {
+   "index": 132,
+   "facet": "open_feedback",
+   "type": "open",
+   "text": {
+    "ca": "Hi ha alguna cosa de com ens tractem que s'hauria de canviar?",
+    "es": "¿Hay algo en cómo nos tratamos que se debería cambiar?",
+    "en": "Is there anything about how we treat each other that should change?"
+   }
+  },
+  {
+   "index": 133,
+   "facet": "open_feedback",
+   "type": "open",
+   "text": {
+    "ca": "Què funciona bé entre companys aquí?",
+    "es": "¿Qué funciona bien entre compañeros aquí?",
+    "en": "What works well between colleagues here?"
+   }
+  },
+  {
+   "index": 134,
+   "facet": "equipment_tools",
+   "type": "scale5",
+   "text": {
+    "ca": "Tinc els equips i les eines que necessito per fer bé la meva feina.",
+    "es": "Tengo los equipos y las herramientas que necesito para hacer bien mi trabajo.",
+    "en": "I have the equipment and tools I need to do my job well."
+   }
+  },
+  {
+   "index": 135,
+   "facet": "equipment_tools",
+   "type": "scale10",
+   "text": {
+    "ca": "Del 0 al 10, com valores les eines i els equips amb què treballes?",
+    "es": "Del 0 al 10, ¿cómo valoras las herramientas y los equipos con los que trabajas?",
+    "en": "From 0 to 10, how good are the tools and equipment you work with?"
+   }
+  },
+  {
+   "index": 136,
+   "facet": "equipment_tools",
+   "type": "yes_no",
+   "text": {
+    "ca": "Aquesta setmana, algun equip avariat o que faltava t'ha fet perdre temps?",
+    "es": "Esta semana, ¿algún equipo averiado o que faltaba te ha hecho perder tiempo?",
+    "en": "This week, did faulty or missing equipment slow you down?"
+   }
+  },
+  {
+   "index": 137,
+   "facet": "equipment_tools",
+   "type": "choice",
+   "text": {
+    "ca": "Els equips amb què treballo són…",
+    "es": "Los equipos con los que trabajo son…",
+    "en": "The equipment I work with is…"
+   },
+   "options": [
+    {
+     "ca": "Bons i ben mantinguts",
+     "es": "Buenos y bien mantenidos",
+     "en": "Good and well maintained"
+    },
+    {
+     "ca": "Suficients",
+     "es": "Suficientes",
+     "en": "Adequate"
+    },
+    {
+     "ca": "Sovint gastats o insuficients",
+     "es": "A menudo desgastados o insuficientes",
+     "en": "Often worn or lacking"
+    },
+    {
+     "ca": "Un problema cada dia",
+     "es": "Un problema cada día",
+     "en": "A problem every day"
+    }
+   ]
+  },
+  {
+   "index": 138,
+   "facet": "equipment_tools",
+   "type": "yes_no",
+   "text": {
+    "ca": "Fa uns dies ens vas dir que els equips eren un problema. S'ha arreglat o ha millorat?",
+    "es": "Hace unos días nos dijiste que los equipos eran un problema. ¿Se ha arreglado o ha mejorado?",
+    "en": "A few days ago you told us your equipment was a problem. Has it been fixed or improved?"
+   }
+  },
+  {
+   "index": 139,
+   "facet": "schedule_predictability",
+   "type": "scale5",
+   "text": {
+    "ca": "Sé el meu horari amb prou antelació per organitzar-me la vida.",
+    "es": "Conozco mi horario con suficiente antelación para organizarme la vida.",
+    "en": "I know my schedule far enough in advance to plan my life."
+   }
+  },
+  {
+   "index": 140,
+   "facet": "schedule_predictability",
+   "type": "scale5",
+   "text": {
+    "ca": "Massa sovint em canvien l'horari amb poc marge.",
+    "es": "Demasiado a menudo me cambian el horario con poco margen.",
+    "en": "My schedule changes at short notice too often."
+   }
+  },
+  {
+   "index": 141,
+   "facet": "schedule_predictability",
+   "type": "scale10",
+   "text": {
+    "ca": "Del 0 al 10, com de previsible és el teu horari?",
+    "es": "Del 0 al 10, ¿cómo de previsible es tu horario?",
+    "en": "From 0 to 10, how predictable is your work schedule?"
+   }
+  },
+  {
+   "index": 142,
+   "facet": "schedule_predictability",
+   "type": "yes_no",
+   "text": {
+    "ca": "T'han avisat amb temps de l'horari de la setmana vinent?",
+    "es": "¿Te han avisado con tiempo del horario de la semana que viene?",
+    "en": "Were you told in good time about your schedule for next week?"
+   }
+  },
+  {
+   "index": 143,
+   "facet": "schedule_predictability",
+   "type": "pair",
+   "text": {
+    "ca": "Sobre el meu horari…",
+    "es": "Sobre mi horario…",
+    "en": "About my schedule…"
+   },
+   "options": [
+    {
+     "ca": "Em puc organitzar amb temps",
+     "es": "Puedo organizarme con tiempo",
+     "en": "I can plan ahead"
+    },
+    {
+     "ca": "Mai sé què vindrà després",
+     "es": "Nunca sé lo que viene después",
+     "en": "I never know what comes next"
+    }
+   ]
+  },
+  {
+   "index": 144,
+   "facet": "schedule_predictability",
+   "type": "scale10",
+   "text": {
+    "ca": "Fa uns dies ens vas dir que els canvis d'horari arribaven massa tard. Del 0 al 10, com de previsible és ara?",
+    "es": "Hace unos días nos dijiste que los cambios de horario llegaban demasiado tarde. Del 0 al 10, ¿cómo de previsible es ahora?",
+    "en": "A few days ago you told us schedule changes came too late. From 0 to 10, how predictable is it now?"
+   }
+  },
+  {
+   "index": 145,
+   "facet": "shift_breaks",
+   "type": "yes_no",
+   "text": {
+    "ca": "Aquesta setmana, has pogut fer tots els descansos que et corresponen?",
+    "es": "Esta semana, ¿has podido hacer todos los descansos que te corresponden?",
+    "en": "This week, were you able to take all the breaks you are entitled to?"
+   }
+  },
+  {
+   "index": 146,
+   "facet": "shift_breaks",
+   "type": "scale5",
+   "text": {
+    "ca": "Els meus descansos són prou llargs per reposar de debò.",
+    "es": "Mis descansos son lo bastante largos para descansar de verdad.",
+    "en": "My breaks are long enough to actually rest."
+   }
+  },
+  {
+   "index": 147,
+   "facet": "shift_breaks",
+   "type": "yes_no",
+   "text": {
+    "ca": "Aquesta setmana, has pogut fer els descansos entre càrregues i descàrregues?",
+    "es": "Esta semana, ¿has podido hacer los descansos entre cargas y descargas?",
+    "en": "This week, were you able to take your breaks between loading and unloading?"
+   }
+  },
+  {
+   "index": 148,
+   "facet": "shift_breaks",
+   "type": "scale5",
+   "text": {
+    "ca": "Sovint m'he de saltar el descans per complir els terminis.",
+    "es": "A menudo tengo que saltarme el descanso para cumplir los plazos.",
+    "en": "I often have to skip my break because of deadlines."
+   }
+  },
+  {
+   "index": 149,
+   "facet": "shift_breaks",
+   "type": "choice",
+   "text": {
+    "ca": "En un torn amb molta feina, fer el descans és…",
+    "es": "En un turno con mucho trabajo, hacer el descanso es…",
+    "en": "On a busy shift, taking my break is…"
+   },
+   "options": [
+    {
+     "ca": "Normal, cap problema",
+     "es": "Normal, sin problema",
+     "en": "Normal, no problem"
+    },
+    {
+     "ca": "Normalment es pot",
+     "es": "Normalmente posible",
+     "en": "Usually possible"
+    },
+    {
+     "ca": "Sovint difícil",
+     "es": "A menudo difícil",
+     "en": "Often difficult"
+    },
+    {
+     "ca": "Gairebé mai es pot",
+     "es": "Pocas veces posible",
+     "en": "Rarely possible"
+    }
+   ]
+  },
+  {
+   "index": 150,
+   "facet": "shift_breaks",
+   "type": "scale10",
+   "text": {
+    "ca": "Fa uns dies ens vas dir que no sempre podies fer els descansos. Del 0 al 10, com pots reposar ara durant el torn?",
+    "es": "Hace unos días nos dijiste que no siempre podías hacer los descansos. Del 0 al 10, ¿cómo puedes descansar ahora durante el turno?",
+    "en": "A few days ago you told us you could not always take your breaks. From 0 to 10, how well can you rest during your shift now?"
+   }
+  },
+  {
+   "index": 151,
+   "facet": "shift_breaks",
+   "type": "yes_no",
+   "text": {
+    "ca": "Fa uns dies ens vas dir que costava fer els descansos. Ha millorat?",
+    "es": "Hace unos días nos dijiste que costaba hacer los descansos. ¿Ha mejorado?",
+    "en": "A few days ago you told us breaks were hard to take. Is that better now?"
+   }
+  },
+  {
+   "index": 152,
+   "facet": "remote_work",
+   "type": "scale5",
+   "text": {
+    "ca": "L'equilibri entre teletreball i feina a l'oficina em va bé.",
+    "es": "El equilibrio entre teletrabajo y oficina me va bien.",
+    "en": "The balance between working from home and the office works for me."
+   }
+  },
+  {
+   "index": 153,
+   "facet": "remote_work",
+   "type": "scale10",
+   "text": {
+    "ca": "Del 0 al 10, com et funciona el teletreball?",
+    "es": "Del 0 al 10, ¿cómo te funciona el teletrabajo?",
+    "en": "From 0 to 10, how well does remote working work for you?"
+   }
+  },
+  {
+   "index": 154,
+   "facet": "remote_work",
+   "type": "yes_no",
+   "text": {
+    "ca": "Tens el que necessites per treballar bé des de casa?",
+    "es": "¿Tienes lo que necesitas para trabajar bien desde casa?",
+    "en": "Do you have what you need to work well from home?"
+   }
+  },
+  {
+   "index": 155,
+   "facet": "remote_work",
+   "type": "pair",
+   "text": {
+    "ca": "Sobre el teletreball…",
+    "es": "Sobre el teletrabajo…",
+    "en": "About remote working…"
+   },
+   "options": [
+    {
+     "ca": "Em va bé com està organitzat",
+     "es": "Me va bien cómo está organizado",
+     "en": "The arrangement suits me"
+    },
+    {
+     "ca": "No em va bé com està organitzat",
+     "es": "No me va bien cómo está organizado",
+     "en": "The arrangement does not suit me"
+    }
+   ]
+  },
+  {
+   "index": 156,
+   "facet": "remote_work",
+   "type": "scale10",
+   "text": {
+    "ca": "Fa uns dies ens vas dir que el teletreball no funcionava bé. Del 0 al 10, com va ara?",
+    "es": "Hace unos días nos dijiste que el teletrabajo no funcionaba bien. Del 0 al 10, ¿cómo va ahora?",
+    "en": "A few days ago you told us remote work was not working well. From 0 to 10, how is it now?"
+   }
+  },
+  {
+   "index": 157,
+   "facet": "priorities",
+   "type": "ranking",
+   "text": {
+    "ca": "Ordena què milloraria més les teves condicions de feina (el més important primer).",
+    "es": "Ordena lo que más mejoraría tus condiciones de trabajo (lo más importante primero).",
+    "en": "Order what would improve your working conditions most (most important first)."
+   },
+   "options": [
+    {
+     "ca": "Millors equips",
+     "es": "Mejores equipos",
+     "en": "Better equipment"
+    },
+    {
+     "ca": "Horaris previsibles",
+     "es": "Horarios previsibles",
+     "en": "Predictable schedules"
+    },
+    {
+     "ca": "Un sou just",
+     "es": "Un sueldo justo",
+     "en": "Fair pay"
+    },
+    {
+     "ca": "Seguretat a la feina",
+     "es": "Seguridad en el trabajo",
+     "en": "Feeling safe at work"
+    }
+   ]
+  },
+  {
+   "index": 158,
+   "facet": "priorities",
+   "type": "ranking",
+   "text": {
+    "ca": "Què milloraria més l'organització? Ordena-ho per importància.",
+    "es": "¿Qué mejoraría más la organización? Ordénalo por importancia.",
+    "en": "Which would improve organisation most? Order by importance."
+   },
+   "options": [
+    {
+     "ca": "Prioritats més clares",
+     "es": "Prioridades más claras",
+     "en": "Clearer priorities"
+    },
+    {
+     "ca": "Menys canvis d'última hora",
+     "es": "Menos cambios de última hora",
+     "en": "Fewer last-minute changes"
+    },
+    {
+     "ca": "Prou personal",
+     "es": "Suficiente personal",
+     "en": "Enough staff"
+    },
+    {
+     "ca": "Millors espais de descans",
+     "es": "Mejores espacios de descanso",
+     "en": "Better break spaces"
+    }
+   ]
+  },
+  {
+   "index": 159,
+   "facet": "priorities",
+   "type": "ranking",
+   "text": {
+    "ca": "Ordena què arreglaries primer.",
+    "es": "Ordena lo que arreglarías primero.",
+    "en": "Order what you would fix first."
+   },
+   "options": [
+    {
+     "ca": "El sistema de torns i descansos",
+     "es": "El sistema de turnos y descansos",
+     "en": "Shift and break system"
+    },
+    {
+     "ca": "Eines i equips",
+     "es": "Herramientas y equipos",
+     "en": "Tools and equipment"
+    },
+    {
+     "ca": "La càrrega de feina",
+     "es": "La carga de trabajo",
+     "en": "Workload"
+    },
+    {
+     "ca": "La informació sobre els canvis",
+     "es": "La información sobre los cambios",
+     "en": "Information about changes"
+    }
+   ]
+  },
+  {
+   "index": 160,
+   "facet": "open_feedback",
+   "type": "open",
+   "text": {
+    "ca": "Hi ha alguna cosa del teu horari o dels torns que canviaries?",
+    "es": "¿Hay algo de tu horario o de los turnos que cambiarías?",
+    "en": "Is there anything about your schedule or shifts that you would change?"
+   }
+  },
+  {
+   "index": 161,
+   "facet": "open_feedback",
+   "type": "open",
+   "text": {
+    "ca": "Quin equip o eina et facilitaria la feina?",
+    "es": "¿Qué equipo o herramienta te facilitaría el trabajo?",
+    "en": "What equipment or tool would make your job easier?"
+   }
+  },
+  {
+   "index": 162,
+   "facet": "open_feedback",
+   "type": "open",
+   "text": {
+    "ca": "Què és el que més alenteix la teva feina?",
+    "es": "¿Qué es lo que más ralentiza tu trabajo?",
+    "en": "What is the main thing that slows your work down?"
+   }
+  }
+ ]
+}

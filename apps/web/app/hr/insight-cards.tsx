@@ -1,42 +1,46 @@
 // Engine insight cards (C4/C5). Rendered per kind from InsightDetails; suppressed rows are never passed in.
+import type { ReactNode } from "react";
+import type { Lang } from "@damm/shared";
 import { nLabel } from "@damm/db/hr";
 import type { InsightView } from "@/lib/hr-engine";
-import { fixShifts, tornLabel } from "@/lib/format";
+import { getTL } from "@/lib/i18n/server";
+import { hrDict, hrLookup } from "@/lib/i18n/hr";
+import { LOCALES, type TFn } from "@/lib/i18n/core";
+import { collectiveLabel, domainLabel, shiftLabel } from "@/lib/i18n/names";
+import { rich } from "@/lib/i18n/rich";
 
-const KIND_TITLE: Record<string, string> = {
-  domain_state: "Estat del domini",
-  top_mover: "Canvi destacat",
-  polarisation: "Polarització",
-  importance_gap: "Importància i puntuació",
-  trajectory_mix: "Trajectòries",
-  followup_confirmation: "Confirmació del seguiment",
-  segment_gap: "Diferència entre grups",
-};
+const KINDS = new Set(["domain_state", "top_mover", "polarisation", "importance_gap", "trajectory_mix", "followup_confirmation", "segment_gap"]);
 
-const QUADRANT: Record<string, string> = {
-  act_first: "Actua primer",
-  maintain: "Mantén",
-  monitor: "Vigila",
-  low_priority: "Prioritat baixa",
-};
-
-const f1 = (v: number) => v.toLocaleString("ca-ES", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
-const signed = (v: number) => `${v >= 0 ? "+" : "−"}${f1(Math.abs(v))}`;
 const pct = (v: number) => `${Math.round(v)}%`;
 
-function where(l: { collective: string; shift: string | null; domain: string | null }) {
-  return [l.domain, l.collective === "All" ? "Tota l'empresa" : l.collective, l.shift ? tornLabel(l.shift) : null].filter(Boolean).join(" · ");
+type Fmt = { f1: (v: number) => string; signed: (v: number) => string };
+const makeFmt = (lang: Lang): Fmt => {
+  const f1 = (v: number) => v.toLocaleString(LOCALES[lang], { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  return { f1, signed: (v) => `${v >= 0 ? "+" : "−"}${f1(Math.abs(v))}` };
+};
+
+function where(l: { collective: string; shift: string | null; domain: string | null }, t: TFn<keyof (typeof hrDict)["ca"]>, lang: Lang) {
+  return [
+    l.domain ? domainLabel(l.domain, lang) : null,
+    l.collective === "All" ? t("all_company") : collectiveLabel(l.collective, lang),
+    l.shift ? shiftLabel(l.shift, lang) : null,
+  ].filter(Boolean).join(" · ");
 }
 
-function Body({ i }: { i: InsightView }) {
+const num = (x: ReactNode) => <span className="num font-semibold">{x}</span>;
+
+function Body({ i, t, lang }: { i: InsightView; t: TFn<keyof (typeof hrDict)["ca"]>; lang: Lang }) {
   if (!i.detail) return null;
+  const { f1, signed } = makeFmt(lang);
   switch (i.kind) {
     case "domain_state": {
       const d = i.detail;
+      const delta = d.delta !== null ? t("ins_vs_prev", { d: signed(d.delta) }) : "";
       return (
         <p>
-          Puntuació <span className="num font-semibold">{f1(d.current.score)}</span>/10
-          {d.delta !== null && <> ({signed(d.delta)} vs. període anterior)</>} · confiança {pct(d.current.confidence)} · consens {pct(d.current.consensus)}
+          {rich(t("ins_domain_state_body", { score: "{score}", delta, conf: pct(d.current.confidence), cons: pct(d.current.consensus) }), {
+            score: <span className="num font-semibold">{f1(d.current.score)}</span>,
+          })}
         </p>
       );
     }
@@ -44,7 +48,9 @@ function Body({ i }: { i: InsightView }) {
       const d = i.detail;
       return (
         <p>
-          {d.direction === "up" ? "↑ Puja" : "↓ Baixa"} <span className="num font-semibold">{signed(d.delta)}</span>: de {f1(d.previous.score)} a {f1(d.current.score)}
+          {rich(t("ins_top_mover_body", { dir: d.direction === "up" ? t("ins_mover_up") : t("ins_mover_down"), delta: "{delta}", from: f1(d.previous.score), to: f1(d.current.score) }), {
+            delta: <span className="num font-semibold">{signed(d.delta)}</span>,
+          })}
         </p>
       );
     }
@@ -52,7 +58,7 @@ function Body({ i }: { i: InsightView }) {
       const d = i.detail;
       return (
         <p>
-          El consens baixa {Math.round(d.consensusDrop)} punts (ara {pct(d.current.consensus)}) amb la puntuació en {f1(d.current.score)} ({signed(d.scoreDelta)}): les opinions s&apos;allunyen.
+          {t("ins_polarisation_body", { drop: Math.round(d.consensusDrop), cons: pct(d.current.consensus), score: f1(d.current.score), delta: signed(d.scoreDelta) })}
         </p>
       );
     }
@@ -60,7 +66,9 @@ function Body({ i }: { i: InsightView }) {
       const d = i.detail;
       return (
         <p>
-          Importància {pct(d.importance * 100)} · puntuació {f1(d.score)}/10 · <span className="badge">{QUADRANT[d.quadrant] ?? d.quadrant}</span>
+          {rich(t("ins_importance_body", { imp: pct(d.importance * 100), score: f1(d.score), quad: "{quad}" }), {
+            quad: <span className="badge">{hrLookup("quad_", d.quadrant, lang)}</span>,
+          })}
         </p>
       );
     }
@@ -68,8 +76,12 @@ function Body({ i }: { i: InsightView }) {
       const d = i.detail;
       return (
         <p>
-          <span className="num">{pct(d.improving)}</span> milloren · <span className="num">{pct(d.stable)}</span> estables · <span className="num">{pct(d.declining)}</span> empitjoren
-          <span className="text-subtle"> (últims {d.windowDays} dies)</span>
+          {rich(t("ins_trajectory_body", { up: "{up}", stable: "{stable}", down: "{down}" }), {
+            up: <span className="num">{pct(d.improving)}</span>,
+            stable: <span className="num">{pct(d.stable)}</span>,
+            down: <span className="num">{pct(d.declining)}</span>,
+          })}
+          <span className="text-subtle">{t("ins_trajectory_window", { days: d.windowDays })}</span>
         </p>
       );
     }
@@ -77,7 +89,7 @@ function Body({ i }: { i: InsightView }) {
       const d = i.detail;
       return (
         <p>
-          El seguiment confirma el senyal en <span className="num font-semibold">{pct(d.rate)}</span> dels casos ({d.confirmed} de {d.resolved}).
+          {rich(t("ins_followup_body", { rate: "{rate}", confirmed: d.confirmed, resolved: d.resolved }), { rate: num(pct(d.rate)) })}
         </p>
       );
     }
@@ -85,12 +97,19 @@ function Body({ i }: { i: InsightView }) {
       const d = i.detail;
       return d.dimension === "shift" ? (
         <p>
-          Diferència de <span className="num font-semibold">{f1(d.gap)}</span> entre torns: {fixShifts(d.lowest.label ?? "—")} {f1(d.lowest.score)} · {fixShifts(d.highest.label ?? "—")} {f1(d.highest.score)}
+          {rich(
+            t("ins_gap_shift_body", {
+              gap: "{gap}",
+              lo: shiftLabel(d.lowest.label ?? "—", lang),
+              loScore: f1(d.lowest.score),
+              hi: shiftLabel(d.highest.label ?? "—", lang),
+              hiScore: f1(d.highest.score),
+            }),
+            { gap: num(f1(d.gap)) },
+          )}
         </p>
       ) : (
-        <p>
-          Responsables {f1(d.managers.score)} · resta {f1(d.others.score)} (diferència {f1(d.gap)}).
-        </p>
+        <p>{t("ins_gap_managers_body", { managers: f1(d.managers.score), others: f1(d.others.score), gap: f1(d.gap) })}</p>
       );
     }
     default:
@@ -98,8 +117,9 @@ function Body({ i }: { i: InsightView }) {
   }
 }
 
-export function InsightCards({ insights, empty }: { insights: InsightView[]; empty: string }) {
-  const visible = insights.filter((i) => !i.suppressed && i.detail && KIND_TITLE[i.kind]);
+export async function InsightCards({ insights, empty }: { insights: InsightView[]; empty: string }) {
+  const { t, lang } = await getTL(hrDict);
+  const visible = insights.filter((i) => !i.suppressed && i.detail && KINDS.has(i.kind));
   if (visible.length === 0) return <p className="text-[13px] text-subtle">{empty}</p>;
   return (
     <ul className="grid gap-3 sm:grid-cols-2">
@@ -108,11 +128,11 @@ export function InsightCards({ insights, empty }: { insights: InsightView[]; emp
         return (
           <li key={i.id} className="rounded-lg border border-line p-3 text-[13px]">
             <div className="mb-1 flex flex-wrap items-center gap-2">
-              <span className="badge">{KIND_TITLE[i.kind]}</span>
+              <span className="badge">{hrLookup("ins_", i.kind, lang)}</span>
               <span className="num ml-auto text-xs text-subtle">{nLabel(i.n, i.collectiuId !== null || i.tornId !== null)}</span>
             </div>
-            <div className="mb-1 text-xs text-subtle">{where(labels)}</div>
-            <Body i={i} />
+            <div className="mb-1 text-xs text-subtle">{where(labels, t, lang)}</div>
+            <Body i={i} t={t} lang={lang} />
           </li>
         );
       })}

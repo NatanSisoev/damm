@@ -1,8 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { useT } from "@/lib/i18n/client";
+import { hrDict } from "@/lib/i18n/hr";
 
 export function CopyButton({ text }: { text: string }) {
+  const t = useT(hrDict);
   const [done, setDone] = useState(false);
   async function copy() {
     try {
@@ -20,7 +23,7 @@ export function CopyButton({ text }: { text: string }) {
   }
   return (
     <button type="button" onClick={copy} className="btn btn-ghost" aria-live="polite">
-      {done ? "Copiat" : "Copia l'enllaç"}
+      {done ? t("copied") : t("copy_link")}
     </button>
   );
 }

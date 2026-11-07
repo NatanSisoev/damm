@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { useT } from "@/lib/i18n/client";
+import { employeeDict } from "@/lib/i18n/employee";
 
 // swipe: drag the card right for "Sí" (1) or left for "No" (0). Two buttons do the same for
 // people who do not swipe (and for keyboard and screen-reader use).
@@ -15,6 +17,7 @@ export function SwipeInput({
   value: number | null;
   onChange: (v: 0 | 1) => void;
 }) {
+  const t = useT(employeeDict);
   const [dx, setDx] = useState(0);
   const [start, setStart] = useState<number | null>(null);
 
@@ -50,9 +53,9 @@ export function SwipeInput({
         }}
       >
         {text}
-        <p className="mt-3 text-sm font-normal text-muted">Llisca a la dreta per «Sí», a l&apos;esquerra per «No»</p>
+        <p className="mt-3 text-sm font-normal text-muted">{t("swipe_hint")}</p>
       </div>
-      <div className="mt-4 grid grid-cols-2 gap-3" role="radiogroup" aria-label="Resposta">
+      <div className="mt-4 grid grid-cols-2 gap-3" role="radiogroup" aria-label={t("swipe_answer")}>
         <button
           type="button"
           role="radio"
@@ -62,7 +65,7 @@ export function SwipeInput({
             value === 0 ? "border-accent bg-accent text-[color:var(--on-accent)]" : "border-line-strong bg-surface text-ink"
           }`}
         >
-          No
+          {t("no")}
         </button>
         <button
           type="button"
@@ -73,7 +76,7 @@ export function SwipeInput({
             value === 1 ? "border-good bg-good text-[color:var(--on-accent)]" : "border-line-strong bg-surface text-ink"
           }`}
         >
-          Sí
+          {t("yes")}
         </button>
       </div>
     </div>

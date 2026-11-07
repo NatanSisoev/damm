@@ -1,4 +1,8 @@
 import { MIN_GROUP_SIZE } from "@damm/shared";
+import { getTL } from "@/lib/i18n/server";
+import { hrResultsDict } from "@/lib/i18n/hr-results";
+import { domainLabel } from "@/lib/i18n/names";
+import { numD } from "@/lib/i18n/num";
 
 // Domain radar: fixed axis order, at most 2 series. The scale adapts to the data
 // (never narrower than 1 point, always inside 1-5) and is labelled, so small changes stay visible.
@@ -22,7 +26,6 @@ const C = SIZE / 2;
 const R = 130;
 
 const angle = (i: number, n: number) => -Math.PI / 2 + (i * 2 * Math.PI) / n;
-const fmt = (v: number) => v.toLocaleString("ca", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 
 type Scale = { lo: number; hi: number; rings: number[]; full: boolean };
 
@@ -96,7 +99,11 @@ function Shape({ s, n, sc }: { s: RadarSeries; n: number; sc: Scale }) {
   );
 }
 
-export function Radar({ axes, series }: { axes: string[]; series: RadarSeries[] }) {
+export async function Radar({ axes, series }: { axes: string[]; series: RadarSeries[] }) {
+  const { t, lang } = await getTL(hrResultsDict);
+  const fmt = (v: number) => numD(v, lang, 1);
+  // Axes arrive as domain names (data); shown in the UI language.
+  const axisLabels = axes.map((a) => domainLabel(a, lang));
   const n = axes.length;
   const sc = scaleFor(series);
   const rings = sc.rings;
@@ -117,7 +124,7 @@ export function Radar({ axes, series }: { axes: string[]; series: RadarSeries[] 
         viewBox={`-80 25 ${SIZE + 160} ${SIZE - 30}`}
         className="mx-auto w-full max-w-[34rem] text-muted"
         role="img"
-        aria-label={`Mitjana per domini (escala de ${fmt(sc.lo)} a ${fmt(sc.hi)}): ${series.map((s) => s.label).join(" i ")}`}
+        aria-label={t("rd_aria", { lo: fmt(sc.lo), hi: fmt(sc.hi), series: series.map((s) => s.label).join(t("rd_and")) })}
       >
         {/* grid */}
         {rings.map((v) => (
@@ -147,7 +154,7 @@ export function Radar({ axes, series }: { axes: string[]; series: RadarSeries[] 
         {[...series].reverse().map((s) => <Shape key={s.label} s={s} n={n} sc={sc} />)}
 
         {/* axis labels, with an n<10 note per suppressed series */}
-        {axes.map((a, i) => {
+        {axisLabels.map((a, i) => {
           const ang = angle(i, n);
           const x = C + (R + 22) * Math.cos(ang);
           const y = C + (R + 22) * Math.sin(ang);
@@ -162,7 +169,7 @@ export function Radar({ axes, series }: { axes: string[]; series: RadarSeries[] 
               ))}
               {suppressed.map((s) => (
                 <tspan key={s.label} x={x} dy={13} className="text-[10px]" fillOpacity={0.6}>
-                  {series.length > 1 ? `${s.label.split(" · ")[0]}: n<${MIN_GROUP_SIZE}` : `n<${MIN_GROUP_SIZE}`}
+                  {series.length > 1 ? `${s.label.split(" · ")[0]}: ${t("rd_supp", { min: MIN_GROUP_SIZE })}` : t("rd_supp", { min: MIN_GROUP_SIZE })}
                 </tspan>
               ))}
             </text>
@@ -170,10 +177,8 @@ export function Radar({ axes, series }: { axes: string[]; series: RadarSeries[] 
         })}
       </svg>
       <figcaption className="text-xs text-subtle">
-        {sc.full
-          ? "Escala de 1 a 5"
-          : `Escala ampliada de ${fmt(sc.lo)} a ${fmt(sc.hi)} (escala completa: 1 a 5); el centre no és 0`}
-        {sc.rings.includes(3) && sc.lo < 3 ? "; la línia discontínua marca el 3" : ""}. Passa el cursor per un punt per veure el valor exacte. Un domini amb menys de {MIN_GROUP_SIZE} respostes queda en blanc, mai com a 0.
+        {sc.full ? t("rd_cap_full") : t("rd_cap_zoom", { lo: fmt(sc.lo), hi: fmt(sc.hi) })}
+        {sc.rings.includes(3) && sc.lo < 3 ? t("rd_cap_dash") : ""}. {t("rd_cap_end", { min: MIN_GROUP_SIZE })}
       </figcaption>
     </figure>
   );

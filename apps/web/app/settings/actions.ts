@@ -3,6 +3,8 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { changePassword, deleteAccount, deletePushSubscription, regenerateRecoveryCode, savePushSubscription } from "@damm/db/employee";
+import { employeeDict } from "@/lib/i18n/employee";
+import { getT } from "@/lib/i18n/server";
 import { destroySession, getCompteId } from "@/lib/session";
 
 async function clientIp(): Promise<string> {
@@ -13,9 +15,9 @@ async function clientIp(): Promise<string> {
 export type SettingsState = { error?: string; ok?: string; recoveryCode?: string };
 
 const ERRORS = {
-  credencials: "La contrasenya actual no és correcta.",
-  password_curta: "La contrasenya nova ha de tenir almenys 8 caràcters.",
-  massa_intents: "Has fet massa intents. Espera uns minuts i torna-ho a provar.",
+  credencials: "err_wrong_password",
+  password_curta: "err_new_password_short",
+  massa_intents: "err_too_many_wait",
 } as const;
 
 export async function logoutAction() {
@@ -28,31 +30,34 @@ export async function logoutAction() {
 export async function changePasswordAction(_prev: SettingsState, formData: FormData): Promise<SettingsState> {
   const compteId = await getCompteId();
   if (!compteId) redirect("/login");
+  const t = await getT(employeeDict);
   const next = String(formData.get("newPassword") ?? "");
-  if (next !== String(formData.get("newPassword2") ?? "")) return { error: "Les contrasenyes noves no coincideixen." };
+  if (next !== String(formData.get("newPassword2") ?? "")) return { error: t("err_new_password_mismatch") };
   const res = await changePassword({
     compteId,
     currentPassword: String(formData.get("currentPassword") ?? ""),
     newPassword: next,
     clientIp: await clientIp(),
   });
-  if (!res.ok) return { error: ERRORS[res.error] };
-  return { ok: "Contrasenya canviada." };
+  if (!res.ok) return { error: t(ERRORS[res.error]) };
+  return { ok: t("pw_done") };
 }
 
 export async function regenerateRecoveryAction(_prev: SettingsState, formData: FormData): Promise<SettingsState> {
   const compteId = await getCompteId();
   if (!compteId) redirect("/login");
+  const t = await getT(employeeDict);
   const res = await regenerateRecoveryCode({ compteId, currentPassword: String(formData.get("currentPassword") ?? ""), clientIp: await clientIp() });
-  if (!res.ok) return { error: ERRORS[res.error] };
+  if (!res.ok) return { error: t(ERRORS[res.error]) };
   return { recoveryCode: res.recoveryCode };
 }
 
 export async function deleteAccountAction(_prev: SettingsState, formData: FormData): Promise<SettingsState> {
   const compteId = await getCompteId();
   if (!compteId) redirect("/login");
+  const t = await getT(employeeDict);
   const res = await deleteAccount({ compteId, currentPassword: String(formData.get("currentPassword") ?? ""), clientIp: await clientIp() });
-  if (!res.ok) return { error: ERRORS[res.error] };
+  if (!res.ok) return { error: t(ERRORS[res.error]) };
   await destroySession();
   redirect("/join?compte=esborrat");
 }

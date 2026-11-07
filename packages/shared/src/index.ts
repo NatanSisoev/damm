@@ -1,4 +1,6 @@
 // Shared contract: types and constants. Agree changes before building on them.
+import type { Translations } from "./i18n.ts";
+export * from "./i18n.ts";
 
 export const MIN_GROUP_SIZE = 10;
 
@@ -58,10 +60,12 @@ export type InsightKind =
 export interface ScoredOption {
   label: string;
   score: number;
+  i18n?: Translations; // C-i18n: label per language; `label` stays the canonical text
 }
 export interface RankingOption {
   label: string;
   domainId: number;
+  i18n?: Translations;
 }
 export type RecomanacioEstat = "proposada" | "aprovada" | "descartada";
 
@@ -79,6 +83,7 @@ export interface Pregunta {
   dominiId: number;
   collectiuId: number | null;
   text: string;
+  textI18n?: Translations | null; // C-i18n: text per language (ca/es/en); `text` is the fallback
   tipus: QuestionType;
   necessitatId: number | null;
   estat: PreguntaEstat;
@@ -94,7 +99,7 @@ export interface Pregunta {
 // Account is identified by the session, never by a request parameter.
 // Returns today's batch (questions_per_day items, fixed for the day).
 export interface PoolNextResponse {
-  preguntes: Pick<Pregunta, "id" | "dominiId" | "text" | "tipus" | "options">[];
+  preguntes: Pick<Pregunta, "id" | "dominiId" | "text" | "textI18n" | "tipus" | "options">[];
 }
 
 // --- API: POST /api/responses ------------------------------------------------

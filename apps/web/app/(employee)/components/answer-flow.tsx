@@ -2,7 +2,9 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import type { PoolNextResponse, PostResponsesRequest } from "@damm/shared";
+import { MIN_GROUP_SIZE, type PoolNextResponse, type PostResponsesRequest } from "@damm/shared";
+import { useT } from "@/lib/i18n/client";
+import { employeeDict } from "@/lib/i18n/employee";
 import { PrivacyNote } from "./frame";
 import {
   EMPTY_DRAFT,
@@ -64,6 +66,7 @@ function pruneDrafts(compteId: string, keep: number[]) {
 // leaving halfway loses nothing; the answer being typed is kept in localStorage until sent. The account is identified by the session cookie only.
 export function AnswerFlow({ compteId }: { compteId: string }) {
   const router = useRouter();
+  const t = useT(employeeDict);
   const [phase, setPhase] = useState<Phase>("loading");
   const [questions, setQuestions] = useState<PoolQuestion[]>([]);
   const [index, setIndex] = useState(0);
@@ -148,7 +151,7 @@ export function AnswerFlow({ compteId }: { compteId: string }) {
       }
       // 409: already answered today (another tab); treat as done and move on.
       if (res.status !== 204 && res.status !== 409) {
-        setMessage("No s'ha pogut enviar la resposta. La teva resposta continua aquí: torna-ho a provar.");
+        setMessage(t("err_send"));
         return;
       }
       setAnsweredAny(true);
@@ -160,8 +163,8 @@ export function AnswerFlow({ compteId }: { compteId: string }) {
     } catch {
       setMessage(
         navigator.onLine === false
-          ? "Sense connexió. La teva resposta continua aquí: torna-ho a provar quan tornis a tenir connexió."
-          : "No hem pogut connectar amb el servidor. La teva resposta continua aquí: torna-ho a provar.",
+          ? t("err_send_offline")
+          : t("err_send_server"),
       );
     } finally {
       setSending(false);
@@ -171,7 +174,7 @@ export function AnswerFlow({ compteId }: { compteId: string }) {
   if (phase === "loading") {
     return (
       <div role="status" aria-busy="true" aria-live="polite" className="py-4">
-        <span className="sr-only">Carregant les preguntes d&apos;avui…</span>
+        <span className="sr-only">{t("home_loading")}</span>
         <div aria-hidden className="animate-pulse">
           <div className="mb-6 h-1.5  bg-surface-muted" />
           <div className="mb-3 h-6 w-4/5 rounded bg-surface-muted" />
@@ -186,11 +189,11 @@ export function AnswerFlow({ compteId }: { compteId: string }) {
       <div className="py-16 text-center">
         <p role="alert" className="text-muted">
           {offline
-            ? "Sembla que no tens connexió. Comprova la connexió i torna-ho a provar."
-            : "No s'han pogut carregar les preguntes."}
+            ? t("home_offline")
+            : t("home_load_failed")}
         </p>
         <button type="button" className="btn mt-4 h-11" onClick={retryLoad}>
-          Torna-ho a provar
+          {t("retry")}
         </button>
       </div>
     );
@@ -199,15 +202,17 @@ export function AnswerFlow({ compteId }: { compteId: string }) {
     return (
       <div>
         <section className="border-b border-line pb-6 pt-4">
-          <h2 className="page-title">Gràcies</h2>
+          <h2 className="page-title">{t("thanks")}</h2>
           <p className="mt-3 max-w-sm text-muted">
             {answeredAny || questions.length
-              ? `Has respost ${questions.length === 1 ? "la pregunta" : `les ${questions.length} preguntes`} d'avui. Demà en tens de noves.`
-              : "Avui ja has acabat. Demà en tens de noves."}
+              ? questions.length === 1
+                ? t("done_one")
+                : t("done_many", { n: questions.length })
+              : t("done_none")}
           </p>
         </section>
         <div className="mt-4">
-          <PrivacyNote>Anònim. Mínim 10 persones per grup.</PrivacyNote>
+          <PrivacyNote>{t("privacy_note_short", { min: MIN_GROUP_SIZE })}</PrivacyNote>
         </div>
       </div>
     );
@@ -219,9 +224,9 @@ export function AnswerFlow({ compteId }: { compteId: string }) {
       <div className="mb-6">
         <div className="mb-2 flex items-baseline justify-between text-sm text-muted">
           <span className="num">
-            Pregunta {index + 1} de {questions.length}
+            {t("question_of", { i: index + 1, n: questions.length })}
           </span>
-          <span className="eyebrow">Anònim</span>
+          <span className="eyebrow">{t("anonymous")}</span>
         </div>
         <div className="h-1.5 overflow-hidden  bg-surface-muted">
           <div
@@ -245,7 +250,7 @@ export function AnswerFlow({ compteId }: { compteId: string }) {
           disabled={!isAnswerable(q, draft) || sending}
           className="btn btn-primary h-14 w-full justify-center text-base disabled:opacity-40"
         >
-          {sending ? "Enviant…" : message ? "Torna-ho a provar" : last ? "Envia" : "Envia i continua"}
+          {sending ? t("sending") : message ? t("retry") : last ? t("send") : t("send_continue")}
         </button>
       </div>
     </div>

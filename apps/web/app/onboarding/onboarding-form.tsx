@@ -2,36 +2,38 @@
 
 import Link from "next/link";
 import { useActionState } from "react";
+import { useT } from "@/lib/i18n/client";
+import { employeeDict } from "@/lib/i18n/employee";
 import { PasswordField } from "../(employee)/components/password-field";
 import { TextField } from "../(employee)/components/text-field";
 import { registerAction, type OnboardingState } from "./actions";
 import { RecoveryCodeScreen } from "./recovery-code";
 
 export function OnboardingForm({ codi }: { codi: string }) {
+  const t = useT(employeeDict);
   const [state, action, pending] = useActionState<OnboardingState, FormData>(registerAction, {});
-  if (state.recoveryCode) return <RecoveryCodeScreen code={state.recoveryCode} title="Compte creat" />;
+  if (state.recoveryCode) return <RecoveryCodeScreen code={state.recoveryCode} title={t("onb_created")} />;
   return (
     <form action={action} className="space-y-5">
       <p className="text-muted">
-        Tria un nom d&apos;usuari i una contrasenya. No et demanem correu, telèfon ni nom: les teves respostes són
-        anònimes.
+        {t("onb_intro")}
       </p>
       <input type="hidden" name="codi" value={codi} />
-      <TextField name="username" label="Nom d'usuari" autoComplete="username" hint="No facis servir el teu nom real." />
-      <PasswordField name="password" label="Contrasenya" autoComplete="new-password" showHint minLength={8} />
-      <PasswordField name="password2" label="Repeteix la contrasenya" autoComplete="new-password" minLength={8} />
+      <TextField name="username" label={t("username_label")} autoComplete="username" hint={t("onb_username_hint")} />
+      <PasswordField name="password" label={t("password_label")} autoComplete="new-password" showHint minLength={8} />
+      <PasswordField name="password2" label={t("onb_password_repeat")} autoComplete="new-password" minLength={8} />
       {state.error && (
         <p role="alert" className="font-semibold text-warn">
           {state.error}
         </p>
       )}
       <button disabled={pending} className="btn btn-primary h-14 w-full justify-center text-base disabled:opacity-50">
-        Crea el compte
+        {t("onb_submit")}
       </button>
       <p className="text-center text-sm">
-        Ja tens compte?{" "}
+        {t("onb_have_account")}{" "}
         <Link href="/login" className="font-semibold underline">
-          Entra
+          {t("enter")}
         </Link>
       </p>
     </form>
