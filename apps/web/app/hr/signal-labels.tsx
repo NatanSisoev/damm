@@ -18,12 +18,15 @@ const SEVERITY: Record<string, { label: string; cls: string }> = {
   critical: { label: "Crític", cls: "badge-warn" },
 };
 
-const STATUS: Record<string, string> = {
+export const STATUS_LABELS: Record<string, string> = {
   open: "Oberta",
   acknowledged: "Revisada",
   action_linked: "Amb acció",
   resolved: "Resolta",
 };
+
+/** Statuses a person can move a signal to, in order. */
+export const STATUS_ORDER = ["open", "acknowledged", "action_linked", "resolved"] as const;
 
 export const signalTypeLabel = (tipus: string) => TIPUS[tipus] ?? tipus;
 
@@ -34,7 +37,7 @@ export function SignalBadges({ tipus, severity, status }: { tipus: string; sever
     <>
       <span className={`badge ${tipus === "improvement" ? "badge-good" : "badge-warn"}`}>{signalTypeLabel(tipus)}</span>
       {sev && <span className={`badge ${sev.cls}`}>{sev.label}</span>}
-      {status && <span className="badge">{STATUS[status] ?? status}</span>}
+      {status && <span className="badge">{STATUS_LABELS[status] ?? status}</span>}
     </>
   );
 }

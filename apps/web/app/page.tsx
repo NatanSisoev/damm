@@ -16,7 +16,7 @@ export default async function Home() {
   const actions = approvedActionsForCompte(compteId);
   return (
     <EmployeeShell>
-      <AnswerFlow />
+      <AnswerFlow compteId={compteId} />
       <ActionsList actions={actions} />
       <p className="mt-6 text-center text-sm text-subtle">
         <Link href="/privacitat" className="inline-flex h-11 items-center underline underline-offset-2">

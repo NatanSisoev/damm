@@ -35,7 +35,11 @@ export default function HrHome() {
         <Stat
           label="Participació"
           value={o.participation === null ? "—" : `${Math.round(o.participation * 100)}%`}
-          hint={`de ${o.population.toLocaleString("ca-ES")} persones`}
+          hint={
+            o.coveredPopulation === null
+              ? `de ${o.population.toLocaleString("ca-ES")} persones`
+              : `de ${o.coveredPopulation.toLocaleString("ca-ES")} persones${o.excludedCollectius > 0 ? ` (${o.excludedCollectius} col·lectiu ocult per n<${MIN_GROUP_SIZE})` : ""}`
+          }
         />
         <Stat label="Respondents" value={fmt(o.respondents)} hint={o.periode ?? "Sense període"} />
         <Stat label="Necessitats obertes" value={o.openNeeds} hint="sense publicar" />
@@ -63,7 +67,7 @@ export default function HrHome() {
                 {o.pending.map((i) => (
                   <li key={`${i.kind}-${i.id}`}>
                     <Link
-                      href={i.kind === "draft" ? "/hr/review" : "/hr/recommendations"}
+                      href={i.kind === "draft" ? "/hr/needs?estat=esborrany" : "/hr/recommendations"}
                       className="flex items-start gap-3 py-3 hover:text-accent-ink"
                     >
                       <span className={`badge mt-0.5 ${i.kind === "draft" ? "" : "badge-accent"}`}>

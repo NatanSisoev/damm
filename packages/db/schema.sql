@@ -73,6 +73,10 @@ CREATE TABLE necessitat (
   collectiu_id  INTEGER REFERENCES collectiu(id),  -- NULL = all collectives
   durada_max_s  INTEGER,
   exclusions    TEXT,
+  context       TEXT,                              -- C3 draft: background HR gives the AI
+  titol         TEXT,                              -- C3 draft: AI-proposed survey title (editable)
+  intro         TEXT,                              -- C3 draft: AI-proposed introduction
+  draft_font    TEXT CHECK (draft_font IN ('llm','fallback')), -- C3 draft: where the drafts came from
   estat         TEXT NOT NULL DEFAULT 'oberta' CHECK (estat IN ('oberta','publicada','tancada')),
   creat         TEXT NOT NULL DEFAULT (datetime('now'))
 );
@@ -91,6 +95,8 @@ CREATE TABLE pregunta (
   estat          TEXT NOT NULL DEFAULT 'draft' CHECK (estat IN ('draft','aprovada','retirada')),
   prioritat      INTEGER NOT NULL DEFAULT 0,        -- approved HR needs get the highest value
   generada_per_ia INTEGER NOT NULL DEFAULT 0 CHECK (generada_per_ia IN (0,1)),
+  motiu          TEXT,                              -- C3 draft: one-line reason the AI gives for the question
+  ordre          INTEGER NOT NULL DEFAULT 0,        -- C3 draft: position within the need (HR reorders in review)
   aprovada_per   TEXT,                              -- HR user label, set only by a human action
   aprovada_el    TEXT
 );

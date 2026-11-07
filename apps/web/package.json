@@ -9,6 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@damm/ai": "workspace:*",
     "@damm/db": "workspace:*",
     "@damm/shared": "workspace:*",
     "next": "16.4.5",

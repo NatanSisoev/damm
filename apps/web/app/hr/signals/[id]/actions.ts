@@ -1,7 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { approveRecommendation, createFollowUp, discardRecommendation } from "@damm/db/hr";
+import { approveRecommendation, discardRecommendation } from "@damm/db/hr";
+import { createDraftedFollowUp } from "../../follow-up";
 
 // Same human actions as the recommendations page; they only revalidate the signal page too.
 function refresh(formData: FormData) {
@@ -21,6 +22,6 @@ export async function discardFromSignalAction(formData: FormData) {
 }
 
 export async function followUpFromSignalAction(formData: FormData) {
-  createFollowUp(Number(formData.get("id")));
+  await createDraftedFollowUp(Number(formData.get("id")));
   refresh(formData);
 }
