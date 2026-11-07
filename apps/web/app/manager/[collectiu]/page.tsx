@@ -5,6 +5,8 @@ import {
   getRepresentativeness,
   getTrends,
   listCollectius,
+  listDomains,
+  listTorns,
   listManagerRecommendations,
   listManagerSignals,
   listThemes,
@@ -18,7 +20,8 @@ import { InsightCards } from "../../hr/insight-cards";
 import { Radar, type RadarSeries } from "../../hr/results/radar";
 import { RepTable, TrendTable } from "../../hr/results/tables";
 import { Card, Empty, PageHeader, SuppressedBadge } from "../../hr/ui";
-import { SignalBadges } from "../../hr/signal-labels";
+import { SignalBadges, SignalText } from "../../hr/signal-labels";
+import { compareSignals } from "@/lib/signal-text";
 import { AggregateNote } from "../note";
 
 export default async function ManagerCollectivePage({ params }: { params: Promise<{ collectiu: string }> }) {
@@ -40,6 +43,15 @@ export default async function ManagerCollectivePage({ params }: { params: Promis
   const viewer = { role: "manager" as const, collectiuId: collectiu.id };
   const insights = hrInsights(viewer, { kind: ["top_mover", "polarisation", "importance_gap", "trajectory_mix", "followup_confirmation", "segment_gap"] }).slice(0, 8);
   const alarms = hrAlarms(viewer);
+  const domainName = new Map(listDomains().map((d) => [d.id, d.nom]));
+  const tornName = new Map(listTorns().map((t) => [t.id, t.nom]));
+  // One list for alarms and signals, same text and order (severity, then size of the drop).
+  const cards = [
+    ...alarms.map((a) => ({ key: `alarm-${a.id}`, tipus: a.type, descripcio: a.description, severity: a.severity, n: a.n,
+      domini: a.domainId ? domainName.get(a.domainId) ?? null : null, torn: a.tornId ? tornName.get(a.tornId) ?? null : null, collectiu: collectiu.nom })),
+    ...signals.filter((s) => !alarms.some((a) => a.id === s.id)).map((s) => ({ key: `signal-${s.id}`, tipus: s.tipus, descripcio: s.descripcio,
+      severity: s.severity, n: s.n, domini: s.domini, torn: s.torn, collectiu: collectiu.nom })),
+  ].sort(compareSignals);
 
   const last = trends.periodes.length - 1;
   const latest = trends.periodes[last];
@@ -152,22 +164,13 @@ export default async function ManagerCollectivePage({ params }: { params: Promis
               <Empty>Cap senyal per a aquest col·lectiu.</Empty>
             ) : (
               <ul className="space-y-3">
-                {alarms.map((a) => (
-                  <li key={`alarm-${a.id}`} className="rounded-lg border border-line p-3">
-                    <div className="mb-1.5 flex flex-wrap items-center gap-2">
-                      <SignalBadges tipus={a.type} severity={a.severity} />
-                      <span className="num ml-auto text-xs text-subtle">n={a.n}</span>
+                {cards.map((c) => (
+                  <li key={c.key} className="rounded-lg border border-line p-3">
+                    <SignalText s={c} />
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                      <SignalBadges tipus={c.tipus} severity={c.severity} />
+                      <span className="num ml-auto text-xs text-subtle">n={c.n}</span>
                     </div>
-                    <p className="text-[13px]">{a.description}</p>
-                  </li>
-                ))}
-                {signals.filter((s) => !alarms.some((a) => a.id === s.id)).map((s) => (
-                  <li key={s.id} className="rounded-lg border border-line p-3">
-                    <div className="mb-1.5 flex flex-wrap items-center gap-2">
-                      <SignalBadges tipus={s.tipus} severity={s.severity} />
-                      <span className="num ml-auto text-xs text-subtle">n={s.n}</span>
-                    </div>
-                    <p className="text-[13px]">{s.descripcio}</p>
                   </li>
                 ))}
               </ul>

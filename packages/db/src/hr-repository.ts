@@ -281,12 +281,16 @@ export function listAggregates(): AggregateRow[] {
   });
 }
 
-export function listSignals(): (Omit<Senyal, "collectiuId"> & { collectiu: string | null })[] {
+export function listSignals(): (Omit<Senyal, "collectiuId"> & { collectiu: string | null; domini: string | null; torn: string | null })[] {
   return (getDb()
     .prepare(
-      `SELECT s.id, s.tipus, s.descripcio, c.nom AS collectiu, s.periode, s.n, s.confianca, s.suprimit,
-              s.severity, s.status
-       FROM senyal s LEFT JOIN collectiu c ON c.id = s.collectiu_id ORDER BY s.n DESC`,
+      `SELECT s.id, s.tipus, s.descripcio, c.nom AS collectiu, d.nom AS domini, t.nom AS torn,
+              s.periode, s.n, s.confianca, s.suprimit, s.severity, s.status
+       FROM senyal s
+       LEFT JOIN collectiu c ON c.id = s.collectiu_id
+       LEFT JOIN domini d ON d.id = s.domini_id
+       LEFT JOIN torn t ON t.id = s.torn_id
+       ORDER BY s.n DESC`,
     )
     .all() as any[])
     .filter((r) => r.n >= MIN_GROUP_SIZE && !r.suprimit)
@@ -314,6 +318,8 @@ export interface ManagerSignal {
   id: number;
   tipus: string;
   descripcio: string;
+  domini: string | null;
+  torn: string | null;
   periode: string;
   n: number;
   severity: string;
@@ -323,9 +329,12 @@ export interface ManagerSignal {
 export function listManagerSignals(collectiuId: number): ManagerSignal[] {
   return getDb()
     .prepare(
-      `SELECT id, tipus, descripcio, periode, n, severity FROM senyal
-       WHERE collectiu_id = ? AND audience = 'hr_manager' AND suprimit = 0 AND n >= ?
-       ORDER BY periode DESC, n DESC`,
+      `SELECT s.id, s.tipus, s.descripcio, d.nom AS domini, t.nom AS torn, s.periode, s.n, s.severity
+       FROM senyal s
+       LEFT JOIN domini d ON d.id = s.domini_id
+       LEFT JOIN torn t ON t.id = s.torn_id
+       WHERE s.collectiu_id = ? AND s.audience = 'hr_manager' AND s.suprimit = 0 AND s.n >= ?
+       ORDER BY s.periode DESC, s.n DESC`,
     )
     .all(collectiuId, MIN_GROUP_SIZE) as ManagerSignal[];
 }

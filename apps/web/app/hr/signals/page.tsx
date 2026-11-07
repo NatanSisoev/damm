@@ -7,7 +7,8 @@ import { STATUS_LABELS, signalTypeLabel } from "../signal-labels";
 import { Sparkline } from "../trend";
 import { recomputeAction, setAlarmStatusAction } from "../actions";
 import { ALARM_NEXT } from "./transitions";
-import { NON_ACTIONABLE, alarmHint, alarmPredicate, dropSize } from "./alarm-text";
+import { NON_ACTIONABLE, alarmHint } from "./alarm-text";
+import { signalDetail, signalDrop, signalSegment } from "@/lib/signal-text";
 import { proposeFollowUpAction } from "./actions";
 
 const TABS = [
@@ -18,9 +19,8 @@ const TABS = [
 
 const SEV_RANK: Record<string, number> = { critical: 0, warning: 1, info: 2 };
 const SEV_LABEL: Record<string, string> = { critical: "Crític", warning: "Avís", info: "Info" };
-const ALL = "Tots els col·lectius";
 
-type Row = AlarmView & { segment: string; domain: string | null; drop: number };
+type Row = AlarmView & { segment: string; domain: string | null; drop: number; detail: string };
 
 export default async function AlarmsPage({ searchParams }: { searchParams: Promise<{ estat?: string }> }) {
   const { estat } = await searchParams;
@@ -39,9 +39,10 @@ export default async function AlarmsPage({ searchParams }: { searchParams: Promi
   const inTab = all.filter((a) => (tab.statuses as readonly string[]).includes(a.status));
 
   const toRow = (a: AlarmView): Row => {
-    const col = a.collectiuId ? colNames.get(a.collectiuId) ?? ALL : ALL;
-    const shift = a.tornId ? torns.get(a.tornId) : null;
-    return { ...a, segment: shift ? `${col} · torn ${shift}` : col, domain: a.domainId ? domains.get(a.domainId) ?? null : null, drop: dropSize(a) };
+    const col = a.collectiuId ? colNames.get(a.collectiuId) ?? null : null;
+    const shift = a.tornId ? torns.get(a.tornId) ?? null : null;
+    const like = { tipus: a.type, descripcio: a.description };
+    return { ...a, segment: signalSegment({ collectiu: col, torn: shift }), domain: a.domainId ? domains.get(a.domainId) ?? null : null, drop: signalDrop(like), detail: signalDetail(like) };
   };
   const rows = inTab.map(toRow);
 
@@ -126,7 +127,7 @@ export default async function AlarmsPage({ searchParams }: { searchParams: Promi
               <ul className="divide-y divide-line">
                 {good.map((r) => (
                   <li key={r.id} className="py-2 text-[13px]">
-                    <strong>{r.segment}{r.domain ? ` · ${r.domain}` : ""}</strong>: {alarmPredicate(r)}
+                    <strong>{r.domain ? `${r.domain} · ` : ""}{r.segment}</strong>: {r.detail}
                     <span className="num ml-2 text-xs text-subtle">{r.periode} · n={r.n}</span>
                   </li>
                 ))}
@@ -174,9 +175,8 @@ function AlarmItem({ r, spark, rec }: { r: Row; spark: number[] | null; rec?: { 
             {r.status !== "open" && <span className="badge">{STATUS_LABELS[r.status]}</span>}
             {r.audience === "hr_manager" && <span className="badge" title="L'alarma també arriba al responsable del col·lectiu">Visible al responsable</span>}
           </div>
-          <p className="text-[14px]">
-            <strong>{r.domain ?? "General"}</strong> {alarmPredicate(r)}
-          </p>
+          <p className="text-[14px] font-semibold">{r.domain ?? "General"}</p>
+          <p className="text-[13px] text-muted">{r.detail}</p>
           <p className="mt-0.5 text-xs text-subtle">
             <span className="num">{r.periode} · n={r.n}</span>
             {alarmHint(r.type) && <> · {alarmHint(r.type)}</>}

@@ -16,6 +16,8 @@ export interface SignalHeader {
   descripcio: string;
   collectiu: string | null;
   collectiuId: number | null;
+  domini: string | null;
+  torn: string | null;
   periode: string;
   n: number;
   confianca: number | null;
@@ -82,8 +84,13 @@ export function getSignalDetail(id: number): SignalDetail | null {
   const row = db
     .prepare(
       `SELECT s.id, s.tipus, s.descripcio, s.collectiu_id AS collectiuId, c.nom AS collectiu,
+              d.nom AS domini, t.nom AS torn,
               s.periode, s.n, s.confianca, s.suprimit, s.severity, s.status
-       FROM senyal s LEFT JOIN collectiu c ON c.id = s.collectiu_id WHERE s.id = ?`,
+       FROM senyal s
+       LEFT JOIN collectiu c ON c.id = s.collectiu_id
+       LEFT JOIN domini d ON d.id = s.domini_id
+       LEFT JOIN torn t ON t.id = s.torn_id
+       WHERE s.id = ?`,
     )
     .get(id) as (SignalHeader & { suprimit: number }) | undefined;
   if (!row || row.n < MIN_GROUP_SIZE || row.suprimit) return null;
@@ -97,7 +104,7 @@ export function getSignalDetail(id: number): SignalDetail | null {
   const trend: SignalTrendRow[] = (scope?.rows ?? [])
     .map((r) => ({
       domini: r.domini,
-      related: desc.includes(norm(r.domini)),
+      related: signal.domini ? norm(signal.domini) === norm(r.domini) : desc.includes(norm(r.domini)),
       cells: r.cells.map((c, i) => ({ ...c, periode: periodes[i] })),
       canvi: r.canvi,
     }))

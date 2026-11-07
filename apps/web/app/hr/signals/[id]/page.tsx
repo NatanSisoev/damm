@@ -8,7 +8,8 @@ import { approveFromSignalAction, discardFromSignalAction, followUpFromSignalAct
 
 import { recommendationStatus } from "../../labels";
 import { ChangeBadge, Sparkline } from "../../trend";
-import { STATUS_LABELS, STATUS_ORDER, SignalBadges, signalTypeLabel } from "../../signal-labels";
+import { STATUS_LABELS, STATUS_ORDER, SignalBadges } from "../../signal-labels";
+import { signalDetail, signalHeadline } from "@/lib/signal-text";
 const suppressedHint = `Menys de ${MIN_GROUP_SIZE} persones han respost`;
 
 function Timeline({ steps }: { steps: SignalTimelineStep[] }) {
@@ -45,17 +46,16 @@ export default async function SignalPage({ params }: { params: Promise<{ id: str
   return (
     <>
       <PageHeader
-        title={signalTypeLabel(signal.tipus)}
-        subtitle={signal.descripcio}
+        title={signalHeadline(signal)}
+        subtitle={signalDetail(signal)}
         actions={<Link href="/hr/recommendations" className="btn">← Recomanacions</Link>}
       />
 
       <div className="mb-6 flex flex-wrap items-center gap-2">
         <SignalBadges tipus={signal.tipus} severity={signal.severity} status={signal.status} />
-        <span className="badge">{signal.collectiu ?? "Tots els col·lectius"}</span>
         <span className="badge num">{signal.periode}</span>
         <span className="badge num">n={signal.n}</span>
-        {signal.confianca !== null && <span className="badge num">confiança {Math.round(signal.confianca * 100)}%</span>}
+        {signal.confianca !== null && <span className="badge num">confiança {Math.round(signal.confianca <= 1 ? signal.confianca * 100 : signal.confianca)}%</span>}
       </div>
 
       <div className="mb-6 flex flex-wrap items-center gap-2">
