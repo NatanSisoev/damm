@@ -8,6 +8,8 @@ import { draftQuestionSchema, draftSurveySchema, type DraftQuestion, type DraftS
 export { estimateSeconds, DRAFT_TYPES } from "./types";
 export type { DraftQuestion, DraftSurvey, DraftType, NeedInput } from "./types";
 export { violatesExclusions } from "./exclusions";
+export { classifyCommentsLlm, summariseThemeLlm } from "./comments";
+export type { CommentToClassify, SummaryRequest, ThemeOption } from "./comments";
 
 const SYSTEM = `Ets un expert en enquestes breus d'escolta activa per a una empresa cervesera (dades sintètiques). Respon NOMÉS amb un objecte JSON, sense text addicional. Escrius en català.
 Format: {"title": string, "intro": string, "questions": [{"text": string, "type": "scale5"|"scale10"|"yes_no"|"open", "domain": string, "reason": string}]}

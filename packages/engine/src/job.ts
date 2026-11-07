@@ -16,6 +16,8 @@ import { runAlarms, type AlarmReport, type AlarmThresholds } from "./alarms.ts";
 
 export { runInsights } from "./insights.ts";
 export { runAlarms } from "./alarms.ts";
+export { runCommentAnalysis, runCommentAnalysisSync } from "./comments.ts";
+export type { CommentOptions, CommentReport } from "./comments.ts";
 
 export interface JobOptions {
   now?: number;

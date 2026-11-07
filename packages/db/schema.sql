@@ -145,7 +145,12 @@ CREATE TABLE tema (
   periode      TEXT NOT NULL,
   n            INTEGER NOT NULL,
   emergent     INTEGER NOT NULL DEFAULT 0 CHECK (emergent IN (0,1)),
-  suprimit     INTEGER NOT NULL DEFAULT 0 CHECK (suprimit IN (0,1))
+  suprimit     INTEGER NOT NULL DEFAULT 0 CHECK (suprimit IN (0,1)),
+  -- Comment analysis (engine, docs/engine.md section 12). One row per theme x period x collective (NULL = company).
+  collectiu_id INTEGER REFERENCES collectiu(id),
+  clau         TEXT,                              -- stable theme key, e.g. 'torns_comunicacio_pauses'
+  share        REAL,                              -- n / comments of that collective and period; NULL when suppressed
+  font         TEXT NOT NULL DEFAULT 'seed' CHECK (font IN ('seed','rules','llm'))
 );
 
 CREATE TABLE comentari_tema (

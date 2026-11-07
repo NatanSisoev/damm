@@ -18,6 +18,7 @@ import { parseArgs } from "node:util";
 import { COLLECTIUS, DOMINIS } from "@damm/shared";
 import { createEngine, type BatchItem } from "../src/engine.ts";
 import { runEngineJob } from "../src/job.ts";
+import { runCommentAnalysisSync } from "../src/comments.ts";
 import { setFormatPreference } from "../src/hr.ts";
 import { all, run, transaction, type SqlDatabase } from "../src/db.ts";
 import { createRng, pick, type Rng } from "../src/rng.ts";
@@ -210,6 +211,8 @@ export function buildDemo(opts: DemoOptions = {}): DemoSummary {
 
   // --- aggregates, insights, alarms -----------------------------------------------------------
   const report = runEngineJob(db, { now: Date.parse(`${world.dates[world.days - 1]}T22:00:00Z`) });
+  // Themes, Catalan summaries and emergent alarms from the comments (deterministic: lexicon and templates).
+  runCommentAnalysisSync(db, { now: Date.parse(`${world.dates[world.days - 1]}T22:00:00Z`) });
   log(`job: ${report.aggregates} aggregates (${report.suppressed} suppressed), ${report.insights.written} insights, ${report.alarms.opened} alarms opened`);
 
   const count = (sql: string) => Object.fromEntries(all<{ k: string; n: number }>(db, sql).map((r) => [r.k, r.n]));
