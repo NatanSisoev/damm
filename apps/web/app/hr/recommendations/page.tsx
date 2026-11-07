@@ -31,7 +31,7 @@ export default function RecommendationsPage() {
                   <SignalText s={s} />
                   <div className="mt-2 flex flex-wrap items-center gap-2">
                     <SignalBadges tipus={s.tipus} severity={s.severity} status={s.status} />
-                    <span className="num ml-auto text-xs text-subtle">{s.periode} · <People n={s.n} /></span>
+                    <span className="num ml-auto text-xs text-subtle">{s.periode} · <People n={s.n} scoped={s.collectiu !== null || s.torn !== null} /></span>
                   </div>
                   <Link href={`/hr/signals/${s.id}`} className="mt-2 inline-block text-xs text-accent-ink hover:underline">Veure detall →</Link>
                 </li>

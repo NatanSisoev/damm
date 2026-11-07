@@ -72,3 +72,17 @@ export function complementarySuppression(children: SiblingCell[]): HideReason[] 
   }
   return out;
 }
+
+/**
+ * Count to show next to an alarm, insight or headline. Company-wide rows keep the exact n. Rows scoped to a
+ * collective or shift show only "≥10": exact counts of sibling segments would let a reader subtract them from the
+ * parent and recover a suppressed segment (for example Logística night = 38 - 30). Only meaningful above the minimum.
+ */
+export function shownCount(n: number, scoped: boolean): string {
+  return scoped ? `≥${MIN_GROUP_SIZE}` : String(n);
+}
+
+/** "n=30" for company-wide rows, "n≥10" for collective or shift rows (B3: no exact count that could expose a suppressed sibling). */
+export function nLabel(n: number, scoped: boolean): string {
+  return scoped ? `n≥${MIN_GROUP_SIZE}` : `n=${n}`;
+}

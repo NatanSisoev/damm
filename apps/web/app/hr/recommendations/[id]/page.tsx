@@ -165,7 +165,7 @@ export default async function RecommendationPage({ params }: { params: Promise<{
                 <div className="mt-3 flex flex-wrap items-center gap-2">
                   <SignalBadges tipus={signal.tipus} severity={signal.severity} status={signal.status} />
                   <span className="badge num">{signal.periode}</span>
-                  <span className="badge num"><People n={signal.n} /></span>
+                  <span className="badge num"><People n={signal.n} scoped={signal.collectiuId !== null || (signal.tornId ?? null) !== null} /></span>
                   {signal.confianca !== null && <span className="badge num">confiança {Math.round(signal.confianca <= 1 ? signal.confianca * 100 : signal.confianca)}%</span>}
                 </div>
                 <Link href={`/hr/signals/${signal.id}`} className="mt-3 inline-block text-xs text-accent-ink hover:underline">Obre l&apos;alarma →</Link>

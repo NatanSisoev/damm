@@ -10,6 +10,6 @@ export async function loginAction(formData: FormData) {
   if (!gateEnabled()) redirect(dest);
   const code = String(formData.get("code") ?? "");
   if (code !== process.env.HR_ACCESS_CODE) redirect(`/hr-login?error=1&next=${encodeURIComponent(dest)}`);
-  (await cookies()).set(HR_COOKIE, await accessToken(code), { httpOnly: true, sameSite: "lax", path: "/hr", maxAge: 60 * 60 * 12 });
+  (await cookies()).set(HR_COOKIE, await accessToken(code), { httpOnly: true, sameSite: "lax", path: "/", maxAge: 60 * 60 * 12 });
   redirect(dest);
 }

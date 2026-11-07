@@ -453,3 +453,17 @@ None of these has been fixed here.
 5. `/join` says "Dues preguntes breus al dia" while the engine default is 3 a day. See S-48.
 6. Stale statements in other docs (listed in `docs/user-flows.md` section 8): `docs/requirements.md` says the approver is not recorded (it is the constant `hr-demo`); `docs/employee-pwa-spec.md` says the join code travels in the session (it travels in `?codi=`) and lists "Res més per avui" and a push toggle that do not exist; `docs/demo-script.md` still uses older labels (for example the separate "Esborranys pendents" list; the needs page is `/hr/needs` since commit `0373ce2`).
 7. No helper exists to add many synthetic answers for a newly published need; reaching n of 10 for a fresh need takes ten manual accounts. See M-16.
+
+## 7. Results log
+
+### 2026-11-07, branch `jan/e2e-fixes` (fixes for the first run)
+
+| Finding | Fix | Checked |
+|---|---|---|
+| B1 (P0) thin new period blanks `/hr/results` and `/hr/signals` (R-PRIV-2) | `readingPeriod`, alarm reinstate on job route and scheduler, insights default | browser, DB with one 2026-11 answer: results default to 2026-10, signals show 28 of 32 open alarms; the other 4 are on segments with n under 10 and stay hidden by design |
+| B2 (P1) `/manager` loop (HR cookie path `/hr`) | cookie path `/` | browser |
+| B3 (P1) per-shift counts reveal a suppressed shift (R-PRIV-2) | scoped rows show `n≥10` | lint, `check:anonymity` |
+| B5 (P1) publish pushes a day over the limit (R-FLOW-5c) | `addPublishedNeedsToDay` respects `questions_per_day` | script on a DB copy (3 slots, idempotent) and engine health: 17 passed, 0 failed |
+
+Build checks: lint, check:anonymity, build, engine typecheck and tests (146) pass. `git fetch` failed when the branch was created, so it is based on the local `origin/jan/dev`. The CLI engine job does not reinstate alarms (Natan item in `docs/contract-changes.md`).
+

@@ -303,3 +303,17 @@ Both are `null` whenever the cell is suppressed (primary or complementary) or n 
 Action items:
 - [x] Jan: trend chart, signal table and results table show SD and consensus; signal page plots its own segment on 0-10. (done 2026-11-07)
 - [x] Natan: aware: `TrendCell` gains `consensus` and `sd` (done 2026-11-07, FYI only).
+
+## 2026-11-07: HR reads the latest readable period; daily limit on publish (Jan)
+
+The first live answer in a new month creates a period with n under 10. The engine job then evaluates only that newest period, so `runAlarms` suppresses every open alarm (`suprimit=1`) and `latestInsightPeriod` points at an empty period; `/hr/results` and `/hr/signals` went blank. Handled HR-side, no schema change, `packages/engine` untouched:
+
+- `@damm/db/hr`: `readingPeriod()` (latest company-wide period with n of at least 10) and `reinstateAlarmsForReadingPeriod()` (un-suppresses open alarms whose segment is readable in that period). The job route and the scheduler's `onReport` call the second one. The CLI job (`packages/engine/scripts/job.ts`) does not, so alarms stay hidden after a CLI run on a thin newest period.
+- `hrInsights` defaults to `readingPeriod()`.
+- Scoped counts (shift, collective) render as `n≥10` (`nLabel`), so a hidden shift cannot be derived from totals.
+- `addPublishedNeedsToDay` (`packages/db/src/employee-repository.ts`) keeps a day within `questions_per_day`: it fills free slots and replaces unanswered `monitor` slots with the published need's questions.
+
+Action items:
+- [ ] Natan: make `runAlarms` and `latestInsightPeriod` use the latest period with n of at least 10 (not the newest), and reinstate alarms in the engine job itself, so the HR-side workaround can go and the CLI job behaves the same.
+- [x] Jan: HR pages, job route, scheduler and publish use the above. (done 2026-11-07)
+

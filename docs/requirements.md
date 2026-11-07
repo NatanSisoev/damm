@@ -215,7 +215,7 @@ G-§8 principles, D-S16 trust pillars and D-S17 golden rules, merged. All Must.
 | ID | Requirement | Source | Status | Evidence / gap |
 |----|-------------|--------|--------|----------------|
 | R-PRIV-1 | Results always aggregated, never individual answers | G-§8, D-S17 | done | HR imports only `@damm/db/hr`; lint rule plus `check:anonymity` |
-| R-PRIV-2 | Minimum group threshold (guide: 5 to 10; ours: **10**) everywhere, exports included | G-§8, A | done | Plus complementary suppression. Join-code account counts under 10 show "<10"; CSV export carries a suppression note. |
+| R-PRIV-2 | Minimum group threshold (guide: 5 to 10; ours: **10**) everywhere, exports included | G-§8, A | done | Plus complementary suppression. Join-code account counts under 10 show "<10"; CSV export carries a suppression note. E2E fixes (2026-11-07): scoped rows (shift, collective) show `n≥10` instead of the exact count, so a viewer cannot derive a suppressed shift from the others; HR pages default to the latest readable period (n≥10), so a thin new month does not blank results or alarms. |
 | R-PRIV-3 | Automatic detection and removal of identifying data in comments (names, emails, phones) | G-§8 | done | `redactPii` regex before storage. LLM pass is optional (Natan). |
 | R-PRIV-4 | No individual profile or inference about specific people; cannot be used to evaluate anyone | G-§8, D-S16 "No vigilància" | done | Trajectories exist only inside the analysis layer; the admin sees counts only. |
 | R-PRIV-5 | **Transparency to respondents**: what the survey is for and how data is handled | G-§8, D-S16 | done | `/privacitat`: what we collect, what HR sees (n≥10), what we never do, comment redaction, session and account deletion (answers stay anonymous). |

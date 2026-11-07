@@ -218,7 +218,7 @@ export default async function AlarmsPage({ searchParams }: { searchParams: Promi
                 {good.map((r) => (
                   <li key={r.id} className="py-2 text-[13px]">
                     <strong>{r.domain ? `${r.domain} · ` : ""}{r.segment}</strong>: {r.detail}
-                    <span className="num ml-2 text-xs text-subtle">{r.periode} · <People n={r.n} /></span>
+                    <span className="num ml-2 text-xs text-subtle">{r.periode} · <People n={r.n} scoped={r.collectiuId !== null || r.tornId !== null} /></span>
                   </li>
                 ))}
               </ul>
@@ -280,7 +280,7 @@ function AlarmItem({ r, spark, rec, drafted }: { r: Row; spark: number[] | null;
           <p className="text-[14px] font-semibold">{r.domain ?? "General"}</p>
           <p className="text-[13px] text-muted">{r.detail}</p>
           <p className="mt-0.5 text-xs text-subtle">
-            <span className="num">{r.periode} · <People n={r.n} /></span>
+            <span className="num">{r.periode} · <People n={r.n} scoped={r.collectiuId !== null || r.tornId !== null} /></span>
             {alarmHint(r.type) && <> · {alarmHint(r.type)}</>}
           </p>
         </div>

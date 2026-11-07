@@ -171,7 +171,7 @@ export default async function ManagerCollectivePage({ params }: { params: Promis
                     <SignalText s={c} />
                     <div className="mt-2 flex flex-wrap items-center gap-2">
                       <SignalBadges tipus={c.tipus} severity={c.severity} />
-                      <span className="num ml-auto text-xs text-subtle"><People n={c.n} /></span>
+                      <span className="num ml-auto text-xs text-subtle"><People n={c.n} scoped={true} /></span>
                     </div>
                   </li>
                 ))}

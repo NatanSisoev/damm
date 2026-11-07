@@ -161,7 +161,7 @@ export default async function HrDashboard({ searchParams }: { searchParams: Prom
             <div className="text-xs font-medium text-subtle">Participació</div>
             <div className="num mt-1 text-2xl font-semibold tracking-tight">{pct === null ? "—" : `${pct}%`}</div>
             <div className="hr-meter mt-2"><span style={{ width: `${pct ?? 0}%` }} /></div>
-            <div className="mt-2 text-xs text-subtle"><People n={respondents} /> de {population.toLocaleString("ca-ES")}</div>
+            <div className="mt-2 text-xs text-subtle"><People n={respondents} scoped={!!col} /> de {population.toLocaleString("ca-ES")}</div>
           </div>
           <Link href="/hr/needs" className="block h-full">
             <Stat label="Consultes" value={live} hint={`${live === 1 ? "activa" : "actives"} · ${drafts} per revisar o publicar`} />
