@@ -112,7 +112,7 @@ const TONE_CLS: Record<Headline["tone"], string> = { up: "text-good", down: "tex
 
 export function HeadlineStrip({ headlines }: { headlines: Headline[] }) {
   return (
-    <Card title="El que cal saber ara" meta="Del motor, amb la seva n i confiança">
+    <Card title="El que cal saber ara" meta="Cada frase indica la n i la confiança">
       {headlines.length === 0 ? (
         <Empty>Encara no hi ha prou respostes per destacar res (cal n ≥ {MIN_GROUP_SIZE}).</Empty>
       ) : (

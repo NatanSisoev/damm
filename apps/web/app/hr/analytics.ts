@@ -3,6 +3,7 @@
 import { MIN_GROUP_SIZE } from "@damm/shared";
 import { getRepresentativeness, getTrends, listRecommendations, listThemes, type TrendCell } from "@damm/db/hr";
 import { hrInsights, type InsightView } from "@/lib/hr-engine";
+import { fixShifts } from "@/lib/format";
 
 const f1 = (v: number) => v.toLocaleString("ca-ES", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 const pct = (v: number) => `${Math.round(v)}%`;
@@ -70,7 +71,7 @@ function headlineOf(i: InsightView): (Headline & { rank: number }) | null {
       return {
         ...base,
         tone: "warn",
-        text: `${where(d.labels)}: les opinions s'allunyen (el consens baixa ${pct(d.consensusDrop)}, ara ${pct(d.current.consensus)}).`,
+        text: `${where(d.labels)}: les opinions s'allunyen (el consens baixa ${Math.round(d.consensusDrop)} punts, ara ${pct(d.current.consensus)}).`,
         confidence: d.current.confidence,
         href: segHref(d.labels.collective, d.labels.domain),
         rank: 80 + d.consensusDrop / 5,
@@ -94,7 +95,7 @@ function headlineOf(i: InsightView): (Headline & { rank: number }) | null {
         return {
           ...base,
           tone: "warn",
-          text: `${where(d.labels)}: ${d.lowest.label ?? "un torn"} puntua ${f1(d.gap)} punts per sota de ${d.highest.label ?? "un altre torn"} (${f1(d.lowest.score)} davant ${f1(d.highest.score)}).`,
+          text: `${where(d.labels)}: ${fixShifts(d.lowest.label ?? "un torn")} puntua ${f1(d.gap)} punts per sota de ${fixShifts(d.highest.label ?? "un altre torn")} (${f1(d.lowest.score)} davant ${f1(d.highest.score)}).`,
           confidence: null,
           href: segHref(d.labels.collective, d.labels.domain),
           rank: 60 + d.gap * 5,

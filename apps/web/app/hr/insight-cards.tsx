@@ -1,5 +1,6 @@
 // Engine insight cards (C4/C5). Rendered per kind from InsightDetails; suppressed rows are never passed in.
 import type { InsightView } from "@/lib/hr-engine";
+import { fixShifts, tornLabel } from "@/lib/format";
 
 const KIND_TITLE: Record<string, string> = {
   domain_state: "Estat del domini",
@@ -23,7 +24,7 @@ const signed = (v: number) => `${v >= 0 ? "+" : "−"}${f1(Math.abs(v))}`;
 const pct = (v: number) => `${Math.round(v)}%`;
 
 function where(l: { collective: string; shift: string | null; domain: string | null }) {
-  return [l.domain, l.collective === "All" ? "Tota l'empresa" : l.collective, l.shift].filter(Boolean).join(" · ");
+  return [l.domain, l.collective === "All" ? "Tota l'empresa" : l.collective, l.shift ? tornLabel(l.shift) : null].filter(Boolean).join(" · ");
 }
 
 function Body({ i }: { i: InsightView }) {
@@ -50,7 +51,7 @@ function Body({ i }: { i: InsightView }) {
       const d = i.detail;
       return (
         <p>
-          El consens baixa {pct(d.consensusDrop)} (ara {pct(d.current.consensus)}) amb la puntuació en {f1(d.current.score)} ({signed(d.scoreDelta)}): les opinions s&apos;allunyen.
+          El consens baixa {Math.round(d.consensusDrop)} punts (ara {pct(d.current.consensus)}) amb la puntuació en {f1(d.current.score)} ({signed(d.scoreDelta)}): les opinions s&apos;allunyen.
         </p>
       );
     }
@@ -83,7 +84,7 @@ function Body({ i }: { i: InsightView }) {
       const d = i.detail;
       return d.dimension === "shift" ? (
         <p>
-          Diferència de <span className="num font-semibold">{f1(d.gap)}</span> entre torns: {d.lowest.label ?? "—"} {f1(d.lowest.score)} · {d.highest.label ?? "—"} {f1(d.highest.score)}
+          Diferència de <span className="num font-semibold">{f1(d.gap)}</span> entre torns: {fixShifts(d.lowest.label ?? "—")} {f1(d.lowest.score)} · {fixShifts(d.highest.label ?? "—")} {f1(d.highest.score)}
         </p>
       ) : (
         <p>
