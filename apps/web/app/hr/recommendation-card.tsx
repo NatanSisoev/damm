@@ -16,6 +16,14 @@ interface RecommendationBody {
 export function RecommendationBody({ r }: { r: RecommendationBody }): ReactNode {
   return (
     <div className="space-y-2">
+      {r.font && (
+        <span
+          className={`badge ${r.font === "llm" ? "badge-accent" : ""}`}
+          title={r.font === "llm" ? "Text redactat pel model d'IA a partir de dades agregades" : "Text de la biblioteca de plantilles, sense IA"}
+        >
+          {r.font === "llm" ? "Redactat per IA" : "Plantilla"}
+        </span>
+      )}
       {r.titol && <h3 className="font-medium">{r.titol}</h3>}
       <p>{r.text}</p>
       {r.iniciativa && <p className="text-[13px]"><span className="font-medium">Iniciativa:</span> {r.iniciativa}</p>}
@@ -28,10 +36,7 @@ export function RecommendationBody({ r }: { r: RecommendationBody }): ReactNode 
       )}
       {r.justificacio && <p className="text-[13px] text-muted"><span className="font-medium">Per què:</span> {r.justificacio}</p>}
       {r.limits && <p className="text-xs text-subtle"><span className="font-medium">Límits:</span> {r.limits}</p>}
-      <p className="text-xs text-subtle">
-        {r.font === "llm" ? "Redactat per la IA" : r.font === "template" ? "Redactat a partir d'una plantilla" : null}
-        {r.aprovadaEl && <>{r.font ? " · " : ""}Aprovada el {r.aprovadaEl.slice(0, 10)}</>}
-      </p>
+      {r.aprovadaEl && <p className="text-xs text-subtle">Aprovada el {r.aprovadaEl.slice(0, 10)}</p>}
     </div>
   );
 }
