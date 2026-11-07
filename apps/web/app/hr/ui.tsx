@@ -55,3 +55,25 @@ export function Stat({ label, value, hint }: { label: string; value: ReactNode; 
     </div>
   );
 }
+
+/** Shows the first `visible` items and folds the rest into a native <details> (no client JS). */
+export function FoldList({
+  items, visible = 5, as = "ul", className = "",
+}: { items: ReactNode[]; visible?: number; as?: "ul" | "div"; className?: string }) {
+  const Tag = as;
+  const rest = items.slice(visible);
+  return (
+    <>
+      <Tag className={className}>{items.slice(0, visible)}</Tag>
+      {rest.length > 0 && (
+        <details className="hr-fold">
+          <summary>
+            <span className="hr-fold-open">Mostra&apos;n {rest.length} més</span>
+            <span className="hr-fold-close">Mostra&apos;n menys</span>
+          </summary>
+          <Tag className={className}>{rest}</Tag>
+        </details>
+      )}
+    </>
+  );
+}

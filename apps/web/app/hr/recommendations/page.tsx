@@ -3,7 +3,7 @@ import { nLabel, listRecommendations, listSignals } from "@damm/db/hr";
 import {
   approveRecommendationAction, discardRecommendationAction, followUpAction,
 } from "../actions";
-import { Card, Empty, PageHeader } from "../ui";
+import { Card, Empty, FoldList, PageHeader } from "../ui";
 import { SignalBadges, SignalText } from "../signal-labels";
 import { compareSignals } from "@/lib/signal-text";
 import { recommendationStatus } from "../labels";
@@ -24,8 +24,7 @@ export default function RecommendationsPage() {
           {signals.length === 0 ? (
             <Empty>Encara no hi ha alarmes. <Link href="/hr/results" className="underline">Mira els resultats</Link> o torna més tard.</Empty>
           ) : (
-            <ul className="space-y-3">
-              {signals.map((s) => (
+            <FoldList className="space-y-3" items={signals.map((s) => (
                 <li key={s.id} className="rounded-lg border border-line p-3">
                   <SignalText s={s} />
                   <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -34,16 +33,14 @@ export default function RecommendationsPage() {
                   </div>
                   <Link href={`/hr/signals/${s.id}`} className="mt-2 inline-block text-xs text-accent-ink hover:underline">Veure detall →</Link>
                 </li>
-              ))}
-            </ul>
+              ))} />
           )}
         </Card>
         <Card title="Recomanacions" meta={<span className="num">{recs.length}</span>}>
           {recs.length === 0 ? (
             <Empty>Encara no hi ha recomanacions. Obre una alarma i demana-ne una, o <Link href="/hr/needs" className="underline">crea una necessitat</Link>.</Empty>
           ) : (
-            <ul className="space-y-3">
-              {recs.map((r) => (
+            <FoldList className="space-y-3" items={recs.map((r) => (
                 <li key={r.id} className={`rounded-lg border border-line p-4 ${r.estat === "descartada" ? "opacity-60" : ""}`}>
                   <div className="mb-2 flex items-center gap-2">
                     <span className={`badge ${recommendationStatus(r.estat).cls}`}>{recommendationStatus(r.estat).label}</span>
@@ -64,8 +61,7 @@ export default function RecommendationsPage() {
                     </div>
                   )}
                 </li>
-              ))}
-            </ul>
+              ))} />
           )}
         </Card>
       </div>

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { MIN_GROUP_SIZE } from "@damm/shared";
 import { nLabel, getTrends, listCollectius, listDomains, listRecommendations, listTorns } from "@damm/db/hr";
 import { hrAlarms, type AlarmView } from "@/lib/hr-engine";
-import { Card, Empty, PageHeader } from "../ui";
+import { Card, Empty, FoldList, PageHeader } from "../ui";
 import { STATUS_LABELS, signalTypeLabel } from "../signal-labels";
 import { Sparkline } from "../trend";
 import { recomputeAction, setAlarmStatusAction } from "../actions";
@@ -112,26 +112,25 @@ export default async function AlarmsPage({ searchParams }: { searchParams: Promi
         <Empty>Cap alarma. Prem «Recalcula ara» perquè l&apos;anàlisi torni a mirar les dades.</Empty>
       ) : (
         <div className="space-y-6">
-          {grouped.map(([segment, items]) => (
+          <FoldList as="div" visible={4} className="space-y-6" items={grouped.map(([segment, items]) => (
             <Card key={segment} title={segment} meta={<span className="num">{items.length} {items.length === 1 ? "alarma" : "alarmes"}</span>}>
-              <ul className="divide-y divide-line">
-                {items.map((r) => (
+              <FoldList
+                className="divide-y divide-line"
+                items={items.map((r) => (
                   <AlarmItem key={r.id} r={r} spark={sparkFor(r)} rec={recs.find((x) => x.senyalId === r.id && x.estat === "aprovada")} />
                 ))}
-              </ul>
+              />
             </Card>
-          ))}
+          ))} />
 
           {good.length > 0 && (
             <Card title="Bones notícies" meta={<span className="num">{good.length}</span>}>
-              <ul className="divide-y divide-line">
-                {good.map((r) => (
+              <FoldList className="divide-y divide-line" items={good.map((r) => (
                   <li key={r.id} className="py-2 text-[13px]">
                     <strong>{r.domain ? `${r.domain} · ` : ""}{r.segment}</strong>: {r.detail}
                     <span className="num ml-2 text-xs text-subtle">{r.periode} · {nLabel(r.n, r.collectiuId !== null || r.tornId !== null)}</span>
                   </li>
-                ))}
-              </ul>
+                ))} />
             </Card>
           )}
 

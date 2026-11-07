@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { MIN_GROUP_SIZE } from "@damm/shared";
 import { getHrOverview } from "@damm/db/hr";
-import { Card, Empty, PageHeader, Stat } from "./ui";
+import { Card, Empty, FoldList, PageHeader, Stat } from "./ui";
 import { getHeadlines, getNarrative, getProposals, getReachGaps } from "./analytics";
 import { HeadlineStrip, NarrativeCard, ProposalsCard, ReachCard } from "./analytics-ui";
 
@@ -29,7 +29,7 @@ export default function HrHome() {
             hint={
               o.coveredPopulation === null
                 ? `de ${o.population.toLocaleString("ca-ES")} persones`
-                : `de ${o.coveredPopulation.toLocaleString("ca-ES")} persones${o.excludedCollectius > 0 ? ` (${o.excludedCollectius} col·lectiu ocult per n<${MIN_GROUP_SIZE})` : ""}`
+                : `de ${o.coveredPopulation.toLocaleString("ca-ES")} persones${o.excludedCollectius > 0 ? ` (${o.excludedCollectius} ${o.excludedCollectius === 1 ? "col·lectiu ocult" : "col·lectius ocults"} per n<${MIN_GROUP_SIZE})` : ""}`
             }
           />
           <Stat label="Han respost" value={fmt(o.respondents)} hint={o.periode ?? "Sense període"} />
@@ -46,16 +46,14 @@ export default function HrHome() {
             {drafts.length === 0 ? (
               <Empty>Cap esborrany pendent.</Empty>
             ) : (
-              <ul className="-my-1 divide-y divide-line">
-                {drafts.map((i) => (
+              <FoldList visible={3} className="-my-1 divide-y divide-line" items={drafts.map((i) => (
                   <li key={`${i.kind}-${i.id}`}>
                     <Link href="/hr/needs?estat=esborrany" className="flex items-start gap-3 py-3 hover:text-accent-ink">
                       <span className="badge mt-0.5">Esborrany</span>
                       <span className="text-[13px]">{i.text}</span>
                     </Link>
                   </li>
-                ))}
-              </ul>
+                ))} />
             )}
           </Card>
         </div>

@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { MIN_GROUP_SIZE } from "@damm/shared";
 import { ChangeBadge, Sparkline } from "./trend";
-import { Card, Empty } from "./ui";
+import { Card, Empty, FoldList } from "./ui";
 import { RecommendationBody } from "./recommendation-card";
 import { approveRecommendationAction, discardRecommendationAction, followUpAction, setAlarmStatusAction } from "./actions";
 import type { Headline, Heatmap, HeatCell, NarrativeView, ReachGap, SegmentTrend, ThemesByDomain } from "./analytics";
@@ -83,8 +83,7 @@ export function ProposalsCard({ proposals }: { proposals: (Parameters<typeof Rec
       {proposals.length === 0 ? (
         <Empty>No hi ha cap recomanació pendent de decisió.</Empty>
       ) : (
-        <ul className="-my-1 divide-y divide-line">
-          {proposals.map((r) => (
+        <FoldList visible={3} className="-my-1 divide-y divide-line" items={proposals.map((r) => (
             <li key={r.id} className="py-3">
               <div className="mb-1 text-xs font-medium text-subtle">Proposta de la IA · decideix una persona</div>
               <RecommendationBody r={r} />
@@ -99,8 +98,7 @@ export function ProposalsCard({ proposals }: { proposals: (Parameters<typeof Rec
                 </form>
               </div>
             </li>
-          ))}
-        </ul>
+          ))} />
       )}
     </Card>
   );
