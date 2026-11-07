@@ -101,6 +101,9 @@ export function TrendTable({ periodes, rows }: { periodes: string[]; rows: Trend
                     <div className={`text-[11px] whitespace-nowrap ${c.precisio === "indicativa" ? "text-warn" : "text-subtle"}`}>
                       n={c.n} · {c.precisio}
                     </div>
+                    {c.sd !== null && c.consensus !== null && (
+                      <div className="text-[11px] whitespace-nowrap text-subtle">±{c.sd.toLocaleString("ca-ES", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} · consens {Math.round(c.consensus)}%</div>
+                    )}
                   </div>
                 )}
               </td>

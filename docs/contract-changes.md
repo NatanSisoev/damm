@@ -179,3 +179,16 @@ Action items:
 - [x] Jan: add `assignment` and `person_domain_state` to `scripts/check-anonymity.mjs` as forbidden for HR code. (done 2026-11-07, f47df99)
 - [x] Jan: the HR signals page handles the new `senyal` types, `severity` and `status`. (done 2026-11-07, 355c13c)
 - [ ] Jan (optional): the results page shows `confidence` and `consensus` next to each score.
+
+## 2026-11-07: `TrendCell` gains `consensus` and `sd` (Jan)
+
+`getTrends()` in `packages/db/src/hr-repository.ts` (and so `getSignalDetail().trend[].cells`) now returns two more fields per cell:
+
+- `consensus`: `agregat.consensus` (0-100, engine formula, higher = answers more alike);
+- `sd`: population standard deviation of the 1-5 (`scale5`) answers, computed from `v_resposta_analitica` per period, collective and domain (all collectives for "Tots").
+
+Both are `null` whenever the cell is suppressed (primary or complementary) or n is under the minimum group size. The HR trend chart draws a mean ± 1 SD band and shows both in the tooltip and tables. No schema change, `packages/engine` untouched.
+
+Action items:
+- [x] Jan: trend chart, signal table and results table show SD and consensus. (done 2026-11-07)
+- [ ] Natan: aware: `TrendCell` gains `consensus` and `sd`.

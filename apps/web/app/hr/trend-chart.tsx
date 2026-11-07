@@ -2,14 +2,18 @@
 
 // Multi-line chart of the domain means per period (plain SVG, one y axis). Domains with a clear change
 // are coloured, the rest are muted grey. Suppressed (n < min group size) points are never drawn: gap in the line.
+// Spread band (mean ± 1 SD, clamped to 1-5): always drawn for highlighted series when `highlight` is set; otherwise
+// only for the series being hovered/focused, so six overlapping bands do not turn the chart into a smear.
 import { useEffect, useRef, useState } from "react";
 import type { TrendRow } from "@damm/db/hr";
 
 const f1 = (v: number) => v.toLocaleString("ca-ES", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+const f0 = (v: number) => Math.round(v).toLocaleString("ca-ES");
 const H = 300;
 const PAD = { top: 14, bottom: 30, left: 34 };
 
-type Pt = { x: number; y: number; v: number; n: number | null; precisio: string | null; pi: number };
+type Pt = { x: number; y: number; v: number; n: number | null; precisio: string | null; pi: number; lo: number | null; hi: number | null };
+const bandOf = (v: number, sd: number | null) => (sd === null ? { lo: null, hi: null } : { lo: Math.max(1, v - sd), hi: Math.min(5, v + sd) });
 
 // `highlight`: domain names to emphasise (coloured, thicker); all others muted. Without it, domains with a clear change are coloured.
 export function TrendChart({ periodes, rows, highlight }: { periodes: string[]; rows: TrendRow[]; highlight?: string[] }) {
@@ -28,6 +32,13 @@ export function TrendChart({ periodes, rows, highlight }: { periodes: string[]; 
 
   const values = rows.flatMap((r) => r.cells.map((c) => (c.suprimit ? null : c.mitjana))).filter((v): v is number => v !== null);
   if (values.length === 0) return null;
+  // The axis must contain every band that can be shown (stable: it does not jump on hover).
+  const extents = rows.flatMap((r) =>
+    !highlight || highlight.includes(r.domini)
+      ? r.cells.flatMap((c) => (c.suprimit || c.mitjana === null ? [] : Object.values(bandOf(c.mitjana, c.sd)).filter((v): v is number => v !== null)))
+      : [],
+  );
+  values.push(...extents);
 
   // Zoomed axis from the data: round down/up to 0.5, at least 1 point of range, inside 1-5.
   let lo = Math.floor(Math.min(...values) * 2) / 2;
@@ -47,7 +58,7 @@ export function TrendChart({ periodes, rows, highlight }: { periodes: string[]; 
 
   const series = rows.map((r, ri) => {
     const pts: (Pt | null)[] = r.cells.map((c, pi) =>
-      c.suprimit || c.mitjana === null ? null : { x: xOf(pi), y: yOf(c.mitjana), v: c.mitjana, n: c.n, precisio: c.precisio, pi },
+      c.suprimit || c.mitjana === null ? null : { x: xOf(pi), y: yOf(c.mitjana), v: c.mitjana, n: c.n, precisio: c.precisio, pi, ...bandOf(c.mitjana, c.sd) },
     );
     return { r, ri, pts, changed: highlight ? highlight.includes(r.domini) : r.canvi.label !== "sense canvi clar" };
   });
@@ -104,8 +115,19 @@ export function TrendChart({ periodes, rows, highlight }: { periodes: string[]; 
           {ordered.map((s) => {
             const color = s.changed ? `var(--dom-${(s.ri % 6) + 1})` : "var(--dom-muted)";
             const dim = active && active.ri !== s.ri ? 0.35 : 1;
+            const showBand = highlight ? s.changed : active?.ri === s.ri;
+            const bandPts = showBand ? s.pts.map((p) => (p && p.lo !== null && p.hi !== null ? p : null)) : [];
             return (
               <g key={s.r.domini} opacity={dim}>
+                {segments(bandPts).map((seg, k) => {
+                  if (seg.length === 1) {
+                    const p = seg[0];
+                    return <rect key={`b${k}`} x={p.x - 5} y={yOf(p.hi!)} width={10} height={Math.max(1, yOf(p.lo!) - yOf(p.hi!))} fill={color} fillOpacity={0.13} aria-hidden />;
+                  }
+                  const up = seg.map((p) => `${p.x},${yOf(p.hi!)}`);
+                  const down = [...seg].reverse().map((p) => `${p.x},${yOf(p.lo!)}`);
+                  return <polygon key={`b${k}`} points={[...up, ...down].join(" ")} fill={color} fillOpacity={0.13} stroke="none" aria-hidden />;
+                })}
                 {segments(s.pts).map((seg, k) =>
                   seg.length > 1 ? (
                     <polyline key={k} points={seg.map((p) => `${p.x},${p.y}`).join(" ")} fill="none" stroke={color} strokeWidth={s.changed && highlight ? 3 : 2} strokeLinejoin="round" strokeLinecap="round" />
@@ -141,7 +163,7 @@ export function TrendChart({ periodes, rows, highlight }: { periodes: string[]; 
                   r="14"
                   fill="transparent"
                   tabIndex={0}
-                  aria-label={`${s.r.domini}, ${periodes[pi]}: ${f1(p.v)}, n=${p.n}, ${p.precisio}`}
+                  aria-label={`${s.r.domini}, ${periodes[pi]}: ${f1(p.v)}, n=${p.n}, ${p.precisio}${s.r.cells[pi].sd !== null ? `, dispersió ±${f1(s.r.cells[pi].sd!)}` : ""}${s.r.cells[pi].consensus !== null ? `, consens ${f0(s.r.cells[pi].consensus!)}%` : ""}`}
                   onMouseEnter={() => setActive({ ri: s.ri, pi })}
                   onFocus={() => setActive({ ri: s.ri, pi })}
                   onBlur={() => setActive(null)}
@@ -156,11 +178,13 @@ export function TrendChart({ periodes, rows, highlight }: { periodes: string[]; 
           <div
             role="status"
             className="pointer-events-none absolute z-10 border border-line bg-surface px-3 py-2 text-xs shadow-sm"
-            style={{ left: Math.min(Math.max(actPt.x + 12, 0), w - 190), top: Math.max(0, actPt.y - 64), width: 180 }}
+            style={{ left: Math.min(Math.max(actPt.x + 12, 0), w - 190), top: Math.max(0, actPt.y - 84), width: 180 }}
           >
             <div className="font-semibold">{act.r.domini}</div>
             <div className="num text-subtle">{periodes[active.pi]}</div>
             <div className="num mt-1">Mitjana {f1(actPt.v)} / 5</div>
+            {actCell.sd !== null && <div className="num">Dispersió ±{f1(actCell.sd)}</div>}
+            {actCell.consensus !== null && <div className="num">Consens {f0(actCell.consensus)}%</div>}
             <div className="num text-subtle">n = {actCell.n} · {actCell.precisio}</div>
           </div>
         )}
@@ -181,7 +205,7 @@ export function TrendChart({ periodes, rows, highlight }: { periodes: string[]; 
         {highlight
           ? "En color: domini relacionat amb el senyal. En gris: la resta de dominis."
           : hasChange ? "En color: dominis amb canvi clar entre períodes. En gris: sense canvi clar." : "Cap domini té un canvi clar: tots en gris."}{" "}
-        Els períodes suprimits (menys de 10 respondents) no es dibuixen.
+        Els períodes suprimits (menys de 10 respondents) no es dibuixen. Banda: ±1 desviació típica de les respostes (1-5). Consens: 0-100, més alt = respostes més semblants.{!highlight && " Passa el cursor per un punt per veure'n la banda."}
       </p>
     </div>
   );
