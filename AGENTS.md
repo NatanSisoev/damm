@@ -2,6 +2,20 @@
 
 Two people work on this repo: **Jan** and **Natan**. Goal: move fast, keep `main` always demo-ready, keep merges and PRs under control. Applies to any AI agent working here.
 
+## Docs (read before working on the area)
+
+| Doc | What | Read when |
+|---|---|---|
+| [`docs/contract-changes.md`](docs/contract-changes.md) | checklist log of every shared-contract change | **after every sync or pull** (see Sync rules) |
+| [`docs/engine.md`](docs/engine.md) | engine model: scheduling, scores / confidence / consensus, follow-ups, insights, alarms, learning | working on or with the engine |
+| [`docs/engine-integration.md`](docs/engine-integration.md) | how the employee app, HR dashboard and jobs call `@damm/engine` | wiring routes or pages to the engine |
+| [`docs/question-types.md`](docs/question-types.md) | every question type with an example DB row and answers | writing questions, the seed or the answer UI |
+
+Engine commands (from `packages/engine`, after `pnpm install`; Node 22.5+, no native modules needed):
+- Test: `pnpm test` (Node test runner, in-memory SQLite)
+- Typecheck: `pnpm typecheck`
+- Run the job on the dev DB: `pnpm --filter @damm/engine run job` (`DB_PATH`, default `data/app.db`)
+
 ## Branches
 
 - `main`: protected, always runnable. Nobody commits to it directly.

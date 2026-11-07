@@ -79,7 +79,7 @@ All six domains stay active. Per person per day:
    `priority_d = hr_weight(collective, d) · (info_gain_d + floor) · outlier_boost_d`
    - `info_gain_d` = drop in the segment's `SE²` from one more answer, normalised across domains. High when the domain is uncertain, low when it is well known.
    - `floor = 0.15`: no domain ever stops being asked.
-   - `outlier_boost_d = 1 + 0.5 · min(segment_surprise_d, 3)`, where segment surprise is the share of recent personal `|z| ≥ 2` in that domain. Outliers make the engine insist.
+   - `outlier_boost_d = 1 + 0.5 · clamp(outlier_share_d / 0.0455 − 1, 0, 3)`: the share of recent (14 days) personal `|z| ≥ 2` in that domain, compared with the 4.55 % expected by chance. Only excess outliers boost, so the engine insists where something is really happening.
    - `hr_weight` from `domain_weight` (default 1).
    - Domains are drawn **without replacement with probability ∝ priority** (stochastic, so near-equal domains alternate naturally). No two monitoring questions from the same domain in one batch.
 4. **Facet**: within the chosen domain, the facet this person has gone longest without (ties random).
@@ -87,7 +87,7 @@ All six domains stay active. Per person per day:
 
 ### Format choice by Thompson sampling
 
-For each (collective, shift, format) keep `Beta(α, β)` (`format_stats`). Reward = a *good answer*: not careless (answer time ≥ `min_answer_ms` 1500 ms, and not the same raw value on all of the day's batch). Per decision, for each eligible format f draw `θ_f ~ Beta(α_f, β_f)` and pick `argmax θ_f · pref(collective, f)`, where `pref` comes from `format_preference` (HR; 0 = banned, default 1).
+For each (collective, shift, format) keep `Beta(α, β)` (`format_stats`). Reward = a *good answer*: answer time ≥ `min_answer_ms` (1500 ms). Answers without `answer_ms` do not update the arm. (Planned: also flag the same raw value across a whole batch.) Per decision, for each eligible format f draw `θ_f ~ Beta(α_f, β_f)` and pick `argmax θ_f · pref(collective, f)`, where `pref` comes from `format_preference` (HR; 0 = banned, default 1).
 
 Example: HR sets Fàbriques to yes_no 3, scale5 2, pair 1, ranking 0. The engine never shows rankings in Fàbriques and leans to yes/no, but if night shift turns out to answer `scale5` carefully and rush through yes/no, the Beta for yes_no drops and `scale5` wins more often. Formats with little data have wide Betas and still get tried.
 

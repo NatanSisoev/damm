@@ -1,0 +1,230 @@
+// Employee-side engine API: daily batch and answer submission. docs/engine-integration.md.
+import type { Canal, QuestionType } from "@damm/shared";
+import { selectBatch, type DomainSignal } from "./batch.ts";
+import { loadConfig, type EngineConfig } from "./config.ts";
+import { run, transaction, type SqlDatabase } from "./db.ts";
+import { isClosed, learn } from "./learn.ts";
+import { parseAnswer, type QuestionDef } from "./normalize.ts";
+import { createRng } from "./rng.ts";
+import { infoGain, type PersonPoint } from "./segment.ts";
+import * as store from "./store.ts";
+import { dayOf, daysBetween, toSqlDatetime } from "./time.ts";
+
+export interface EngineOptions {
+  db: SqlDatabase;
+  /** PII redaction for comments, owned by the AI module. Required: the engine never stores raw text. */
+  redact: (text: string) => string;
+  /** Clock, injectable for tests and demos. */
+  now?: () => number;
+  /** Config overrides on top of engine_config (tests, simulations). */
+  config?: Partial<EngineConfig>;
+}
+
+export interface BatchItem {
+  assignmentId: number;
+  questionId: number;
+  domainId: number;
+  type: QuestionType;
+  text: string;
+  /** pair/choice/ranking: labels in index order. Option scores are never sent to the client. */
+  options: { label: string }[] | null;
+  scale: { min: number; max: number } | null;
+  isFollowup: boolean;
+  answered: boolean;
+}
+
+export interface DailyBatch {
+  day: string;
+  total: number;
+  answered: number;
+  items: BatchItem[];
+}
+
+export interface AnswerInput {
+  preguntaId: number;
+  valorNum?: number | null;
+  valueJson?: number[] | null;
+  answerMs?: number | null;
+  comentari?: string | null;
+}
+
+export type RejectReason = "not_in_todays_batch" | "already_answered" | "invalid_value" | "missing_comment";
+
+export interface SubmitResult {
+  accepted: number[];
+  rejected: { questionId: number; reason: RejectReason }[];
+  remainingToday: number;
+}
+
+export class EngineError extends Error {}
+
+export interface Engine {
+  getDailyBatch(accountId: string): DailyBatch;
+  submitAnswers(accountId: string, answers: AnswerInput[], opts?: { channel?: Canal }): SubmitResult;
+}
+
+const SCALES: Partial<Record<QuestionType, { min: number; max: number }>> = {
+  scale5: { min: 1, max: 5 },
+  scale10: { min: 0, max: 10 },
+};
+
+export function createEngine(opts: EngineOptions): Engine {
+  if (typeof opts.redact !== "function") throw new EngineError("createEngine needs a redact function");
+  const { db, redact } = opts;
+  const now = opts.now ?? Date.now;
+  const config = (): EngineConfig => ({ ...loadConfig(db), ...opts.config });
+
+  function account(accountId: string) {
+    const a = store.getAccount(db, accountId);
+    if (!a) throw new EngineError("unknown account");
+    return a;
+  }
+
+  function domainSignals(cfg: EngineConfig, collectiuId: number, nowMs: number): DomainSignal[] {
+    const states = store.collectiveStates(db, collectiuId);
+    const N = store.population(db).filter((p) => p.collectiuId === collectiuId).reduce((s, p) => s + p.n, 0);
+    const weight = store.domainWeights(db, collectiuId);
+    const nowSql = toSqlDatetime(nowMs);
+    return store.domainIds(db).map((domainId) => {
+      const mine = states.filter((s) => s.domini_id === domainId);
+      const points: PersonPoint[] = mine.map((s) => ({ level: s.level, variance: s.variance, daysSince: daysBetween(s.last_at, nowSql) }));
+      const recent = mine.filter((s) => daysBetween(s.last_at, nowSql) <= cfg.outlierWindowDays && s.last_z !== null);
+      const outliers = recent.filter((s) => Math.abs(s.last_z!) >= cfg.outlierZ).length;
+      return {
+        domainId,
+        infoGain: infoGain(points, N, cfg),
+        outlierShare: recent.length ? outliers / recent.length : 0,
+        weight: weight(domainId),
+      };
+    });
+  }
+
+  function toItem(row: store.AssignmentRow, q: QuestionDef): BatchItem {
+    return {
+      assignmentId: row.id,
+      questionId: q.id,
+      domainId: q.domainId,
+      type: q.type,
+      text: q.text,
+      options: q.options ? q.options.map((o) => ({ label: o.label })) : null,
+      scale: SCALES[q.type] ?? null,
+      isFollowup: row.reason === "followup" || q.isFollowup,
+      answered: row.answered_at !== null,
+    };
+  }
+
+  function getDailyBatch(accountId: string): DailyBatch {
+    const cfg = config();
+    const nowMs = now();
+    const day = dayOf(nowMs, cfg.timezone);
+    const acc = account(accountId);
+    let rows = store.assignmentsFor(db, accountId, day);
+    if (rows.length === 0) {
+      transaction(db, () => {
+        const picks = selectBatch({
+          cfg,
+          rng: createRng(`${accountId}|${day}`),
+          day,
+          questions: store.approvedQuestionsFor(db, acc.collectiuId),
+          lastSeen: store.lastSeenByItem(db, accountId),
+          answered: store.answeredQuestionIds(db, accountId),
+          dueFollowups: store.dueFollowupDomains(db, accountId, day),
+          domains: domainSignals(cfg, acc.collectiuId, nowMs),
+          formatPref: store.formatPrefs(db, acc.collectiuId),
+          formatStats: store.formatStatsFor(db, cfg, acc.collectiuId, acc.tornId),
+        });
+        // OR IGNORE: a concurrent request may have created today's batch first; we then read theirs.
+        picks.forEach((p, slot) =>
+          run(db, "INSERT OR IGNORE INTO assignment (compte_id, pregunta_id, day, slot, reason) VALUES (?,?,?,?,?)", accountId, p.question.id, day, slot, p.reason),
+        );
+      });
+      rows = store.assignmentsFor(db, accountId, day);
+    }
+    const qs = store.questionsByIds(db, rows.map((r) => r.pregunta_id));
+    const items = rows.flatMap((r) => {
+      const q = qs.get(r.pregunta_id);
+      return q ? [toItem(r, q)] : [];
+    });
+    return { day, total: items.length, answered: items.filter((i) => i.answered).length, items };
+  }
+
+  function submitAnswers(accountId: string, answers: AnswerInput[], o: { channel?: Canal } = {}): SubmitResult {
+    const cfg = config();
+    const nowMs = now();
+    const day = dayOf(nowMs, cfg.timezone);
+    const at = toSqlDatetime(nowMs);
+    const acc = account(accountId);
+    const result: SubmitResult = { accepted: [], rejected: [], remainingToday: 0 };
+
+    transaction(db, () => {
+      const rows = store.assignmentsFor(db, accountId, day);
+      const byQuestion = new Map(rows.map((r) => [r.pregunta_id, r]));
+      const qs = store.questionsByIds(db, rows.map((r) => r.pregunta_id));
+      const done = new Set<number>();
+
+      for (const a of answers) {
+        const row = byQuestion.get(a.preguntaId);
+        const q = qs.get(a.preguntaId);
+        if (!row || !q) {
+          result.rejected.push({ questionId: a.preguntaId, reason: "not_in_todays_batch" });
+          continue;
+        }
+        if (row.answered_at !== null || done.has(a.preguntaId)) {
+          result.rejected.push({ questionId: a.preguntaId, reason: "already_answered" });
+          continue;
+        }
+        const parsed = parseAnswer(q, a);
+        if (!parsed.ok) {
+          result.rejected.push({ questionId: a.preguntaId, reason: parsed.reason });
+          continue;
+        }
+        const { score, valorNum, valueJson } = parsed.value;
+        const comment = a.comentari && a.comentari.trim() ? redact(a.comentari.trim()) : null;
+        const answerMs = typeof a.answerMs === "number" && a.answerMs >= 0 ? Math.round(a.answerMs) : null;
+
+        run(
+          db,
+          `INSERT INTO resposta (compte_id, pregunta_id, valor_num, value_json, score, answer_ms, comentari, canal, periode, data)
+           VALUES (?,?,?,?,?,?,?,?,?,?)`,
+          accountId,
+          q.id,
+          valorNum,
+          valueJson ? JSON.stringify(valueJson) : null,
+          score,
+          answerMs,
+          comment,
+          o.channel ?? "app",
+          day.slice(0, 7),
+          at,
+        );
+
+        if (score !== null && isClosed(q.type)) {
+          const out = learn(
+            {
+              person: store.getPersonState(db, accountId, q.domainId),
+              item: store.getItemStats(db, q.id),
+              question: q,
+              score,
+              at,
+              day,
+              isFollowup: row.reason === "followup" || q.isFollowup,
+            },
+            cfg,
+            createRng(`${accountId}|${q.domainId}|${day}`),
+          );
+          store.putPersonState(db, accountId, q.domainId, out.person);
+          store.putItemStats(db, q.id, out.item);
+        }
+        if (answerMs !== null) store.bumpFormatStats(db, cfg, acc.collectiuId, acc.tornId, q.type, answerMs >= cfg.minAnswerMs);
+
+        run(db, "UPDATE assignment SET answered_at = ? WHERE id = ?", at, row.id);
+        done.add(q.id);
+        result.accepted.push(q.id);
+      }
+      result.remainingToday = rows.filter((r) => r.answered_at === null && !done.has(r.pregunta_id)).length;
+    });
+    return result;
+  }
+
+  return { getDailyBatch, submitAnswers };
+}

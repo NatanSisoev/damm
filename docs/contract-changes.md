@@ -19,6 +19,24 @@ What changed and why.
 
 ---
 
+## C3 · 2026-11-07 · Natan · `@damm/engine` package
+
+New workspace package `packages/engine` (`@damm/engine`), API as in [engine-integration.md](engine-integration.md). It has no runtime dependencies: the caller injects the SQLite connection (better-sqlite3 in the app, node:sqlite in tests).
+
+- Entry points:
+  - `@damm/engine`: `createEngine({ db, redact })`, `getDailyBatch` and `submitAnswers`;
+  - `@damm/engine/job`: `runEngineJob(db)`;
+  - `@damm/engine/hr`: `validateQuestion`, `setDomainWeight`, `setFormatPreference`, `getConfig` and `setConfig`;
+  - `@damm/engine/core`: the pure model.
+- `runEngineJob` writes `agregat` (with `mitjana` still on 1..5) and `domain_importance`, fills a missing `resposta.score`, and on a fresh database bootstraps `person_domain_state` and `item_stats` from existing answers.
+- `insight` and `senyal` are not written yet (the report says `pending`).
+- The root `package.json`, `pnpm-workspace.yaml` and `packages/shared/package.json` on Natan's branch are byte-identical to `jan/dev`, so they merge cleanly.
+
+Action items:
+- [ ] Jan: after merging, run `pnpm install` so `pnpm-lock.yaml` picks up `@damm/engine` (its devDependencies are `typescript` and `@types/node`).
+- [ ] Jan: add `"@damm/engine": "workspace:*"` to `apps/web` dependencies, and to `transpilePackages` in the Next config if the other workspace packages are listed there.
+- [ ] Jan: the C2 items for routing `pool/next`, `responses` and the job through the engine are now unblocked.
+
 ## C2 · 2026-11-07 · Natan · English question types, engine integration API
 
 Question (answer) type values are now English. Engine API defined in [engine-integration.md](engine-integration.md). Implementation is in progress on `natan/engine-core`.
