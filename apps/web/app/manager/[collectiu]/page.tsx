@@ -60,7 +60,7 @@ export default async function ManagerCollectivePage({ params }: { params: Promis
       <AggregateNote />
 
       <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
-        <Card title="Perfil per domini" meta="Mitjana 1–5">
+        <Card title="Perfil per domini" meta="Mitjana per domini">
           {series ? <Radar axes={series.rows.map((r) => r.domini)} series={radarSeries} /> : <Empty>Encara no hi ha dades visibles per a aquest col·lectiu.</Empty>}
         </Card>
 
