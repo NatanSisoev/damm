@@ -42,6 +42,15 @@
   --co-4: #eda100;
   --co-5: #e87ba4;
 
+  /* Domain trend lines (categorical slots 1-6, validated light and dark); no clear change = muted grey. */
+  --dom-1: #2a78d6;
+  --dom-2: #eb6834;
+  --dom-3: #1baf7a;
+  --dom-4: #eda100;
+  --dom-5: #e87ba4;
+  --dom-6: #008300;
+  --dom-muted: #a9b0a3;
+
   font-family: var(--font-hanken), var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   background: var(--bg);
   color: var(--text);
@@ -83,6 +92,14 @@
     --co-3: #199e70;
     --co-4: #c98500;
     --co-5: #d55181;
+
+    --dom-1: #3987e5;
+    --dom-2: #d95926;
+    --dom-3: #199e70;
+    --dom-4: #c98500;
+    --dom-5: #d55181;
+    --dom-6: #008300;
+    --dom-muted: #5d675a;
   }
 }
 
@@ -209,12 +226,14 @@
 .alarm-status-menu button:hover { background: var(--surface-muted); }
 
 /* Heatmap (collectives x domains) */
+.hr-heat-grid { table-layout: fixed; min-width: 34rem; }
+.hr-heat-grid thead th { overflow-wrap: anywhere; hyphens: auto; vertical-align: bottom; }
 .hr-heat-cell {
   display: flex;
   align-items: center;
   justify-content: center;
   height: 44px;
-  min-width: 56px;
+  min-width: 0;
   font-size: 13px;
   font-weight: 600;
   color: var(--text);
