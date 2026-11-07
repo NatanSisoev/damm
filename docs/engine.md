@@ -109,6 +109,8 @@ All per segment with n ≥ 10. Written to `insight` with `kind`:
 | `segment_gap` | night vs. day, managers vs. non-managers (manager positivity bias) |
 | `action_effect` | score before vs. after an approved `recomanacio`, on its domain |
 
+**Implemented** (`src/insights.ts`, `runInsights(db, { now })`, run after `runEngineJob`): every kind above except `driver` and `action_effect`. Each run replaces its own kinds for the periods it covers (idempotent). Rows with n < `minGroupSize` are written suppressed (`value`, `detail_json` NULL). `value` per kind: `domain_state` score; `top_mover` score change (top 5 per period, |change| ≥ 0.3, confidence ≥ `insight_min_confidence` in both periods); `polarisation` consensus drop; `importance_gap` importance × (1 − score/10), with `rank` and `quadrant` in the detail; `trajectory_mix` % declining (detail: improving / stable / declining %, change ≥ 0.5 on 0–10 over 30 days counts as a move); `followup_confirmation` % of resolved follow-ups that confirmed; `segment_gap` highest − lowest shift score (`detail.dimension = "shift"`, `torn_id` = lowest shift) or manager − non-manager score (`detail.dimension = "manager"`). Trajectories, follow-up outcomes and the manager split come from replaying `resposta` (follow-ups = `assignment.reason = 'followup'` or a follow-up-worded item), since `person_domain_state` keeps only the latest state.
+
 ## 7. Alarms (`senyal`)
 
 Each alarm has `severity`, `status` (`open` → `acknowledged` → `action_linked` → `resolved`), `audience`, a trigger level and a separate clear level (hysteresis), and a cooldown of 7 days per (type, segment, domain). Warnings go in a weekly digest; critical alarms are pushed immediately. The AI may attach a proposed `recomanacio`; a human decides.
