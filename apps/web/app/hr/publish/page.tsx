@@ -3,6 +3,7 @@ import { MIN_GROUP_SIZE } from "@damm/shared";
 import { listJoinCodes, listNeeds } from "@damm/db/hr";
 import { closeNeedAction } from "../actions";
 import { Card, Empty, PageHeader } from "../ui";
+import { needStatus } from "../labels";
 import { CopyButton } from "./copy-button";
 import { baseUrl, joinUrl, qrSvg } from "./qr";
 
@@ -73,7 +74,7 @@ export default async function PublishPage() {
           <ul className="divide-y divide-line">
             {needs.map((n) => (
               <li key={n.id} className="flex flex-wrap items-center gap-3 py-2.5">
-                <span className={`badge ${n.estat === "publicada" ? "badge-good" : ""}`}>{n.estat}</span>
+                <span className={`badge ${needStatus(n.estat).cls}`}>{needStatus(n.estat).label}</span>
                 <span className="min-w-0 flex-1 text-[13px]">{n.textNl}{n.collectiu ? ` · ${n.collectiu}` : ""}</span>
                 {n.estat !== "tancada" && (
                   <form action={closeNeedAction}><input type="hidden" name="id" value={n.id} /><button className="btn">Tanca la necessitat</button></form>

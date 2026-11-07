@@ -1,12 +1,9 @@
 import { MIN_GROUP_SIZE } from "@damm/shared";
 import { SuppressedBadge } from "../ui";
+import { ChangeBadge, Sparkline } from "../trend";
 import {
-  CHANGE_MIN_DELTA,
-  CHANGE_MIN_N,
   REP_GAP_FLAG,
-  type Change,
   type RepRow,
-  type TrendCell,
   type TrendRow,
 } from "@damm/db/hr";
 
@@ -19,11 +16,8 @@ const hintFor = (motiu: "primari" | "complementari" | null) => (motiu === "compl
 
 export function Bar({ value, tone }: { value: number; tone: "chart" | "muted" }) {
   return (
-    <div className="h-1.5 w-full max-w-36 rounded-full bg-surface-muted">
-      <div
-        className={`h-1.5 rounded-full ${tone === "chart" ? "bg-chart-1" : "bg-line-strong"}`}
-        style={{ width: `${Math.min(100, value * 100)}%` }}
-      />
+    <div className={`hr-meter w-full max-w-36 ${tone === "muted" ? "hr-meter-muted" : ""}`}>
+      <span style={{ width: `${Math.min(100, value * 100)}%` }} />
     </div>
   );
 }
@@ -80,38 +74,6 @@ export function RepTable({ rows, byShift }: { rows: RepRow[]; byShift: boolean }
   );
 }
 
-export function Sparkline({ cells }: { cells: TrendCell[] }) {
-  const w = 80, h = 24;
-  const pts = cells
-    .map((c, i) => (c.mitjana === null ? null : { x: (i / Math.max(1, cells.length - 1)) * (w - 8) + 4, y: h - 4 - ((c.mitjana - 1) / 4) * (h - 8) }))
-    .filter((p): p is { x: number; y: number } => p !== null);
-  return (
-    <svg width={w} height={h} role="img" aria-label="Tendència" className="inline-block">
-      {pts.length > 1 && <polyline points={pts.map((p) => `${p.x},${p.y}`).join(" ")} fill="none" className="stroke-chart-1" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />}
-      {pts.map((p, i) => <circle key={i} cx={p.x} cy={p.y} r="2.5" className="fill-chart-1" />)}
-    </svg>
-  );
-}
-
-export function ChangeBadge({ canvi }: { canvi: Change }) {
-  if (canvi.label === "sense canvi clar") {
-    return (
-      <span
-        className="text-xs text-subtle"
-        title={`Només es parla de canvi si |Δ| ≥ ${CHANGE_MIN_DELTA} i els dos períodes tenen n ≥ ${CHANGE_MIN_N}`}
-      >
-        sense canvi clar
-      </span>
-    );
-  }
-  const up = canvi.label === "puja";
-  return (
-    <span className="badge num" title={`Δ ${canvi.delta! >= 0 ? "+" : "−"}${Math.abs(canvi.delta!).toFixed(1)}`}>
-      {up ? "↑ puja" : "↓ baixa"} {canvi.delta! >= 0 ? "+" : "−"}{Math.abs(canvi.delta!).toFixed(1)}
-    </span>
-  );
-}
-
 export function TrendTable({ periodes, rows }: { periodes: string[]; rows: TrendRow[] }) {
   return (
     <table className="table min-w-[36rem]">
@@ -143,7 +105,7 @@ export function TrendTable({ periodes, rows }: { periodes: string[]; rows: Trend
                 )}
               </td>
             ))}
-            <td className="text-right"><Sparkline cells={r.cells} /></td>
+            <td className="text-right"><Sparkline values={r.cells.map((c) => c.mitjana)} /></td>
             <td className="text-right"><ChangeBadge canvi={r.canvi} /></td>
           </tr>
         ))}

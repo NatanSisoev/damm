@@ -71,7 +71,7 @@ export default async function ResultsPage({ searchParams }: { searchParams: Prom
       <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
         <Card
           title="Perfil per domini"
-          meta="Mitjana 1–5"
+          meta="Mitjana per domini"
         >
           {radar ? (
             <div className="space-y-4">
