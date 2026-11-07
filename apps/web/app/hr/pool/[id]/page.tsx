@@ -1,7 +1,8 @@
 import { Fragment } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { hrPoolQuestion, type PoolWeek } from "@/lib/hr-engine";
+import { hrPoolQuestion } from "@/lib/hr-engine";
+import { EvolutionChart } from "./evolution-chart";
 import { ConfirmButton } from "../../confirm-button";
 import { setQuestionActiveAction } from "../../actions";
 import { Card, Empty, PageHeader, Stat } from "../../ui";
@@ -15,9 +16,10 @@ const pct = (x: number | null) => (x === null ? "—" : `${Math.round(x * 100)}%
 const num = (x: number) => x.toLocaleString("ca-ES");
 const score10 = (x: number | null) => (x === null ? "Suprimit" : (x * 10).toFixed(1));
 
-export default async function QuestionPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function QuestionPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ g?: string }> }) {
   const { id } = await params;
-  const d = Number.isInteger(Number(id)) ? hrPoolQuestion(Number(id)) : null;
+  const grain = (await searchParams).g === "day" ? "day" : "week";
+  const d = Number.isInteger(Number(id)) ? hrPoolQuestion(Number(id), grain) : null;
   if (!d) notFound();
   const q = d.question;
   const st = STATE[q.state];
@@ -57,8 +59,17 @@ export default async function QuestionPage({ params }: { params: Promise<{ id: s
         />
       </div>
 
-      <Card title="Evolució setmanal" meta="Barres: respostes · línia: puntuació mitjana (0–10) · contorn: demanades" className="mb-6">
-        {d.weekly.length === 0 ? <Empty>Encara no hi ha activitat.</Empty> : <WeeklyChart weeks={d.weekly} />}
+      <Card
+        title="Evolució"
+        meta={
+          <nav aria-label="Granularitat" className="hr-seg">
+            <Link href={`/hr/pool/${q.id}`} aria-current={grain === "week" ? "page" : undefined}>Setmanes</Link>
+            <Link href={`/hr/pool/${q.id}?g=day`} aria-current={grain === "day" ? "page" : undefined}>Dies</Link>
+          </nav>
+        }
+        className="mb-6"
+      >
+        {d.weekly.length === 0 ? <Empty>Encara no hi ha activitat.</Empty> : <EvolutionChart buckets={d.weekly} grain={grain} />}
       </Card>
 
       <div className="mb-6 grid gap-6 lg:grid-cols-2">
@@ -184,40 +195,5 @@ function Bars({ bars }: { bars: { label: string; count: number }[] }) {
         </li>
       ))}
     </ul>
-  );
-}
-
-function WeeklyChart({ weeks }: { weeks: PoolWeek[] }) {
-  const W = 760, H = 220, L = 34, R = 34, T = 12, B = 28;
-  const iw = W - L - R, ih = H - T - B;
-  const maxN = Math.max(1, ...weeks.map((w) => Math.max(w.asked, w.responses)));
-  const step = iw / weeks.length;
-  const bw = Math.min(28, step * 0.6);
-  const x = (i: number) => L + step * i + step / 2;
-  const yN = (n: number) => T + ih - (n / maxN) * ih;
-  const yS = (s: number) => T + ih - s * ih;
-  const pts = weeks.map((w, i) => (w.avgScore === null ? null : ([x(i), yS(w.avgScore)] as const)));
-  const path = pts.reduce((acc, p, i) => (p ? `${acc}${pts[i - 1] ? "L" : "M"}${p[0].toFixed(1)},${p[1].toFixed(1)}` : acc), "");
-  const every = Math.ceil(weeks.length / 10);
-  return (
-    <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Evolució setmanal de respostes i puntuació" className="w-full" style={{ maxHeight: 280 }}>
-      {[0, 0.5, 1].map((t) => (
-        <g key={t}>
-          <line x1={L} x2={W - R} y1={T + ih - t * ih} y2={T + ih - t * ih} stroke="var(--line)" />
-          <text x={L - 6} y={T + ih - t * ih + 4} textAnchor="end" fontSize="10" fill="currentColor" fillOpacity="0.6">{Math.round(maxN * t)}</text>
-          <text x={W - R + 6} y={T + ih - t * ih + 4} fontSize="10" fill="currentColor" fillOpacity="0.6">{t * 10}</text>
-        </g>
-      ))}
-      {weeks.map((w, i) => (
-        <g key={w.week}>
-          <title>{`Setmana del ${w.week}: ${w.asked} demanades, ${w.responses} respostes${w.avgScore === null ? "" : `, puntuació ${(w.avgScore * 10).toFixed(1)}`}`}</title>
-          {w.asked > 0 && <rect x={x(i) - bw / 2 - 2} y={yN(w.asked)} width={bw + 4} height={T + ih - yN(w.asked)} fill="none" stroke="currentColor" strokeOpacity="0.45" />}
-          <rect x={x(i) - bw / 2} y={yN(w.responses)} width={bw} height={T + ih - yN(w.responses)} fill="var(--co-2, currentColor)" fillOpacity="0.8" />
-          {i % every === 0 && <text x={x(i)} y={H - 8} textAnchor="middle" fontSize="10" fill="currentColor" fillOpacity="0.6">{w.week.slice(5)}</text>}
-        </g>
-      ))}
-      {path && <path d={path} fill="none" stroke="var(--co-4, currentColor)" strokeWidth="2" />}
-      {pts.map((p, i) => p && <circle key={i} cx={p[0]} cy={p[1]} r="3" fill="var(--co-4, currentColor)" />)}
-    </svg>
   );
 }

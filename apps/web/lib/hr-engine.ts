@@ -63,4 +63,4 @@ export type { Brain, BrainCollective, BrainDomain, BrainFormat, SimResult, Simul
 // Question pool inspector: every question with delivery statistics and schedule. Aggregates only.
 export const hrPool = () => listPool(db());
 export const hrSetQuestionActive = (id: number, active: boolean, by: string) => setQuestionActive(db(), id, active, by);
-export const hrPoolQuestion = (id: number) => getPoolQuestion(db(), id);
+export const hrPoolQuestion = (id: number, grain: "week" | "day" = "week") => getPoolQuestion(db(), id, { grain });
