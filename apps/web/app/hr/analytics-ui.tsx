@@ -12,12 +12,12 @@ const signed = (v: number) => `${v >= 0 ? "+" : "−"}${f1(Math.abs(v))}`;
 
 // ---------- narrative ----------
 
-export function NarrativeCard({ narrative, title = "Resum del motor" }: { narrative: NarrativeView | null; title?: string }) {
+export function NarrativeCard({ narrative, title = "Resum de l'anàlisi" }: { narrative: NarrativeView | null; title?: string }) {
   const d = narrative?.detail;
   return (
     <Card title={title} meta={narrative ? <span className="num">{narrative.periode}</span> : undefined}>
       {!d ? (
-        <Empty>Encara no hi ha resum del motor</Empty>
+        <Empty>Encara no hi ha cap resum de l&apos;anàlisi</Empty>
       ) : (
         <div className="space-y-4">
           <p className="text-[15px] leading-relaxed">{d.summary}</p>

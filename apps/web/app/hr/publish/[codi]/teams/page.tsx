@@ -23,7 +23,7 @@ export default async function TeamsPage({ params }: PageProps<"/hr/publish/[codi
     <>
       <PageHeader
         title={`Publica a Teams · ${row.collectiu}`}
-        subtitle="Targeta adaptativa (Adaptive Card 1.5) amb l'enllaç d'accés. No conté dades personals."
+        subtitle="Targeta adaptativa (Adaptive Card 1.5) amb l'enllaç d'invitació. No conté dades personals."
         actions={<Link href="/hr/publish" className="btn btn-ghost">← Tornar</Link>}
       />
       <div className="grid gap-4 xl:grid-cols-2">

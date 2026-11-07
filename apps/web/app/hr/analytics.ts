@@ -300,7 +300,7 @@ export function getReachGaps(limit = 4): ReachGap[] {
       action:
         kind === "torn"
           ? `Envia les preguntes a l'hora del torn ${label} i reforça el recordatori abans del canvi de torn.`
-          : `Demana a ${label} que comparteixi l'enllaç d'unió i prova un recordatori curt.`,
+          : `Demana a ${label} que comparteixi l'enllaç d'invitació i prova un recordatori curt.`,
     });
   };
   for (const r of rep.collectius) add(r.collectiu, "col·lectiu", r);

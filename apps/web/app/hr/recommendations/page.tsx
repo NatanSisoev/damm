@@ -53,12 +53,12 @@ export default function RecommendationsPage() {
                     <div className="mt-3 flex flex-wrap justify-end gap-2 border-t border-line pt-3">
                       {r.estat === "proposada" && (
                         <>
-                          <form action={discardRecommendationAction}><input type="hidden" name="id" value={r.id} /><button className="btn">Descartar</button></form>
-                          <form action={approveRecommendationAction}><input type="hidden" name="id" value={r.id} /><button className="btn btn-primary">Aprovar</button></form>
+                          <form action={discardRecommendationAction}><input type="hidden" name="id" value={r.id} /><button className="btn">Descarta</button></form>
+                          <form action={approveRecommendationAction}><input type="hidden" name="id" value={r.id} /><button className="btn btn-primary">Aprova</button></form>
                         </>
                       )}
                       {r.estat === "aprovada" && !r.seguimentNecessitatId && (
-                        <form action={followUpAction}><input type="hidden" name="id" value={r.id} /><button className="btn btn-primary">Crear enquesta de seguiment</button></form>
+                        <form action={followUpAction}><input type="hidden" name="id" value={r.id} /><button className="btn btn-primary">Crea l&apos;enquesta de seguiment</button></form>
                       )}
                     </div>
                   )}
