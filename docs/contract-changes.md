@@ -1,0 +1,78 @@
+# Shared contract change log
+
+Every change to the shared contract (`packages/db/schema.sql`, `packages/shared`, or an API the other person calls) gets an entry here, **newest first**, in the same commit as the change.
+
+**How agents use this file** (also in AGENTS.md, Sync rules):
+1. After every sync or pull, read every entry that still has open items (`- [ ]`) for your person.
+2. Apply the item in your area, tick it (`- [x]`) and append `(done YYYY-MM-DD, <short commit>)`.
+3. If an item cannot be applied yet, leave it open and tell your user why.
+4. Only tick your own items. Never delete entries.
+
+Entry format:
+
+```
+## C<n> · YYYY-MM-DD · <author> · <title>
+What changed and why.
+- [ ] Jan: action
+- [ ] Natan: action
+```
+
+---
+
+## C2 · 2026-11-07 · Natan · English question types, engine integration API
+
+Question (answer) type values are now English. Engine API defined in [engine-integration.md](engine-integration.md). Implementation is in progress on `natan/engine-core`.
+
+| Old (Catalan) | New |
+|---|---|
+| `escala5` | `scale5` |
+| `escala10` | `scale10` |
+| `swipe` | `yes_no` (a swipe is still fine as the UI) |
+| `obert` | `open` |
+| `pair`, `choice`, `ranking` | unchanged |
+
+- `packages/shared`: new `QUESTION_TYPES` constant and `QuestionType` type. `PreguntaTipus` stays as a deprecated alias of `QuestionType`.
+- `schema.sql`: the `pregunta.tipus` CHECK uses the new values.
+- The engine takes over:
+  - question selection for `GET /api/pool/next` (`engine.getDailyBatch`);
+  - answer validation and insert for `POST /api/responses` (`engine.submitAnswers`);
+  - computing `agregat` (`runEngineJob`, which writes `mitjana` 1..5 as before, plus `score`, `confidence` and `consensus`).
+
+Action items:
+- [ ] Jan: replace `escala5`/`escala10`/`swipe`/`obert` with `scale5`/`scale10`/`yes_no`/`open` in the seed (`packages/seed/src/questions.ts`, `seed.ts`), `employee-repository.ts` and the answer UI (`question-renderer.tsx`, `answer-flow.tsx`).
+- [ ] Jan: once `@damm/engine` is on main, route `GET /api/pool/next` and `POST /api/responses` through `createEngine({ db, redact })` (engine-integration.md), and drop the selection and validation logic in `employee-repository.ts`.
+- [ ] Jan: stop writing `agregat` in `packages/db/src/init.ts` and call `runEngineJob(db)` after seeding instead.
+- [ ] Jan: add `@damm/engine` and `@damm/engine/job` to the HR import ban and to `scripts/check-anonymity.mjs`. HR code may import only `@damm/engine/hr`.
+
+## C1 · 2026-11-07 · Natan · Engine tables, new question types, alarms
+
+Design: [engine.md](engine.md). Examples of every type: [question-types.md](question-types.md).
+
+All changes are additive: nothing was renamed or removed, and new TypeScript fields are optional.
+
+- **`pregunta`:**
+  - new types `pair` (this or that) and `choice` (pick the most representative statement);
+  - new columns `facet` (interchangeable wordings), `polarity` (1 or -1; -1 = negatively worded), `options_json` (pair/choice `[{label, score}]`, ranking `[{label, domain_id}]`) and `is_followup`.
+- **`resposta`:**
+  - new columns `value_json` (ranking order, option indices, best first), `score` (engine-normalised 0..1, 1 = best, set only by the engine) and `answer_ms`;
+  - `valor_num` for pair/choice is the chosen option index;
+  - `v_resposta_analitica` now also exposes `score`, and still has no `compte_id`.
+- **`agregat`:** new engine columns `score` (0..10), `confidence` and `consensus` (0..100). `mitjana` is unchanged (1..5). Suppressed rows must have all of them NULL.
+- **`senyal`:**
+  - new types `sharp_drop`, `sustained_decline`, `changepoint_cluster`, `polarisation`, `low_confidence` and `improvement`;
+  - new columns `torn_id`, `domini_id`, `severity`, `status`, `audience` (Lideratge alarms always `hr`) and `created_at`.
+- **New tables:**
+  - engine-only, per account: `assignment` (daily batch) and `person_domain_state`;
+  - engine state: `item_stats` and `format_stats`;
+  - HR config: `domain_weight`, `format_preference` and `engine_config`;
+  - aggregates for the dashboard: `insight` and `domain_importance`.
+- **`GET /api/pool/next`:** returns today's fixed batch of 3 questions, including `options`. No timeouts.
+- **`packages/shared`:** new alarm and insight types, `ScoredOption`, `RankingOption`, `Insight`, and optional fields on `Pregunta`, `RespostaInput`, `Agregat` and `Senyal`.
+
+Action items:
+- [ ] Jan: ranking items in the seed need `options_json` with a `domain_id` per option; give items a `facet`.
+- [ ] Jan: the answer UI renders `pair` and `choice` from `options`.
+- [ ] Jan: `POST /api/responses` accepts `valueJson` and `answerMs`.
+- [ ] Jan: add `assignment` and `person_domain_state` to `scripts/check-anonymity.mjs` as forbidden for HR code.
+- [ ] Jan: the HR signals page handles the new `senyal` types, `severity` and `status`.
+- [ ] Jan (optional): the results page shows `confidence` and `consensus` next to each score.
