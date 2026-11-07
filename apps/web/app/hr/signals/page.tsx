@@ -10,7 +10,7 @@ import { recomputeAction, setAlarmStatusAction } from "../actions";
 import { ALARM_NEXT } from "./transitions";
 import { NON_ACTIONABLE, alarmHint } from "./alarm-text";
 import { signalDetail, signalDrop, signalSegment } from "@/lib/signal-text";
-import { proposeFollowUpAction } from "./actions";
+import { generateRecommendationsAction, proposeFollowUpAction } from "./actions";
 
 const TABS = [
   { key: "obertes", label: "Obertes", statuses: ["open"] },
@@ -197,7 +197,7 @@ export default async function AlarmsPage({ searchParams }: { searchParams: Promi
             <Card key={segment} title={segment} meta={<span className="num">{items.length} {items.length === 1 ? "alarma" : "alarmes"}</span>}>
               <ul className="divide-y divide-line">
                 {items.map((r) => (
-                  <AlarmItem key={r.id} r={r} spark={sparkFor(r)} rec={recs.find((x) => x.senyalId === r.id && x.estat === "aprovada")} />
+                  <AlarmItem key={r.id} r={r} spark={sparkFor(r)} rec={recs.find((x) => x.senyalId === r.id && x.estat === "aprovada")} drafted={recs.some((x) => x.senyalId === r.id)} />
                 ))}
               </ul>
             </Card>
@@ -256,7 +256,7 @@ function Select({ name, label, value, options }: { name: string; label: string; 
   );
 }
 
-function AlarmItem({ r, spark, rec }: { r: Row; spark: number[] | null; rec?: { id: number; seguimentNecessitatId: number | null } }) {
+function AlarmItem({ r, spark, rec, drafted }: { r: Row; spark: number[] | null; rec?: { id: number; seguimentNecessitatId: number | null }; drafted: boolean }) {
   const next = ALARM_NEXT[r.status];
   return (
     <li className="py-3">
@@ -292,6 +292,12 @@ function AlarmItem({ r, spark, rec }: { r: Row; spark: number[] | null; rec?: { 
           <Link href={`/hr/signals/${r.id}`} className="btn">Seguiment creat →</Link>
         ) : (
           <Link href={`/hr/signals/${r.id}`} className="btn btn-primary">Revisa l&apos;alarma i decideix →</Link>
+        )}
+        {!drafted && r.domainId != null && !NON_ACTIONABLE.has(r.type) && (
+          <form action={generateRecommendationsAction}>
+            <input type="hidden" name="signal" value={r.id} />
+            <button className="btn" type="submit">Genera recomanacions</button>
+          </form>
         )}
         {next.length > 0 && (
           <details className="alarm-status">

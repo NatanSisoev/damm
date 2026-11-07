@@ -5,6 +5,7 @@ import { getSignalDetail, listCollectius, listContextEvents, listDomains, listTo
 import { hrInsights, hrListProbes, type ProbeView } from "@/lib/hr-engine";
 import { Card, Empty, PageHeader, SuppressedBadge } from "../../ui";
 import { setSignalStatusAction } from "../../actions";
+import { generateRecommendationsAction } from "../actions";
 import { addContextEventAction, approveFromSignalAction, discardFromSignalAction, followUpFromSignalAction, startProbeAction, stopProbeAction } from "./actions";
 
 import { recommendationStatus } from "../../labels";
@@ -248,7 +249,16 @@ export default async function SignalPage({ params, searchParams }: { params: Pro
         <div className="space-y-6">
           <Card id="recomanacions" title="Recomanacions" meta={<span className="num">{recommendations.length}</span>}>
             {recommendations.length === 0 ? (
-              <Empty>Encara no hi ha recomanacions per a aquest senyal.</Empty>
+              <div className="space-y-3">
+                <Empty>Encara no hi ha recomanacions per a aquest senyal.</Empty>
+                {signal.dominiId != null && (
+                  <form action={generateRecommendationsAction} className="text-center">
+                    <input type="hidden" name="signal" value={signal.id} />
+                    <button className="btn btn-primary" type="submit">Genera recomanacions</button>
+                    <p className="mt-2 text-xs text-subtle">Proposa fins a 3 accions. Una persona les aprova o descarta.</p>
+                  </form>
+                )}
+              </div>
             ) : (
               <ul className="space-y-3">
                 {recommendations.map((r) => (
