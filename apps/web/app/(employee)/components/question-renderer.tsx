@@ -19,6 +19,11 @@ function optionLabels(q: PoolQuestion): string[] {
   return (q.options ?? []).map((o) => o.label);
 }
 
+/** Scale anchors travel in options: first label = low end, last label = high end. */
+function anchors(labels: string[], low: string, high: string): [string, string] {
+  return labels.length >= 2 ? [labels[0], labels[labels.length - 1]] : [low, high];
+}
+
 export function isAnswerable(q: PoolQuestion, d: AnswerDraft): boolean {
   return q.tipus === "open" ? d.comentari.trim().length > 0 : d.valorNum !== null;
 }
@@ -36,18 +41,22 @@ export function QuestionRenderer({
   const labels = optionLabels(question);
 
   switch (question.tipus) {
-    case "scale5":
+    case "scale5": {
+      const [low, high] = anchors(labels, "Mínim", "Màxim");
       return (
         <Block text={question.text}>
-          <ScaleInput max={5} value={draft.valorNum} onChange={setNum} lowLabel="Gens d'acord" highLabel="Totalment d'acord" />
+          <ScaleInput max={5} value={draft.valorNum} onChange={setNum} lowLabel={low} highLabel={high} />
         </Block>
       );
-    case "scale10":
+    }
+    case "scale10": {
+      const [low, high] = anchors(labels, "Mínim", "Màxim");
       return (
         <Block text={question.text}>
-          <ScaleInput max={10} value={draft.valorNum} onChange={setNum} lowLabel="1 · Gens" highLabel="10 · Moltíssim" />
+          <ScaleInput min={0} max={10} value={draft.valorNum} onChange={setNum} lowLabel={low} highLabel={high} />
         </Block>
       );
+    }
     case "yes_no":
       return <SwipeInput text={question.text} value={draft.valorNum} onChange={setNum} />;
     case "pair":
@@ -65,7 +74,7 @@ export function QuestionRenderer({
         // Free-form wording without a list of options: fall back to a 1-5 priority scale.
         return (
           <Block text={question.text}>
-            <ScaleInput max={5} value={draft.valorNum} onChange={setNum} lowLabel="1 · Màxima prioritat" highLabel="5 · Mínima" />
+            <ScaleInput max={5} value={draft.valorNum} onChange={setNum} lowLabel="Màxima prioritat" highLabel="Mínima" />
           </Block>
         );
       }

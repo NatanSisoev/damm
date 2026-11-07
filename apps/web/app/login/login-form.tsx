@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState, useState } from "react";
 import { RecoveryCodeScreen } from "../onboarding/recovery-code";
 import { loginAction, recoverAction, type LoginState } from "./actions";
@@ -57,6 +58,9 @@ export function LoginForm() {
       <button type="button" onClick={() => setRecovering(true)} className="w-full text-sm underline">He perdut la contrasenya</button>
       <p className="text-center text-sm opacity-70">
         Primera vegada? Obre l&apos;enllaç d&apos;invitació del teu equip.
+      </p>
+      <p className="text-center text-sm">
+        <Link href="/privacitat" className="underline">Com tractem les teves dades</Link>
       </p>
     </form>
   );

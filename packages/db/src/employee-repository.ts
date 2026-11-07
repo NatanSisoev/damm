@@ -308,7 +308,7 @@ function valueRange(tipus: PreguntaTipus, optionCount: number): [number, number]
     case "scale5":
       return [1, 5];
     case "scale10":
-      return [1, 10];
+      return [0, 10];
     case "yes_no":
       return [0, 1];
     case "ranking":
