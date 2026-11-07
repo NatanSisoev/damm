@@ -42,7 +42,7 @@ G-§9: "Criteris excloents". These outrank everything else.
 |----|-------------|--------|--------|----------------|
 | R-CH-1 | An AI-based active-listening platform that creates climate micro-surveys adapted to each collective **and moment** | D-S12, G-§3 | partial | Collective adaptation exists in the seeded pool. "Moment" (timing) depends on the engine (blocked). |
 | R-CH-2 | Representative participation **without saturating** people | D-S11, G-§3 | partial | About 2 questions a day and representativeness per collective are in place. The anti-saturation rules live in the engine (blocked). |
-| R-CH-3 | Answers become insights **and actions** automatically | G-§3 | partial | Signals, themes and recommendations are shown. They are produced by the seed, not by an analysis job (blocked). |
+| R-CH-3 | Answers become insights **and actions** automatically | G-§3 | partial | Engine insights and alarms (`@damm/engine`) are shown on HR results, the Alarmes page and the manager view; the engine job runs after seeding and every 10 min. Themes and recommendations still come from the seed. |
 | R-CH-4 | Anonymity and privacy guaranteed at all times | D-S12, G-§3 | done | See section 6. |
 | R-CH-5 | **One continuous flow**, not three projects. All parts present; going deeper on one is fine | G-§3, G-§10 FAQ | partial | Every step has a screen. Steps 2 (real AI) and 6 (real analysis) are blocked. |
 | R-CH-6 | It must not feel like "one more survey". It is a new way to listen, understand and act | D-S19, G-§1 | partial | Continuous pool, swipe/ranking formats and the "Has dit, hem fet" loop on the employee home carry this. Make it explicit in the pitch. |
