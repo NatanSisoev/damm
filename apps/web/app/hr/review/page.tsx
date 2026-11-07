@@ -1,24 +1,57 @@
-import { draftQuestions } from "@/lib/hr-fixtures";
+import { listApprovedUnpublishedNeeds, listDrafts, listPublications } from "@damm/db/hr";
+import {
+  approveQuestionAction, discardQuestionAction, editQuestionAction, publishAction,
+} from "../actions";
+
+const btn = "rounded border px-3 py-1 text-sm";
 
 export default function ReviewPage() {
+  const drafts = listDrafts();
+  const ready = listApprovedUnpublishedNeeds();
+  const pubs = listPublications();
   return (
-    <section className="space-y-4">
-      <h1 className="text-2xl font-semibold">Revisa les preguntes proposades</h1>
-      <p className="text-sm opacity-70">Cap pregunta entra al grup fins que una persona l&apos;aprova.</p>
+    <section className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-semibold">Revisa les preguntes proposades</h1>
+        <p className="text-sm opacity-70">Cap pregunta entra al grup fins que una persona l&apos;aprova.</p>
+      </div>
+      {drafts.length === 0 && <p className="text-sm opacity-70">No hi ha esborranys pendents.</p>}
       <ul className="space-y-3">
-        {draftQuestions.map((q) => (
+        {drafts.map((q) => (
           <li key={q.id} className="rounded border p-3">
-            <div className="text-xs opacity-60">{q.domini} · {q.tipus}</div>
-            <p className="my-2">{q.text}</p>
-            <div className="flex gap-2 text-sm">
-              <button type="button" disabled className="rounded border px-3 py-1">Aprovar</button>
-              <button type="button" disabled className="rounded border px-3 py-1">Editar</button>
-              <button type="button" disabled className="rounded border px-3 py-1">Descartar</button>
+            <div className="text-xs opacity-60">{q.domini} · {q.tipus}{q.generadaPerIa ? " · IA" : ""}</div>
+            <form action={editQuestionAction} className="my-2 flex gap-2">
+              <input type="hidden" name="id" value={q.id} />
+              <input name="text" defaultValue={q.text} className="flex-1 rounded border p-1" />
+              <button className={btn}>Desar</button>
+            </form>
+            <div className="flex gap-2">
+              <form action={approveQuestionAction}><input type="hidden" name="id" value={q.id} /><button className={btn}>Aprovar</button></form>
+              <form action={discardQuestionAction}><input type="hidden" name="id" value={q.id} /><button className={btn}>Descartar</button></form>
             </div>
           </li>
         ))}
       </ul>
-      <button type="button" disabled className="rounded bg-black px-4 py-2 text-white disabled:opacity-50 dark:bg-white dark:text-black">Publicar (enllaç i QR)</button>
+      {ready.length > 0 && (
+        <div className="space-y-2">
+          <h2 className="font-semibold">Llestes per publicar</h2>
+          {ready.map((n) => (
+            <form key={n.id} action={publishAction} className="flex items-center gap-3 rounded border p-3 text-sm">
+              <input type="hidden" name="id" value={n.id} />
+              <span className="flex-1">{n.textNl} ({n.approved} aprovades)</span>
+              <button className="rounded bg-black px-3 py-1 text-white dark:bg-white dark:text-black">Publicar (enllaç i QR)</button>
+            </form>
+          ))}
+        </div>
+      )}
+      {pubs.length > 0 && (
+        <div className="space-y-2">
+          <h2 className="font-semibold">Publicades</h2>
+          <ul className="space-y-1 text-sm">
+            {pubs.map((p) => <li key={p.id} className="rounded border p-3">{p.textNl}<br /><code>{p.url}</code> · codi <b>{p.codi}</b></li>)}
+          </ul>
+        </div>
+      )}
     </section>
   );
 }

@@ -2,9 +2,9 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   /* config options here */
-  transpilePackages: ["@damm/shared"],
-  cacheComponents: true,
-  partialPrefetching: true,
+  transpilePackages: ["@damm/shared", "@damm/db"],
+  serverExternalPackages: ["better-sqlite3"],
+  cacheComponents: false,
   turbopack: {
     rules: {
       "*.css": {
