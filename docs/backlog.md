@@ -23,9 +23,11 @@ Status: `running`, `ready` (can start now), `blocked` (waiting on a dependency),
 | 10 | `jan/dev` → `main` PR | coordinating session | ready | light |
 | 12 | HR home overview | `jan/hr-home` | running | light |
 | 13 | Publish page: join link, QR and print poster | `jan/publish-qr` | running | light |
-| 14 | Pitch deck | `jan/deck` | ready | light |
-| 15 | Demo reset and presenter mode | `jan/demo-reset` | ready | heavy |
-| 16 | Signal drilldown and follow-up loop view | `jan/signals` | ready | light |
+| 14 | Pitch deck | `jan/deck` | deferred to 8 Nov 9:00 | light |
+| 15 | Demo reset and presenter mode | `jan/demo-reset` | deferred to 8 Nov 9:00 | heavy |
+| 16 | Signal drilldown and follow-up loop view | `jan/signals` | ready, next when a slot frees | light |
+
+Order for the next free slots: 16, then 5, then 4. Pitch deck and demo work (14, 15) go last and are not raised before 8 Nov 9:00.
 
 All of the done rows are merged into `jan/dev` and pushed (lint, `check:anonymity`, seed and build pass). Not yet verified: the production refusal when `SESSION_SECRET` is unset.
 
