@@ -123,3 +123,12 @@ test("rng: seeded and reproducible; beta samples in range", () => {
   const keys = weightedSampleWithoutReplacement(a, [{ key: 1, weight: 1 }, { key: 2, weight: 0 }, { key: 3, weight: 2 }], 3);
   assert.deepEqual([...keys].sort(), [1, 3]);
 });
+
+test("config: a partial nested override keeps the other keys", async () => {
+  const { mergeConfig } = await import("../src/config.ts");
+  const c = mergeConfig(DEFAULT_CONFIG, { noiseSd: { yes_no: 0.38 } as never, priors: { level: 0.7 } as never });
+  assert.equal(c.noiseSd.yes_no, 0.38);
+  assert.equal(c.noiseSd.scale10, DEFAULT_CONFIG.noiseSd.scale10);
+  assert.equal(c.priors.level, 0.7);
+  assert.equal(c.priors.variance, DEFAULT_CONFIG.priors.variance);
+});

@@ -61,7 +61,7 @@ export function parseAnswer(q: QuestionDef, a: RawAnswer): ParseResult {
       return { ok: true, value: { valorNum: null, valueJson: [...order], score: null } };
     }
     case "open":
-      return a.comentari && a.comentari.trim().length > 0
+      return typeof a.comentari === "string" && a.comentari.trim().length > 0
         ? { ok: true, value: { valorNum: null, valueJson: null, score: null } }
         : { ok: false, reason: "missing_comment" };
   }

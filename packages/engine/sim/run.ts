@@ -6,7 +6,7 @@ import { DatabaseSync } from "node:sqlite";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { DEFAULT_CONFIG, type ClosedType, type EngineConfig } from "../src/config.ts";
+import { DEFAULT_CONFIG, mergeConfig, type ClosedType, type EngineConfig } from "../src/config.ts";
 import type { SqlDatabase } from "../src/db.ts";
 import { createEngine, type AnswerInput } from "../src/engine.ts";
 import { runEngineJob } from "../src/job.ts";
@@ -151,7 +151,7 @@ function lastDayOfPeriod(periode: string): string {
 export function runSim(opts: SimOptions = {}): SimReport {
   const t0 = performance.now();
   const world = opts.world && "items" in opts.world ? opts.world : createWorld(opts.world as WorldOptions | undefined);
-  const cfg: EngineConfig = { ...structuredClone(DEFAULT_CONFIG), ...opts.config };
+  const cfg: EngineConfig = mergeConfig(structuredClone(DEFAULT_CONFIG), opts.config);
   const every = opts.checkpointEvery ?? 4;
   const k = opts.detectSigmas ?? 2;
   const db = setup(world);

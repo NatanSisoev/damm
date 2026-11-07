@@ -61,6 +61,22 @@ export interface InsightDetails {
         gap: number;
         asOf: string;
       };
+  narrative: {
+    labels: SegmentLabels; // collective "All" for company-wide; shift and domain are null
+    summary: string;
+    highlights: { text: string; domain: string | null; evidence: string }[];
+    suggestedActions: {
+      title: string;
+      why: string;
+      domain: string | null;
+      followUpSurvey: string;
+      alarmId: number | null; // open alarm it addresses (senyal.id)
+      recommendationId: number | null; // recomanacio.id created for it, estat 'proposada'
+    }[];
+    recommendationIds: number[];
+    model: string;
+    inputHash: string;
+  };
   driver: Record<string, unknown>;
   action_effect: Record<string, unknown>;
 }
