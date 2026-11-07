@@ -46,6 +46,11 @@ Find out who you are working for (Jan or Natan) from `git config user.name` or b
 
 ## Hard rules
 
+- **No traces of AI tooling in git, locally or on the remote.**
+  - Branch names are only `<name>/dev` or `<name>/<task>`: never `claude/*` or other tool-generated names. If a tool creates a branch with such a name, rename it before the first push (`git branch -m`).
+  - No `Co-Authored-By`, "Generated with" or similar lines in commit messages, PR titles or PR descriptions.
+  - Never commit tool folders or files (`.claude/`, worktree folders, agent scratch files).
+
 - Never push or commit to `main`.
 - Never touch the other person's branches.
 - Stay in your area (see Ownership). If a change is needed outside it, tell the user so they can coordinate with the other person.
