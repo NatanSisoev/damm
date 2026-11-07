@@ -787,16 +787,31 @@ export interface ThemeRow {
   n: number | null;
   emergent: boolean;
   suprimit: boolean;
+  /** null = company-wide row. */
+  collectiuId: number | null;
+  /** Share of that collective's comments in the period (0..1); null when suppressed. */
+  share: number | null;
+  font: "seed" | "rules" | "llm";
 }
 
-export function listThemes(): ThemeRow[] {
+/**
+ * Themes from the comment analysis (one row per theme x period x collective, docs/engine.md section 12).
+ * Without `collectiuId` only the company-wide rows (collectiu_id IS NULL) are returned; pass a collective id for its rows.
+ * Suppressed rows (suprimit = 1 or n below the minimum group size) carry no label, summary, n or share.
+ */
+export function listThemes(opts: { collectiuId?: number | null } = {}): ThemeRow[] {
+  const col = opts.collectiuId ?? null;
   return (getDb()
-    .prepare("SELECT id, etiqueta, resum, periode, n, emergent, suprimit FROM tema ORDER BY periode DESC, emergent DESC, n DESC")
-    .all() as any[]).map((r) => {
+    .prepare(
+      `SELECT id, etiqueta, resum, periode, n, emergent, suprimit, collectiu_id, share, font FROM tema
+       WHERE collectiu_id IS ? ORDER BY periode DESC, emergent DESC, n DESC`,
+    )
+    .all(col) as any[]).map((r) => {
     const hidden = r.n < MIN_GROUP_SIZE || !!r.suprimit;
     return {
       id: r.id, periode: r.periode, emergent: !!r.emergent, suprimit: hidden,
       etiqueta: hidden ? null : r.etiqueta, resum: hidden ? null : r.resum, n: hidden ? null : r.n,
+      collectiuId: r.collectiu_id ?? null, share: hidden ? null : r.share ?? null, font: r.font,
     };
   });
 }

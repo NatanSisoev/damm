@@ -119,6 +119,9 @@ importers:
 
   packages/seed:
     dependencies:
+      '@damm/ai':
+        specifier: workspace:*
+        version: link:../ai
       '@damm/engine':
         specifier: workspace:*
         version: link:../engine
