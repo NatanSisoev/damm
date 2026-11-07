@@ -235,7 +235,7 @@ export default async function ResultsPage({ searchParams }: { searchParams: Prom
           )}
         </Card>
 
-        <Card title="Tendències per domini" meta="Mitjana 1–5 per període · tots els col·lectius" flush={!!overall}>
+        <Card title="Tendència per domini" meta="Mitjana 1–5 per període · tots els col·lectius" flush={!!overall}>
           {overall ? (
             <>
               <TrendChart periodes={trends.periodes} rows={overall.rows} />

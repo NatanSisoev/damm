@@ -123,7 +123,7 @@ export function HeadlineStrip({ headlines }: { headlines: Headline[] }) {
               <div className="min-w-0 flex-1">
                 <p className="text-[14px] leading-snug">{h.text}</p>
                 <p className="num mt-0.5 text-xs text-subtle">
-                  n = {h.n}
+                  n={h.n}
                   {h.confidence !== null && <> · confiança {Math.round(h.confidence)}%</>}
                   {" · "}
                   <Link href={h.href} className="text-accent-ink hover:underline">Veure detall →</Link>
@@ -153,10 +153,10 @@ function cellStyle(c: HeatCell, maxAbs: number): React.CSSProperties {
 
 const cellTitle = (c: HeatCell) =>
   c.suppressed
-    ? `${c.collective} · ${c.domain}: suprimit (menys de ${MIN_GROUP_SIZE} respondents)`
+    ? `${c.collective} · ${c.domain}: suprimit (menys de ${MIN_GROUP_SIZE} persones han respost)`
     : c.mean === null
       ? `${c.collective} · ${c.domain}: sense dades`
-      : `${c.collective} · ${c.domain}: ${f1(c.mean)}/5 · ${c.delta !== null ? `${signed(c.delta)} vs. mitjana de l'empresa` : ""} · n = ${c.n} · precisió ${c.precision}`;
+      : `${c.collective} · ${c.domain}: ${f1(c.mean)}/5 · ${c.delta !== null ? `${signed(c.delta)} respecte de la mitjana de l'empresa` : ""} · n=${c.n} · precisió ${c.precision}`;
 
 export function HeatmapCard({ map, selected }: { map: Heatmap; selected?: { seg?: string; dom?: string } }) {
   return (
@@ -248,7 +248,7 @@ export function SegmentTrendCard({ trend }: { trend: SegmentTrend }) {
                 <div className="num text-xs text-subtle">{p}</div>
                 <div className="num font-semibold">
                   {c?.suprimit ? "Suprimit" : c?.mitjana == null ? "—" : f1(c.mitjana)}
-                  {c && !c.suprimit && c.n !== null && <span className="ml-1 text-xs font-normal text-subtle">n = {c.n}</span>}
+                  {c && !c.suprimit && c.n !== null && <span className="ml-1 text-xs font-normal text-subtle">n={c.n}</span>}
                 </div>
               </li>
             );
