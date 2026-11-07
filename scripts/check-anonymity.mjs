@@ -4,7 +4,7 @@
 //
 //  (a) The HR data layer (packages/db/src/hr.ts and every file it reaches through relative
 //      imports/exports, i.e. hr-repository.ts) must not mention raw response/account data.
-//  (b) Nothing under apps/web/app/hr/** may import the DB root, other repositories or a driver.
+//  (b) Nothing under apps/web/app/hr/** and apps/web/app/manager/** may import the DB root, other repositories or a driver.
 //  (c) The analytics view v_resposta_analitica must not expose compte_id in its output columns.
 //  (d) packages/ai takes plain input and returns plain output: it must not import @damm/db or a driver.
 //      This is what makes @damm/ai safe to import from HR code.
@@ -134,7 +134,7 @@ function forbiddenImport(spec) {
   return null;
 }
 
-for (const file of walk(path.join(root, "apps/web/app/hr"))) {
+for (const file of [...walk(path.join(root, "apps/web/app/hr")), ...walk(path.join(root, "apps/web/app/manager"))]) {
   const code = stripComments(fs.readFileSync(file, "utf8"));
   const specRe = /(?:\bfrom\s*|\bimport\s*\(?\s*|\brequire\s*\(\s*)["']([^"']+)["']/g;
   for (const m of code.matchAll(specRe)) {

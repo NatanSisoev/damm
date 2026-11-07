@@ -1,8 +1,10 @@
 import { loginAction } from "./actions";
+import { HrScope } from "../hr/theme";
 
 export default async function HrLoginPage({ searchParams }: { searchParams: Promise<{ next?: string; error?: string }> }) {
   const { next, error } = await searchParams;
   return (
+    <HrScope>
     <main className="mx-auto flex min-h-screen max-w-sm flex-col justify-center gap-4 px-4">
       <h1 className="text-xl font-semibold">Portal de persones</h1>
       <p className="text-[13px] text-muted">Accés restringit a l&apos;equip de persones. Introdueix el codi d&apos;accés de la demo.</p>
@@ -14,5 +16,6 @@ export default async function HrLoginPage({ searchParams }: { searchParams: Prom
         <button className="btn btn-primary w-full">Entra</button>
       </form>
     </main>
+    </HrScope>
   );
 }

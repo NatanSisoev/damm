@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useActionState, useState } from "react";
 import { createNeedAction } from "../actions";
 
 type Collectiu = { id: number; nom: string };
@@ -42,7 +42,7 @@ export function NeedForm({ collectius }: { collectius: Collectiu[] }) {
   const [exclusions, setExclusions] = useState("");
   const [collectiu, setCollectiu] = useState("0");
   const [durada, setDurada] = useState(120);
-  const [pending, setPending] = useState(false);
+  const [state, formAction, pending] = useActionState(createNeedAction, null);
 
   const fill = (e: (typeof EXAMPLES)[number]) => {
     setObjective(e.objective);
@@ -53,7 +53,7 @@ export function NeedForm({ collectius }: { collectius: Collectiu[] }) {
   };
 
   return (
-    <form action={createNeedAction} onSubmit={() => setPending(true)} className="space-y-5">
+    <form action={formAction} className="space-y-5" noValidate>
       <div>
         <p className="label">Exemples per començar</p>
         <div className="flex flex-wrap gap-2">
@@ -68,6 +68,7 @@ export function NeedForm({ collectius }: { collectius: Collectiu[] }) {
         <label htmlFor="text_nl" className="label">Objectiu</label>
         <textarea
           id="text_nl" name="text_nl" required rows={3} className="input w-full resize-y"
+          aria-invalid={state?.field === "text_nl"} aria-describedby={state ? "need-error" : undefined}
           value={objective} onChange={(e) => setObjective(e.target.value)}
           placeholder="Ex.: Volem saber com viuen els equips de planta el nou sistema de torns."
         />
@@ -101,13 +102,19 @@ export function NeedForm({ collectius }: { collectius: Collectiu[] }) {
           <label htmlFor="durada" className="label">Durada màxima per persona (segons)</label>
           <input
             id="durada" name="durada" type="number" min={30} step={10} className="input num w-full"
+            aria-invalid={state?.field === "durada"}
             value={durada} onChange={(e) => setDurada(Number(e.target.value))}
           />
         </div>
       </div>
+      {state && (
+        <div id="need-error" role="alert" className="flex items-start justify-between gap-3 rounded-lg border border-warn bg-warn-soft px-3 py-2 text-sm text-warn">
+          <p>{state.error}</p>
+        </div>
+      )}
       <div className="flex items-center justify-end gap-3 border-t border-line pt-4">
         <span className="text-xs text-subtle">{pending ? "La IA està redactant les preguntes…" : "Després podràs revisar i aprovar les preguntes a la mateixa targeta."}</span>
-        <button className="btn btn-primary" disabled={pending}>{pending ? "Generant…" : "Generar esborranys"}</button>
+        <button className="btn btn-primary" disabled={pending}>{pending ? "Generant…" : state && !state.field ? "Torna-ho a provar" : "Generar esborranys"}</button>
       </div>
     </form>
   );

@@ -302,6 +302,41 @@ export function listRecommendations(): Recomanacio[] {
     .all() as Recomanacio[];
 }
 
+// --- Manager view reads (read-only, one collective, aggregates only) -------------------
+
+export interface ManagerSignal {
+  id: number;
+  tipus: string;
+  descripcio: string;
+  periode: string;
+  n: number;
+  severity: string;
+}
+
+/** Signals a manager may see for one collective: audience `hr_manager` only (Lideratge alarms are `hr`), n >= minimum group size, not suppressed. */
+export function listManagerSignals(collectiuId: number): ManagerSignal[] {
+  return getDb()
+    .prepare(
+      `SELECT id, tipus, descripcio, periode, n, severity FROM senyal
+       WHERE collectiu_id = ? AND audience = 'hr_manager' AND suprimit = 0 AND n >= ?
+       ORDER BY periode DESC, n DESC`,
+    )
+    .all(collectiuId, MIN_GROUP_SIZE) as ManagerSignal[];
+}
+
+/** Recommendations a human at HR approved, tied to a signal a manager may see for this collective. Never proposed or discarded ones. */
+export function listManagerRecommendations(collectiuId: number): { id: number; text: string; seguiment: boolean }[] {
+  return (getDb()
+    .prepare(
+      `SELECT r.id, r.text, r.seguiment_necessitat_id AS seg FROM recomanacio r
+       JOIN senyal s ON s.id = r.senyal_id
+       WHERE r.estat = 'aprovada' AND s.collectiu_id = ? AND s.audience = 'hr_manager' AND s.suprimit = 0 AND s.n >= ?
+       ORDER BY r.id`,
+    )
+    .all(collectiuId, MIN_GROUP_SIZE) as { id: number; text: string; seg: number | null }[])
+    .map((r) => ({ id: r.id, text: r.text, seguiment: r.seg !== null }));
+}
+
 export function approveRecommendation(id: number): void {
   getDb().prepare("UPDATE recomanacio SET estat = 'aprovada' WHERE id = ? AND estat = 'proposada'").run(id);
 }

@@ -9,7 +9,7 @@ const eslintConfig = defineConfig([
   // @damm/ai is allowed here on purpose: it takes plain input, returns plain output and cannot import the DB
   // (scripts/check-anonymity.mjs section d). Everything else stays restricted below.
   {
-    files: ["app/hr/**/*.{ts,tsx,js,jsx,mjs}"],
+    files: ["app/hr/**/*.{ts,tsx,js,jsx,mjs}", "app/manager/**/*.{ts,tsx,js,jsx,mjs}"],
     rules: {
       "no-restricted-imports": [
         "error",
