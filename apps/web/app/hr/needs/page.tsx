@@ -11,9 +11,9 @@ export const dynamic = "force-dynamic";
 
 const STATES: { key: NeedState; label: string; hint: string }[] = [
   { key: "esborrany", label: NEED_STATUS.esborrany.label, hint: "La IA ha proposat preguntes; falta que una persona les revisi i les aprovi." },
-  { key: "llesta", label: NEED_STATUS.llesta.label, hint: "Totes les preguntes estan revisades. Falta publicar-la: les preguntes entren al grup i s'avisa el col·lectiu amb una notificació." },
-  { key: "publicada", label: NEED_STATUS.publicada.label, hint: "Les preguntes són al grup de preguntes i el col·lectiu ha rebut una notificació al mòbil." },
-  { key: "tancada", label: NEED_STATUS.tancada.label, hint: "Decisió de l'equip: no hi entren noves respostes de seguiment." },
+  { key: "llesta", label: NEED_STATUS.llesta.label, hint: "Totes les preguntes estan revisades. Falta publicar-la: les preguntes entren al banc de preguntes i s'avisa el col·lectiu amb una notificació." },
+  { key: "publicada", label: NEED_STATUS.publicada.label, hint: "Les preguntes són al banc de preguntes i el col·lectiu ha rebut una notificació al mòbil." },
+  { key: "tancada", label: NEED_STATUS.tancada.label, hint: "L'equip l'ha tancada: ja no recull respostes de seguiment." },
 ];
 const LABEL = Object.fromEntries(STATES.map((s) => [s.key, s.label])) as Record<NeedState, string>;
 
@@ -34,7 +34,7 @@ export default async function NeedsPage({ searchParams }: { searchParams: Promis
     <>
       <PageHeader
         title="Necessitats"
-        subtitle="Cada necessitat segueix el seu camí: esborrany, llesta per publicar, publicada i tancada. Cap pregunta arriba al grup sense que una persona l'aprovi."
+        subtitle="Cada necessitat segueix el seu camí: esborrany, llesta per publicar, publicada i tancada. Cap pregunta arriba al banc de preguntes sense que una persona l'aprovi."
       />
       {publicada && avis && /^(off|<?\d+)$/.test(avis) && <PublishNotice avis={avis} />}
       <details open={all.length === 0} className="card mb-6 group">
@@ -109,12 +109,12 @@ function NeedItem({ n, draft }: { n: NeedCard; draft?: ReturnType<typeof listNee
             {n.state !== "publicada" && (
               <form action={publishAction}>
                 <input type="hidden" name="id" value={n.id} />
-                <button className="btn btn-primary">Publicar i avisar per notificació</button>
+                <button className="btn btn-primary">Publica i envia la notificació</button>
               </form>
             )}
             {n.state === "publicada" && (
               <>
-                <Link href="/hr/publish" className="btn btn-ghost">Codis d&apos;accés per apuntar-s&apos;hi</Link>
+                <Link href="/hr/publish" className="btn btn-ghost">Codis d&apos;invitació</Link>
                 <form action={closeNeedAction}>
                   <input type="hidden" name="id" value={n.id} />
                   <button className="btn">Tanca la necessitat</button>
@@ -147,7 +147,7 @@ function NeedItem({ n, draft }: { n: NeedCard; draft?: ReturnType<typeof listNee
 function PublishNotice({ avis }: { avis: string }) {
   const text =
     avis === "off"
-      ? "Necessitat publicada. Les preguntes ja són al grup, però les notificacions estan desactivades en aquest servidor (falten les claus VAPID), així que no s'ha avisat ningú."
+      ? "Necessitat publicada. Les preguntes ja són al banc de preguntes, però les notificacions estan desactivades en aquest servidor (falten les claus VAPID), així que no s'ha avisat ningú."
       : avis.startsWith("<")
         ? `Necessitat publicada. S'han enviat notificacions a menys de ${MIN_GROUP_SIZE} dispositius: no en mostrem el nombre exacte.`
         : `Necessitat publicada. S'han enviat notificacions a ${avis} dispositius del col·lectiu.`;

@@ -31,7 +31,7 @@ export function OnboardingForm({ codi }: { codi: string }) {
       <p className="text-center text-sm">
         Ja tens compte?{" "}
         <Link href="/login" className="font-semibold underline">
-          Inicia la sessió
+          Entra
         </Link>
       </p>
     </form>

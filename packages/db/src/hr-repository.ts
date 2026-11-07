@@ -682,7 +682,7 @@ export function exportResultsCsv(now: Date = new Date()): string {
     `# Període: ${rep.periode ?? "–"} (representativitat); tendències: ${trends.periodes.join(", ") || "–"}`,
     `# Generat: ${now.toISOString()}`,
     `# Mida mínima de grup: n >= ${MIN_GROUP_SIZE}`,
-    `# Nota: els segments amb menys de ${MIN_GROUP_SIZE} respondents, i els ocults per protegir-los (supressió complementària) no tenen valors i porten suprimit=1. Només dades agregades, mai valors individuals.`,
+    `# Nota: els segments amb menys de ${MIN_GROUP_SIZE} persones que han respost, i els ocults per protegir-los (supressió complementària) no tenen valors i porten suprimit=1. Només dades agregades, mai valors individuals.`,
   ];
   return [...meta, ...lines.map((l) => l.map(csvCell).join(","))].join("\r\n") + "\r\n";
 }

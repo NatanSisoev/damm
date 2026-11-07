@@ -24,7 +24,7 @@ export default async function PublishPage() {
         </p>
       )}
       {items.length === 0 ? (
-        <Empty>Encara no hi ha cap codi d&apos;accés.</Empty>
+        <Empty>Encara no hi ha cap codi d&apos;invitació.</Empty>
       ) : (
         <div className="grid gap-4 xl:grid-cols-2">
           {items.map((c) => (
@@ -48,7 +48,7 @@ export default async function PublishPage() {
                     <div className="num font-semibold tracking-wide">{c.codi}</div>
                   </div>
                   <div>
-                    <div className="text-xs font-medium text-subtle">Enllaç d&apos;accés</div>
+                    <div className="text-xs font-medium text-subtle">Enllaç d&apos;invitació</div>
                     <code className="block break-all text-[13px]">{c.url}</code>
                   </div>
                   <div className="flex flex-wrap gap-2">
@@ -83,7 +83,7 @@ export default async function PublishPage() {
             ))}
           </ul>
         )}
-        <p className="mt-3 text-xs text-subtle">Tancar una necessitat és una decisió de l&apos;equip: no en recull noves respostes de seguiment i surt de la llista d&apos;obertes.</p>
+        <p className="mt-3 text-xs text-subtle">Tancar una necessitat és una decisió de l&apos;equip. Deixa de recollir respostes de seguiment i surt de la llista de necessitats obertes.</p>
       </Card>
     </>
   );

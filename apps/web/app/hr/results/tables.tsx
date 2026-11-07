@@ -9,7 +9,7 @@ import {
 
 const pct = (v: number) => `${(v * 100).toFixed(1)}%`;
 const gapLabel = (g: number) => `${g >= 0 ? "+" : "−"}${Math.abs(g * 100).toFixed(1)} pp`;
-export const suppressedHint = `Menys de ${MIN_GROUP_SIZE} respondents`;
+export const suppressedHint = `Menys de ${MIN_GROUP_SIZE} persones han respost`;
 const complementaryHint = "Ocult per protegir un grup petit: no es pot deduir per resta";
 const hintFor = (motiu: "primari" | "complementari" | null) => (motiu === "complementari" ? complementaryHint : suppressedHint);
 

@@ -91,7 +91,7 @@ export const CORES: Record<string, string[]> = {
     "no arriba la mateixa informació a tots els torns",
     "a vegades les instruccions són contradictòries",
     "voldria reunions curtes i periòdiques per estar al dia",
-    "els tauler d'anuncis no s'actualitzen mai",
+    "els taulers d'anuncis no s'actualitzen mai",
     "m'agrada rebre un resum mensual del que passa a l'empresa",
     "caldria més comunicació abans que després dels canvis",
     "se sap tard què es decideix a les oficines centrals",

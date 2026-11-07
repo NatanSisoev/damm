@@ -85,7 +85,7 @@ export function PushToggle({ vapidKey, compact = false }: { vapidKey: string; co
       </p>
       {state === "error" && (
         <p role="alert" className="font-semibold text-accent-ink">
-          No s&apos;han pogut activar. Torna-ho a provar.
+          No s&apos;han pogut activar les notificacions. Torna-ho a provar.
         </p>
       )}
       {(state === "off" || state === "error" || state === "working") && (

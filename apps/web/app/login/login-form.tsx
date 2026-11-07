@@ -21,7 +21,7 @@ export function LoginForm() {
       <form action={recDo} className="space-y-5">
         <h2 className="section-title">Recupera el compte</h2>
         <p className="text-muted">
-          Introdueix el teu usuari, el codi de recuperació que vas desar i una contrasenya nova. El codi només serveix
+          Escriu el teu usuari, el codi de recuperació que vas desar i una contrasenya nova. El codi només serveix
           una vegada; te&apos;n donarem un de nou.
         </p>
         <TextField name="username" label="Nom d'usuari" autoComplete="username" />
@@ -36,7 +36,7 @@ export function LoginForm() {
           Canvia la contrasenya
         </button>
         <button type="button" onClick={() => setRecovering(false)} className="btn btn-ghost w-full justify-center underline">
-          Torna a l&apos;inici de sessió
+          Torna a entrar
         </button>
       </form>
     );
