@@ -15,28 +15,77 @@ import {
 } from "@damm/db/hr";
 import { hrInsights } from "@/lib/hr-engine";
 import { InsightCards } from "../insight-cards";
+import { getHeadlines, getHeatmap, getNarrative, getProposals, getReachGaps, getSegmentTrend, getThemesByDomain } from "../analytics";
+import { HeadlineStrip, HeatmapCard, NarrativeCard, ProposalsCard, ReachCard, SegmentTrendCard, ThemesCard } from "../analytics-ui";
 
-function radarData(trends: ReturnType<typeof getTrends>, vs: string | undefined) {
-  const [overall, ...perCollective] = trends.series;
+// Fixed colour per entity (var(--co-N) in hr.css), never by rank or selection order.
+const COHORT_COLOR: Record<string, string> = {
+  Tots: "var(--co-1)",
+  "Fàbriques": "var(--co-2)",
+  "Logística": "var(--co-3)",
+  Comercial: "var(--co-4)",
+  Oficines: "var(--co-5)",
+};
+const MAX_SERIES = 4;
+
+type Chip = { key: string; label: string; color: string; on: boolean; disabled?: string; href: string };
+
+/** Radar series and chip state from `?c=Tots,Fàbriques&prev=1`. The latest period is drawn; prev adds the previous period of the first cohort, dashed. */
+function radarData(trends: ReturnType<typeof getTrends>, c: string | undefined, prev: boolean, legacyVs: string | undefined) {
+  const all = trends.series;
   const last = trends.periodes.length - 1;
   const latest = trends.periodes[last];
-  const prev = trends.periodes[last - 1];
-  const at = (rows: typeof overall.rows, k: number) => rows.map((r) => r.cells[k]?.mitjana ?? null);
-  const other = perCollective.find((s) => s.scope === vs);
+  const before = trends.periodes[last - 1];
+  const hasPrev = last > 0;
+  const hidden = (sc: (typeof all)[number]) => sc.rows.length === 0 || sc.rows.every((r) => r.cells[last]?.mitjana == null);
+  const known = new Map(all.map((sc) => [sc.scope, sc]));
 
-  const series: RadarSeries[] = [{ label: `Tots · ${latest}`, values: at(overall.rows, last), tone: "primary" }];
-  if (other) {
-    const byDomain = new Map(other.rows.map((r) => [r.domini, r.cells[last]?.mitjana ?? null]));
-    series.push({ label: `${other.scope} · ${latest}`, values: overall.rows.map((r) => byDomain.get(r.domini) ?? null), tone: "compare" });
-  } else if (prev) {
-    series.push({ label: `Tots · ${prev}`, values: at(overall.rows, last - 1), tone: "compare" });
+  const requested = (c ?? (legacyVs ? `Tots,${legacyVs}` : "Tots")).split(",").map((x) => x.trim()).filter(Boolean);
+  const wantPrev = prev && hasPrev;
+  const cap = MAX_SERIES - (wantPrev ? 1 : 0);
+  const picked = [...new Set(requested)].filter((k) => known.has(k) && !hidden(known.get(k)!)).slice(0, cap);
+  if (picked.length === 0 && known.has("Tots")) picked.push("Tots");
+
+  const href = (cohorts: string[], p: boolean) => {
+    const q = new URLSearchParams();
+    q.set("c", cohorts.join(","));
+    if (p) q.set("prev", "1");
+    return `?${q.toString()}#perfil`;
+  };
+
+  const overall = all[0];
+  const axes = overall ? overall.rows.map((r) => r.domini) : [];
+  const valuesFor = (sc: (typeof all)[number], k: number) => {
+    const byDomain = new Map(sc.rows.map((r) => [r.domini, r.cells[k]?.mitjana ?? null]));
+    return axes.map((d) => byDomain.get(d) ?? null);
+  };
+  const series: RadarSeries[] = picked.map((k) => ({ label: `${k} · ${latest}`, values: valuesFor(known.get(k)!, last), color: COHORT_COLOR[k] ?? "var(--co-1)" }));
+  if (wantPrev && picked[0]) {
+    series.push({ label: `${picked[0]} · ${before}`, values: valuesFor(known.get(picked[0])!, last - 1), color: COHORT_COLOR[picked[0]] ?? "var(--co-1)", dashed: true });
   }
-  const options = [{ key: undefined as string | undefined, label: "Període anterior" }, ...perCollective.map((s) => ({ key: s.scope, label: s.scope }))];
-  return { axes: overall.rows.map((r) => r.domini), series, options, active: other?.scope };
+
+  const chips: Chip[] = all.map((sc) => {
+    const on = picked.includes(sc.scope);
+    const next = on ? picked.filter((k) => k !== sc.scope) : [...picked, sc.scope];
+    const full = !on && picked.length >= cap;
+    const lone = on && picked.length === 1;
+    return {
+      key: sc.scope,
+      label: sc.scope,
+      color: COHORT_COLOR[sc.scope] ?? "var(--co-1)",
+      on,
+      disabled: hidden(sc) ? `<${MIN_GROUP_SIZE}` : full ? `màx. ${MAX_SERIES}` : lone ? "mínim 1" : undefined,
+      href: href(next, wantPrev),
+    };
+  });
+  const prevChip = hasPrev
+    ? { on: wantPrev, href: href(picked, !wantPrev), disabled: !wantPrev && picked.length >= MAX_SERIES ? `màx. ${MAX_SERIES}` : undefined }
+    : null;
+  return { axes, series, chips, prevChip, prevLabel: before };
 }
 
-export default async function ResultsPage({ searchParams }: { searchParams: Promise<{ vs?: string }> }) {
-  const { vs } = await searchParams;
+export default async function ResultsPage({ searchParams }: { searchParams: Promise<{ vs?: string; c?: string; prev?: string; seg?: string; dom?: string }> }) {
+  const { vs, c, prev, seg, dom } = await searchParams;
   const rep = getRepresentativeness();
   const trends = getTrends();
   const themes = listThemes();
@@ -49,7 +98,14 @@ export default async function ResultsPage({ searchParams }: { searchParams: Prom
   const visibleThemes = themes.filter((t) => !t.suprimit);
   const emergent = visibleThemes.filter((t) => t.emergent).length;
   const suppressedSegments = [...rep.collectius, ...rep.torns].filter((r) => r.suprimit).length;
-  const radar = overall ? radarData(trends, vs) : null;
+  const radar = overall ? radarData(trends, c, prev === "1", vs) : null;
+
+  const heatmap = getHeatmap();
+  const segValid = seg && heatmap.collectives.includes(seg) ? seg : undefined;
+  const domValid = dom && heatmap.domains.includes(dom) ? dom : undefined;
+  const segmentTrend = getSegmentTrend(segValid, domValid);
+  const companyNarrative = getNarrative("All");
+  const segNarrative = segValid ? getNarrative(segValid) : null;
 
   return (
     <>
@@ -64,6 +120,27 @@ export default async function ResultsPage({ searchParams }: { searchParams: Prom
         }
       />
 
+      <div className="space-y-6">
+        <HeadlineStrip headlines={getHeadlines()} />
+        <NarrativeCard narrative={companyNarrative} title="Resum del motor · tota l'empresa" />
+        <HeatmapCard map={heatmap} selected={{ seg: segValid, dom: domValid }} />
+        <SegmentTrendCard trend={segmentTrend} />
+        {segValid && <NarrativeCard narrative={segNarrative} title={`Resum del motor · ${segValid}`} />}
+        <div className="grid gap-6 xl:grid-cols-2">
+          <ThemesCard groups={getThemesByDomain(heatmap.domains)} />
+          <div className="space-y-6">
+            <ReachCard gaps={getReachGaps()} />
+            <ProposalsCard proposals={getProposals()} />
+          </div>
+        </div>
+      </div>
+
+      <details className="card group mt-8" open={!!(c || prev || vs)}>
+        <summary className="card-header cursor-pointer list-none">
+          <h2 className="section-title">Dades detallades</h2>
+          <span className="text-xs text-subtle">Taules, perfil per domini, representativitat i tendències</span>
+        </summary>
+        <div className="card-body">
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <Stat label="Comptes actius" value={totalAccounts ?? "—"} hint={allVisible ? `${counts.length} col·lectius` : `Algun col·lectiu té menys de ${MIN_GROUP_SIZE} comptes`} />
         <Stat label="Temes detectats" value={visibleThemes.length} hint="Als comentaris" />
@@ -77,22 +154,40 @@ export default async function ResultsPage({ searchParams }: { searchParams: Prom
 
       <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
         <Card
-          title="Perfil per domini"
+          title={<span id="perfil">Perfil per domini</span>}
           meta="Mitjana per domini"
         >
           {radar ? (
             <div className="space-y-4">
-              <nav className="segmented" aria-label="Compara amb">
-                {radar.options.map((o) => (
+              <nav aria-label="Filtra per col·lectiu" className="flex flex-wrap gap-2">
+                {radar.chips.map((ch) => (
                   <Link
-                    key={o.label}
-                    href={o.key ? `?vs=${encodeURIComponent(o.key)}` : "?"}
+                    key={ch.key}
+                    href={ch.href}
                     scroll={false}
-                    aria-current={o.key === radar.active ? "true" : undefined}
+                    className="hr-chip"
+                    aria-pressed={ch.on}
+                    aria-disabled={ch.disabled ? true : undefined}
+                    tabIndex={ch.disabled ? -1 : undefined}
                   >
-                    {o.label}
+                    <span className="hr-chip-dot" style={{ background: ch.color }} aria-hidden />
+                    {ch.label}
+                    {ch.disabled && <span className="text-xs text-subtle">{ch.disabled}</span>}
                   </Link>
                 ))}
+                {radar.prevChip && (
+                  <Link
+                    href={radar.prevChip.href}
+                    scroll={false}
+                    className="hr-chip"
+                    aria-pressed={radar.prevChip.on}
+                    aria-disabled={radar.prevChip.disabled ? true : undefined}
+                    tabIndex={radar.prevChip.disabled ? -1 : undefined}
+                  >
+                    Període anterior ({radar.prevLabel})
+                    {radar.prevChip.disabled && <span className="text-xs text-subtle">{radar.prevChip.disabled}</span>}
+                  </Link>
+                )}
               </nav>
               <Radar axes={radar.axes} series={radar.series} />
             </div>
@@ -174,6 +269,8 @@ export default async function ResultsPage({ searchParams }: { searchParams: Prom
           </dl>
         </Card>
       </div>
+        </div>
+      </details>
     </>
   );
 }

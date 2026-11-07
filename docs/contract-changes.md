@@ -45,16 +45,16 @@ Action items:
 - The job and narrative scripts resolve a relative `DB_PATH` from where they're run, else from the repo root, and never create a new database file.
 
 Action items:
-- [ ] Jan: in `instrumentation.ts`, pass `narrative: process.env.LLM_API_KEY ? { complete: createComplete() } : undefined` to `startEngineScheduler`.
-- [ ] Jan: rebuild existing databases (the `insight.kind` CHECK now includes `narrative`, see C7).
+- [x] Jan: in `instrumentation.ts`, pass `narrative: process.env.LLM_API_KEY ? { complete: createComplete() } : undefined` to `startEngineScheduler`. (done 2026-11-07, 978fe61; wired in `apps/web/lib/engine.ts`, where the scheduler starts)
+- [x] Jan: rebuild existing databases (the `insight.kind` CHECK now includes `narrative`, see C7). (done 2026-11-07, 978fe61; `data/demo.db` rebuilt, existing DBs must be rebuilt)
 
 ## C7 · 2026-11-07 · Natan · Narrative insights (LLM summaries and proposed recommendations)
 
 New `insight.kind = 'narrative'` (CHECK in `packages/db/schema.sql`, `InsightKind` in `packages/shared`, `InsightDetails.narrative` in `@damm/engine/hr`). One row per period × segment: company-wide (`collectiu_id` NULL) and one per collective. `detail` has `summary`, `highlights`, `suggestedActions`, `recommendationIds`, `model`, `inputHash`. Each suggested action is also inserted into `recomanacio` with `estat = 'proposada'` (and `senyal_id` when it clearly matches an open alarm). Nothing runs automatically yet: `runNarrative` is exported from `@damm/engine/job` but not called by `runEngineJob` or the scheduler; Natan wires it later. Existing databases need the new CHECK: rebuild with `pnpm --filter @damm/db run init` or the demo builder. Details: [engine-integration.md](engine-integration.md), "Narrative insights".
 
 Action items:
-- [ ] Jan: show the narrative card (summary, highlights, suggested actions) from `listInsights(db, viewer, { kind: "narrative" })`, company-wide on the overview and per collective on its page. Handle the case where there is no narrative row yet.
-- [ ] Jan: list `recomanacio` rows with `estat = 'proposada'` with Approve and Discard buttons (HR-only route, updates `estat` to `aprovada` / `descartada`). The engine never changes a recommendation a human has decided on. Label them as AI proposals.
+- [x] Jan: show the narrative card (summary, highlights, suggested actions) from `listInsights(db, viewer, { kind: "narrative" })`, company-wide on the overview and per collective on its page. Handle the case where there is no narrative row yet. (done 2026-11-07, 978fe61; overview and results, per collective via the heatmap segment selection; empty state "Encara no hi ha resum del motor")
+- [x] Jan: list `recomanacio` rows with `estat = 'proposada'` with Approve and Discard buttons (HR-only route, updates `estat` to `aprovada` / `descartada`). The engine never changes a recommendation a human has decided on. Label them as AI proposals. (done 2026-11-07, 978fe61; labelled "Proposta de la IA · decideix una persona")
 
 ## C6 · 2026-11-07 · Natan · Demo database, question bank, simulator
 

@@ -94,12 +94,12 @@ export async function publishAction(formData: FormData) {
 
 export async function approveRecommendationAction(formData: FormData) {
   approveRecommendation(Number(formData.get("id")));
-  revalidatePath("/hr/recommendations");
+  revalidatePath("/hr", "layout");
 }
 
 export async function discardRecommendationAction(formData: FormData) {
   discardRecommendation(Number(formData.get("id")));
-  revalidatePath("/hr/recommendations");
+  revalidatePath("/hr", "layout");
 }
 
 export async function followUpAction(formData: FormData) {
