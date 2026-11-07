@@ -52,3 +52,13 @@ Exit code 1 means a check failed.
 ## Push caveats
 
 Web push needs public HTTPS (provided by Railway). On iOS the PWA must be installed to the home screen first (iOS 16.4 or later); push does not work from a plain Safari tab.
+
+## Push on a phone
+
+The VAPID pair is set as Railway variables, so `pushEnabled()` is true on the deploy. Subscriptions are stored in the SQLite DB on `/data`, so they survive redeploys (a reseed wipes them).
+
+- Android Chrome: works from the URL, installed or not. Open the app, tap "Activa les notificacions" in the employee settings.
+- iPhone: iOS 16.4 or later. Safari, Share, Add to Home Screen, open the app from the icon, then tap "Activa les notificacions".
+- Trigger: publishing an approved need in `/hr` notifies that need's collective, or everyone if it has none.
+- HR only ever sees a device count, shown as "<10" under the minimum group size.
+- HR login uses `HR_ACCESS_CODE`, the same value as in Jan's local `.env`.
