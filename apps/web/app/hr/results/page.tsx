@@ -150,7 +150,7 @@ export default async function ResultsPage({ searchParams }: { searchParams: Prom
       </div>
 
       <Card title="Què destaca el motor" meta={<span className="num">{insights.length}</span>} className="mt-6">
-        <InsightCards insights={insights} empty="Encara no hi ha prou respostes per destacar res (cal n ≥ 10)." />
+        <InsightCards insights={insights} empty="Encara no hi ha prou respostes per destacar res (cal 👤≥10)." />
       </Card>
 
       <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">

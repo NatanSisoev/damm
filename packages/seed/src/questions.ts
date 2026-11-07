@@ -4,6 +4,7 @@ export interface QItem {
   text: string;
   tipus: PreguntaTipus;
   key?: string; // marks the questions that carry the deliberate biases
+  facet?: string; // what the item really asks; items sharing a facet are interchangeable wordings
 }
 
 // 7 closed items + 1 open item per domain. Each collective gets a rotated subset (see seed.ts).
@@ -73,21 +74,32 @@ export const BANK: Record<string, QItem[]> = {
 // Extra collective-specific items (carry the deliberate biases).
 export const EXTRA: Record<string, { domini: string; item: QItem }[]> = {
   "Fàbriques": [
-    { domini: "Benestar", item: { text: "Les pauses durant el torn són suficients?", tipus: "scale5", key: "pauses" } },
-    { domini: "Condicions i organització", item: { text: "El sistema de torns es comunica amb prou antelació?", tipus: "scale5", key: "torns" } },
-    { domini: "Condicions i organització", item: { text: "Què canviaries del sistema de torns?", tipus: "open", key: "torns_obert" } },
+    { domini: "Benestar", item: { text: "Les pauses durant el torn són suficients?", tipus: "scale5", key: "pauses", facet: "shift_breaks" } },
+    { domini: "Condicions i organització", item: { text: "El sistema de torns es comunica amb prou antelació?", tipus: "scale5", key: "torns", facet: "schedule_predictability" } },
+    { domini: "Condicions i organització", item: { text: "Què canviaries del sistema de torns?", tipus: "open", key: "torns_obert", facet: "shift_breaks" } },
   ],
   "Logística": [
-    { domini: "Benestar", item: { text: "Les condicions de temperatura a la zona de treball són acceptables?", tipus: "scale5", key: "calor" } },
-    { domini: "Condicions i organització", item: { text: "Disposes dels equips de protecció adequats per a la teva feina?", tipus: "scale5", key: "epi" } },
+    { domini: "Benestar", item: { text: "Les condicions de temperatura a la zona de treball són acceptables?", tipus: "scale5", key: "calor", facet: "thermal_comfort" } },
+    { domini: "Condicions i organització", item: { text: "Disposes dels equips de protecció adequats per a la teva feina?", tipus: "scale5", key: "epi", facet: "protective_equipment" } },
   ],
   "Comercial": [
-    { domini: "Condicions i organització", item: { text: "Els desplaçaments i la planificació de rutes són raonables?", tipus: "scale5" } },
+    { domini: "Condicions i organització", item: { text: "Els desplaçaments i la planificació de rutes són raonables?", tipus: "scale5", facet: "field_travel" } },
   ],
   "Oficines": [
-    { domini: "Condicions i organització", item: { text: "El model híbrid de teletreball funciona per a tu?", tipus: "scale5" } },
+    { domini: "Condicions i organització", item: { text: "El model híbrid de teletreball funciona per a tu?", tipus: "scale5", facet: "remote_work" } },
   ],
 };
+
+// Facet of each bank item (same order as BANK[domain]). Names follow the engine's question-bank vocabulary where one fits.
+const FACETS: Record<string, string[]> = {
+  "Benestar": ["energy_after_work", "workload", "stress_level", "energy_after_work", "priorities", "stress_level", "stress_level", "open_feedback"],
+  "Lideratge": ["manager_listens", "feedback_quality", "trust_leadership", "trust_leadership", "priorities", "fair_treatment", "manager_listens", "open_feedback"],
+  "Desenvolupament": ["learning_support", "training_access", "growth_path", "learning_support", "priorities", "growth_path", "skill_use", "open_feedback"],
+  "Cultura i pertinença": ["belonging", "recognition", "belonging", "pride", "priorities", "company_information", "values_fit", "open_feedback"],
+  "Entorn i relacions": ["respect_colleagues", "safe_to_speak", "respect_colleagues", "team_cooperation", "priorities", "conflict_resolution", "respect_colleagues", "open_feedback"],
+  "Condicions i organització": ["equipment_tools", "schedule_predictability", "work_life_balance", "workspace", "priorities", "schedule_predictability", "work_life_balance", "open_feedback"],
+};
+for (const [dom, fs] of Object.entries(FACETS)) BANK[dom].forEach((it, i) => { it.facet = fs[i]; });
 
 /** Scale anchors (low, high). Stored in options_json as two scored labels so the UI can show them. */
 export function anchorsOf(item: QItem): [string, string] | null {

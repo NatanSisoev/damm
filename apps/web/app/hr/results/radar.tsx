@@ -162,7 +162,7 @@ export function Radar({ axes, series }: { axes: string[]; series: RadarSeries[] 
               ))}
               {suppressed.map((s) => (
                 <tspan key={s.label} x={x} dy={13} className="text-[10px]" fillOpacity={0.6}>
-                  {series.length > 1 ? `${s.label.split(" · ")[0]}: n<${MIN_GROUP_SIZE}` : `n<${MIN_GROUP_SIZE}`}
+                  {series.length > 1 ? `${s.label.split(" · ")[0]}: 👤<${MIN_GROUP_SIZE}` : `👤<${MIN_GROUP_SIZE}`}
                 </tspan>
               ))}
             </text>

@@ -1,4 +1,5 @@
 import { MIN_GROUP_SIZE } from "@damm/shared";
+import { People } from "../glyphs";
 import { SuppressedBadge } from "../ui";
 import { num1, tornLabel } from "@/lib/format";
 import { ChangeBadge, Sparkline } from "../trend";
@@ -50,7 +51,7 @@ export function RepTable({ rows, byShift }: { rows: RepRow[]; byShift: boolean }
                 <td>
                   <div className="flex items-center gap-3">
                     <Bar value={r.respShare!} tone="chart" />
-                    <span className="num text-xs whitespace-nowrap text-muted">{pct(r.respShare!)} · n={r.respondents}</span>
+                    <span className="num text-xs whitespace-nowrap text-muted">{pct(r.respShare!)} · <People n={r.respondents} /></span>
                   </div>
                 </td>
                 <td>
@@ -100,7 +101,7 @@ export function TrendTable({ periodes, rows }: { periodes: string[]; rows: Trend
                   <div>
                     <div>{num1(c.mitjana)}</div>
                     <div className={`text-[11px] whitespace-nowrap ${c.precisio === "indicativa" ? "text-warn" : "text-subtle"}`}>
-                      n={c.n} · {c.precisio}
+                      <People n={c.n} /> · {c.precisio}
                     </div>
                     {c.sd !== null && c.consensus !== null && (
                       <div className="text-[11px] whitespace-nowrap text-subtle">±{c.sd.toLocaleString("ca-ES", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} · consens {Math.round(c.consensus)}%</div>

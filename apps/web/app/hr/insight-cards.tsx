@@ -1,6 +1,6 @@
 // Engine insight cards (C4/C5). Rendered per kind from InsightDetails; suppressed rows are never passed in.
-import { nLabel } from "@damm/db/hr";
 import type { InsightView } from "@/lib/hr-engine";
+import { People } from "./glyphs";
 import { fixShifts, tornLabel } from "@/lib/format";
 
 const KIND_TITLE: Record<string, string> = {
@@ -109,7 +109,7 @@ export function InsightCards({ insights, empty }: { insights: InsightView[]; emp
           <li key={i.id} className="rounded-lg border border-line p-3 text-[13px]">
             <div className="mb-1 flex flex-wrap items-center gap-2">
               <span className="badge">{KIND_TITLE[i.kind]}</span>
-              <span className="num ml-auto text-xs text-subtle">{nLabel(i.n, i.collectiuId !== null || i.tornId !== null)}</span>
+              <span className="num ml-auto text-xs text-subtle"><People n={i.n} scoped={i.collectiuId !== null || i.tornId !== null} /></span>
             </div>
             <div className="mb-1 text-xs text-subtle">{where(labels)}</div>
             <Body i={i} />

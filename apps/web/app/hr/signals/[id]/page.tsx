@@ -1,10 +1,14 @@
 import Link from "next/link";
+import { Comments, MinPeople, People, PeopleRange } from "../../glyphs";
 import { notFound } from "next/navigation";
 import { MIN_GROUP_SIZE } from "@damm/shared";
-import { nLabel, getSignalDetail, listCollectius, listContextEvents, listDomains, listTorns, type SignalTimelineStep } from "@damm/db/hr";
+import { getSignalDetail, listCollectius, listContextEvents, listDomains, listTorns, type SignalTimelineStep } from "@damm/db/hr";
 import { hrInsights, hrListProbes, type ProbeView } from "@/lib/hr-engine";
 import { Card, Empty, PageHeader, SuppressedBadge } from "../../ui";
 import { setSignalStatusAction } from "../../actions";
+import "../alarms.css";
+import { generateRecommendationsAction } from "../actions";
+import { GenerateButton } from "../generate-button";
 import { addContextEventAction, approveFromSignalAction, discardFromSignalAction, followUpFromSignalAction, startProbeAction, stopProbeAction } from "./actions";
 
 import { recommendationStatus } from "../../labels";
@@ -81,7 +85,7 @@ function ProbeCard({ probes, signal, error }: { probes: ProbeView[]; signal: { i
                 {p.status === "active" && <span className="num ml-auto text-xs">{p.daysLeft} {p.daysLeft === 1 ? "dia" : "dies"} restants</span>}
               </div>
               {!p.progress || p.progress.suppressed ? (
-                <p className="text-[13px] text-subtle">Encara no hi ha prou respostes (cal n ≥ {MIN_GROUP_SIZE}).</p>
+                <p className="text-[13px] text-subtle">Encara no hi ha prou respostes (cal <MinPeople />).</p>
               ) : (
                 <p className="text-[13px]">
                   <span className="num">{p.progress.extraAnswers !== null ? `+${p.progress.extraAnswers}` : "–"}</span> respostes extra
@@ -133,7 +137,7 @@ export default async function SignalPage({ params, searchParams }: { params: Pro
       <div className="mb-6 flex flex-wrap items-center gap-2">
         <SignalBadges tipus={signal.tipus} severity={signal.severity} status={signal.status} />
         <span className="badge num">{signal.periode}</span>
-        <span className="badge num">{nLabel(signal.n, signal.collectiuId !== null || (signal.tornId ?? null) !== null)}</span>
+        <span className="badge num"><People n={signal.n} scoped={signal.collectiuId !== null || (signal.tornId ?? null) !== null} /></span>
         {signal.confianca !== null && <span className="badge num">confiança {Math.round(signal.confianca <= 1 ? signal.confianca * 100 : signal.confianca)}%</span>}
       </div>
 
@@ -194,7 +198,7 @@ export default async function SignalPage({ params, searchParams }: { params: Pro
                               ) : (
                                 <>
                                   {((c.mitjana - 1) * 2.5).toFixed(1)}
-                                  <div className={`text-[11px] whitespace-nowrap ${c.precisio === "indicativa" ? "text-warn" : "text-subtle"}`}>n={c.n} · {c.precisio}</div>
+                                  <div className={`text-[11px] whitespace-nowrap ${c.precisio === "indicativa" ? "text-warn" : "text-subtle"}`}><People n={c.n} /> · {c.precisio}</div>
                                   {c.sd !== null && c.consensus !== null && (
                                     <div className="text-[11px] whitespace-nowrap text-subtle">±{(c.sd * 2.5).toLocaleString("ca-ES", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} · consens {Math.round(c.consensus)}%</div>
                                   )}
@@ -214,9 +218,9 @@ export default async function SignalPage({ params, searchParams }: { params: Pro
             )}
           </Card>
 
-          <Card title="Temes relacionats" meta={`n ≥ ${MIN_GROUP_SIZE}`}>
+          <Card title="Temes relacionats" meta={`👤≥${MIN_GROUP_SIZE}`}>
             {themes.length === 0 ? (
-              <Empty>Cap tema amb prou comentaris ({`n ≥ ${MIN_GROUP_SIZE}`}) per a aquest col·lectiu.</Empty>
+              <Empty>Cap tema amb prou comentaris ({`👤≥${MIN_GROUP_SIZE}`}) per a aquest col·lectiu.</Empty>
             ) : (
               <ul className="space-y-4">
                 {themes.map((t) => (
@@ -224,7 +228,7 @@ export default async function SignalPage({ params, searchParams }: { params: Pro
                     <div className="mb-1.5 flex flex-wrap items-center gap-2">
                       <h3 className="font-medium">{t.etiqueta}</h3>
                       {t.emergent && <span className="badge badge-warn">Emergent</span>}
-                      <span className="num ml-auto text-xs text-subtle">n={t.n} comentaris</span>
+                      <span className="num ml-auto text-xs text-subtle"><Comments n={t.n} /></span>
                     </div>
                     {t.resum && <p className="text-[13px] text-muted">{t.resum} <span className="text-xs text-subtle">(resum generat per la IA)</span></p>}
                     {t.snippets.length > 0 && (
@@ -248,7 +252,22 @@ export default async function SignalPage({ params, searchParams }: { params: Pro
         <div className="space-y-6">
           <Card id="recomanacions" title="Recomanacions" meta={<span className="num">{recommendations.length}</span>}>
             {recommendations.length === 0 ? (
-              <Empty>Encara no hi ha recomanacions per a aquest senyal.</Empty>
+              signal.dominiId != null ? (
+                <div className="gen-panel">
+                  <span className="gen-panel-mark" aria-hidden>
+                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" strokeLinecap="round"><path d="M8 1.5 9.6 6.4 14.5 8 9.6 9.6 8 14.5 6.4 9.6 1.5 8 6.4 6.4Z" /></svg>
+                  </span>
+                  <h3>Encara no hi ha cap recomanació</h3>
+                  <p>Proposa fins a 3 accions concretes per a aquest senyal, amb responsable i termini suggerits.</p>
+                  <form action={generateRecommendationsAction}>
+                    <input type="hidden" name="signal" value={signal.id} />
+                    <GenerateButton variant="panel" />
+                  </form>
+                  <small>Una persona les aprova o les descarta.</small>
+                </div>
+              ) : (
+                <Empty>Aquest senyal no té un domini concret, així que no es poden proposar recomanacions.</Empty>
+              )
             ) : (
               <ul className="space-y-3">
                 {recommendations.map((r) => (
@@ -258,6 +277,7 @@ export default async function SignalPage({ params, searchParams }: { params: Pro
                       {r.seguimentNecessitatId && <span className="badge badge-accent">Seguiment creat</span>}
                     </div>
                     <RecommendationBody r={r} />
+                    <Link href={`/hr/recommendations/${r.id}`} className="mt-3 inline-block text-xs text-accent-ink hover:underline">Veure tot el detall →</Link>
                     {(r.estat === "proposada" || (r.estat === "aprovada" && !r.seguimentNecessitatId)) && (
                       <div className="mt-3 flex flex-wrap justify-end gap-2 border-t border-line pt-3">
                         {r.estat === "proposada" && (
@@ -291,7 +311,7 @@ export default async function SignalPage({ params, searchParams }: { params: Pro
                       <div className="mb-1 text-xs font-medium text-subtle">Des de {d.since} · {d.anchor.label}</div>
                       <p className="text-[13px]">{d.wording}</p>
                       <p className="mt-1 text-xs text-subtle">
-                        <span className="num">{f1(d.before.score)} → {f1(d.after.score)}</span> · n={d.before.n} / {d.after.n}
+                        <span className="num">{f1(d.before.score)} → {f1(d.after.score)}</span> · <PeopleRange from={d.before.n} to={d.after.n} />
                       </p>
                       <p className="mt-1 text-xs text-subtle">{d.limits}</p>
                     </li>
@@ -361,8 +381,8 @@ export default async function SignalPage({ params, searchParams }: { params: Pro
                     )}
                     <p className="mt-3 text-xs text-subtle">
                       {f.newResults
-                        ? <>Nous resultats: <span className="num">n={f.newResults.n}</span>{f.newResults.mitjana !== null && <> · mitjana <span className="num">{f.newResults.mitjana.toFixed(1)}</span></>}</>
-                        : `Nous resultats: pendents (cal n ≥ ${MIN_GROUP_SIZE}).`}
+                        ? <>Nous resultats: <span className="num"><People n={f.newResults.n} /></span>{f.newResults.mitjana !== null && <> · mitjana <span className="num">{f.newResults.mitjana.toFixed(1)}</span></>}</>
+                        : `Nous resultats: pendents (cal 👤≥${MIN_GROUP_SIZE}).`}
                     </p>
                   </li>
                 ))}

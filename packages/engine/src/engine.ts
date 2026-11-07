@@ -7,9 +7,9 @@ import { isClosed, learn } from "./learn.ts";
 import { activeProbeBoosts } from "./probe.ts";
 import { parseAnswer, type QuestionDef } from "./normalize.ts";
 import { createRng } from "./rng.ts";
-import { infoGain, type PersonPoint } from "./segment.ts";
+import { computeSignals } from "./signals.ts";
 import * as store from "./store.ts";
-import { dayOf, daysBetween, toSqlDatetime } from "./time.ts";
+import { dayOf, toSqlDatetime } from "./time.ts";
 
 export interface EngineOptions {
   db: SqlDatabase;
@@ -94,27 +94,10 @@ export function createEngine(opts: EngineOptions): Engine {
     let base = signalCache.get(key);
     if (!base) {
       if (signalCache.size > 64) signalCache.clear();
-      base = computeSignals(cfg, collectiuId, nowMs);
+      base = computeSignals(db, cfg, collectiuId, nowMs);
       signalCache.set(key, base);
     }
     return base.map((s) => ({ ...s, weight: weight(s.domainId), probeBoost: probes.get(s.domainId) ?? 1 }));
-  }
-
-  function computeSignals(cfg: EngineConfig, collectiuId: number, nowMs: number): Omit<DomainSignal, "weight">[] {
-    const states = store.collectiveStates(db, collectiuId);
-    const N = store.population(db).filter((p) => p.collectiuId === collectiuId).reduce((s, p) => s + p.n, 0);
-    const nowSql = toSqlDatetime(nowMs);
-    return store.domainIds(db).map((domainId) => {
-      const mine = states.filter((s) => s.domini_id === domainId);
-      const points: PersonPoint[] = mine.map((s) => ({ level: s.level, variance: s.variance, daysSince: daysBetween(s.last_at, nowSql) }));
-      const recent = mine.filter((s) => daysBetween(s.last_at, nowSql) <= cfg.outlierWindowDays && s.last_z !== null);
-      const outliers = recent.filter((s) => Math.abs(s.last_z!) >= cfg.outlierZ).length;
-      return {
-        domainId,
-        infoGain: infoGain(points, N, cfg),
-        outlierShare: recent.length ? outliers / recent.length : 0,
-      };
-    });
   }
 
   function toItem(row: store.AssignmentRow, q: QuestionDef): BatchItem {
@@ -137,8 +120,8 @@ export function createEngine(opts: EngineOptions): Engine {
     const day = dayOf(nowMs, cfg.timezone);
     const acc = account(accountId);
     let rows = store.assignmentsFor(db, accountId, day);
-    if (rows.length === 0) {
-      transaction(db, () => {
+    transaction(db, () => {
+      if (rows.length === 0) {
         const picks = selectBatch({
           cfg,
           rng: createRng(`${accountId}|${day}`),
@@ -155,9 +138,14 @@ export function createEngine(opts: EngineOptions): Engine {
         picks.forEach((p, slot) =>
           run(db, "INSERT OR IGNORE INTO assignment (compte_id, pregunta_id, day, slot, reason) VALUES (?,?,?,?,?)", accountId, p.question.id, day, slot, p.reason),
         );
-      });
-      rows = store.assignmentsFor(db, accountId, day);
-    }
+      }
+      // Published needs past the daily cap: appended after the batch's slots, so a need published
+      // later shows up the same day. Only unanswered questions not already in the day's batch.
+      const missing = store.publishedNeedsMissing(db, accountId, acc.collectiuId, day);
+      let slot = store.assignmentsFor(db, accountId, day).reduce((m, r) => Math.max(m, r.slot + 1), 0);
+      for (const q of missing) run(db, "INSERT OR IGNORE INTO assignment (compte_id, pregunta_id, day, slot, reason) VALUES (?,?,?,?,'need')", accountId, q.id, day, slot++);
+    });
+    rows = store.assignmentsFor(db, accountId, day);
     const qs = store.questionsByIds(db, rows.map((r) => r.pregunta_id));
     const items = rows.flatMap((r) => {
       const q = qs.get(r.pregunta_id);

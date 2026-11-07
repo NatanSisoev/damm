@@ -195,3 +195,47 @@ export function mergeConfig(base: EngineConfig, override: Partial<EngineConfig> 
 }
 
 export const resolveConfig = (db: SqlDatabase, override?: Partial<EngineConfig>): EngineConfig => mergeConfig(loadConfig(db), override);
+
+const SNAKE_OF = Object.fromEntries(Object.entries(KEY_MAP).map(([snake, camel]) => [camel, snake])) as Record<keyof EngineConfig, string>;
+
+export interface ConfigEntry {
+  /** engine_config key (snake_case): what setConfig accepts. */
+  key: string;
+  /** Value the engine uses now. */
+  value: unknown;
+  /** Built-in default. */
+  default: unknown;
+  /** True when HR stored a value that differs from the default. */
+  overridden: boolean;
+}
+
+/** Every tunable parameter with its effective value, its default and whether HR changed it. */
+export function describeConfig(db: SqlDatabase): ConfigEntry[] {
+  const cfg = loadConfig(db);
+  return (Object.keys(KEY_MAP).map((k) => KEY_MAP[k]!) as (keyof EngineConfig)[]).map((camel) => ({
+    key: SNAKE_OF[camel],
+    value: cfg[camel],
+    default: DEFAULT_CONFIG[camel],
+    overridden: JSON.stringify(cfg[camel]) !== JSON.stringify(DEFAULT_CONFIG[camel]),
+  }));
+}
+
+/** Drops stored values so the built-in defaults apply again. No keys = reset everything HR can set. */
+export function resetConfig(db: SqlDatabase, keys?: string[]): void {
+  const target = keys ?? Object.keys(KEY_MAP);
+  for (const key of target) if (!KEY_MAP[key] || READ_ONLY_KEYS.has(key)) throw new ConfigError(`unknown config key: ${key}`);
+  transaction(db, () => {
+    for (const key of target) run(db, "DELETE FROM engine_config WHERE key = ?", key);
+  });
+}
+
+/** Validates a snake_case patch like setConfig does, but returns it as an override instead of storing it (what-if runs). */
+export function parseConfigPatch(patch: Record<string, unknown>): Partial<EngineConfig> {
+  const out: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(patch)) {
+    const k = KEY_MAP[key];
+    if (!k || READ_ONLY_KEYS.has(key)) throw new ConfigError(`unknown config key: ${key}`);
+    out[k] = coerce(k, value);
+  }
+  return out as Partial<EngineConfig>;
+}

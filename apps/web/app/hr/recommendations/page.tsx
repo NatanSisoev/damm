@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { nLabel, listRecommendations, listSignals } from "@damm/db/hr";
+import { People } from "../glyphs";
+import { listRecommendations, listSignals } from "@damm/db/hr";
 import {
   approveRecommendationAction, discardRecommendationAction, followUpAction,
 } from "../actions";
@@ -30,7 +31,7 @@ export default function RecommendationsPage() {
                   <SignalText s={s} />
                   <div className="mt-2 flex flex-wrap items-center gap-2">
                     <SignalBadges tipus={s.tipus} severity={s.severity} status={s.status} />
-                    <span className="num ml-auto text-xs text-subtle">{s.periode} · {nLabel(s.n, s.collectiu !== null || s.torn !== null)}</span>
+                    <span className="num ml-auto text-xs text-subtle">{s.periode} · <People n={s.n} scoped={s.collectiu !== null || s.torn !== null} /></span>
                   </div>
                   <Link href={`/hr/signals/${s.id}`} className="mt-2 inline-block text-xs text-accent-ink hover:underline">Veure detall →</Link>
                 </li>
@@ -50,6 +51,7 @@ export default function RecommendationsPage() {
                     {r.seguimentNecessitatId && <span className="badge badge-accent">Seguiment creat</span>}
                   </div>
                   <RecommendationBody r={r} />
+                  <Link href={`/hr/recommendations/${r.id}`} className="mt-3 inline-block text-xs text-accent-ink hover:underline">Veure tot el detall →</Link>
                   {(r.estat === "proposada" || (r.estat === "aprovada" && !r.seguimentNecessitatId)) && (
                     <div className="mt-3 flex flex-wrap justify-end gap-2 border-t border-line pt-3">
                       {r.estat === "proposada" && (

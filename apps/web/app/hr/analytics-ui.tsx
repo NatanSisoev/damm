@@ -1,5 +1,6 @@
 // Insights-first blocks shared by the HR overview and results pages. Server components; all forms post to HR-only server actions.
 import Link from "next/link";
+import { MinPeople, People } from "./glyphs";
 import { MIN_GROUP_SIZE } from "@damm/shared";
 import { ChangeBadge, Sparkline } from "./trend";
 import { Card, Empty } from "./ui";
@@ -113,9 +114,9 @@ const TONE_CLS: Record<Headline["tone"], string> = { up: "text-good", down: "tex
 
 export function HeadlineStrip({ headlines }: { headlines: Headline[] }) {
   return (
-    <Card title="El que cal saber ara" meta="Cada frase indica la n i la confiança">
+    <Card title="El que cal saber ara" meta="👤 persones · confiança">
       {headlines.length === 0 ? (
-        <Empty>Encara no hi ha prou respostes per destacar res (cal n ≥ {MIN_GROUP_SIZE}).</Empty>
+        <Empty>Encara no hi ha prou respostes per destacar res (cal <MinPeople />).</Empty>
       ) : (
         <ol className="-my-1 divide-y divide-line">
           {headlines.map((h) => (
@@ -124,7 +125,7 @@ export function HeadlineStrip({ headlines }: { headlines: Headline[] }) {
               <div className="min-w-0 flex-1">
                 <p className="text-[14px] leading-snug">{h.text}</p>
                 <p className="num mt-0.5 text-xs text-subtle">
-                  n={h.n} <span className="font-sans">(n més petita)</span>
+                  <People n={h.n} /> <span className="font-sans">(la mostra més petita)</span>
                   {h.confidence !== null && <> · confiança {Math.round(h.confidence)}%</>}
                   {" · "}
                   <Link href={h.href} className="text-accent-ink hover:underline">Veure detall →</Link>
@@ -157,7 +158,7 @@ const cellTitle = (c: HeatCell) =>
     ? `${c.collective} · ${c.domain}: suprimit (menys de ${MIN_GROUP_SIZE} persones han respost)`
     : c.mean === null
       ? `${c.collective} · ${c.domain}: sense dades`
-      : `${c.collective} · ${c.domain}: ${f1(c.mean)}/5 · ${c.delta !== null ? `${signed(c.delta)} respecte de la mitjana de l'empresa` : ""} · n=${c.n} · precisió ${c.precision}`;
+      : `${c.collective} · ${c.domain}: ${f1(c.mean)}/5 · ${c.delta !== null ? `${signed(c.delta)} respecte de la mitjana de l'empresa` : ""} · 👤 ${c.n} · precisió ${c.precision}`;
 
 export function HeatmapCard({ map, selected }: { map: Heatmap; selected?: { seg?: string; dom?: string } }) {
   return (
@@ -219,7 +220,7 @@ export function HeatmapCard({ map, selected }: { map: Heatmap; selected?: { seg?
               <span aria-hidden className="hr-heat-scale" />
               Per sobre de la mitjana de l&apos;empresa
             </span>
-            <span className="flex items-center gap-1.5"><span aria-hidden className="hr-heat-key hr-heat-hatch" /> Suprimit (n &lt; {MIN_GROUP_SIZE})</span>
+            <span className="flex items-center gap-1.5"><span aria-hidden className="hr-heat-key hr-heat-hatch" /> Suprimit (👤 &lt; {MIN_GROUP_SIZE})</span>
             <span>Color més pàl·lid = menys confiança (n baixa)</span>
           </div>
         </>
@@ -249,7 +250,7 @@ export function SegmentTrendCard({ trend }: { trend: SegmentTrend }) {
                 <div className="num text-xs text-subtle">{p}</div>
                 <div className="num font-semibold">
                   {c?.suprimit ? "Suprimit" : c?.mitjana == null ? "—" : f1(c.mitjana)}
-                  {c && !c.suprimit && c.n !== null && <span className="ml-1 text-xs font-normal text-subtle">n={c.n}</span>}
+                  {c && !c.suprimit && c.n !== null && <span className="ml-1 text-xs font-normal text-subtle"><People n={c.n} /></span>}
                 </div>
               </li>
             );
