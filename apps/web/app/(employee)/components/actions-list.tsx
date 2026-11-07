@@ -32,7 +32,7 @@ export function ActionsList({ actions }: { actions: ApprovedAction[] }) {
             {actions.map((a) => (
               <li key={a.id} className="rounded-lg border border-line bg-surface-muted p-4">
                 <p className="text-base leading-6">{a.text}</p>
-                <p className="mt-2 flex flex-wrap items-center gap-2 text-xs text-subtle">
+                <p className="mt-2 flex flex-wrap items-center gap-2 text-sm text-muted">
                   <span className="badge">{periodLabel(a.periode)}</span>
                   <span className="num">a partir de les respostes de {a.n} persones</span>
                   {a.seguimentEnMarxa && <span className="badge badge-good">Enquesta de seguiment en marxa</span>}

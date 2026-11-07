@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { getCompteId } from "@/lib/session";
 import { EmployeeShell } from "../(employee)/components/shell";
 import { logoutAction } from "./actions";
+import { ChangePasswordPanel, DeleteAccountPanel, RecoveryPanel } from "./account-panels";
 
 export const dynamic = "force-dynamic";
 
@@ -25,6 +26,9 @@ export default async function SettingsPage() {
         </div>
       </section>
 
+      <ChangePasswordPanel />
+      <RecoveryPanel />
+
       <section className="card mt-4">
         <div className="card-body space-y-2">
           <h2 className="section-title">Sessió</h2>
@@ -34,6 +38,8 @@ export default async function SettingsPage() {
           </form>
         </div>
       </section>
+
+      <DeleteAccountPanel />
     </EmployeeShell>
   );
 }

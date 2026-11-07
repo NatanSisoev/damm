@@ -1,0 +1,223 @@
+/*
+ * Employee brand ("Proposta mixta"): hop greens, red for primary actions, Alfa Slab One display
+ * over a CSS hop texture, Hanken Grotesk body. Scoped to `.brand`, which only the employee
+ * routes render, so /hr and /manager keep the base tokens from globals.css.
+ * No Damm logos, photos or proprietary fonts.
+ */
+.brand {
+  --bg: #eef0ea;
+  --surface: #ffffff;
+  --surface-muted: #e3e8dc;
+  --border: #d3d9cc;
+  --border-strong: #7d8a78;
+  --text: #17211a;
+  --text-muted: #52604f;
+  --text-subtle: #52604f;
+  --accent: #c8201a;
+  --accent-hover: #a81a15;
+  --accent-soft: rgb(200 32 26 / 0.1);
+  --accent-text: #a3331f;
+  --good: #1d6b34;
+  --good-soft: rgb(29 107 52 / 0.12);
+  --warn: #8a4b0a;
+  --warn-soft: #fbf3e0;
+  --on-accent: #ffffff;
+  --hop-1: #243f27;
+  --hop-2: #3f5f2c;
+  --hop-3: #6c8a45;
+  --on-hop: #ffffff;
+  --gold: #e8c46a;
+  --focus: #243f27;
+  --display: var(--font-alfa), "Rockwell", "Clarendon", Georgia, serif;
+  --shadow-sm: none;
+
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-hanken), system-ui, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  min-height: 100dvh;
+}
+
+@media (prefers-color-scheme: dark) {
+  .brand {
+    --bg: #0f1511;
+    --surface: #18211a;
+    --surface-muted: #202c22;
+    --border: #2d3a2f;
+    --border-strong: #6b7b69;
+    --text: #e8ede4;
+    --text-muted: #a3b09f;
+    --text-subtle: #a3b09f;
+    --accent: #ff7a6e;
+    --accent-hover: #ff9488;
+    --accent-soft: rgb(255 122 110 / 0.14);
+    --accent-text: #ff9a85;
+    --good: #7fd196;
+    --good-soft: rgb(127 209 150 / 0.14);
+    --warn: #f0b45a;
+    --warn-soft: rgb(240 180 90 / 0.12);
+    --on-accent: #1a0a08;
+    --focus: #e8c46a;
+  }
+}
+
+.brand :focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+.brand .hop :focus-visible {
+  outline-color: var(--gold);
+}
+
+/* Base components retinted for touch: 44px+ targets, 16px inputs (no iOS zoom). */
+.brand .btn {
+  min-height: 44px;
+  font-size: 15px;
+  font-weight: 700;
+  border-width: 1.5px;
+  border-color: var(--text);
+  border-radius: 10px;
+  justify-content: center;
+}
+.brand .btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
+  letter-spacing: 0.03em;
+}
+.brand .btn-primary:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+.brand .btn-ghost {
+  border-color: transparent;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+.brand .btn[disabled],
+.brand .btn-primary[disabled] {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.brand .input {
+  min-height: 48px;
+  font-size: 16px;
+  border-width: 1.5px;
+  border-radius: 10px;
+  width: 100%;
+}
+textarea.brand .input,
+.brand textarea.input {
+  min-height: 96px;
+}
+.brand .input:focus {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+  box-shadow: none;
+  border-color: var(--text);
+}
+.brand .label {
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 18px;
+  margin-bottom: 6px;
+  color: var(--text);
+}
+.brand .card {
+  border-radius: 14px;
+}
+.brand .badge {
+  height: 24px;
+  font-weight: 700;
+}
+.brand .page-title {
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: 30px;
+  line-height: 1.1;
+  letter-spacing: 0.01em;
+}
+.brand .section-title {
+  font-size: 17px;
+  font-weight: 800;
+}
+
+/* Hop texture hero with outline display type */
+.brand .hop {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  color: var(--on-hop);
+  background:
+    radial-gradient(120% 80% at 90% 0%, rgb(108 138 69 / 0.55), transparent 60%),
+    radial-gradient(90% 70% at 0% 100%, rgb(63 95 44 / 0.6), transparent 65%),
+    linear-gradient(160deg, var(--hop-2), var(--hop-1) 70%);
+}
+.brand .hop::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(180deg, rgb(10 22 12 / 0.35), rgb(10 22 12 / 0.55));
+}
+.brand .hop::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  opacity: 0.16;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120' fill='none' stroke='white' stroke-width='1'><path d='M0 20 Q30 0 60 20 T120 20'/><path d='M0 60 Q30 40 60 60 T120 60'/><path d='M0 100 Q30 80 60 100 T120 100'/></svg>");
+}
+.brand .out {
+  font-family: var(--display);
+  font-weight: 400;
+  line-height: 1.02;
+  letter-spacing: 0.01em;
+  text-wrap: balance;
+  color: transparent;
+  -webkit-text-stroke: 1.5px var(--on-hop);
+}
+.brand .hop-lede {
+  color: var(--on-hop);
+  opacity: 0.92;
+}
+
+/* Daily-question tiles (1-5 scale) */
+.brand .tiles button {
+  min-height: 72px;
+  border: 1.5px solid var(--text);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text);
+  font-weight: 800;
+  font-size: 26px;
+  line-height: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+.brand .tiles button small {
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.1;
+  color: var(--text-muted);
+}
+.brand .tiles button[aria-checked="true"] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
+}
+.brand .tiles button[aria-checked="true"] small {
+  color: var(--on-accent);
+}
+
+.brand .tag {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}

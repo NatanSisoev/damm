@@ -459,7 +459,7 @@ export function accountCounts(): { collectiu: string; comptes: number | null }[]
   return (getDb()
     .prepare(
       `SELECT c.nom AS collectiu, COUNT(k.id) AS comptes FROM collectiu c
-       LEFT JOIN compte k ON k.collectiu_id = c.id GROUP BY c.id ORDER BY c.id`,
+       LEFT JOIN compte k ON k.collectiu_id = c.id AND k.id NOT LIKE 'deleted:%' GROUP BY c.id ORDER BY c.id`,
     )
     .all() as { collectiu: string; comptes: number }[]).map((r) => ({ ...r, comptes: r.comptes < MIN_GROUP_SIZE ? null : r.comptes }));
 }
