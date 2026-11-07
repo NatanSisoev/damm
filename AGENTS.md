@@ -38,6 +38,10 @@ Find out who you are working for (Jan or Natan) from `git config user.name` or b
 
 Work is split by area so the two of you rarely edit the same files. Stay in the areas your person has claimed. The shared contract (DB schema and API types) is agreed by both before anyone builds on it; change it only after telling the other person.
 
+- **Natan:** the engine (`packages/engine`): question scheduling, domain scores with confidence and consensus, personal trajectories and follow-ups, insights and alarms. Design: `docs/engine.md`.
+- **Contract change log:** every change to `packages/db/schema.sql` or `packages/shared` gets an entry in `docs/contract-changes.md` (newest first, with what the other person must do). After pulling `main`, read the new entries before building on the schema.
+- **Naming:** new code, tables, columns and docs are in English. Existing Catalan identifiers stay as they are until both agree to rename them. User-facing text stays in Catalan.
+
 ## Challenge
 
 Estrella Damm, UAB THE HACK 2026: an active-listening platform that creates tailored micro-surveys, gets representative participation, and turns answers into insights and actions, while always guaranteeing anonymity.
@@ -114,7 +118,7 @@ Web push through the PWA (service worker plus VAPID keys in `.env`, `web-push` o
 
 ## LLM
 
-- OpenAI-compatible API served by UAB DCC: `https://dcc-llm-gw.uab.cat/uabthehack/v1`, models `ornith` and `nemotron`.
+- OpenAI-compatible API served by UAB DCC: `https://dcc-llm-gw.uab.cat/uabthehack/v1`. Only model: `ornith` (`nemotron` returns 404; checked 2026-11-07). It is a reasoning model: it thinks in a separate `reasoning` field before answering in `content`, so use a large `max_tokens` (1500+) and handle `content: null`. Send request bodies as UTF-8.
 - The team key goes in `.env` only (`LLM_API_KEY`), never in code, commits, slides or chat. `.env.example` has the variable names with empty values.
 
 ## Stack and commands
