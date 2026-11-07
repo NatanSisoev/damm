@@ -163,3 +163,137 @@ export function accountCounts(): { collectiu: string; comptes: number }[] {
     )
     .all() as { collectiu: string; comptes: number }[];
 }
+
+// --- Results dashboard reads (aggregates + synthetic population only) ------------------
+
+export interface RepRow {
+  collectiu: string;
+  torn: string | null;
+  suprimit: boolean;
+  respondents: number | null; // null when suppressed
+  respShare: number | null; // 0..1, among visible segments of the same group
+  popShare: number | null;
+  gap: number | null; // respShare - popShare
+}
+
+export interface Representativeness {
+  periode: string | null;
+  collectius: RepRow[];
+  torns: RepRow[];
+}
+
+function buildRep(
+  items: { collectiu: string; torn: string | null; resp: number; pop: number; hidden: boolean }[],
+): RepRow[] {
+  const visible = items.filter((i) => !i.hidden && i.resp >= MIN_GROUP_SIZE && i.pop >= MIN_GROUP_SIZE);
+  const respTotal = visible.reduce((s, i) => s + i.resp, 0);
+  const popTotal = visible.reduce((s, i) => s + i.pop, 0);
+  return items.map((i) => {
+    if (!visible.includes(i)) {
+      return { collectiu: i.collectiu, torn: i.torn, suprimit: true, respondents: null, respShare: null, popShare: null, gap: null };
+    }
+    const respShare = i.resp / respTotal;
+    const popShare = i.pop / popTotal;
+    return { collectiu: i.collectiu, torn: i.torn, suprimit: false, respondents: i.resp, respShare, popShare, gap: respShare - popShare };
+  });
+}
+
+/** Response share vs synthetic population share for the latest period. Shares are computed among visible segments only, so suppressed counts cannot be recovered by subtraction. */
+export function getRepresentativeness(): Representativeness {
+  const db = getDb();
+  const p = db.prepare("SELECT MAX(periode) AS p FROM agregat").get() as { p: string | null };
+  if (!p.p) return { periode: null, collectius: [], torns: [] };
+  const cols = listCollectius();
+  const torns = db.prepare("SELECT id, nom FROM torn ORDER BY id").all() as { id: number; nom: string }[];
+  const pop = db
+    .prepare("SELECT collectiu_id AS c, torn_id AS t, COUNT(*) AS n FROM empleat_sintetic GROUP BY collectiu_id, torn_id")
+    .all() as { c: number; t: number | null; n: number }[];
+  const resp = db
+    .prepare(
+      `SELECT collectiu_id AS c, torn_id AS t, n, suprimit FROM agregat
+       WHERE periode = ? AND collectiu_id IS NOT NULL AND domini_id IS NULL`,
+    )
+    .all(p.p) as { c: number; t: number | null; n: number; suprimit: number }[];
+
+  const popC = (c: number) => pop.filter((x) => x.c === c).reduce((s, x) => s + x.n, 0);
+  const collectius = buildRep(
+    cols.map((c) => {
+      const r = resp.find((x) => x.c === c.id && x.t === null);
+      return { collectiu: c.nom, torn: null, resp: r?.n ?? 0, pop: popC(c.id), hidden: !r || !!r.suprimit };
+    }),
+  );
+
+  const shiftRows: RepRow[] = [];
+  for (const c of cols) {
+    const shifts = torns.filter((t) => pop.some((x) => x.c === c.id && x.t === t.id));
+    if (!shifts.length) continue;
+    shiftRows.push(
+      ...buildRep(
+        shifts.map((t) => {
+          const r = resp.find((x) => x.c === c.id && x.t === t.id);
+          const n = pop.find((x) => x.c === c.id && x.t === t.id)?.n ?? 0;
+          return { collectiu: c.nom, torn: t.nom, resp: r?.n ?? 0, pop: n, hidden: !r || !!r.suprimit };
+        }),
+      ),
+    );
+  }
+  return { periode: p.p, collectius, torns: shiftRows };
+}
+
+export interface TrendCell { mitjana: number | null; suprimit: boolean }
+export interface TrendSeries {
+  scope: string; // "Tots" or a collective name
+  rows: { domini: string; cells: TrendCell[] }[];
+}
+export interface Trends { periodes: string[]; series: TrendSeries[] }
+
+/** Mean score per domain per period, overall and per collective. Suppression re-enforced on read. */
+export function getTrends(): Trends {
+  const db = getDb();
+  const periodes = (db.prepare("SELECT DISTINCT periode FROM agregat ORDER BY periode").all() as { periode: string }[]).map((r) => r.periode);
+  const doms = db.prepare("SELECT id, nom FROM domini ORDER BY id").all() as { id: number; nom: string }[];
+  const rows = db
+    .prepare(
+      `SELECT periode, collectiu_id AS c, domini_id AS d, n, mitjana, suprimit FROM agregat
+       WHERE torn_id IS NULL AND domini_id IS NOT NULL`,
+    )
+    .all() as { periode: string; c: number | null; d: number; n: number; mitjana: number | null; suprimit: number }[];
+  const scopes: { id: number | null; nom: string }[] = [{ id: null, nom: "Tots" }, ...listCollectius().map((c) => ({ id: c.id, nom: c.nom }))];
+  const series = scopes
+    .map((s) => ({
+      scope: s.nom,
+      rows: doms.map((d) => ({
+        domini: d.nom,
+        cells: periodes.map((per): TrendCell => {
+          const r = rows.find((x) => x.periode === per && x.c === s.id && x.d === d.id);
+          if (!r) return { mitjana: null, suprimit: false };
+          const hidden = r.n < MIN_GROUP_SIZE || !!r.suprimit;
+          return { mitjana: hidden ? null : r.mitjana, suprimit: hidden };
+        }),
+      })),
+    }))
+    .filter((s) => s.rows.some((r) => r.cells.some((c) => c.mitjana !== null || c.suprimit)));
+  return { periodes, series };
+}
+
+export interface ThemeRow {
+  id: number;
+  etiqueta: string | null; // null when suppressed
+  resum: string | null;
+  periode: string;
+  n: number | null;
+  emergent: boolean;
+  suprimit: boolean;
+}
+
+export function listThemes(): ThemeRow[] {
+  return (getDb()
+    .prepare("SELECT id, etiqueta, resum, periode, n, emergent, suprimit FROM tema ORDER BY periode DESC, emergent DESC, n DESC")
+    .all() as any[]).map((r) => {
+    const hidden = r.n < MIN_GROUP_SIZE || !!r.suprimit;
+    return {
+      id: r.id, periode: r.periode, emergent: !!r.emergent, suprimit: hidden,
+      etiqueta: hidden ? null : r.etiqueta, resum: hidden ? null : r.resum, n: hidden ? null : r.n,
+    };
+  });
+}
