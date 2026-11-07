@@ -129,6 +129,7 @@ Commands (run from the repo root, pnpm 10):
 - Lint: `pnpm lint`
 - Build: `pnpm build`
 - Test: no test suite yet.
+- Anonymity checks: `pnpm check:anonymity` fails if HR code or `@damm/db/hr` touches raw responses/accounts or the analytics view exposes `compte_id`; `pnpm lint` enforces the HR import rules (only `@damm/db/hr` and `@damm/shared`).
 
 Config: copy `.env.example` to `.env` and fill it in. `PUBLIC_BASE_URL` (default `http://localhost:3000`) is the base for join links.
 
