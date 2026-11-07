@@ -169,11 +169,11 @@ export function HeatmapCard({ map, selected }: { map: Heatmap; selected?: { seg?
       ) : (
         <>
           <div className="overflow-x-auto">
-            <table className="hr-heat w-full border-separate" style={{ borderSpacing: 3 }}>
+            <table className="hr-heat hr-heat-grid w-full border-separate" style={{ borderSpacing: 3 }}>
               <caption className="sr-only">Mitjana per col·lectiu i domini. El color indica la diferència amb la mitjana de l&apos;empresa.</caption>
               <thead>
                 <tr>
-                  <th scope="col" className="w-28 text-left text-xs font-medium text-subtle">Col·lectiu</th>
+                  <th scope="col" className="w-24 text-left text-xs font-medium text-subtle">Col·lectiu</th>
                   {map.domains.map((d) => (
                     <th key={d} scope="col" className="px-1 text-center text-[11px] leading-tight font-medium text-subtle">{d}</th>
                   ))}
