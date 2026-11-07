@@ -52,11 +52,11 @@ function latent(col: string, dom: number, periode: string, torn: string | null, 
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
 function valueFor(tipus: PreguntaTipus, x: number): number | null {
   switch (tipus) {
-    case "escala5": return clamp(Math.round(x), 1, 5);
-    case "escala10": return clamp(Math.round(x * 2), 1, 10);
-    case "swipe": return chance(r, clamp((x - 1) / 4, 0.05, 0.95)) ? 1 : 0;
+    case "scale5": return clamp(Math.round(x), 1, 5);
+    case "scale10": return clamp(Math.round(x * 2), 1, 10);
+    case "yes_no": return chance(r, clamp((x - 1) / 4, 0.05, 0.95)) ? 1 : 0;
     case "ranking": return int(r, 1, 5); // position (1 = top priority) given to the first listed option
-    case "obert": return null;
+    case "open": return null;
   }
 }
 
@@ -137,7 +137,7 @@ const hourFor = (torn: string | null) => (torn === "nit" ? pick(r, [22, 23, 0, 1
 const pad = (n: number) => String(n).padStart(2, "0");
 
 function qWeight(a: Acc, q: Q, periode: string): number {
-  let w = q.item.tipus === "obert" ? 0.6 : 1;
+  let w = q.item.tipus === "open" ? 0.6 : 1;
   const k = q.item.key;
   if (a.col === "Fàbriques" && periode === "2026-10" && (k === "torns" || k === "pauses" || k === "torns_obert")) w *= 3;
   if (a.col === "Logística" && (k === "calor" || k === "epi")) w *= 2;
@@ -209,7 +209,7 @@ placeSpecial("seguretat_calor_epi", "Logística", { "2026-08": 4, "2026-09": 4, 
 
 // General comments: every open-question answer, then random scale answers until 500 comments.
 const total = THEMES.reduce((s, t) => s + t.count, 0);
-rows.filter((x) => x.tipus === "obert" && !commented.has(x)).forEach((x) => commented.add(x));
+rows.filter((x) => x.tipus === "open" && !commented.has(x)).forEach((x) => commented.add(x));
 const need = total - commented.size;
 if (need < 0) throw new Error("More open answers than comments available");
 const wRow = (x: Row) => (x.acc.col === "Fàbriques" && x.periode === "2026-10" ? 1.8 : x.acc.col === "Logística" ? 1.3 : 1);
@@ -274,8 +274,8 @@ const sub = all(SEG_SQL).filter((x) => Number(x.respondents) < MIN_GROUP_SIZE);
 line(`\nSub-threshold segments (collective x shift, n<${MIN_GROUP_SIZE}): ${sub.length} -> ${sub.map((x) => `${x.col}/${x.torn} (n=${x.respondents})`).join(", ")}`);
 if (sub.length !== 1) throw new Error("Expected exactly one sub-threshold group");
 
-const mgr = all(`SELECT a.es_manager m, ROUND(AVG(r.valor_num),2) mean, COUNT(*) n FROM resposta r JOIN compte a ON a.id=r.compte_id JOIN pregunta p ON p.id=r.pregunta_id WHERE p.tipus='escala5' GROUP BY 1`);
-line(`\nManager bias (escala5 mean): ${mgr.map((x) => `${x.m ? "manager" : "non-manager"}=${x.mean} (n=${x.n})`).join(" vs ")}`);
+const mgr = all(`SELECT a.es_manager m, ROUND(AVG(r.valor_num),2) mean, COUNT(*) n FROM resposta r JOIN compte a ON a.id=r.compte_id JOIN pregunta p ON p.id=r.pregunta_id WHERE p.tipus='scale5' GROUP BY 1`);
+line(`\nManager bias (scale5 mean): ${mgr.map((x) => `${x.m ? "manager" : "non-manager"}=${x.mean} (n=${x.n})`).join(" vs ")}`);
 
 const torns = all(`SELECT r.periode p, ROUND(AVG(r.valor_num),2) mean, COUNT(*) n FROM resposta r JOIN compte a ON a.id=r.compte_id JOIN pregunta p ON p.id=r.pregunta_id
   WHERE a.collectiu_id=1 AND (p.text LIKE 'El sistema de torns%' OR p.text LIKE 'Les pauses durant%') GROUP BY 1 ORDER BY 1`);

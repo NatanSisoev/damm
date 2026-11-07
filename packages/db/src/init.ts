@@ -27,9 +27,9 @@ db.prepare("INSERT INTO necessitat (text_nl, collectiu_id, durada_max_s) VALUES 
 const q = db.prepare(
   "INSERT INTO pregunta (domini_id, collectiu_id, text, tipus, necessitat_id, generada_per_ia) VALUES (?,?,?,?,1,1)",
 );
-q.run(6, 1, "El sistema de torns es comunica amb prou antelació?", "escala5");
-q.run(1, 1, "Les pauses durant el torn són suficients?", "escala5");
-q.run(4, 1, "Què canviaries del sistema de torns?", "obert");
+q.run(6, 1, "El sistema de torns es comunica amb prou antelació?", "scale5");
+q.run(1, 1, "Les pauses durant el torn són suficients?", "scale5");
+q.run(4, 1, "Què canviaries del sistema de torns?", "open");
 
 const ag = db.prepare("INSERT INTO agregat (periode, collectiu_id, torn_id, domini_id, n, mitjana, suprimit) VALUES (?,?,?,?,?,?,?)");
 ag.run("2026-10", 1, 1, 6, 64, 3.6, 0);

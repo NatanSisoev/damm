@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { PoolNextResponse, PostResponsesRequest } from "@damm/shared";
 import {
   EMPTY_DRAFT,
@@ -49,6 +49,11 @@ export function AnswerFlow() {
   }, [router]);
 
   const q = questions[index];
+  // Time from display to answer, for careless-answer detection (C1 answer_ms).
+  const shownAt = useRef(0);
+  useEffect(() => {
+    shownAt.current = performance.now();
+  }, [q?.id]);
 
   async function submit() {
     if (!q || !isAnswerable(q, draft) || sending) return;
@@ -56,9 +61,14 @@ export function AnswerFlow() {
     setMessage(null);
     const payload: PostResponsesRequest = {
       respostes: [
-        q.tipus === "obert"
+        q.tipus === "open"
           ? { preguntaId: q.id, comentari: draft.comentari.trim() }
-          : { preguntaId: q.id, valorNum: draft.valorNum },
+          : {
+              preguntaId: q.id,
+              valorNum: draft.valorNum,
+              valueJson: draft.valueJson,
+              answerMs: Math.max(0, Math.round(performance.now() - shownAt.current)),
+            },
       ],
       canal: "app",
     };

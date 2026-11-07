@@ -1,6 +1,6 @@
 "use client";
 
-// escala5 and escala10: large tap targets, extremes labelled.
+// scale5 and scale10: large tap targets, extremes labelled.
 export function ScaleInput({
   max,
   value,

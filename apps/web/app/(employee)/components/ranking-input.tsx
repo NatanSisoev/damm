@@ -2,9 +2,8 @@
 
 import { useState } from "react";
 
-// ranking: the contract carries one number, so the answer is the position (1 = top priority)
-// the person gives to the FIRST option listed in the question text. The order of the others is
-// shown to the person but not stored.
+// ranking: `valor_num` is the position (1 = top priority) the person gives to the FIRST option,
+// kept for the legacy aggregate. The full order (option indices, best first) goes in `valueJson`.
 
 /** "Ordena què valores: escolta, claredat, justícia." -> prompt + options. */
 export function parseRanking(text: string): { prompt: string; options: string[] } {
@@ -26,7 +25,7 @@ export function RankingInput({
   onChange,
 }: {
   options: string[];
-  onChange: (positionOfFirst: number | null) => void;
+  onChange: (positionOfFirst: number | null, order: number[]) => void;
 }) {
   const [order, setOrder] = useState(options.map((_, i) => i));
   const [touched, setTouched] = useState(false);
@@ -34,7 +33,7 @@ export function RankingInput({
   const commit = (next: number[]) => {
     setOrder(next);
     setTouched(true);
-    onChange(next.indexOf(0) + 1);
+    onChange(next.indexOf(0) + 1, next);
   };
   const move = (from: number, to: number) => {
     if (to < 0 || to >= order.length) return;
