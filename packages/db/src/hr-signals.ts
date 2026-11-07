@@ -3,7 +3,10 @@
 // Every figure re-applies the minimum group size on read.
 import { MIN_GROUP_SIZE } from "@damm/shared";
 import { getDb } from "./connection";
+import { getTrends, type TrendCell } from "./hr-repository";
+import type { Change } from "./hr-rigour";
 
+// Snippets: stored redacted text only, no metadata returned next to them, never from themes under the minimum size.
 const SNIPPETS_PER_THEME = 3;
 const SNIPPET_MAX_CHARS = 280;
 
@@ -21,7 +24,8 @@ export interface SignalHeader {
 export interface SignalTrendRow {
   domini: string;
   related: boolean; // the signal description mentions this domain
-  cells: { periode: string; n: number | null; mitjana: number | null; suprimit: boolean }[];
+  cells: (TrendCell & { periode: string })[]; // rigour layer: complementary suppression, n, precisio
+  canvi: Change;
 }
 
 export interface SignalTheme {
@@ -83,28 +87,18 @@ export function getSignalDetail(id: number): SignalDetail | null {
   if (!row || row.n < MIN_GROUP_SIZE || row.suprimit) return null;
   const { suprimit: _s, ...signal } = row;
 
-  // --- Trend: domain means for the signal's collective (or everyone) across periods.
-  const periodes = (db.prepare("SELECT DISTINCT periode FROM agregat ORDER BY periode").all() as { periode: string }[]).map((r) => r.periode);
-  const doms = db.prepare("SELECT id, nom FROM domini ORDER BY id").all() as { id: number; nom: string }[];
-  const aggs = db
-    .prepare(
-      `SELECT periode, domini_id AS d, n, mitjana, suprimit FROM agregat
-       WHERE torn_id IS NULL AND domini_id IS NOT NULL AND collectiu_id IS ?`,
-    )
-    .all(signal.collectiuId) as { periode: string; d: number; n: number; mitjana: number | null; suprimit: number }[];
+  // --- Trend: the rigour trend (complementary suppression, precision, change rule) for the signal's scope.
+  const all = getTrends();
+  const periodes = all.periodes;
+  const scope = all.series.find((x) => x.scope === (signal.collectiu ?? "Tots"));
   const desc = norm(signal.descripcio);
-  const trend: SignalTrendRow[] = doms
-    .map((d) => ({
-      domini: d.nom,
-      related: desc.includes(norm(d.nom)),
-      cells: periodes.map((p) => {
-        const a = aggs.find((x) => x.periode === p && x.d === d.id);
-        if (!a) return { periode: p, n: null, mitjana: null, suprimit: false };
-        const hidden = a.n < MIN_GROUP_SIZE || !!a.suprimit;
-        return { periode: p, n: hidden ? null : a.n, mitjana: hidden ? null : a.mitjana, suprimit: hidden };
-      }),
+  const trend: SignalTrendRow[] = (scope?.rows ?? [])
+    .map((r) => ({
+      domini: r.domini,
+      related: desc.includes(norm(r.domini)),
+      cells: r.cells.map((c, i) => ({ ...c, periode: periodes[i] })),
+      canvi: r.canvi,
     }))
-    .filter((r) => r.cells.some((c) => c.mitjana !== null || c.suprimit))
     .sort((a, b) => Number(b.related) - Number(a.related));
 
   // --- Themes: counted within the signal's collective through the analytics view.
@@ -158,6 +152,8 @@ export function getSignalDetail(id: number): SignalDetail | null {
       const agg = db
         .prepare(`SELECT COUNT(*) AS n, AVG(valor_num) AS m FROM v_resposta_analitica WHERE pregunta_id IN (${marks})`)
         .get(...questions.map((q) => q.id)) as { n: number; m: number | null };
+      // TODO: count distinct respondents, not answers. v_resposta_analitica has no person key and HR code may not
+      // join accounts, so this needs a distinct-respondent column in the view or a precomputed aggregate (Natan).
       if (agg.n >= MIN_GROUP_SIZE) newResults = { n: agg.n, mitjana: agg.m };
     }
     followUps.push({ necessitatId: need.id, textNl: need.textNl, estat: need.estat, published, questions, newResults });

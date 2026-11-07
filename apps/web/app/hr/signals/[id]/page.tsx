@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { MIN_GROUP_SIZE } from "@damm/shared";
-import { getSignalDetail, type SignalTimelineStep } from "@damm/db/hr";
+import { CHANGE_MIN_DELTA, CHANGE_MIN_N, getSignalDetail, type Change, type SignalTimelineStep } from "@damm/db/hr";
 import { Card, Empty, PageHeader, SuppressedBadge } from "../../ui";
 import { approveFromSignalAction, discardFromSignalAction, followUpFromSignalAction } from "./actions";
 
@@ -35,6 +35,22 @@ function Timeline({ steps }: { steps: SignalTimelineStep[] }) {
         </li>
       ))}
     </ol>
+  );
+}
+
+function ChangeBadge({ canvi }: { canvi: Change }) {
+  if (canvi.label === "sense canvi clar") {
+    return (
+      <span className="badge" title={`Només es parla de canvi si |Δ| ≥ ${CHANGE_MIN_DELTA} i els dos períodes tenen n ≥ ${CHANGE_MIN_N}`}>
+        sense canvi clar
+      </span>
+    );
+  }
+  const up = canvi.label === "puja";
+  return (
+    <span className="badge num">
+      {up ? "↑ puja" : "↓ baixa"} {canvi.delta! >= 0 ? "+" : "−"}{Math.abs(canvi.delta!).toFixed(1)}
+    </span>
   );
 }
 
@@ -92,6 +108,7 @@ export default async function SignalPage({ params }: { params: Promise<{ id: str
                   <tr>
                     <th>Domini</th>
                     {periodes.map((p) => <th key={p} className="text-right">{p}</th>)}
+                    <th className="text-right">Canvi</th>
                     <th className="text-right">Tendència</th>
                   </tr>
                 </thead>
@@ -109,10 +126,14 @@ export default async function SignalPage({ params }: { params: Promise<{ id: str
                           ) : c.mitjana === null ? (
                             <span className="text-subtle">–</span>
                           ) : (
-                            <>{c.mitjana.toFixed(1)} <span className="text-xs text-subtle">n={c.n}</span></>
+                            <>
+                              {c.mitjana.toFixed(1)}
+                              <div className={`text-[11px] whitespace-nowrap ${c.precisio === "indicativa" ? "text-warn" : "text-subtle"}`}>n={c.n} · {c.precisio}</div>
+                            </>
                           )}
                         </td>
                       ))}
+                      <td className="text-right"><ChangeBadge canvi={r.canvi} /></td>
                       <td className="text-right"><Sparkline values={r.cells.map((c) => c.mitjana)} /></td>
                     </tr>
                   ))}
@@ -146,7 +167,7 @@ export default async function SignalPage({ params }: { params: Promise<{ id: str
               </ul>
             )}
             <p className="mt-3 text-xs text-subtle">
-              Només es mostren temes amb {MIN_GROUP_SIZE} comentaris o més en aquest col·lectiu; els fragments són anònims i ja redactats.
+              Només es mostren temes amb {MIN_GROUP_SIZE} comentaris o més en aquest col·lectiu. Els fragments són anonimitzats i il·lustratius, no respostes individuals.
               {hiddenThemes > 0 && ` ${hiddenThemes} ${hiddenThemes > 1 ? "temes ocults" : "tema ocult"} per tenir menys de ${MIN_GROUP_SIZE} comentaris.`}
             </p>
           </Card>
