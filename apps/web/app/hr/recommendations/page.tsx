@@ -7,6 +7,7 @@ import { Card, Empty, PageHeader } from "../ui";
 import { SignalBadges, SignalText } from "../signal-labels";
 import { compareSignals } from "@/lib/signal-text";
 import { recommendationStatus } from "../labels";
+import { RecommendationBody } from "../recommendation-card";
 
 
 export default function RecommendationsPage() {
@@ -48,7 +49,7 @@ export default function RecommendationsPage() {
                     <span className={`badge ${recommendationStatus(r.estat).cls}`}>{recommendationStatus(r.estat).label}</span>
                     {r.seguimentNecessitatId && <span className="badge badge-accent">Seguiment creat</span>}
                   </div>
-                  <p>{r.text}</p>
+                  <RecommendationBody r={r} />
                   {(r.estat === "proposada" || (r.estat === "aprovada" && !r.seguimentNecessitatId)) && (
                     <div className="mt-3 flex flex-wrap justify-end gap-2 border-t border-line pt-3">
                       {r.estat === "proposada" && (

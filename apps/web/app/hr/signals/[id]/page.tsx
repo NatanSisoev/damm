@@ -1,12 +1,14 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { MIN_GROUP_SIZE } from "@damm/shared";
-import { nLabel, getSignalDetail, type SignalTimelineStep } from "@damm/db/hr";
+import { nLabel, getSignalDetail, listCollectius, listContextEvents, listDomains, listTorns, type SignalTimelineStep } from "@damm/db/hr";
+import { hrInsights, hrListProbes, type ProbeView } from "@/lib/hr-engine";
 import { Card, Empty, PageHeader, SuppressedBadge } from "../../ui";
 import { setSignalStatusAction } from "../../actions";
-import { approveFromSignalAction, discardFromSignalAction, followUpFromSignalAction } from "./actions";
+import { addContextEventAction, approveFromSignalAction, discardFromSignalAction, followUpFromSignalAction, startProbeAction, stopProbeAction } from "./actions";
 
 import { recommendationStatus } from "../../labels";
+import { RecommendationBody } from "../../recommendation-card";
 import { ChangeBadge, Sparkline } from "../../trend";
 import { TrendChart } from "../../trend-chart";
 import { STATUS_LABELS, STATUS_ORDER, SignalBadges } from "../../signal-labels";
@@ -47,11 +49,78 @@ function Timeline({ steps }: { steps: SignalTimelineStep[] }) {
   );
 }
 
-export default async function SignalPage({ params }: { params: Promise<{ id: string }> }) {
+const f1 = (v: number) => v.toLocaleString("ca-ES", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+const pct = (v: number) => `${Math.round(v <= 1 ? v * 100 : v)}%`;
+
+function ProbeCard({ probes, signal, error }: { probes: ProbeView[]; signal: { id: number; collectiuId: number | null; tornId: number | null; dominiId: number | null; collectiu: string | null; domini: string | null }; error?: string }) {
+  const active = probes.filter((p) => p.status === "active");
+  const canProbe = signal.collectiuId !== null && signal.dominiId !== null;
+  return (
+    <Card id="indagar" title="Indagar" meta="Més mostreig durant un temps">
+      <p className="mb-3 text-[13px] text-muted">
+        Fa que {signal.domini ?? "aquest domini"} surti més sovint a les enquestes d&apos;aquest grup (x2 durant 14 dies). Només afecta quines preguntes es proposen, mai qui les contesta.
+      </p>
+      {error && <p role="alert" className="mb-3 rounded-lg border border-line-strong px-3 py-2 text-[13px]">{error}</p>}
+      {active.length === 0 && (
+        <form action={startProbeAction}>
+          <input type="hidden" name="signal" value={signal.id} />
+          <input type="hidden" name="collectiu" value={signal.collectiuId ?? ""} />
+          <input type="hidden" name="torn" value={signal.tornId ?? ""} />
+          <input type="hidden" name="domini" value={signal.dominiId ?? ""} />
+          <button className="btn btn-primary" disabled={!canProbe}>Indaga</button>
+          {!canProbe && <span className="ml-3 text-xs text-subtle">Cal un senyal amb col·lectiu i domini concrets.</span>}
+        </form>
+      )}
+      {probes.length > 0 && (
+        <ul className={`${active.length === 0 ? "mt-4" : ""} space-y-3`}>
+          {probes.map((p) => (
+            <li key={p.id} className="rounded-lg border border-line p-4">
+              <div className="mb-2 flex flex-wrap items-center gap-2">
+                <span className={`badge ${p.status === "active" ? "badge-accent" : ""}`}>{p.status === "active" ? "Activa" : p.status === "stopped" ? "Aturada" : "Acabada"}</span>
+                <span className="num text-xs text-subtle">x{p.boost} · {p.startsAt.slice(0, 10)} → {p.endsAt.slice(0, 10)}</span>
+                {p.status === "active" && <span className="num ml-auto text-xs">{p.daysLeft} {p.daysLeft === 1 ? "dia" : "dies"} restants</span>}
+              </div>
+              {!p.progress || p.progress.suppressed ? (
+                <p className="text-[13px] text-subtle">Encara no hi ha prou respostes (cal n ≥ {MIN_GROUP_SIZE}).</p>
+              ) : (
+                <p className="text-[13px]">
+                  <span className="num">{p.progress.extraAnswers !== null ? `+${p.progress.extraAnswers}` : "–"}</span> respostes extra
+                  {p.progress.confidenceBefore !== null && p.progress.confidenceNow !== null && (
+                    <> · confiança <span className="num">{pct(p.progress.confidenceBefore)} → {pct(p.progress.confidenceNow)}</span></>
+                  )}
+                </p>
+              )}
+              {p.status === "active" && (
+                <form action={stopProbeAction} className="mt-3 flex justify-end">
+                  <input type="hidden" name="id" value={p.id} />
+                  <input type="hidden" name="signal" value={signal.id} />
+                  <button className="btn">Atura</button>
+                </form>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+    </Card>
+  );
+}
+
+export default async function SignalPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ probeError?: string; eventError?: string }> }) {
   const { id } = await params;
+  const { probeError, eventError } = await searchParams;
   const detail = Number.isInteger(Number(id)) ? getSignalDetail(Number(id)) : null;
   if (!detail) notFound();
   const { signal, periodes, trend, trendScope, themes, hiddenThemes, recommendations, followUps, timeline } = detail;
+  const probes = hrListProbes(signal.id);
+  const sameSegment = (c: number | null, t: number | null, d: number | null) =>
+    (c === null || c === signal.collectiuId) && (t === null || signal.tornId === null || t === signal.tornId) && (d === null || d === signal.dominiId);
+  // "Since" comparisons for this signal's segment. Correlation, never proof: the engine's own wording and limits go together.
+  const effects = hrInsights({ role: "hr" }, { periode: "all", kind: "action_effect", collectiuId: signal.collectiuId ?? undefined })
+    .filter((i): i is Extract<typeof i, { kind: "action_effect" }> => i.kind === "action_effect" && !i.suppressed && !!i.detail && sameSegment(i.collectiuId, i.tornId, i.domainId));
+  const events = listContextEvents().filter((e) => sameSegment(e.collectiuId, e.tornId, e.dominiId));
+  const collectius = listCollectius();
+  const domains = listDomains();
+  const torns = listTorns();
 
   return (
     <>
@@ -188,7 +257,7 @@ export default async function SignalPage({ params }: { params: Promise<{ id: str
                       <span className={`badge ${recommendationStatus(r.estat).cls}`}>{recommendationStatus(r.estat).label}</span>
                       {r.seguimentNecessitatId && <span className="badge badge-accent">Seguiment creat</span>}
                     </div>
-                    <p>{r.text}</p>
+                    <RecommendationBody r={r} />
                     {(r.estat === "proposada" || (r.estat === "aprovada" && !r.seguimentNecessitatId)) && (
                       <div className="mt-3 flex flex-wrap justify-end gap-2 border-t border-line pt-3">
                         {r.estat === "proposada" && (
@@ -206,6 +275,67 @@ export default async function SignalPage({ params }: { params: Promise<{ id: str
                 ))}
               </ul>
             )}
+          </Card>
+
+          <ProbeCard probes={probes} signal={signal} error={probeError} />
+
+          <Card id="context" title="Des de quan ha canviat?" meta="Context, no causa">
+            {effects.length === 0 ? (
+              <Empty>Encara no hi ha cap comparació «des de». Apareix quan hi ha prou respostes abans i després d&apos;una recomanació aprovada o d&apos;un fet del context.</Empty>
+            ) : (
+              <ul className="space-y-3">
+                {effects.map((i) => {
+                  const d = i.detail!;
+                  return (
+                    <li key={i.id} className="rounded-lg border border-line p-4">
+                      <div className="mb-1 text-xs font-medium text-subtle">Des de {d.since} · {d.anchor.label}</div>
+                      <p className="text-[13px]">{d.wording}</p>
+                      <p className="mt-1 text-xs text-subtle">
+                        <span className="num">{f1(d.before.score)} → {f1(d.after.score)}</span> · n={d.before.n} / {d.after.n}
+                      </p>
+                      <p className="mt-1 text-xs text-subtle">{d.limits}</p>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+            <h3 className="mt-5 mb-2 text-[13px] font-medium">Fets del context</h3>
+            {events.length === 0 ? (
+              <p className="text-xs text-subtle">Cap fet registrat per a aquest grup.</p>
+            ) : (
+              <ul className="mb-3 space-y-1 text-[13px]">
+                {events.map((e) => (
+                  <li key={e.id}><span className="num text-subtle">{e.date}</span> · {e.label}</li>
+                ))}
+              </ul>
+            )}
+            {eventError && <p role="alert" className="mb-2 text-[13px]">{eventError}</p>}
+            <form action={addContextEventAction} className="space-y-2 border-t border-line pt-3">
+              <input type="hidden" name="signal" value={signal.id} />
+              <div className="grid gap-2 sm:grid-cols-2">
+                <label className="text-xs text-subtle">Data<input type="date" name="date" required className="input mt-1 w-full" /></label>
+                <label className="text-xs text-subtle">Què ha passat<input type="text" name="label" required maxLength={120} placeholder="Nou sistema de torns" className="input mt-1 w-full" /></label>
+                <label className="text-xs text-subtle">Col·lectiu
+                  <select name="collectiu" defaultValue={signal.collectiuId ?? ""} className="input mt-1 w-full">
+                    <option value="">Tots</option>
+                    {collectius.map((c) => <option key={c.id} value={c.id}>{c.nom}</option>)}
+                  </select>
+                </label>
+                <label className="text-xs text-subtle">Torn
+                  <select name="torn" defaultValue={signal.tornId ?? ""} className="input mt-1 w-full">
+                    <option value="">Tots</option>
+                    {torns.map((t) => <option key={t.id} value={t.id}>{t.nom}</option>)}
+                  </select>
+                </label>
+                <label className="text-xs text-subtle sm:col-span-2">Domini
+                  <select name="domini" defaultValue={signal.dominiId ?? ""} className="input mt-1 w-full">
+                    <option value="">Tots</option>
+                    {domains.map((d) => <option key={d.id} value={d.id}>{d.nom}</option>)}
+                  </select>
+                </label>
+              </div>
+              <div className="flex justify-end"><button className="btn btn-primary">Afegeix el fet</button></div>
+            </form>
           </Card>
 
           <Card id="seguiment" title="Seguiment">

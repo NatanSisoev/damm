@@ -40,7 +40,7 @@ G-§9: "Criteris excloents". These outrank everything else.
 
 | ID | Requirement | Source | Status | Evidence / gap |
 |----|-------------|--------|--------|----------------|
-| R-CH-1 | An AI-based active-listening platform that creates climate micro-surveys adapted to each collective **and moment** | D-S12, G-§3 | partial | Collective adaptation exists in the seeded pool. "Moment" (timing): the engine times extra sampling with HR "Indagar" probes (time-boxed, per segment; `startProbe`, C12). The Indagar button on the signal page is Jan's open item. |
+| R-CH-1 | An AI-based active-listening platform that creates climate micro-surveys adapted to each collective **and moment** | D-S12, G-§3 | partial | Collective adaptation exists in the seeded pool. "Moment" (timing): the engine times extra sampling with HR "Indagar" probes (time-boxed, per segment; `startProbe`, C12). The Indagar button and progress card are on the signal page (51458d3). |
 | R-CH-2 | Representative participation **without saturating** people | D-S11, G-§3 | partial | About 2 questions a day and representativeness per collective are in place. The anti-saturation rules live in the engine (blocked). |
 | R-CH-3 | Answers become insights **and actions** automatically | G-§3 | partial | Engine insights and alarms (`@damm/engine`) are shown on HR results, the Alarmes page and the manager view; the engine job runs after seeding and every 10 min. Themes and recommendations still come from the seed. |
 | R-CH-4 | Anonymity and privacy guaranteed at all times | D-S12, G-§3 | done | See section 6. |
@@ -106,7 +106,7 @@ The guide says "Publicar a Typeform". AGENTS.md decides to ignore Typeform: the 
 | R-FLOW-5b | QR access | done | `/join/[codi]` |
 | R-FLOW-5c | **Frequency** strategy (about 2 a day, no repeats 4 days in a row) | blocked | Pool stub today; engine is Natan's |
 | R-FLOW-5d | **Reminders** | partial | Web push built: opt-in toggle (`/settings`, nudge on `/`), subscription in `push_subscripcio`, a publish notifies the collective, expired subscriptions (404/410) deleted. No daily reminder job yet. A real phone needs HTTPS (task 9). |
-| R-FLOW-5e | **Representativeness control** while collecting (warn when a group is under-sampled) | partial | Shown on results; the reach card links to a new need aimed at the gap (`/hr/needs?nova=1#nova`, c1c7422). The engine raises a `baixa_participacio` alarm (C9; banner pending) and can act on it with a time-boxed probe that samples a domain more in a segment (`startProbe`, C12) with progress. Missing: the Indagar button and progress card in the HR UI. |
+| R-FLOW-5e | **Representativeness control** while collecting (warn when a group is under-sampled) | partial | Shown on results; the reach card links to a new need aimed at the gap (`/hr/needs?nova=1#nova`, c1c7422). The engine raises a `baixa_participacio` alarm (C9; banner pending) and can act on it with a time-boxed probe that samples a domain more in a segment (`startProbe`, C12) with progress. Indagar button and progress card on the signal page (51458d3). |
 | R-FLOW-5f | Does not saturate anyone | blocked | Engine rules |
 
 ### R-FLOW-6 Collect and analyse
@@ -132,10 +132,10 @@ The guide says "Publicar a Typeform". AGENTS.md decides to ignore Typeform: the 
 ### R-FLOW-8 Recommend and close the loop
 | ID | Requirement | Status | Evidence / gap |
 |----|-------------|--------|----------------|
-| R-FLOW-8a | Proposes **concrete actions** | done | `runRecommendations` + `draftRecommendations` draft 1 to 3 proposals per open alarm (template or LLM). Run by `POST /api/jobs/run` and the seed. Jan: show them (C11). |
+| R-FLOW-8a | Proposes **concrete actions** | done | `runRecommendations` + `draftRecommendations` draft 1 to 3 proposals per open alarm (template or LLM). Run by `POST /api/jobs/run` and the seed (362f275). Shown with title, initiative, suggested owner and timeframe, justification, limits and source; approve or discard only (51458d3). |
 | R-FLOW-8b | Proposes a **new follow-up micro-survey** | done | `createDraftedFollowUp`: need for the signal's collective, AI-drafted questions, human review |
 | R-FLOW-8c | Recommendations are proposals, never automatic decisions | done | Approve or discard |
-| R-FLOW-8e | "Tornar a escoltar": how perception evolves after the action | partial | Engine done: `action_effect` insight, anchored on `recomanacio.aprovada_el` or a `context_event`; no "done" state; n≥10 in both windows; worded "since X", correlation not cause. `improvement` alarm uses the same anchors. Open: HR UI (Jan, C13) |
+| R-FLOW-8e | "Tornar a escoltar": how perception evolves after the action | partial | Engine done: `action_effect` insight, anchored on `recomanacio.aprovada_el` or a `context_event`; no "done" state; n≥10 in both windows; worded "since X", correlation not cause. `improvement` alarm uses the same anchors. HR UI done: signal page card "Des de quan ha canviat?" shows `wording` with `limits`, no done button (51458d3). |
 | R-FLOW-8d | Results go back to the people who answered | done | Employee home lists approved actions for their collective (`approvedActionsForCompte`, n≥10 only) with period and follow-up badge |
 
 ## 4. Acceptance scenarios
@@ -197,7 +197,7 @@ D-S9 and D-S10. Each needs a named mitigation we can point at in the demo. "AI d
 | R-DIFF-3 | Causality | Never present correlations as causes; wording on signals and methodology | partial (needs 18) |
 | R-DIFF-4 | Prioritisation (frequent ≠ most relevant) | Signals ranked by effect and n, not by volume | blocked (signal criteria, Natan) |
 | R-DIFF-5 | Comparability | Same item IDs across periods; change rule only on the same question | done |
-| R-DIFF-6 | Context: what event explains a change? | Need text and recommendations attached to the signal timeline | partial. Engine done (`context_event`, `addContextEvent`, `action_effect` "des de <data>" with limits note). Open: show events and `action_effect` on the signal timeline (Jan, C13) |
+| R-DIFF-6 | Context: what event explains a change? | Need text and recommendations attached to the signal timeline | done. Context events can be added and listed on the signal page, and `action_effect` shows "des de <data>" with the limits note (51458d3) |
 | R-DIFF-7 | Open text (languages, irony, several themes) | Multi-theme `comentari_tema`; Catalan, Spanish and English lexicon with accent and typo tolerance; optional LLM classifier; irony is not handled and is stated as a limit (engine.md section 12) | done (engine), limits documented |
 | R-DIFF-8 | Actionability: an insight needs an owner and a plan | Recommendation with an approval, follow-up survey | done (suggested owner and timeframe on `recomanacio`, C11; suggestions only, not tracked) |
 
@@ -296,7 +296,7 @@ Bonus items named by the guide (G-§4 "Bonus") and the deck (D-S18), then our ow
 | N-1 | **Teams / M365 integration** | G bonus, D-S18, 10% criterion | Hits a weighted criterion directly | partial | Adaptive Card, optional webhook, `docs/teams-integration.md`. Roadmap: Graph for audience, Entra SSO without identity leakage. |
 | N-2 | **Representativeness indicator** | G bonus | Already built; name it as the bonus in the pitch | done | |
 | N-3 | **Experience for people without a computer** | G bonus, D-S18 | Plant and logistics, scenario B | partial | QR plus mobile done. Add a **kiosk mode**: shared tablet, no account, one answer per session with a rate limit, own `canal` value. |
-| N-4 | **Actionable wellbeing recommendations** | G bonus, D-S18 | Value for people | done (engine side) | Proposals name a Damm initiative, a suggested owner and timeframe, and cite n and confidence. UI in C11. |
+| N-4 | **Actionable wellbeing recommendations** | G bonus, D-S18 | Value for people | done (engine side) | Proposals name a Damm initiative, a suggested owner and timeframe, and cite n and confidence. UI done (51458d3). |
 | N-5 | **Dynamic follow-up questions** | G bonus | Ties to R-FLOW-2e | missing | A low score triggers an open "why?" question in the same session. |
 | N-6 | **Multi-language** | G bonus | Catalan, Spanish, English at minimum; plant staff | missing | i18n on the employee app first; the AI translates approved questions with human review. |
 | N-7 | **Full cycle in one platform** | D-S18 | Already our architecture | done | Say it explicitly. |
