@@ -17,17 +17,22 @@ Status: `running`, `ready` (can start now), `blocked` (waiting on a dependency),
 | 3 | PWA answer flow | `jan/pwa-answer` | done | heavy |
 | 4 | Installable PWA and push | `jan/pwa-push` | ready | heavy |
 | 5 | Employee UI refinement | `jan/ui-employee` | ready | light |
-| 6 | Security demo | `jan/security-demo` | running | light |
+| 6 | Security demo | `jan/security-demo` | done | light |
 | 7 | Demo script and slide notes | `jan/demo-script` | done | light |
 | 8 | HR CSV export with suppression | `jan/hr-export` | done | light |
 | 10 | `jan/dev` → `main` PR | coordinating session | ready | light |
-| 12 | HR home overview | `jan/hr-home` | running | light |
+| 12 | HR home overview | `jan/hr-home` | done | light |
 | 13 | Publish page: join link, QR and print poster | `jan/publish-qr` | running | light |
 | 14 | Pitch deck | `jan/deck` | deferred to 8 Nov 9:00 | light |
 | 15 | Demo reset and presenter mode | `jan/demo-reset` | deferred to 8 Nov 9:00 | heavy |
-| 16 | Signal drilldown and follow-up loop view | `jan/signals` | ready, next when a slot frees | light |
+| 16 | Signal drilldown and follow-up loop view | `jan/signals` | running | light |
+| 17 | Statistical rigour: complementary suppression, precision, change rule | `jan/rigour` | running | light |
+| 18 | Methodology page ("Com calculem") | `jan/methodology` | ready | light |
+| 19 | Question-quality checker on drafts | `jan/draft-check` | ready | light |
+| 20 | "Has dit, hem fet": results back to employees | `jan/closing-loop` | ready | light |
+| 21 | Decision audit log and AI provenance | `jan/audit-log` | blocked on schema (Natan) | light |
 
-Order for the next free slots: 16, then 5, then 4. Pitch deck and demo work (14, 15) go last and are not raised before 8 Nov 9:00.
+Order for the next free slots: 18, 20, 19, then 5, then 4. Pitch deck and demo work (14, 15) go last and are not raised before 8 Nov 9:00.
 
 All of the done rows are merged into `jan/dev` and pushed (lint, `check:anonymity`, seed and build pass). Not yet verified: the production refusal when `SESSION_SECRET` is unset.
 
@@ -110,6 +115,37 @@ Remove the merged worktrees under `.claude/worktrees/` and delete the merged `ja
   - the follow-up survey state.
 - A small timeline closes the loop: signal, recommendation, follow-up need, new results.
 
+## Trust and rigour (audit, 7 Nov)
+
+Findings from reading `hr-repository.ts` against the seeded fixtures:
+- **Suppression can be undone by subtraction.** Logística October: total n=100, shifts 50 + 44 + 6 (suppressed). 100 − 50 − 44 gives the hidden group's n, and once shift-level means exist the hidden mean follows the same way. Primary suppression alone is not enough.
+- **Means have no precision.** n=12 and n=160 look equally certain; trend arrows react to any difference.
+- **Nothing explains the numbers.** No page says what n, suppression, representativeness gap or a signal mean.
+- **Decisions leave no trace.** Approvals overwrite `estat`; nobody can see who approved what, when, or what the AI had proposed.
+
+New read functions for 16 to 20 go in new files under `packages/db/src/` (for example `hr-signals.ts`, `hr-rigour.ts`) and are re-exported from `hr.ts`, so parallel branches do not collide in `hr-repository.ts`.
+
+### 17. Statistical rigour: `jan/rigour` (light)
+- Files: `packages/db/src/hr-rigour.ts` (new), `packages/db/src/hr.ts` (re-export), `packages/db/src/hr-repository.ts` (call sites only), `apps/web/app/hr/results/**`, `apps/web/app/hr/trends/**` if it exists.
+- Complementary suppression on read: when a parent has exactly one suppressed child (or the suppressed children sum to under 10), also suppress the smallest visible sibling, and blank the n of suppressed cells. Applies to the page and the CSV export.
+- Precision: every mean shows its n; a precision label per n band (n < 30 "indicativa", 30 to 99 "moderada", 100 or more "sòlida"). A true confidence interval needs a per-segment standard deviation in `agregat` (see Natan table).
+- Change rule: a period-over-period change is only called "puja" or "baixa" when |Δ| ≥ 0.3 on the 1-5 scale and both periods have n ≥ 30; otherwise "sense canvi clar". One constant in `@damm/shared` once agreed, local constant until then.
+
+### 18. Methodology page: `jan/methodology` (light)
+- Files: `apps/web/app/hr/metodologia/**`, a nav entry, small "Com es calcula?" links from results, trends and signals.
+- In Catalan, one screen: who is counted, minimum group of 10 and complementary suppression, how representativeness and its gap are computed, the precision bands and change rule from 17, what makes a signal, what the AI does and does not do, what is never stored (identities, raw comments).
+
+### 19. Question-quality checker: `jan/draft-check` (light)
+- Files: `apps/web/app/hr/drafts/**`, a pure helper in `apps/web/lib/question-check.ts`.
+- Deterministic warnings on each draft before approval: double-barrelled ("i", "o" joining two asks), leading wording ("no creus que..."), absolute terms ("sempre", "mai"), over 20 words, jargon list, scale and format mismatch, and a re-identification risk check (mentions of a role, place or shift that would narrow the group below 10). Warnings only; the human decides.
+
+### 20. "Has dit, hem fet": `jan/closing-loop` (light)
+- Files: employee home section, a new read function in `packages/db/src/employee-*.ts` that returns approved recommendations and their aggregate context (no per-account data).
+- Shows employees what changed because they answered: approved actions per collective, with the period and n. Closing the loop is what keeps participation up and makes the anonymity promise credible.
+
+### 21. Decision audit log and AI provenance: `jan/audit-log` (blocked on schema)
+- Needs a `decisio` table (what, previous and new state, AI original text, timestamp, HR role) and a `font` field on `pregunta` and `recomanacio` (source signal, n, confidence). Shared contract: agree with Natan first.
+
 ## Needs Natan first
 
 | Item | Why it matters | Unblocks |
@@ -119,3 +155,7 @@ Remove the merged worktrees under `.claude/worktrees/` and delete the merged `ja
 | Analysis job writing `agregat`, `tema`, `senyal` from seeded responses | results show seed data instead of the init fixtures | results, demo |
 | New `./employee` export in `packages/db` and `SESSION_SECRET` in `.env.example` (already in `jan/dev`: tell Natan before the PR) | shared contract | 2 (done), 4 |
 | Branch protection on `main` | repo flow | 10 |
+| A standard deviation (`desviacio`) per `agregat` row, written by the analysis job | real confidence intervals instead of n bands | 17 (full) |
+| Complementary suppression in the analysis job too, so stored aggregates are already safe | defence in depth for 17 | 17 |
+| `decisio` table and `font` provenance fields | audit trail of human decisions over AI proposals | 21 |
+| Signals carry a minimum effect size and n in their criteria | signals are not noise | 16, 18 |
