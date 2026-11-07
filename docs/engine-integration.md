@@ -302,6 +302,16 @@ stopProbe(db, probe.id);
 - **Today:** alarms are written by each job run, at most every 10 minutes. The dashboard picks them up when it reads, so a page load or a 60-second poll of `alarmCounts` for the header badge is enough for the demo.
 - **Planned:** a weekly digest of warnings and an immediate push or email for critical alarms. These will be an `onReport` hook on the scheduler (`report.alarms.opened > 0`). Not built yet.
 
+## Question pool inspector (HR dashboard)
+
+`/hr/pool` lists every question with how often it was asked and answered, and `/hr/pool/<id>` opens one question (weekly evolution, answer distribution, per period, collective and shift). Both read `@damm/engine/hr`:
+
+- `listPool(db)` returns `{ summary, questions }`. Per question: state (`live`, `waiting`, `inactive`) and a reason, next batch day, asked and answered counts (from `assignment` and `resposta`), answer rate, last 7 days, first and last time asked, reach (accounts that answered / eligible accounts) and per-collective and per-period counts.
+- `getPoolQuestion(db, id)` adds the weekly series, the answer distribution and the segment table.
+- `setQuestionActive(db, id, active, by)` retires a question or brings a previously approved one back. Drafts and never-approved discarded questions cannot be reactivated here; they go through review.
+
+Only counts and aggregates leave the engine. Mean score, response time, comments, the distribution and segment scores are `null` under the minimum group size (10). "Asked" counts `assignment` rows, so a DB seeded without batches (`data/app.db`) shows 0 asked and no answer rate until the engine has served batches.
+
 ## Narrative insights
 
 An LLM briefing per collective and company-wide: a 3 to 5 sentence summary, 2 to 4 highlights with their evidence, and 1 to 3 suggested actions, each with a follow-up survey idea. AI proposes, a human decides: actions are written to `recomanacio` as `proposada`.
