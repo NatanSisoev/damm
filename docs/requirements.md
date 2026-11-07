@@ -64,7 +64,7 @@ G-§4 is the authoritative list ("Tots els equips han de cobrir aquest recorregu
 ### R-FLOW-1 Define the need
 | ID | Requirement | Status | Evidence / gap |
 |----|-------------|--------|----------------|
-| R-FLOW-1a | HR describes the objective in natural language | done | `/hr/need`, `text_nl` |
+| R-FLOW-1a | HR describes the objective in natural language | done | `/hr/needs`, `text_nl` |
 | R-FLOW-1b | Target collective | done | Collective select, or "Tots" |
 | R-FLOW-1c | Context | partial | Only free text. There is no separate context field. |
 | R-FLOW-1d | Maximum duration | done | `durada_max_s`, default 120 s |

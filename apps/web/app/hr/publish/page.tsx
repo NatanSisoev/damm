@@ -4,7 +4,7 @@ import { listJoinCodes, listNeeds } from "@damm/db/hr";
 import { closeNeedAction } from "../actions";
 import { Card, Empty, PageHeader } from "../ui";
 import { CopyButton } from "./copy-button";
-import { joinUrl, qrSvg } from "./qr";
+import { baseUrl, joinUrl, qrSvg } from "./qr";
 
 export default async function PublishPage() {
   const codes = listJoinCodes();
@@ -16,6 +16,12 @@ export default async function PublishPage() {
         title="Enllaços i QR per col·lectiu"
         subtitle="Comparteix l'enllaç o imprimeix el cartell. Les persones s'hi apunten sense dades personals."
       />
+      {/^https?:\/\/(localhost|127\.0\.0\.1)/.test(baseUrl()) && (
+        <p role="note" className="mb-4 rounded-lg border border-line-strong px-3 py-2 text-sm">
+          Els enllaços i QR apunten a <code>{baseUrl()}</code>, que només funciona en aquest ordinador. Per provar amb un
+          mòbil, defineix <code>PUBLIC_BASE_URL</code> amb l&apos;adreça pública (túnel HTTPS) i reinicia el servidor.
+        </p>
+      )}
       {items.length === 0 ? (
         <Empty>Encara no hi ha cap codi d&apos;accés.</Empty>
       ) : (

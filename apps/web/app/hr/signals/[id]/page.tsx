@@ -224,7 +224,7 @@ export default async function SignalPage({ params }: { params: Promise<{ id: str
                   <li key={f.necessitatId} className="rounded-lg border border-line p-4">
                     <div className="mb-2 flex flex-wrap items-center gap-2">
                       <span className={`badge ${f.published ? "badge-good" : "badge-warn"}`}>{f.published ? "Publicada" : "Sense publicar"}</span>
-                      <Link href="/hr/review" className="ml-auto text-xs text-accent-ink hover:underline">Revisar i publicar →</Link>
+                      <Link href="/hr/needs" className="ml-auto text-xs text-accent-ink hover:underline">Revisar i publicar →</Link>
                     </div>
                     <p className="text-[13px] font-medium">{f.textNl}</p>
                     {f.questions.length > 0 ? (
