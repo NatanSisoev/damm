@@ -1,5 +1,5 @@
 // Builds a fully seeded dev DB from schema.sql. Deterministic: seeded PRNG, no network, no Math.random.
-// Writes RAW data only: no agregat/tema/comentari_tema/senyal/recomanacio (the analysis layer does that).
+// Writes RAW data only, plus TEMPORARY dashboard fixtures (dashboard-fixtures.ts) until the analysis layer exists.
 import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
@@ -8,6 +8,7 @@ import { COLLECTIUS, DOMINIS, TORNS, MIN_GROUP_SIZE, PERIODES_SEED, type Pregunt
 import { mulberry32, int, pick, shuffle, normal, chance, type Rng } from "./rng";
 import { THEMES } from "./themes";
 import { BANK, EXTRA, type QItem } from "./questions";
+import { applyDashboardFixtures } from "./dashboard-fixtures";
 
 const root = path.resolve(__dirname, "../../..");
 const out = process.env.DB_PATH ?? path.join(root, "data/app.db");
@@ -288,4 +289,5 @@ const night = all(`SELECT COALESCE(t.nom,'-') torn, ROUND(AVG(1.0*x.n),2) avg_re
 line(`Responses per account (Fàbriques+Logística) by shift: ${night.map((x) => `${x.torn}=${x.avg_resp}`).join("  ")}`);
 const leak = one(`SELECT COUNT(*) n FROM resposta r JOIN pregunta p ON p.id=r.pregunta_id JOIN compte a ON a.id=r.compte_id WHERE p.collectiu_id <> a.collectiu_id`);
 line(`Responses to a question of another collective: ${leak.n}`);
+applyDashboardFixtures(db); // TEMPORARY until the analysis job exists
 db.close();
