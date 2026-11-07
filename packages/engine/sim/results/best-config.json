@@ -1,0 +1,184 @@
+{
+  "note": "Tuned by sim/tune.ts: random search on synthetic worlds with known ground truth. Synthetic data only.",
+  "generatedAt": "2026-11-07",
+  "search": {
+    "trials": 24,
+    "scale": 0.3,
+    "tuningSeeds": [
+      "tune-1",
+      "tune-2"
+    ],
+    "validationSeed": "damm-sim",
+    "bestTrial": 13,
+    "meanTuningLoss": 1.2481,
+    "defaultTuningLoss": 1.3654
+  },
+  "validation": {
+    "defaultLoss": 1.3953,
+    "bestLoss": 1.3685
+  },
+  "config": {
+    "halfLifeDays": 21,
+    "processNoisePerDay": 0.00033,
+    "followupZ": 2.5,
+    "itemBiasShrinkage": 61,
+    "noiseSd": {
+      "scale10": 0.13,
+      "scale5": 0.12,
+      "yes_no": 0.38,
+      "pair": 0.14,
+      "choice": 0.18
+    }
+  },
+  "engineConfigKeys": {
+    "half_life_days": 21,
+    "process_noise_per_day": 0.00033,
+    "followup_z": 2.5,
+    "item_bias_shrinkage": 61,
+    "noise_sd": {
+      "scale10": 0.13,
+      "scale5": 0.12,
+      "yes_no": 0.38,
+      "pair": 0.14,
+      "choice": 0.18
+    }
+  },
+  "leaderboard": [
+    {
+      "trial": 13,
+      "loss": 1.1661,
+      "knobs": {
+        "halfLifeDays": 21,
+        "processNoisePerDay": 0.00033,
+        "followupZ": 2.5,
+        "itemBiasShrinkage": 61,
+        "noiseSd": {
+          "scale10": 0.13,
+          "scale5": 0.12,
+          "yes_no": 0.38,
+          "pair": 0.14,
+          "choice": 0.18
+        }
+      }
+    },
+    {
+      "trial": 6,
+      "loss": 1.2939,
+      "knobs": {
+        "halfLifeDays": 18,
+        "processNoisePerDay": 0.000061,
+        "followupZ": 2.8,
+        "itemBiasShrinkage": 22,
+        "noiseSd": {
+          "scale10": 0.11,
+          "scale5": 0.11,
+          "yes_no": 0.36,
+          "pair": 0.3,
+          "choice": 0.13
+        }
+      }
+    },
+    {
+      "trial": 18,
+      "loss": 1.3211,
+      "knobs": {
+        "halfLifeDays": 28,
+        "processNoisePerDay": 0.00013,
+        "followupZ": 2.2,
+        "itemBiasShrinkage": 31,
+        "noiseSd": {
+          "scale10": 0.11,
+          "scale5": 0.16,
+          "yes_no": 0.4,
+          "pair": 0.25,
+          "choice": 0.17
+        }
+      }
+    },
+    {
+      "trial": 17,
+      "loss": 1.3415,
+      "knobs": {
+        "halfLifeDays": 26,
+        "processNoisePerDay": 0.0032,
+        "followupZ": 1.8,
+        "itemBiasShrinkage": 23,
+        "noiseSd": {
+          "scale10": 0.17,
+          "scale5": 0.22,
+          "yes_no": 0.38,
+          "pair": 0.16,
+          "choice": 0.12
+        }
+      }
+    },
+    {
+      "trial": 1,
+      "loss": 1.3442,
+      "knobs": {
+        "halfLifeDays": 23,
+        "processNoisePerDay": 0.00019,
+        "followupZ": 2,
+        "itemBiasShrinkage": 51,
+        "noiseSd": {
+          "scale10": 0.1,
+          "scale5": 0.2,
+          "yes_no": 0.26,
+          "pair": 0.27,
+          "choice": 0.14
+        }
+      }
+    },
+    {
+      "trial": 11,
+      "loss": 1.3658,
+      "knobs": {
+        "halfLifeDays": 8,
+        "processNoisePerDay": 0.00005,
+        "followupZ": 3,
+        "itemBiasShrinkage": 20,
+        "noiseSd": {
+          "scale10": 0.062,
+          "scale5": 0.17,
+          "yes_no": 0.38,
+          "pair": 0.21,
+          "choice": 0.13
+        }
+      }
+    },
+    {
+      "trial": 0,
+      "loss": 1.3929,
+      "knobs": {
+        "halfLifeDays": 21,
+        "processNoisePerDay": 0.0005,
+        "followupZ": 2.5,
+        "itemBiasShrinkage": 20,
+        "noiseSd": {
+          "scale10": 0.1,
+          "scale5": 0.12,
+          "yes_no": 0.25,
+          "pair": 0.22,
+          "choice": 0.17
+        }
+      }
+    },
+    {
+      "trial": 21,
+      "loss": 1.4577,
+      "knobs": {
+        "halfLifeDays": 23,
+        "processNoisePerDay": 0.00012,
+        "followupZ": 2,
+        "itemBiasShrinkage": 8,
+        "noiseSd": {
+          "scale10": 0.079,
+          "scale5": 0.096,
+          "yes_no": 0.34,
+          "pair": 0.19,
+          "choice": 0.24
+        }
+      }
+    }
+  ]
+}
