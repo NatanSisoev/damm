@@ -36,7 +36,7 @@ All six are done and merged into `jan/dev` (2026-11-07): items 1 to 3 in `claude
 | # | Finding | Owner |
 |---|---|---|
 | 18 | There's no manager view: no read-only, collective-scoped dashboard (R-U-3, N-8). | J |
-| 19 | There's no methodology page (precision bands, margin of error, suppression rule) linked from the results. | J |
+| 19 | There's no methodology page (precision bands, margin of error, suppression rule) linked from the results. **Done 2026-11-07:** `/hr/methodology`, linked from the results page and the HR nav. | J |
 | 20 | Onboarding and login use raw styles. Signup has friction: an 8-character password, no show toggle, and a 24-character recovery code with no copy button. | J |
 | 21 | Accounts can't change the password, regenerate the recovery code or delete the account. | J |
 | 22 | There's no manual join-code entry, only the link and QR. | J |

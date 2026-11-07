@@ -186,7 +186,7 @@ D-S9 and D-S10. Each needs a named mitigation we can point at in the demo. "AI d
 | R-BIAS-5 | Social desirability | Anonymity promise plus `/privacitat`; **show the manager positivity gap** (seeded `MANAGER_BONUS`) | missing: the manager segment is not shown anywhere (option B, not started) |
 | R-BIAS-6 | Timing | The engine spreads questions over days and shifts; trend change rule | partial |
 | R-BIAS-7 | Segmentation (averages hide collectives) | Always broken down by collective, domain radar per collective | done |
-| R-BIAS-8 | Analysis (confirmation bias) | Change rule, precision bands, "correlation is not cause" note, human validation of signals | partial (methodology page 18 missing) |
+| R-BIAS-8 | Analysis (confirmation bias) | Change rule, precision bands, "correlation is not cause" note, human validation of signals | partial (methodology page `/hr/methodology` pending merge, audit item 19) |
 
 ### R-DIFF (D-S10)
 | ID | Difficulty | Our answer | Status |
@@ -218,7 +218,7 @@ G-§8 principles, D-S16 trust pillars and D-S17 golden rules, merged. All Must.
 | R-PRIV-3 | Automatic detection and removal of identifying data in comments (names, emails, phones) | G-§8 | done | `redactPii` regex before storage. LLM pass is optional (Natan). |
 | R-PRIV-4 | No individual profile or inference about specific people; cannot be used to evaluate anyone | G-§8, D-S16 "No vigilància" | done | Trajectories exist only inside the analysis layer; the admin sees counts only. |
 | R-PRIV-5 | **Transparency to respondents**: what the survey is for and how data is handled | G-§8, D-S16 | done | `/privacitat`: what we collect, what HR sees (n≥10), what we never do, comment redaction, session and account |
-| R-PRIV-6 | **Explainability**: sample size, confidence and limits of the analysis; correlations are not causes | G-§8 | partial | n and precision bands done; methodology page 18 missing |
+| R-PRIV-6 | **Explainability**: sample size, confidence and limits of the analysis; correlations are not causes | G-§8 | partial | n and precision bands done; methodology page `/hr/methodology` built on `claude/audit-p2-methodology-8b92a4` (audit item 19), status unchanged until merge |
 | R-PRIV-7 | Human control: HR validates surveys and recommendations before acting | G-§8, D-S16, D-S17 | done | |
 | R-PRIV-8 | **Minimisation and expiry**: keep only what is needed, for as long as needed | G-§8 | partial | Minimisation done (no email or phone, redacted comments only). **No retention or expiry rule exists.** Add a documented retention period and a purge script or job. |
 | R-PRIV-9 | Equity: check coverage and results per collective | D-S16 | done | |
