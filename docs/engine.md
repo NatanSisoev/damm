@@ -76,11 +76,12 @@ All six domains stay active. Per person per day:
 1. **Follow-up** (at most 1/day): if a follow-up is due, it takes a slot.
 2. **HR needs** (at most 1/day by default): approved items with `necessitat_id` for this collective, highest `prioritat` first.
 3. **Monitoring** fills the remaining slots. Domain priority:
-   `priority_d = hr_weight(collective, d) · (info_gain_d + floor) · outlier_boost_d`
+   `priority_d = hr_weight(collective, d) · probe_boost_d · (info_gain_d + floor) · outlier_boost_d`
    - `info_gain_d` = drop in the segment's `SE²` from one more answer, normalised across domains. High when the domain is uncertain, low when it is well known.
    - `floor = 0.15`: no domain ever stops being asked.
    - `outlier_boost_d = 1 + 0.5 · clamp(outlier_share_d / 0.0455 − 1, 0, 3)`: the share of recent (14 days) personal `|z| ≥ 2` in that domain, compared with the 4.55 % expected by chance. Only excess outliers boost, so the engine insists where something is really happening.
    - `hr_weight` from `domain_weight` (default 1).
+   - `probe_boost_d`: the "Indagar" multiplier while an HR probe is active for this person's segment and domain (default 1). See "Probes" below.
    - Domains are drawn **without replacement with probability ∝ priority** (stochastic, so near-equal domains alternate naturally). No two monitoring questions from the same domain in one batch.
 4. **Facet**: within the chosen domain, the facet this person has gone longest without (ties random).
 5. **Item and format**: among approved items of that facet for this collective, excluding items this person saw in the last `item_cooldown_days` (28), pick the format by **Thompson sampling** (below), then a random item of that format.
@@ -92,6 +93,17 @@ For each (collective, shift, format) keep `Beta(α, β)` (`format_stats`). Rewar
 Example: HR sets Fàbriques to yes_no 3, scale5 2, pair 1, ranking 0. The engine never shows rankings in Fàbriques and leans to yes/no, but if night shift turns out to answer `scale5` carefully and rush through yes/no, the Beta for yes_no drops and `scale5` wins more often. Formats with little data have wide Betas and still get tried.
 
 When non-response is modelled later, the same Thompson step gets an "answered" reward. Nothing else changes.
+
+### Probes ("Indagar")
+
+HR can ask the engine to dig deeper into an alarm: sample one domain more in one segment for a while, to get more feedback before deciding.
+
+- **What:** a row in `probe`: collective, optional shift, domain, `boost` (1 < boost ≤ 10, default 2), `starts_at`, `ends_at` (`days`, default 14, at most 90), optional `senyal_id`. API in `@damm/engine/hr`: `startProbe`, `listProbes`, `stopProbe`.
+- **Effect:** while `starts_at ≤ now < ends_at` and the probe is not stopped, `probe_boost_d` multiplies the domain's priority for accounts in the segment (collective, and shift if the probe names one). Other collectives, other shifts, and any time outside the window are untouched. Several probes on the same domain take the largest boost. Because domains are drawn ∝ priority, a boost raises the chance the domain is asked on a given day; it does not add slots.
+- **Rules that still hold:** at most `questions_per_day` questions (a probe never adds slots), one monitoring item per domain per day, a due follow-up first, HR needs next, formats at weight 0 stay banned, and the item cooldown applies. Within the probed domain the facet the person has gone longest without comes first, so extra asks widen facet coverage instead of repeating an item.
+- **Open comment prompt:** in a probed domain the format step multiplies the preference for `open` items by 2, so people get the chance to say why. If the facet has no `open` item, the normal format choice applies.
+- **Refusals:** the segment (synthetic population, else accounts) must have at least `min_group_size` (10) people; a second active probe on the same segment and domain is refused; boost and days are range-checked. A probe addresses segments only: nothing in it names or selects an account, and the scheduler's per-account decision is the same function as before.
+- **Progress:** the engine job fills the progress columns on every run from answers since the probe started, never per person. `extraAnswers = answers − answersBefore`, where `answersBefore` counts an equally long window before the start. `confidenceBefore` is the segment's `agregat` confidence when the probe started, `confidenceNow` the latest. If fewer than 10 different people answered during the probe, `suprimit = 1` and every number is hidden. Progress freezes when the probe ends or is stopped.
 
 ## 6. Insights (periodic, dashboard)
 

@@ -299,6 +299,34 @@ CREATE TABLE domain_importance (
   CHECK (suprimit = 0 OR importance IS NULL)
 );
 
+-- Time-boxed "Indagar" probe (C10): HR asks the engine to sample one domain more in one segment for a while.
+-- Targets a segment (collective, optional shift), never accounts. Progress columns are written by the engine job
+-- from aggregates only; when fewer than MIN_GROUP_SIZE people answered, suprimit = 1 and the value columns are NULL.
+CREATE TABLE probe (
+  id                   INTEGER PRIMARY KEY,
+  senyal_id            INTEGER REFERENCES senyal(id),
+  collectiu_id         INTEGER NOT NULL REFERENCES collectiu(id),
+  torn_id              INTEGER REFERENCES torn(id),
+  domini_id            INTEGER NOT NULL REFERENCES domini(id),
+  boost                REAL NOT NULL DEFAULT 2 CHECK (boost > 1 AND boost <= 10),
+  starts_at            TEXT NOT NULL,                     -- SQLite UTC datetime
+  ends_at              TEXT NOT NULL,
+  stopped_at           TEXT,                              -- set by stopProbe
+  created_at           TEXT NOT NULL DEFAULT (datetime('now')),
+  baseline_confidence  REAL,                              -- agregat confidence at start (NULL if unknown or suppressed)
+  baseline_score       REAL,
+  progress_at          TEXT,                              -- last engine job update
+  answers_n            INTEGER,                           -- answers in the domain and segment since start
+  answers_before_n     INTEGER,                           -- same, over an equally long window before start
+  respondents_n        INTEGER,                           -- distinct people behind answers_n
+  confidence_now       REAL,
+  score_now            REAL,
+  suprimit             INTEGER NOT NULL DEFAULT 0 CHECK (suprimit IN (0,1)),
+  CHECK (ends_at > starts_at),
+  CHECK (suprimit = 0 OR (answers_n IS NULL AND answers_before_n IS NULL AND confidence_now IS NULL AND score_now IS NULL))
+);
+CREATE INDEX idx_probe_seg ON probe(collectiu_id, domini_id);
+
 -- Seed only: hidden ground truth for validating analysis. Never shipped with the app.
 CREATE TABLE resposta_seed (
   resposta_id  INTEGER PRIMARY KEY REFERENCES resposta(id),
