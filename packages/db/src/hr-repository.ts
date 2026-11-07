@@ -575,6 +575,52 @@ function buildRep(items: RepItem[]): RepRow[] {
 }
 
 /**
+ * Latest period the HR pages may read: the newest one whose company-wide row clears the minimum group size.
+ * A month that has just started (a handful of live answers) must not replace the last readable one, or every cell would be
+ * suppressed. Falls back to the newest period when none clears it. Periods after this one are hidden from HR reads.
+ */
+export function readingPeriod(db: ReturnType<typeof getDb> = getDb()): string | null {
+  const ok = db
+    .prepare("SELECT MAX(periode) AS p FROM agregat WHERE collectiu_id IS NULL AND torn_id IS NULL AND suprimit = 0 AND n >= ?")
+    .get(MIN_GROUP_SIZE) as { p: string | null };
+  if (ok.p) return ok.p;
+  return (db.prepare("SELECT MAX(periode) AS p FROM agregat").get() as { p: string | null }).p;
+}
+
+/**
+ * Job step: when the newest period is too thin to read, the engine hides every open alarm (it evaluates only the
+ * newest period). Restore the ones whose segment is still readable in the reading period, so a first answer of a
+ * new month does not wipe the alarm list. Returns the number restored. Aggregates only.
+ */
+export function reinstateAlarmsForReadingPeriod(db: ReturnType<typeof getDb> = getDb()): number {
+  const reading = readingPeriod(db);
+  const newest = (db.prepare("SELECT MAX(periode) AS p FROM agregat").get() as { p: string | null }).p;
+  if (!reading || reading === newest) return 0;
+  // Alarms of one domain match that domain's aggregate; segment-wide alarms (domini_id NULL, e.g. low participation)
+  // match any readable domain row of the segment and keep a NULL confidence.
+  const r = db
+    .prepare(
+      `UPDATE senyal SET suprimit = 0,
+         confianca = CASE WHEN domini_id IS NULL THEN NULL ELSE
+           (SELECT a.confidence FROM agregat a WHERE a.periode = @p AND a.collectiu_id IS senyal.collectiu_id
+              AND a.torn_id IS senyal.torn_id AND a.domini_id = senyal.domini_id AND a.suprimit = 0 AND a.n >= @min) END
+       WHERE suprimit = 1 AND status = 'open' AND n >= @min AND EXISTS (
+         SELECT 1 FROM agregat a WHERE a.periode = @p AND a.collectiu_id IS senyal.collectiu_id
+           AND a.torn_id IS senyal.torn_id AND (senyal.domini_id IS NULL OR a.domini_id = senyal.domini_id)
+           AND a.suprimit = 0 AND a.n >= @min)`,
+    )
+    .run({ p: reading, min: MIN_GROUP_SIZE });
+  return r.changes;
+}
+
+/** Periods HR may read, oldest first (up to and including the reading period). */
+function readablePeriods(db: ReturnType<typeof getDb>): string[] {
+  const cap = readingPeriod(db);
+  if (!cap) return [];
+  return (db.prepare("SELECT DISTINCT periode FROM agregat WHERE periode <= ? ORDER BY periode").all(cap) as { periode: string }[]).map((r) => r.periode);
+}
+
+/**
  * Respondent counts per (collective, shift) for one period.
  * Prefers the all-domains rows (domini_id NULL). The engine writes per-domain rows only, so otherwise the largest
  * per-domain n of the segment is used: a lower bound of the distinct respondents, never an over-count.
@@ -599,7 +645,7 @@ function segmentCounts(db: ReturnType<typeof getDb>, periode: string): { c: numb
 /** Response share vs synthetic population share for the latest period. Shares are computed among visible segments only, so suppressed counts cannot be recovered by subtraction. */
 export function getRepresentativeness(): Representativeness {
   const db = getDb();
-  const p = db.prepare("SELECT MAX(periode) AS p FROM agregat").get() as { p: string | null };
+  const p = { p: readingPeriod(db) };
   if (!p.p) return { periode: null, collectius: [], torns: [] };
   const cols = listCollectius();
   const torns = db.prepare("SELECT id, nom FROM torn ORDER BY id").all() as { id: number; nom: string }[];
@@ -678,7 +724,7 @@ function scaleSpread(): Map<string, number> {
 /** Mean score per domain per period, overall and per collective. Suppression re-enforced on read, including complementary suppression of collectives under "Tots". */
 export function getTrends(): Trends {
   const db = getDb();
-  const periodes = (db.prepare("SELECT DISTINCT periode FROM agregat ORDER BY periode").all() as { periode: string }[]).map((r) => r.periode);
+  const periodes = readablePeriods(db);
   const doms = db.prepare("SELECT id, nom FROM domini ORDER BY id").all() as { id: number; nom: string }[];
   const rows = db
     .prepare(
@@ -748,7 +794,7 @@ function shiftSpread(collectiuId: number): Map<string, number> {
  */
 export function getShiftTrend(collectiuId: number, tornId: number): { periodes: string[]; rows: TrendRow[] } | null {
   const db = getDb();
-  const periodes = (db.prepare("SELECT DISTINCT periode FROM agregat ORDER BY periode").all() as { periode: string }[]).map((r) => r.periode);
+  const periodes = readablePeriods(db);
   const doms = db.prepare("SELECT id, nom FROM domini ORDER BY id").all() as { id: number; nom: string }[];
   const rows = db
     .prepare(
@@ -808,9 +854,9 @@ export function listThemes(opts: { collectiuId?: number | null } = {}): ThemeRow
   return (getDb()
     .prepare(
       `SELECT id, etiqueta, resum, periode, n, emergent, suprimit, collectiu_id, share, font FROM tema
-       WHERE collectiu_id IS ? ORDER BY periode DESC, emergent DESC, n DESC`,
+       WHERE collectiu_id IS ? AND periode <= ? ORDER BY periode DESC, emergent DESC, n DESC`,
     )
-    .all(col) as any[]).map((r) => {
+    .all(col, readingPeriod() ?? "") as any[]).map((r) => {
     const hidden = r.n < MIN_GROUP_SIZE || !!r.suprimit;
     return {
       id: r.id, periode: r.periode, emergent: !!r.emergent, suprimit: hidden,
@@ -900,7 +946,7 @@ export function getHrOverview(): HrOverview {
   const db = getDb();
   const count = (sql: string) => (db.prepare(sql).get() as { c: number }).c;
   const population = count("SELECT COUNT(*) AS c FROM empleat_sintetic");
-  const p = db.prepare("SELECT MAX(periode) AS p FROM agregat").get() as { p: string | null };
+  const p = { p: readingPeriod(db) };
   let respondents: number | null = null;
   let coveredPopulation: number | null = null;
   let excludedCollectius = 0;

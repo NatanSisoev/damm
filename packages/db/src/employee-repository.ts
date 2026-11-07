@@ -352,20 +352,36 @@ export function deletePushSubscriptionByEndpoint(endpoint: string): void {
   getDb().prepare("DELETE FROM push_subscripcio WHERE endpoint = ?").run(endpoint);
 }
 
+/** Daily question limit: engine config `questions_per_day`, 3 when unset (same default as the engine). */
+function questionsPerDay(db: ReturnType<typeof getDb>): number {
+  const row = db.prepare("SELECT value FROM engine_config WHERE key = 'questions_per_day'").get() as { value: string } | undefined;
+  const v = row ? Number(JSON.parse(row.value)) : NaN;
+  return Number.isFinite(v) && v > 0 ? Math.floor(v) : 3;
+}
+
 /**
- * Adds the unanswered questions of published HR needs for this account's collective to an
- * existing day's batch, past the daily cap, so a need published after the batch was built shows
- * up straight away (on login or from the push). Never adds a question the account already
- * answered or that is already in that day's batch. Returns how many rows were added.
- * Call it after the engine has built the day (it only appends, it never creates the batch).
+ * Puts the unanswered questions of published HR needs for this account's collective into an
+ * existing day's batch, so a need published after the batch was built shows up straight away
+ * (on login or from the push). The batch never goes past the daily limit: need questions take
+ * the free slots first, then replace unanswered `monitor` questions (needs have top priority).
+ * Whatever does not fit stays in the pool for the next day's batch. Never adds a question the
+ * account already answered or that is already in that day's batch. Returns how many rows changed.
+ * Call it after the engine has built the day (it only changes it, it never creates the batch).
  */
 export function addPublishedNeedsToDay(compteId: string, day: string): number {
   const db = getDb();
   return db.transaction(() => {
-    const existing = db
-      .prepare("SELECT COUNT(*) AS n, COALESCE(MAX(slot), -1) AS maxSlot FROM assignment WHERE compte_id = ? AND day = ?")
-      .get(compteId, day) as { n: number; maxSlot: number };
-    if (existing.n === 0) return 0;
+    const limit = questionsPerDay(db);
+    const rows = db
+      .prepare("SELECT slot, reason, answered_at FROM assignment WHERE compte_id = ? AND day = ?")
+      .all(compteId, day) as { slot: number; reason: string; answered_at: string | null }[];
+    if (rows.length === 0) return 0;
+    const used = new Set(rows.map((r) => r.slot));
+    const slots: number[] = [];
+    for (let i = 0; i < limit; i++) if (!used.has(i)) slots.push(i);
+    const replaceable = rows.filter((r) => r.reason === "monitor" && !r.answered_at).map((r) => r.slot).sort((a, b) => b - a);
+    const room = slots.length + replaceable.length;
+    if (room === 0) return 0;
     const missing = db
       .prepare(
         `SELECT p.id FROM pregunta p
@@ -376,16 +392,21 @@ export function addPublishedNeedsToDay(compteId: string, day: string): number {
             AND (p.collectiu_id IS NULL OR p.collectiu_id = c.collectiu_id)
             AND NOT EXISTS (SELECT 1 FROM resposta r WHERE r.compte_id = c.id AND r.pregunta_id = p.id)
             AND NOT EXISTS (SELECT 1 FROM assignment a WHERE a.compte_id = c.id AND a.day = ? AND a.pregunta_id = p.id)
-          ORDER BY p.prioritat DESC, p.id`,
+          ORDER BY p.prioritat DESC, p.id
+          LIMIT ?`,
       )
-      .all(compteId, day) as { id: number }[];
+      .all(compteId, day, room) as { id: number }[];
+    const del = db.prepare("DELETE FROM assignment WHERE compte_id = ? AND day = ? AND slot = ?");
     const insert = db.prepare(
       "INSERT OR IGNORE INTO assignment (compte_id, pregunta_id, day, slot, reason) VALUES (?, ?, ?, ?, 'need')",
     );
-    let added = 0;
+    const targets = [...slots, ...replaceable];
+    let changed = 0;
     missing.forEach((q, i) => {
-      added += insert.run(compteId, q.id, day, existing.maxSlot + 1 + i).changes;
+      const slot = targets[i]!;
+      if (i >= slots.length) del.run(compteId, day, slot);
+      changed += insert.run(compteId, q.id, day, slot).changes;
     });
-    return added;
+    return changed;
   })();
 }

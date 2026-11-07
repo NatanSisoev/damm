@@ -1,7 +1,7 @@
 // Data assembly for the insights-first HR pages. Reads only HR-safe aggregates:
 // @damm/db/hr (trends, representativeness, themes, recommendations) and the engine's insight read API.
 import { MIN_GROUP_SIZE } from "@damm/shared";
-import { getRepresentativeness, getTrends, listRecommendations, listThemes, type TrendCell } from "@damm/db/hr";
+import { shownCount, getRepresentativeness, getTrends, listRecommendations, listThemes, type TrendCell } from "@damm/db/hr";
 import { hrInsights, type InsightView } from "@/lib/hr-engine";
 import { fixShifts } from "@/lib/format";
 
@@ -43,7 +43,7 @@ export type Headline = {
   key: string;
   tone: "up" | "down" | "warn" | "neutral";
   text: string;
-  n: number;
+  n: string; // shownCount: exact for company-wide rows, "≥10" for collective or shift rows
   confidence: number | null;
   href: string;
 };
@@ -52,7 +52,7 @@ function headlineOf(i: InsightView): (Headline & { rank: number }) | null {
   if (i.suppressed || !i.detail) return null;
   const where = (l: { collective: string; domain: string | null; shift: string | null }) =>
     `${l.domain ?? "El clima"} ${l.collective === "All" ? "a tota l'empresa" : `a ${l.collective}`}${l.shift ? ` (${fixShifts(l.shift)})` : ""}`;
-  const base = { key: `${i.kind}-${i.id}`, n: i.n };
+  const base = { key: `${i.kind}-${i.id}`, n: shownCount(i.n, i.collectiuId !== null || i.tornId !== null) };
   switch (i.kind) {
     case "top_mover": {
       const d = i.detail;
