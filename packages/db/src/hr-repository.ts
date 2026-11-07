@@ -165,6 +165,14 @@ export function listCollectius(): { id: number; nom: string }[] {
   return getDb().prepare("SELECT id, nom FROM collectiu ORDER BY id").all() as { id: number; nom: string }[];
 }
 
+export function listDomains(): { id: number; nom: string }[] {
+  return getDb().prepare("SELECT id, nom FROM domini ORDER BY id").all() as { id: number; nom: string }[];
+}
+
+export function listTorns(): { id: number; nom: string }[] {
+  return getDb().prepare("SELECT id, nom FROM torn ORDER BY id").all() as { id: number; nom: string }[];
+}
+
 export function listDrafts(): DraftQuestion[] {
   return getDb()
     .prepare(
