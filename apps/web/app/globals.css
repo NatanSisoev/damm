@@ -3,7 +3,7 @@
 /*
  * Design tokens. Direction adapted from the Magenta Desks system:
  * calm, dense, precise. Neutral zinc surfaces, 1px borders instead of heavy
- * shadows, one accent used sparingly (Damm red), a deep navy sidebar.
+ * shadows, one accent used sparingly (Estrella Damm red), a black sidebar as on damm.com.
  */
 :root {
   --gray-0: #ffffff;
@@ -27,10 +27,11 @@
   --text-muted: var(--gray-600);
   --text-subtle: var(--gray-500);
 
-  --accent: #c8102e;
-  --accent-hover: #a90d27;
-  --accent-soft: rgb(200 16 46 / 0.08);
-  --accent-text: #a90d27;
+  /* Estrella Damm red (damm.com), black nav as on the site */
+  --accent: #eb0505;
+  --accent-hover: #c40404;
+  --accent-soft: rgb(235 5 5 / 0.08);
+  --accent-text: #b80404;
 
   --warn: #b45309;
   --warn-soft: #fffbeb;
@@ -40,9 +41,9 @@
   --chart-1: #2a78d6;
   --chart-2: #eb6834;
 
-  --nav-bg: #12163a;
-  --nav-text: #c6cae3;
-  --nav-muted: #8a8fb5;
+  --nav-bg: #0a0a0a;
+  --nav-text: #d4d4d8;
+  --nav-muted: #8e8e98;
   --nav-active-bg: rgb(255 255 255 / 0.08);
   --nav-active-text: #ffffff;
 
@@ -66,10 +67,10 @@
     --text-muted: #b4b4bc;
     --text-subtle: #8e8e98;
 
-    --accent: #ef4458;
-    --accent-hover: #f26173;
-    --accent-soft: rgb(239 68 88 / 0.14);
-    --accent-text: #f58a97;
+    --accent: #e8201f;
+    --accent-hover: #f23d3c;
+    --accent-soft: rgb(242 61 60 / 0.14);
+    --accent-text: #ff7b7a;
 
     --warn: #f59e0b;
     --warn-soft: rgb(245 158 11 / 0.12);
@@ -79,7 +80,7 @@
     --chart-1: #3987e5;
     --chart-2: #d95926;
 
-    --nav-bg: #17162a;
+    --nav-bg: #000000;
     --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4);
     --shadow-md: 0 4px 12px rgb(0 0 0 / 0.4);
   }

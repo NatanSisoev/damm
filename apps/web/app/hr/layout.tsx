@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { MIN_GROUP_SIZE } from "@damm/shared";
 import { HrNav } from "./nav";
+import { DammLogo } from "./damm-logo";
 
 export const dynamic = "force-dynamic";
 
@@ -8,9 +9,9 @@ export default function HrLayout({ children }: LayoutProps<"/hr">) {
   return (
     <div className="min-h-screen md:grid md:grid-cols-[232px_1fr]">
       <aside className="flex flex-col gap-4 bg-nav px-3 py-3 md:sticky md:top-0 md:h-screen md:gap-6 md:py-5">
-        <Link href="/hr" className="flex items-center gap-2.5 px-2">
-          <span aria-hidden className="grid size-7 place-items-center rounded-lg bg-accent text-sm text-white">★</span>
-          <span className="leading-tight">
+        <Link href="/hr" className="flex items-center gap-3 px-2 md:flex-col md:items-start md:gap-2.5">
+          <DammLogo className="h-6 w-auto shrink-0 text-white md:h-7" />
+          <span className="border-l border-white/15 pl-3 leading-tight md:border-l-0 md:border-t md:pt-2.5 md:pl-0 md:w-full">
             <span className="block text-[13px] font-semibold text-white">Escolta activa</span>
             <span className="block text-[11px] text-nav-muted">Portal de persones</span>
           </span>
