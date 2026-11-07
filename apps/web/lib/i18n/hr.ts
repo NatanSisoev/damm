@@ -117,6 +117,7 @@ export const hrDict = defineDict({
     rc_by_ai: "Redactat per la IA",
     rc_by_template: "Redactat a partir d'una plantilla",
     rc_approved_on: "Aprovada el {date}",
+    rc_approved_by: "Aprovada per {who}, {date}",
 
     // Home
     home_title: "Inici",
@@ -147,6 +148,7 @@ export const hrDict = defineDict({
     recs_followup_created: "Seguiment creat",
     recs_discard: "Descarta",
     recs_approve: "Aprova",
+    approver_label: "Qui aprova (opcional)",
     recs_create_followup: "Crea l'enquesta de seguiment",
 
     // Publish page
@@ -282,6 +284,7 @@ export const hrDict = defineDict({
     login_intro: "Accés restringit a l'equip de persones. Escriu el codi d'accés de la demo.",
     login_code: "Codi d'accés",
     login_error: "Codi incorrecte.",
+    login_unconfigured: "L'accés no està configurat en aquest entorn (falta HR_ACCESS_CODE).",
     login_submit: "Entra",
 
     // Methodology
@@ -433,6 +436,7 @@ export const hrDict = defineDict({
     rc_by_ai: "Redactado por la IA",
     rc_by_template: "Redactado a partir de una plantilla",
     rc_approved_on: "Aprobada el {date}",
+    rc_approved_by: "Aprobada por {who}, {date}",
 
     home_title: "Inicio",
     home_subtitle: "Qué ha cambiado, por qué y qué hay que hacer ahora.",
@@ -461,6 +465,7 @@ export const hrDict = defineDict({
     recs_followup_created: "Seguimiento creado",
     recs_discard: "Descarta",
     recs_approve: "Aprueba",
+    approver_label: "Quién aprueba (opcional)",
     recs_create_followup: "Crea la encuesta de seguimiento",
 
     pub_title: "Enlaces y QR por colectivo",
@@ -590,6 +595,7 @@ export const hrDict = defineDict({
     login_intro: "Acceso restringido al equipo de personas. Escribe el código de acceso de la demo.",
     login_code: "Código de acceso",
     login_error: "Código incorrecto.",
+    login_unconfigured: "El acceso no está configurado en este entorno (falta HR_ACCESS_CODE).",
     login_submit: "Entra",
 
     meth_meta_title: "¿Cómo se calcula? · Metodología",
@@ -740,6 +746,7 @@ export const hrDict = defineDict({
     rc_by_ai: "Written by the AI",
     rc_by_template: "Written from a template",
     rc_approved_on: "Approved on {date}",
+    rc_approved_by: "Approved by {who}, {date}",
 
     home_title: "Home",
     home_subtitle: "What has changed, why, and what to do now.",
@@ -768,6 +775,7 @@ export const hrDict = defineDict({
     recs_followup_created: "Follow-up created",
     recs_discard: "Discard",
     recs_approve: "Approve",
+    approver_label: "Approver (optional)",
     recs_create_followup: "Create the follow-up survey",
 
     pub_title: "Links and QR per collective",
@@ -897,6 +905,7 @@ export const hrDict = defineDict({
     login_intro: "Access is restricted to the people team. Enter the demo access code.",
     login_code: "Access code",
     login_error: "Wrong code.",
+    login_unconfigured: "Access is not configured in this environment (HR_ACCESS_CODE is missing).",
     login_submit: "Sign in",
 
     meth_meta_title: "How is it calculated? · Methodology",

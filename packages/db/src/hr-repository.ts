@@ -319,7 +319,7 @@ export function listSignals(): (Omit<Senyal, "collectiuId"> & { collectiu: strin
 
 /** SQL column list that maps `recomanacio` onto `SignalRecommendation`. */
 export const RECOMMENDATION_COLUMNS = `id, text, estat, seguiment_necessitat_id AS seguimentNecessitatId, titol, iniciativa,
-  responsable_suggerit AS responsableSuggerit, termini_suggerit AS terminiSuggerit, justificacio, limits, font, aprovada_el AS aprovadaEl`;
+  responsable_suggerit AS responsableSuggerit, termini_suggerit AS terminiSuggerit, justificacio, limits, font, aprovada_el AS aprovadaEl, aprovada_per AS aprovadaPer`;
 
 type RecommendationRow = Recomanacio & Omit<SignalRecommendation, "id" | "text" | "estat" | "seguimentNecessitatId">;
 
@@ -375,8 +375,17 @@ export function listManagerRecommendations(collectiuId: number): { id: number; t
     .map((r) => ({ id: r.id, text: r.text, seguiment: r.seg !== null }));
 }
 
-export function approveRecommendation(id: number): void {
-  getDb().prepare("UPDATE recomanacio SET estat = 'aprovada', aprovada_el = datetime('now') WHERE id = ? AND estat = 'proposada'").run(id);
+/** Non-personal approver label: control characters and "@" stripped (no emails), max 60 chars, "HR" when empty. */
+export function approverLabel(raw: unknown): string {
+  const v = String(raw ?? "").replace(/[\u0000-\u001f\u007f@]/g, "").replace(/\s+/g, " ").trim().slice(0, 60);
+  return v || "HR";
+}
+
+/** Human approval of a recommendation. Records a non-personal label (what HR typed, or "HR") and the time (R-X-3). */
+export function approveRecommendation(id: number, approvedBy?: string): void {
+  getDb()
+    .prepare("UPDATE recomanacio SET estat = 'aprovada', aprovada_el = datetime('now'), aprovada_per = ? WHERE id = ? AND estat = 'proposada'")
+    .run(approverLabel(approvedBy), id);
 }
 
 export interface ContextEvent {

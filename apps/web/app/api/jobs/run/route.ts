@@ -3,7 +3,7 @@ import { getDb } from "@damm/db";
 import { reinstateAlarmsForReadingPeriod } from "@damm/db/hr";
 import { runEngineJob, runCommentAnalysisSync, runRecommendations } from "@damm/engine/job";
 import { draftRecommendations } from "@damm/ai";
-import { HR_COOKIE, accessToken, gateEnabled } from "@/lib/hr-access";
+import { HR_COOKIE, accessToken, gateEnabled, gateMisconfigured } from "@/lib/hr-access";
 
 // The analysis job: engine (aggregates, insights, alarms) -> comment themes -> recommendation proposals.
 // Job code only: never call these from a dashboard request path. HR-only (same gate as /hr).
@@ -15,6 +15,7 @@ type EngineDb = Parameters<typeof runEngineJob>[0]; // better-sqlite3 satisfies 
 let running = false;
 
 export async function POST(req: NextRequest) {
+  if (gateMisconfigured()) return NextResponse.json({ error: "access not configured" }, { status: 503 });
   if (gateEnabled()) {
     const token = req.cookies.get(HR_COOKIE)?.value;
     if (!token || token !== (await accessToken(process.env.HR_ACCESS_CODE!))) {

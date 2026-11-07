@@ -136,8 +136,9 @@ export async function ProposalsCard({ proposals }: { proposals: (Parameters<type
                   <input type="hidden" name="id" value={r.id} />
                   <button className="btn" type="submit">{t("sd_discard")}</button>
                 </form>
-                <form action={approveRecommendationAction}>
+                <form action={approveRecommendationAction} className="flex gap-2">
                   <input type="hidden" name="id" value={r.id} />
+                  <input name="approver" maxLength={60} autoComplete="off" aria-label={t("approver_label")} placeholder={t("approver_label")} className="input w-40 text-[13px]" />
                   <button className="btn btn-primary" type="submit">{t("sd_approve")}</button>
                 </form>
               </div>

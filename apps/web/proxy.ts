@@ -1,8 +1,14 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { HR_COOKIE, accessToken, gateEnabled } from "./lib/hr-access";
+import { HR_COOKIE, accessToken, gateEnabled, gateMisconfigured } from "./lib/hr-access";
 
 // Access gate for the HR dashboard and the read-only manager view (same HR_ACCESS_CODE).
 export async function proxy(req: NextRequest) {
+  if (gateMisconfigured()) {
+    const url = req.nextUrl.clone();
+    url.pathname = "/hr-login";
+    url.search = "?error=unconfigured";
+    return NextResponse.redirect(url);
+  }
   if (!gateEnabled()) return NextResponse.next();
   const token = req.cookies.get(HR_COOKIE)?.value;
   if (token && token === (await accessToken(process.env.HR_ACCESS_CODE!))) return NextResponse.next();

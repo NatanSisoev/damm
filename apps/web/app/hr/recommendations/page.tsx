@@ -56,7 +56,7 @@ export default async function RecommendationsPage() {
                       {r.estat === "proposada" && (
                         <>
                           <form action={discardRecommendationAction}><input type="hidden" name="id" value={r.id} /><button className="btn">{t("recs_discard")}</button></form>
-                          <form action={approveRecommendationAction}><input type="hidden" name="id" value={r.id} /><button className="btn btn-primary">{t("recs_approve")}</button></form>
+                          <form action={approveRecommendationAction} className="flex gap-2"><input type="hidden" name="id" value={r.id} /><input name="approver" maxLength={60} autoComplete="off" aria-label={t("approver_label")} placeholder={t("approver_label")} className="input w-40 text-[13px]" /><button className="btn btn-primary">{t("recs_approve")}</button></form>
                         </>
                       )}
                       {r.estat === "aprovada" && !r.seguimentNecessitatId && (

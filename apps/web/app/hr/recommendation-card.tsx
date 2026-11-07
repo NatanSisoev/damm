@@ -12,6 +12,7 @@ interface RecommendationBody {
   limits?: string | null;
   font?: "llm" | "template" | null;
   aprovadaEl?: string | null;
+  aprovadaPer?: string | null;
 }
 
 /** Structured body of a recommendation: what, who, when, why, limits and source. No "done" state: HR only approves or discards. */
@@ -33,7 +34,7 @@ export async function RecommendationBody({ r }: { r: RecommendationBody }): Prom
       {r.limits && <p className="text-xs text-subtle"><span className="font-medium">{t("rc_limits")}</span> {r.limits}</p>}
       <p className="text-xs text-subtle">
         {r.font === "llm" ? t("rc_by_ai") : r.font === "template" ? t("rc_by_template") : null}
-        {r.aprovadaEl && <>{r.font ? " · " : ""}{t("rc_approved_on", { date: r.aprovadaEl.slice(0, 10) })}</>}
+        {r.aprovadaEl && <>{r.font ? " · " : ""}{r.aprovadaPer ? t("rc_approved_by", { who: r.aprovadaPer, date: r.aprovadaEl.slice(0, 10) }) : t("rc_approved_on", { date: r.aprovadaEl.slice(0, 10) })}</>}
       </p>
     </div>
   );

@@ -14,6 +14,13 @@ export function getDb(): Db {
     cached = new Database(dbPath());
     cached.pragma("foreign_keys = ON");
     cached.pragma("journal_mode = WAL");
+    ensureApprovalColumn(cached);
   }
   return cached;
+}
+
+/** Additive column for databases built before it existed (schema.sql has it for new ones). Idempotent. */
+function ensureApprovalColumn(db: Db): void {
+  const cols = db.prepare("PRAGMA table_info(recomanacio)").all() as { name: string }[];
+  if (cols.length && !cols.some((c) => c.name === "aprovada_per")) db.exec("ALTER TABLE recomanacio ADD COLUMN aprovada_per TEXT");
 }
