@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getDb } from "@damm/db";
+import { reinstateAlarmsForReadingPeriod } from "@damm/db/hr";
 import { runEngineJob, runCommentAnalysisSync, runRecommendations } from "@damm/engine/job";
 import { draftRecommendations } from "@damm/ai";
 import { HR_COOKIE, accessToken, gateEnabled } from "@/lib/hr-access";
@@ -26,11 +27,13 @@ export async function POST(req: NextRequest) {
     const db = getDb() as unknown as EngineDb;
     const now = Date.now();
     const engine = runEngineJob(db, { now });
+    // A thin newest period (first live answer of a month) makes the engine hide every open alarm: bring back the readable ones.
+    const reinstated = reinstateAlarmsForReadingPeriod();
     // Deterministic themes, summaries and emergent alarms (needs no key); must follow runEngineJob.
     const comments = runCommentAnalysisSync(db, { now });
     // Proposals for open alarms: LLM when LLM_BASE_URL and LLM_API_KEY are set, template library otherwise.
     const recommendations = await runRecommendations(db, { now, draft: (ctx) => draftRecommendations(ctx) });
-    return NextResponse.json({ ok: true, engine, comments, recommendations }, { headers: { "Cache-Control": "no-store" } });
+    return NextResponse.json({ ok: true, engine, reinstatedAlarms: reinstated, comments, recommendations }, { headers: { "Cache-Control": "no-store" } });
   } catch (e) {
     console.error("job failed", e);
     return NextResponse.json({ error: "job failed" }, { status: 500 });
