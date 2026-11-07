@@ -11,10 +11,19 @@ import { createRng } from "./rng.ts";
 import { combineStrata, segmentStats, type SegmentStats } from "./segment.ts";
 import * as store from "./store.ts";
 import { daysBetween, periodEndMs, toSqlDatetime } from "./time.ts";
+import { runInsights, type InsightConfig } from "./insights.ts";
+import { runAlarms, type AlarmReport, type AlarmThresholds } from "./alarms.ts";
+
+export { runInsights } from "./insights.ts";
+export { runAlarms } from "./alarms.ts";
 
 export interface JobOptions {
   now?: number;
   config?: Partial<EngineConfig>;
+  /** Overrides for insight thresholds (tests, simulations). */
+  insight?: Partial<InsightConfig>;
+  /** Overrides for alarm thresholds (tests, simulations). */
+  thresholds?: Partial<AlarmThresholds>;
 }
 
 export interface JobReport {
@@ -25,8 +34,8 @@ export interface JobReport {
   importanceRows: number;
   bootstrapped: boolean;
   scoresFilled: number;
-  insights: "pending";
-  alarms: "pending";
+  insights: { written: number; suppressed: number };
+  alarms: AlarmReport;
 }
 
 interface ReplayRow {
@@ -40,6 +49,8 @@ interface ReplayRow {
   data: string;
   collectiu_id: number;
   torn_id: number | null;
+  /** 1 when the answer was to a follow-up slot of the daily batch. */
+  followup_slot: number;
 }
 
 const key = (a: string, d: number) => `${a}|${d}`;
@@ -52,7 +63,9 @@ export function runEngineJob(db: SqlDatabase, opts: JobOptions = {}): JobReport 
   const pop = store.population(db);
   const rows = all<ReplayRow>(
     db,
-    `SELECT r.id, r.compte_id, r.pregunta_id, r.valor_num, r.value_json, r.score, r.periode, r.data, c.collectiu_id, c.torn_id
+    `SELECT r.id, r.compte_id, r.pregunta_id, r.valor_num, r.value_json, r.score, r.periode, r.data, c.collectiu_id, c.torn_id,
+       EXISTS (SELECT 1 FROM assignment a WHERE a.compte_id = r.compte_id AND a.pregunta_id = r.pregunta_id
+               AND a.reason = 'followup' AND a.day = date(r.data)) AS followup_slot
      FROM resposta r JOIN compte c ON c.id = r.compte_id ORDER BY r.data, r.id`,
   );
 
@@ -162,7 +175,7 @@ export function runEngineJob(db: SqlDatabase, opts: JobOptions = {}): JobReport 
     }
     const day = r.data.slice(0, 10);
     const out = learn(
-      { person: persons.get(key(r.compte_id, q.domainId)) ?? null, item: items.get(q.id) ?? { ...EMPTY_ITEM }, question: q, score, at: r.data, day, isFollowup: q.isFollowup },
+      { person: persons.get(key(r.compte_id, q.domainId)) ?? null, item: items.get(q.id) ?? { ...EMPTY_ITEM }, question: q, score, at: r.data, day, isFollowup: q.isFollowup || r.followup_slot === 1 },
       cfg,
       createRng(`${r.compte_id}|${q.domainId}|${day}`),
     );
@@ -207,6 +220,10 @@ export function runEngineJob(db: SqlDatabase, opts: JobOptions = {}): JobReport 
     writeSystemKey(db, "last_job_at", toSqlDatetime(nowMs));
   });
 
+  // Both read the aggregates just written, so they run after the transaction above has committed.
+  const insights = runInsights(db, { now: nowMs, config: opts.config, insight: opts.insight });
+  const alarms = runAlarms(db, { now: nowMs, config: opts.config, thresholds: opts.thresholds });
+
   return {
     engineVersion: ENGINE_VERSION,
     periods,
@@ -215,7 +232,7 @@ export function runEngineJob(db: SqlDatabase, opts: JobOptions = {}): JobReport 
     importanceRows: importance.length,
     bootstrapped,
     scoresFilled: filledScores.length,
-    insights: "pending",
-    alarms: "pending",
+    insights,
+    alarms,
   };
 }

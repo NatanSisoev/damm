@@ -145,6 +145,11 @@ test("job: writes aggregates with score/confidence/consensus and suppresses n < 
   assert.ok(rows.some((r) => r.collectiu_id === 1 && r.torn_id === null && r.suprimit === 0));
   assert.ok(rows.some((r) => r.collectiu_id === null && r.suprimit === 0));
   assert.equal(getConfig(db).engine_version, report.engineVersion);
+  // Insights and alarms run as part of the job.
+  assert.ok(report.insights.written > 0);
+  assert.equal(report.insights.written, one<{ n: number }>(db, "SELECT COUNT(*) AS n FROM insight")?.n);
+  assert.equal(typeof report.alarms.opened, "number");
+  assert.ok(all<{ suprimit: number; value: number | null }>(db, "SELECT suprimit, value FROM insight").every((r) => r.suprimit === 0 || r.value === null));
   // Idempotent.
   const again = runEngineJob(db, { now });
   assert.equal(again.aggregates, report.aggregates);

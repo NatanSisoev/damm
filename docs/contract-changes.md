@@ -19,6 +19,22 @@ What changed and why.
 
 ---
 
+## C4 · 2026-11-07 · Natan · Engine job writes insights and alarms
+
+`runEngineJob` now also calls `runInsights` and `runAlarms`, so one job run fills `agregat`, `domain_importance`, `insight` and `senyal`. `JobReport.insights` and `JobReport.alarms` are objects with counts instead of `"pending"`. No schema change.
+
+What the dashboard reads:
+- **`insight`:** kinds `domain_state`, `top_mover`, `polarisation`, `importance_gap`, `trajectory_mix`, `followup_confirmation` and `segment_gap` (`detail_json.dimension` is `"shift"` or `"manager"`). `detail_json` has the labels and previous/current values needed to render a card. Suppressed rows have `value` and `detail_json` NULL.
+- **`senyal`:** engine alarm types `sharp_drop`, `sustained_decline`, `changepoint_cluster`, `polarisation`, `feble`, `low_confidence` and `improvement`.
+  - Each has `severity`, `audience` and `status`.
+  - The engine opens alarms and auto-resolves `open` ones. It never touches `acknowledged` or `action_linked` alarms: those statuses are set by HR actions.
+  - Lideratge alarms always have `audience = 'hr'`.
+
+Action items:
+- [ ] Jan: show the insight cards on the HR results page, reading `insight` through `@damm/db/hr`.
+- [ ] Jan: the signals page lists engine alarms with severity and lets HR move them to `acknowledged`, `action_linked` or `resolved`.
+- [ ] Jan: managers see only `audience = 'hr_manager'` alarms for their own collective.
+
 ## C3 · 2026-11-07 · Natan · `@damm/engine` package
 
 New workspace package `packages/engine` (`@damm/engine`), API as in [engine-integration.md](engine-integration.md). It has no runtime dependencies: the caller injects the SQLite connection (better-sqlite3 in the app, node:sqlite in tests).

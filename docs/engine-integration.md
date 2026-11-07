@@ -2,7 +2,7 @@
 
 How `@damm/engine` plugs into the employee app, the HR dashboard and the jobs. The model itself is described in [engine.md](engine.md). Question types are in [question-types.md](question-types.md).
 
-Status (2026-11-07): API defined. Implementation is in progress on `natan/engine-core`: the daily batch, answer submission, the job (aggregates), HR config and question validation come first. Insights and alarms are specified but not written yet; until then the job reports them as `pending`.
+Status (2026-11-07): implemented on `natan/engine-core`: the daily batch, answer submission, the job (aggregates, insights and alarms), HR config and question validation. Not yet: the `driver` and `action_effect` insights, alarm notifications (digest and push), and non-response handling.
 
 ## Big picture
 
@@ -129,8 +129,8 @@ Reads (through `@damm/db/hr`, Jan's repositories), aggregate tables only:
 |---|---|---|
 | `agregat` | per period × collective × shift × domain: `n`, `mitjana` (1..5, legacy scale, kept for the existing pages), `score` (0..10), `confidence` (0..100), `consensus` (0..100), `suprimit` | engine job |
 | `domain_importance` | importance per domain from rankings | engine job |
-| `insight` | insight cards (section 6 of engine.md) | engine job (pending) |
-| `senyal` | alarms with severity, status, audience | engine job (pending) + analysis (themes) |
+| `insight` | insight cards (section 6 of engine.md) | engine job (`runInsights`, called by the job) |
+| `senyal` | alarms with severity, status, audience | engine job (`runAlarms`, called by the job) + analysis (themes) |
 
 Display rules:
 - **Suppressed rows** (`suprimit = 1`) have every value NULL. Show "n < 10" and nothing else.
@@ -148,7 +148,7 @@ Writes (HR routes, through `@damm/engine/hr`):
 ```ts
 import { runEngineJob } from "@damm/engine/job";
 const report = runEngineJob(db, { now: Date.now() });
-// { periods: ["2026-08","2026-09","2026-10"], aggregates: 312, suppressed: 41, insights: "pending", alarms: "pending" }
+// { periods: ["2026-08","2026-09","2026-10"], aggregates: 312, suppressed: 41, insights: { written: 540, suppressed: 96 }, alarms: { opened: 3, resolved: 1, suppressed: 0 } }
 ```
 
 Run it:
