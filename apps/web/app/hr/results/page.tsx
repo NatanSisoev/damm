@@ -3,7 +3,7 @@ import { MIN_GROUP_SIZE } from "@damm/shared";
 import { Radar, type RadarSeries } from "./radar";
 import { Card, Empty, PageHeader, Stat, SuppressedBadge } from "../ui";
 import { RepTable, TrendTable, suppressedHint } from "./tables";
-import { TrendChart } from "./trend-chart";
+import { TrendChart } from "../trend-chart";
 import {
   accountCounts,
   getRepresentativeness,

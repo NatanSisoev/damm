@@ -11,7 +11,8 @@ const PAD = { top: 14, bottom: 30, left: 34 };
 
 type Pt = { x: number; y: number; v: number; n: number | null; precisio: string | null; pi: number };
 
-export function TrendChart({ periodes, rows }: { periodes: string[]; rows: TrendRow[] }) {
+// `highlight`: domain names to emphasise (coloured, thicker); all others muted. Without it, domains with a clear change are coloured.
+export function TrendChart({ periodes, rows, highlight }: { periodes: string[]; rows: TrendRow[]; highlight?: string[] }) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const [w, setW] = useState(640);
   const [active, setActive] = useState<{ ri: number; pi: number } | null>(null);
@@ -48,7 +49,7 @@ export function TrendChart({ periodes, rows }: { periodes: string[]; rows: Trend
     const pts: (Pt | null)[] = r.cells.map((c, pi) =>
       c.suprimit || c.mitjana === null ? null : { x: xOf(pi), y: yOf(c.mitjana), v: c.mitjana, n: c.n, precisio: c.precisio, pi },
     );
-    return { r, ri, pts, changed: r.canvi.label !== "sense canvi clar" };
+    return { r, ri, pts, changed: highlight ? highlight.includes(r.domini) : r.canvi.label !== "sense canvi clar" };
   });
 
   // Direct labels at the line end (last drawn point), nudged apart vertically.
@@ -107,7 +108,7 @@ export function TrendChart({ periodes, rows }: { periodes: string[]; rows: Trend
               <g key={s.r.domini} opacity={dim}>
                 {segments(s.pts).map((seg, k) =>
                   seg.length > 1 ? (
-                    <polyline key={k} points={seg.map((p) => `${p.x},${p.y}`).join(" ")} fill="none" stroke={color} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+                    <polyline key={k} points={seg.map((p) => `${p.x},${p.y}`).join(" ")} fill="none" stroke={color} strokeWidth={s.changed && highlight ? 3 : 2} strokeLinejoin="round" strokeLinecap="round" />
                   ) : null,
                 )}
                 {s.pts.map((p, pi) =>
@@ -171,13 +172,15 @@ export function TrendChart({ periodes, rows }: { periodes: string[]; rows: Trend
             <span aria-hidden className="inline-block h-0.5 w-4" style={{ background: s.changed ? `var(--dom-${(s.ri % 6) + 1})` : "var(--dom-muted)" }} />
             <span className={s.changed ? "font-semibold" : "text-subtle"}>
               {s.r.domini}
-              {s.changed && <span className="num"> · {s.r.canvi.label === "puja" ? "↑" : "↓"} {s.r.canvi.delta! >= 0 ? "+" : "−"}{f1(Math.abs(s.r.canvi.delta!))}</span>}
+              {s.changed && s.r.canvi.delta !== null && s.r.canvi.label !== "sense canvi clar" && <span className="num"> · {s.r.canvi.label === "puja" ? "↑" : "↓"} {s.r.canvi.delta! >= 0 ? "+" : "−"}{f1(Math.abs(s.r.canvi.delta!))}</span>}
             </span>
           </li>
         ))}
       </ul>
       <p className="mt-2 text-xs text-subtle">
-        {hasChange ? "En color: dominis amb canvi clar entre períodes. En gris: sense canvi clar." : "Cap domini té un canvi clar: tots en gris."}{" "}
+        {highlight
+          ? "En color: domini relacionat amb el senyal. En gris: la resta de dominis."
+          : hasChange ? "En color: dominis amb canvi clar entre períodes. En gris: sense canvi clar." : "Cap domini té un canvi clar: tots en gris."}{" "}
         Els períodes suprimits (menys de 10 respondents) no es dibuixen.
       </p>
     </div>
