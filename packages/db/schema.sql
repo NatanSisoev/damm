@@ -211,7 +211,21 @@ CREATE TABLE recomanacio (
   termini_suggerit         TEXT,
   justificacio             TEXT,                               -- cites n and confidence
   limits                   TEXT,                               -- honest limits line ("correlació, no causa")
-  font                     TEXT CHECK (font IS NULL OR font IN ('llm','template'))
+  font                     TEXT CHECK (font IS NULL OR font IN ('llm','template')),
+  aprovada_el              TEXT                                 -- when HR adopted it (set with estat = 'aprovada'); anchor of the "listen again" before/after
+);
+
+-- Something that happened in the organisation, recorded by HR (e.g. "new shift system from 1 Oct").
+-- Anchor of the before/after comparison (insight `action_effect`) when it has a domain.
+-- Optional scope: collectiu_id / torn_id NULL = all. Never holds personal data.
+CREATE TABLE context_event (
+  id            INTEGER PRIMARY KEY,
+  event_date    TEXT NOT NULL CHECK (event_date GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]'),
+  collectiu_id  INTEGER REFERENCES collectiu(id),
+  torn_id       INTEGER REFERENCES torn(id),
+  domini_id     INTEGER REFERENCES domini(id),
+  label         TEXT NOT NULL,
+  created_at    TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
 -- Engine (Natan, packages/engine; see docs/engine.md) ------------------------------

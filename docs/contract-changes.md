@@ -19,6 +19,23 @@ What changed and why.
 
 ---
 
+## C13 · 2026-11-07 · Natan · Listen again: context events, `aprovada_el`, `action_effect`
+
+The deck's cycle ends with "tornar a escoltar". HR is not forced to carry out a recommendation, so there is **no "done" state**: the before/after is anchored on when HR adopted (approved) a recommendation, or on a context event HR records, and always worded "since X", never as proof of cause. Design: [engine.md](engine.md) section 6.
+
+All changes are additive:
+- **`recomanacio`:** new column `aprovada_el` (datetime). `approveRecommendation` in `packages/db/src/hr-repository.ts` now sets it. Any other code that approves a recommendation must set it too. Approved rows without it fall back to the first day of their alarm's period. Existing databases need `ALTER TABLE recomanacio ADD COLUMN aprovada_el TEXT` (or re-run init / the demo).
+- **New table `context_event`:** `event_date` (YYYY-MM-DD), optional `collectiu_id`, `torn_id`, `domini_id`, `label`, `created_at`. HR functions `addContextEvent` and `listContextEvents` in `@damm/db/hr`. Only events with a domain produce an insight.
+- **`insight` kind `action_effect`** (already allowed by the CHECK) is now written by the engine: segment × domain score, confidence and n before vs. after the anchor, `detail.wording` ("Des de <data>, ...") and `detail.limits`. n ≥ 10 in both windows, otherwise suppressed. Rows appear 14 days after the anchor.
+- **`improvement` alarm** now uses the same anchors instead of the `action_linked` status; it no longer reads that status.
+
+Action items:
+- [ ] Jan: show `action_effect` insights and context events on the signal timeline (R-DIFF-6, R-FLOW-8e): "des de <data>" with `detail.wording` and `detail.limits` together, never worded as proof the action worked. No "done" button.
+- [ ] Jan: add a small form on the HR side to record a context event with `addContextEvent` (date, label, optional collective, shift and domain) and list them with `listContextEvents`.
+- [ ] Jan: if anything else approves a recommendation, set `aprovada_el` there too.
+
+---
+
 ## C12 · 2026-11-07 · Natan · "Indagar" probe (time-boxed extra sampling)
 
 New table `probe` in `packages/db/schema.sql` (additive; rebuild existing databases with `pnpm --filter @damm/db run init` or the demo builder). New in `@damm/engine/hr`: `startProbe`, `listProbes`, `stopProbe` and the types `ProbeView`, `ProbeProgress`. A probe makes the scheduler ask one domain more often for one segment (collective, optionally one shift) for a number of days, optionally tied to an alarm (`senyalId`). It targets segments, never accounts; segments under 10 people are refused with a `ProbeError`. The engine job refreshes each probe's progress (extra answers, confidence before and now) from aggregates, hidden when fewer than 10 people answered. Details: [engine.md](engine.md), "Probes", and [engine-integration.md](engine-integration.md), "Probes (Indagar)".

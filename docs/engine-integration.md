@@ -2,7 +2,7 @@
 
 How `@damm/engine` plugs into the employee app, the HR dashboard and the jobs. The model itself is described in [engine.md](engine.md). Question types are in [question-types.md](question-types.md).
 
-Status (2026-11-07): implemented on `natan/engine-core`: the daily batch, answer submission, the job (aggregates, insights and alarms), HR config and question validation. Not yet: the `driver` and `action_effect` insights, alarm notifications (digest and push), and non-response handling.
+Status (2026-11-07): implemented on `natan/engine-core`: the daily batch, answer submission, the job (aggregates, insights and alarms), HR config and question validation. Not yet: the `driver` insight, alarm notifications (digest and push), and non-response handling.
 
 ## Big picture
 
@@ -238,8 +238,13 @@ Each `InsightView` has `id`, `kind`, `periode`, `collectiuId`, `tornId`, `domain
 | `trajectory_mix` | % declining | `improving`, `stable`, `declining` (%), `windowDays`, `n` | stacked bar |
 | `followup_confirmation` | % confirmed | `resolved`, `confirmed`, `confirmedDown`, `confirmedUp`, `rate`, `n` | "real change or noise?" |
 | `segment_gap` | gap in score | `dimension: "shift"`: `lowest`, `highest`, `groups[]`, `gap`. `dimension: "manager"`: `managers`, `others`, `gap`, `asOf` | side-by-side bars |
+| `action_effect` | score change (after − before) | `anchor` (`kind` recommendation / context_event, `id`, `date`, `label`), `since`, `before` and `after` (`from`, `to`, `score`, `confidence`, `n`), `delta`, `change` (`improved`, `declined`, `no_clear_change`, `low_confidence`), `windowDays`, `wording`, `limits` | "since 15 Sep" card on the signal timeline |
 
-`driver` and `action_effect` are reserved but not produced yet.
+`driver` is reserved but not produced yet.
+
+### Listen again (`action_effect`)
+
+No completion state: HR adopts a recommendation (`approveRecommendation` sets `recomanacio.aprovada_el`) or records a context event, and the engine reports what the scores did since. HR records events with `addContextEvent({ date, label, collectiuId?, tornId?, dominiId? })` and lists them with `listContextEvents()` (`@damm/db/hr`). Only events with a domain produce an insight. Always show `detail.wording` together with `detail.limits` ("correlation, not cause"); never say the action worked. Rows appear 14 days after the anchor and are suppressed below 10 people in either window.
 
 ### Alarms
 

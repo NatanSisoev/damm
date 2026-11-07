@@ -5,6 +5,7 @@
 import { DEFAULT_CONFIG, resolveConfig, type EngineConfig } from "./config.ts";
 import { all, one, run, transaction, type SqlDatabase } from "./db.ts";
 import { addDays, dayOf, toMs, toSqlDatetime } from "./time.ts";
+import { improvementAnchors, loadAnchors } from "./listen-again.ts";
 
 export type AlarmType =
   | "sharp_drop"
@@ -47,7 +48,7 @@ export interface AlarmThresholds {
   lowConfidenceTrigger: number;
   lowConfidenceClear: number;
   lowConfidenceDays: number;
-  /** improvement: score rose at least trigger since the period of an alarm with a linked action. */
+  /** improvement: score rose at least trigger since the period before an adopted recommendation or a recorded context event. */
   improvementTrigger: number;
   improvementClear: number;
   improvementMinConfidence: number;
@@ -255,7 +256,7 @@ export function evalLowConfidence(hist: (Point | null)[], daysIntoCurrent: numbe
   };
 }
 
-export function evalImprovement(baseline: Point | null, cur: Point | null, t: AlarmThresholds): Evaluation {
+export function evalImprovement(baseline: Point | null, cur: Point | null, t: AlarmThresholds, since?: string): Evaluation {
   if (!baseline || !cur) return NONE;
   const rise = cur.score - baseline.score;
   return {
@@ -263,7 +264,7 @@ export function evalImprovement(baseline: Point | null, cur: Point | null, t: Al
     clear: rise < t.improvementClear,
     n: cur.n,
     confidence: cur.confidence,
-    description: `Score rose ${fmt(rise)} points (${fmt(baseline.score)} → ${fmt(cur.score)}) since an action was linked.`,
+    description: `Score rose ${fmt(rise)} points (${fmt(baseline.score)} → ${fmt(cur.score)}) since ${since ?? "an action was adopted"}; this does not show the action caused it.`,
   };
 }
 
@@ -386,15 +387,8 @@ export function runAlarms(db: SqlDatabase, opts: AlarmOptions): AlarmReport {
     all<{ collectiu_id: number }>(db, "SELECT DISTINCT collectiu_id FROM empleat_sintetic WHERE torn_id IS NOT NULL").map((r) => r.collectiu_id),
   );
 
-  // Linked actions: alarm with status action_linked, or with an approved recommendation. Baseline = its period.
-  const linked = all<{ collectiu_id: number | null; torn_id: number | null; domini_id: number; periode: string }>(
-    db,
-    `SELECT s.collectiu_id, s.torn_id, s.domini_id, MAX(s.periode) AS periode FROM senyal s
-     WHERE s.domini_id IS NOT NULL AND s.tipus <> 'improvement'
-       AND (s.status = 'action_linked' OR EXISTS (SELECT 1 FROM recomanacio r WHERE r.senyal_id = s.id AND r.estat = 'aprovada'))
-     GROUP BY s.collectiu_id, s.torn_id, s.domini_id`,
-  );
-  const baselinePeriod = new Map(linked.map((l) => [segKey(l.collectiu_id, l.torn_id, l.domini_id), l.periode]));
+  // Adoption anchors (approved recommendation, HR-recorded context event). Baseline = the period before the anchor's. No completion state.
+  const anchorOf = improvementAnchors(loadAnchors(db, cfg.timezone), periods, current);
 
   const insert = db.prepare(
     `INSERT INTO senyal (tipus, descripcio, collectiu_id, torn_id, domini_id, periode, n, confianca, severity, status, audience, created_at, suprimit)
@@ -480,10 +474,10 @@ export function runAlarms(db: SqlDatabase, opts: AlarmOptions): AlarmReport {
       apply("polarisation", h.c, h.t, h.d, evalPolarisation(h.pts, t));
       apply("feble", h.c, h.t, h.d, evalWeakSignal(h.pts, t));
       apply("low_confidence", h.c, h.t, h.d, evalLowConfidence(h.pts, daysIntoCurrent, t));
-      const bp = baselinePeriod.get(segKey(h.c, h.t, h.d));
-      if (bp !== undefined && bp < current) {
-        const bi = idx.get(bp);
-        apply("improvement", h.c, h.t, h.d, evalImprovement(bi === undefined ? null : h.pts[bi] ?? null, cur, t));
+      const anchor = anchorOf.get(segKey(h.c, h.t, h.d));
+      if (anchor !== undefined) {
+        const bi = idx.get(anchor.baseline);
+        apply("improvement", h.c, h.t, h.d, evalImprovement(bi === undefined ? null : h.pts[bi] ?? null, cur, t, anchor.since));
       }
 
       // Changepoint cluster on the non-nesting segments only.
