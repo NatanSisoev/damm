@@ -264,7 +264,7 @@ function QuestionRows({ q, today, minGroup }: { q: PoolQuestion; today: string; 
       <tr className="pool-row">
         <td className="max-w-[26rem]">
           <div className="text-[13px] leading-snug">
-            <Link href={`/hr/pool/${q.id}`} className="pool-link"><span className="num text-subtle">#{q.id}</span> {q.text}</Link>
+            <Link href={`/hr/pool/${q.id}`} className="pool-link">{q.text}</Link>
           </div>
           <div className="flex flex-wrap gap-1.5" style={{ marginTop: 10 }}>
             <span className="badge">{questionTypeLabel(q.type)}</span>
