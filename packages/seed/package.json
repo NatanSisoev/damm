@@ -7,6 +7,7 @@
     "comments": "tsx src/generate-comments.ts"
   },
   "dependencies": {
+    "@damm/engine": "workspace:*",
     "@damm/shared": "workspace:*",
     "better-sqlite3": "^12.0.0"
   },

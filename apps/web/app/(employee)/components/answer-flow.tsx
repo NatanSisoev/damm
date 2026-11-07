@@ -11,9 +11,6 @@ import {
   type PoolQuestion,
 } from "./question-renderer";
 
-// Same cap the server applies (DAILY_QUESTION_LIMIT in @damm/db/employee).
-const DAILY_QUESTION_LIMIT = 2;
-
 type Phase = "loading" | "answering" | "done" | "error";
 
 // In-progress answers live on this device only (never sent anywhere until the person submits).
@@ -209,10 +206,9 @@ export function AnswerFlow({ compteId }: { compteId: string }) {
           </svg>
         </div>
         <h2 className="text-xl font-semibold">Avui ja has acabat</h2>
-        <p className="mt-2 text-muted">Tornem demà amb un parell de preguntes.</p>
+        <p className="mt-2 text-muted">Tornem demà amb unes quantes preguntes noves.</p>
         <p className="mt-4 text-sm text-subtle">
-          {answeredAny ? "Gràcies! Les teves respostes són anònimes. " : ""}Mai et farem més de{" "}
-          {DAILY_QUESTION_LIMIT} preguntes al dia.
+          {answeredAny ? "Gràcies! Les teves respostes són anònimes. " : ""}Només te&apos;n farem unes poques al dia.
         </p>
       </div>
     );
