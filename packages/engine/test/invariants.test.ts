@@ -4,6 +4,9 @@ import assert from "node:assert/strict";
 import { all, one } from "../src/db.ts";
 import { runEngineJob } from "../src/job.ts";
 import { DEFAULT_CONFIG } from "../src/config.ts";
+import { EMPTY_ITEM } from "../src/item-bias.ts";
+import { learn } from "../src/learn.ts";
+import { createRng } from "../src/rng.ts";
 import { addDays } from "../src/time.ts";
 import { cloneDb, dumpAll, dumpTable, findBadNumbers, OUTPUT_TABLES } from "./db-util.ts";
 import { generateWorld, type World } from "./world-gen.ts";
@@ -52,6 +55,21 @@ test("every resposta.score is in [0,1] (or NULL for ranking/open)", each(({ name
   const bad = all(world.db, "SELECT id, score FROM resposta WHERE score IS NOT NULL AND (score < 0 OR score > 1)");
   assert.deepEqual(bad, [], name);
 }));
+
+test("person levels stay in [0,1] even when item bias pushes the adjusted answer outside", () => {
+  const q = { id: 1, domainId: 1, collectiuId: null, type: "scale10", text: "q", facet: "f", polarity: 1, options: null, isFollowup: false, needId: null, priority: 0 } as const;
+  for (const [bias, score] of [[-0.3, 1], [0.3, 0], [-0.9, 1], [0.9, 0]] as const) {
+    let person = null;
+    let item = { ...EMPTY_ITEM, bias };
+    for (let i = 0; i < 60; i++) {
+      const out = learn({ person, item, question: q, score, at: `2026-09-${String(1 + (i % 28)).padStart(2, "0")} 09:00:00`, day: "2026-09-01", isFollowup: false }, DEFAULT_CONFIG, createRng(`b${i}`));
+      person = out.person;
+      item = { ...EMPTY_ITEM, bias };
+      assert.ok(person.level >= 0 && person.level <= 1, `level ${person.level} with bias ${bias}, score ${score}`);
+    }
+  }
+  for (const { name, world } of worlds()) assert.deepEqual(all(world.db, "SELECT * FROM person_domain_state WHERE level < 0 OR level > 1 OR variance <= 0"), [], name);
+});
 
 test("agregat: score in [0,10], confidence and consensus in [0,100], mean in [1,5]", each(({ name, world }) => {
   const bad = all(
