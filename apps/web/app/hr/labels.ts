@@ -14,13 +14,13 @@ export const NEED_STATUS: Record<string, { label: string; cls: string }> = {
 };
 
 export const QUESTION_TYPE_LABELS: Record<string, string> = {
-  scale5: "Escala 1–5",
-  scale10: "Escala 1–10",
+  scale5: "1–5",
+  scale10: "1–10",
   yes_no: "Sí / No",
   pair: "Parella",
   choice: "Opció",
   ranking: "Ordenació",
-  open: "Resposta oberta",
+  open: "Oberta",
 };
 
 export const recommendationStatus = (estat: string) =>
