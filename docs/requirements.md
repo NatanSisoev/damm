@@ -45,7 +45,7 @@ G-§9: "Criteris excloents". These outrank everything else.
 | R-CH-3 | Answers become insights **and actions** automatically | G-§3 | partial | Signals, themes and recommendations are shown. They are produced by the seed, not by an analysis job (blocked). |
 | R-CH-4 | Anonymity and privacy guaranteed at all times | D-S12, G-§3 | done | See section 6. |
 | R-CH-5 | **One continuous flow**, not three projects. All parts present; going deeper on one is fine | G-§3, G-§10 FAQ | partial | Every step has a screen. Steps 2 (real AI) and 6 (real analysis) are blocked. |
-| R-CH-6 | It must not feel like "one more survey". It is a new way to listen, understand and act | D-S19, G-§1 | partial | Continuous pool, swipe/ranking formats and the "Has dit, hem fet" loop (wip) carry this. Make it explicit in the pitch. |
+| R-CH-6 | It must not feel like "one more survey". It is a new way to listen, understand and act | D-S19, G-§1 | partial | Continuous pool, swipe/ranking formats and the "Has dit, hem fet" loop on the employee home carry this. Make it explicit in the pitch. |
 
 ## 2. Users
 
@@ -54,8 +54,8 @@ G-§3.2.
 | ID | User | What they need | Status | Evidence / gap |
 |----|------|----------------|--------|----------------|
 | R-U-1 | **Primary**: People/HR person who wants to understand a concrete situation and act | Need → drafts → approval → publish → results → recommendation | partial | `/hr/*`. Real AI and analysis are blocked. |
-| R-U-2 | **Respondent**: anyone at Damm (plant, logistics, sales, office, manager), little time, on a phone | Fast mobile answering, anonymity they can believe | partial | PWA onboarding and answering are done. Done state, `/privacitat` and polish are wip (session A). |
-| R-U-3 | **Secondary**: team leads and management who receive aggregated results and recommendations | Read-only aggregate view and recommendations | missing | No team concept exists (only collective, centre type and shift), so a manager view carries re-identification risk. Proposal: collective-level read-only share or a Teams card (session C). See N-6. |
+| R-U-2 | **Respondent**: anyone at Damm (plant, logistics, sales, office, manager), little time, on a phone | Fast mobile answering, anonymity they can believe | done | PWA onboarding, answering, done state (2 a day max), `/privacitat` and a shared mobile shell (44px targets). Push (task 4) still open. |
+| R-U-3 | **Secondary**: team leads and management who receive aggregated results and recommendations | Read-only aggregate view and recommendations | missing | No team concept exists (only collective, centre type and shift), so a manager view carries re-identification risk. Proposal: collective-level read-only share or the Teams card (`/hr/publish/[codi]/teams`). See N-6. |
 
 ## 3. Functional flow (minimum)
 
@@ -97,7 +97,7 @@ The guide says "Publicar a Typeform". AGENTS.md decides to ignore Typeform: the 
 | R-FLOW-4a | Publishing makes the approved questions live | done | `publishNecessitat`, pool |
 | R-FLOW-4b | A shareable **link** | done | `/hr/publish`, join URL per collective |
 | R-FLOW-4c | A **QR** | done | Server-side SVG plus a printable A4 poster |
-| R-FLOW-4d | Publish via **API** / M365 integration (D-S13) | wip | Teams Adaptive Card preview and optional webhook (session C) |
+| R-FLOW-4d | Publish via **API** / M365 integration (D-S13) | done | `/hr/publish/[codi]/teams`: Adaptive Card preview, copyable JSON, optional send to `TEAMS_WEBHOOK_URL`. The webhook send is not yet tested against a real Teams channel. |
 
 ### R-FLOW-5 Participation
 | ID | Requirement | Status | Evidence / gap |
@@ -135,7 +135,7 @@ The guide says "Publicar a Typeform". AGENTS.md decides to ignore Typeform: the 
 | R-FLOW-8a | Proposes **concrete actions** | partial | `recomanacio` seeded. Generation is blocked. |
 | R-FLOW-8b | Proposes a **new follow-up micro-survey** | done | `createFollowUp` creates a need |
 | R-FLOW-8c | Recommendations are proposals, never automatic decisions | done | Approve or discard |
-| R-FLOW-8d | Results go back to the people who answered | wip | Task 20, "Has dit, hem fet" (session A) |
+| R-FLOW-8d | Results go back to the people who answered | done | Employee home lists approved actions for their collective (`approvedActionsForCompte`, n≥10 only) with period and follow-up badge |
 
 ## 4. Acceptance scenarios
 
@@ -217,7 +217,7 @@ G-§8 principles, D-S16 trust pillars and D-S17 golden rules, merged. All Must.
 | R-PRIV-2 | Minimum group threshold (guide: 5 to 10; ours: **10**) everywhere, exports included | G-§8, A | done | Plus complementary suppression |
 | R-PRIV-3 | Automatic detection and removal of identifying data in comments (names, emails, phones) | G-§8 | done | `redactPii` regex before storage. LLM pass is optional (Natan). |
 | R-PRIV-4 | No individual profile or inference about specific people; cannot be used to evaluate anyone | G-§8, D-S16 "No vigilància" | done | Trajectories exist only inside the analysis layer; the admin sees counts only. |
-| R-PRIV-5 | **Transparency to respondents**: what the survey is for and how data is handled | G-§8, D-S16 | wip | `/privacitat` (session A) |
+| R-PRIV-5 | **Transparency to respondents**: what the survey is for and how data is handled | G-§8, D-S16 | done | `/privacitat`: what we collect, what HR sees (n≥10), what we never do, comment redaction, session and account |
 | R-PRIV-6 | **Explainability**: sample size, confidence and limits of the analysis; correlations are not causes | G-§8 | partial | n and precision bands done; methodology page 18 missing |
 | R-PRIV-7 | Human control: HR validates surveys and recommendations before acting | G-§8, D-S16, D-S17 | done | |
 | R-PRIV-8 | **Minimisation and expiry**: keep only what is needed, for as long as needed | G-§8 | partial | Minimisation done (no email or phone, redacted comments only). **No retention or expiry rule exists.** Add a documented retention period and a purge script or job. |
@@ -275,13 +275,13 @@ G-§9 wording, D-S18 weights. Use this to decide what to build next: weight × g
 
 | Weight | Criterion | What scores it | Weakest point now |
 |--------|-----------|----------------|-------------------|
-| 20% | Fit to the problem and value for people | Full cycle, closing the loop to employees, anonymity people believe | Employee side thin (wip A) |
-| 15% | Prototype quality and usability | Polished HR and mobile flows, no dead ends | Employee polish (A), push (4) |
+| 20% | Fit to the problem and value for people | Full cycle, closing the loop to employees, anonymity people believe | Push (4); manager view (R-U-3) |
+| 15% | Prototype quality and usability | Polished HR and mobile flows, no dead ends | Push (4), reorder (R-FLOW-3c) |
 | 15% | Useful, justified use of AI | Real drafts, clustering, summaries, recommendations, each with a human gate | All AI calls blocked on Natan |
 | 15% | Privacy, anonymity, responsible use | n≥10, complementary suppression, redaction, lint guard, transparency | Traceability (21), retention (R-PRIV-8) |
 | 10% | Representativeness and inclusion of all collectives | Gap vs population, night shift, no-computer path | Explicit warning (R-SC-B3), kiosk (N-3) |
 | 10% | Analysis and insight quality | Signals with effect size and n, change rule, emerging vs previous period, limits explained | Real analysis job, methodology (18), summaries |
-| 10% | Future M365 integrations | Teams card and webhook, a credible Graph/Entra roadmap | Session C, plus a roadmap slide |
+| 10% | Future M365 integrations | Teams card and webhook, a credible Graph/Entra roadmap | Real webhook test, plus a roadmap slide |
 | 5% | Presentation clarity and evolution | Deck, future-evolution slide | After 8 Nov 09:00 |
 
 ---
@@ -292,7 +292,7 @@ Bonus items named by the guide (G-§4 "Bonus") and the deck (D-S18), then our ow
 
 | ID | Item | Source | Why it scores | Status | Notes |
 |----|------|--------|---------------|--------|-------|
-| N-1 | **Teams / M365 integration** | G bonus, D-S18, 10% criterion | Hits a weighted criterion directly | wip | Session C: Adaptive Card, optional webhook. Roadmap: Graph for audience, Entra SSO without identity leakage. |
+| N-1 | **Teams / M365 integration** | G bonus, D-S18, 10% criterion | Hits a weighted criterion directly | partial | Adaptive Card, optional webhook, `docs/teams-integration.md`. Roadmap: Graph for audience, Entra SSO without identity leakage. |
 | N-2 | **Representativeness indicator** | G bonus | Already built; name it as the bonus in the pitch | done | |
 | N-3 | **Experience for people without a computer** | G bonus, D-S18 | Plant and logistics, scenario B | partial | QR plus mobile done. Add a **kiosk mode**: shared tablet, no account, one answer per session with a rate limit, own `canal` value. |
 | N-4 | **Actionable wellbeing recommendations** | G bonus, D-S18 | Value for people | partial | Recommendations exist; make them concrete (owner, deadline, which initiative from D-S3). |

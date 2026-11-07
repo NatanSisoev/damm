@@ -16,7 +16,7 @@ Status: `running`, `ready` (can start now), `blocked` (waiting on a dependency),
 | 2 | PWA accounts and onboarding | `jan/pwa-auth` | done | heavy |
 | 3 | PWA answer flow | `jan/pwa-answer` | done | heavy |
 | 4 | Installable PWA and push | `jan/pwa-push` | ready | heavy |
-| 5 | Employee UI refinement | `jan/ui-employee` | ready | light |
+| 5 | Employee UI refinement | `jan/ui-employee` | done | light |
 | 6 | Security demo | `jan/security-demo` | done | light |
 | 7 | Demo script and slide notes | `jan/demo-script` | done | light |
 | 8 | HR CSV export with suppression | `jan/hr-export` | done | light |
@@ -29,10 +29,10 @@ Status: `running`, `ready` (can start now), `blocked` (waiting on a dependency),
 | 17 | Statistical rigour: complementary suppression, precision, change rule | `jan/rigour` | done | light |
 | 18 | Methodology page ("Com calculem") | `jan/methodology` | ready | light |
 | 19 | Question-quality checker on drafts | `jan/draft-check` | ready | light |
-| 20 | "Has dit, hem fet": results back to employees | `jan/closing-loop` | ready | light |
+| 20 | "Has dit, hem fet": results back to employees | `jan/closing-loop` | done | light |
 | 21 | Decision audit log and AI provenance | `jan/audit-log` | blocked on schema (Natan) | light |
 
-Order for the next free slots: 18, 20, 19, then 5, then 4. Pitch deck and demo work (14, 15) go last and are not raised before 8 Nov 9:00.
+Order for the next free slots: 18, 19, then 4. Pitch deck and demo work (14, 15) go last and are not raised before 8 Nov 9:00.
 
 All of the done rows are merged into `jan/dev` and pushed (lint, `check:anonymity`, seed and build pass). Not yet verified: the production refusal when `SESSION_SECRET` is unset.
 

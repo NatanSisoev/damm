@@ -147,6 +147,7 @@ Read these before planning work. Both people's agents keep them current.
 - `docs/employee-pwa-spec.md`: the employee app's screens, flow and anonymity copy.
 - `docs/security-demo.md`: the steps for the anonymity and security demo (exclusion criteria, R-PRIV).
 - `docs/demo-script.md` and `docs/slide-notes.md`: the pitch flow and the slide content.
+- `docs/teams-integration.md`: what the Teams publish card does today and the Graph/bot/Entra roadmap (R-FLOW-4d, N-1).
 
 When you add a doc, list it here with one line on what it is for.
 
