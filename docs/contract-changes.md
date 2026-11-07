@@ -19,6 +19,15 @@ What changed and why.
 
 ---
 
+## C18 · 2026-11-07 · Natan · The engine tops up published needs itself
+
+- `getDailyBatch` (`@damm/engine`) now always appends the unanswered questions of `publicada` needs for the account's collective to the day's batch, past `questionsPerDay` and `maxNeedsPerDay`, in slots after the existing ones. It runs on every call, so a need published later shows up the same day.
+- `approvedQuestionsFor` serves need questions only while their `necessitat` is `publicada`. Nothing else changes; the API and schema are the same.
+- The web top-up is now redundant but harmless (`addPublishedNeedsToDay` skips rows already in the batch).
+
+Action items:
+- [ ] Jan: remove `addPublishedNeedsToDay` (`@damm/db/employee`) and `getTodaysBatch` (`apps/web/lib/engine.ts`) and call `getEngine().getDailyBatch` directly in `GET /api/pool/next`.
+
 ## C17 · 2026-11-07 · Jan · NeedCard carries dates, per-question answer counts and participation
 
 `NeedCard` (`@damm/db/hr`, read-only HR type) gains `publicat`, `responses`, `population`, `publications[].creat` and `approved[].answers`. Counts come from `v_resposta_analitica` and are `null` under the minimum group size. No schema change.
@@ -44,8 +53,8 @@ Action items:
 - No schema change. This is a second writer of the engine-owned `assignment` table, from the web layer.
 
 Action items:
-- [ ] Natan: in `approvedQuestionsFor` / `selectBatch`, serve need questions only when their `necessitat` is `publicada` (today an `aprovada` question is served while the need is still `oberta`, before HR publishes; seen in the browser 2026-11-07).
-- [ ] Natan: in `getDailyBatch`, top up an existing day's batch with unanswered questions of `publicada` needs, past `questionsPerDay` and `maxNeedsPerDay`; then tell Jan so `addPublishedNeedsToDay` and `getTodaysBatch` can be removed.
+- [x] Natan: in `approvedQuestionsFor` / `selectBatch`, serve need questions only when their `necessitat` is `publicada` (done 2026-11-07, uncommitted: `store.approvedQuestionsFor` filters on `necessitat.estat`).
+- [x] Natan: in `getDailyBatch`, top up an existing day's batch with unanswered questions of `publicada` needs, past `questionsPerDay` and `maxNeedsPerDay` (done 2026-11-07, uncommitted: `store.publishedNeedsMissing`, called from `getDailyBatch`; see C18 for Jan).
 
 ## C14 · 2026-11-07 · Jan · Publishing a need sends web push, no per-need join code
 
@@ -54,7 +63,7 @@ Action items:
 - No schema change. The engine still serves every `aprovada` question whatever the need's state.
 
 Action items:
-- [ ] Natan: none required; FYI if the engine or seed ever relied on a `publicacio` row per need.
+- [x] Natan: none required; FYI if the engine or seed ever relied on a `publicacio` row per need (done 2026-11-07, nothing to change).
 
 ---
 
@@ -271,4 +280,4 @@ Both are `null` whenever the cell is suppressed (primary or complementary) or n 
 
 Action items:
 - [x] Jan: trend chart, signal table and results table show SD and consensus; signal page plots its own segment on 0-10. (done 2026-11-07)
-- [ ] Natan: aware: `TrendCell` gains `consensus` and `sd`.
+- [x] Natan: aware: `TrendCell` gains `consensus` and `sd` (done 2026-11-07, FYI only).
