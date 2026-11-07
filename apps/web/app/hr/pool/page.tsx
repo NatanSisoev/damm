@@ -264,7 +264,7 @@ function QuestionRows({ q, today, minGroup }: { q: PoolQuestion; today: string; 
       <tr className="pool-row">
         <td className="max-w-[26rem]">
           <div className="text-[13px] leading-snug">
-            <Link href={`/hr/pool/${q.id}`} className="hover:underline"><span className="num text-subtle">#{q.id}</span> {q.text}</Link>
+            <Link href={`/hr/pool/${q.id}`} className="pool-link"><span className="num text-subtle">#{q.id}</span> {q.text}</Link>
           </div>
           <div className="flex flex-wrap gap-1.5" style={{ marginTop: 10 }}>
             <span className="badge">{questionTypeLabel(q.type)}</span>
@@ -274,7 +274,6 @@ function QuestionRows({ q, today, minGroup }: { q: PoolQuestion; today: string; 
             {q.polarity === -1 && <span className="badge" title="Redactada en negatiu: la puntuació s'inverteix">Negativa</span>}
             {q.aiGenerated && <span className="badge" title="Proposada per la IA i aprovada per una persona">IA</span>}
           </div>
-          <Link href={`/hr/pool/${q.id}`} className="mt-2 inline-block text-xs">Detall i dades completes →</Link>
         </td>
         <td>
           <span className={`badge ${st.cls}`}>{st.label}</span>
