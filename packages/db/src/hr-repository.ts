@@ -297,3 +297,42 @@ export function listThemes(): ThemeRow[] {
     };
   });
 }
+
+// --- CSV export (aggregates only; same suppression as the results page) ----------------
+
+function csvCell(v: string | number | null): string {
+  if (v === null) return "";
+  const s = String(v);
+  return /[",\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+
+/** CSV of the aggregates behind the results page. Suppressed segments carry no numbers and `suprimit=1`. */
+export function exportResultsCsv(): string {
+  const header = ["tipus", "periode", "collectiu", "torn", "domini", "respondents", "resp_pct", "pop_pct", "diferencia_pp", "mitjana", "suprimit"];
+  const lines: (string | number | null)[][] = [header];
+  const pct = (v: number | null) => (v === null ? null : +(v * 100).toFixed(1));
+
+  const rep = getRepresentativeness();
+  for (const [tipus, rows] of [["representativitat_collectiu", rep.collectius], ["representativitat_torn", rep.torns]] as const) {
+    for (const r of rows) {
+      const hide = r.suprimit;
+      lines.push([
+        tipus, rep.periode, r.collectiu, r.torn, null,
+        hide ? null : r.respondents, hide ? null : pct(r.respShare), hide ? null : pct(r.popShare), hide ? null : pct(r.gap),
+        null, hide ? 1 : 0,
+      ]);
+    }
+  }
+
+  const trends = getTrends();
+  for (const s of trends.series) {
+    for (const row of s.rows) {
+      row.cells.forEach((c, i) => {
+        const hide = c.suprimit || c.mitjana === null;
+        if (!c.suprimit && c.mitjana === null) return; // no data for this cell
+        lines.push(["tendencia", trends.periodes[i], s.scope, null, row.domini, null, null, null, null, hide ? null : +c.mitjana!.toFixed(2), hide ? 1 : 0]);
+      });
+    }
+  }
+  return lines.map((l) => l.map(csvCell).join(",")).join("\r\n") + "\r\n";
+}

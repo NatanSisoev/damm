@@ -156,7 +156,12 @@ export default async function ResultsPage({ searchParams }: { searchParams: Prom
       <PageHeader
         title="Resultats"
         subtitle={<>Sempre en agregat. Els segments amb menys de {MIN_GROUP_SIZE} respondents es mostren com a <span className="font-medium text-muted">Suprimit</span>.</>}
-        actions={rep.periode ? <span className="badge num">{rep.periode}</span> : undefined}
+        actions={
+          <>
+            {rep.periode && <span className="badge num">{rep.periode}</span>}
+            <a href="/hr/results/export" className="btn" download>Exporta CSV</a>
+          </>
+        }
       />
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
