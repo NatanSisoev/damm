@@ -107,3 +107,15 @@
 .hr-meter { height: 6px; background: var(--surface-muted); }
 .hr-meter > span { display: block; height: 100%; background: var(--brand-red); }
 .hr-meter-muted > span { background: var(--border-strong); }
+
+/* Alarms: compact status menu */
+.alarm-status { position: relative; }
+.alarm-status > summary { list-style: none; cursor: pointer; }
+.alarm-status > summary::-webkit-details-marker { display: none; }
+.alarm-status-menu {
+  position: absolute; z-index: 10; left: 0; top: calc(100% + 4px); min-width: 9rem;
+  display: flex; flex-direction: column;
+  background: var(--surface); border: 1px solid var(--border-strong);
+}
+.alarm-status-menu button { width: 100%; text-align: left; padding: 8px 12px; font-size: 13px; }
+.alarm-status-menu button:hover { background: var(--surface-muted); }
