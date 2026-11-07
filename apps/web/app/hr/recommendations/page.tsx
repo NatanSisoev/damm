@@ -4,12 +4,13 @@ import {
   approveRecommendationAction, discardRecommendationAction, followUpAction,
 } from "../actions";
 import { Card, Empty, PageHeader } from "../ui";
-import { SignalBadges } from "../signal-labels";
+import { SignalBadges, SignalText } from "../signal-labels";
+import { compareSignals } from "@/lib/signal-text";
 import { recommendationStatus } from "../labels";
 
 
 export default function RecommendationsPage() {
-  const signals = listSignals();
+  const signals = listSignals().sort(compareSignals);
   const recs = listRecommendations();
   return (
     <>
@@ -25,12 +26,11 @@ export default function RecommendationsPage() {
             <ul className="space-y-3">
               {signals.map((s) => (
                 <li key={s.id} className="rounded-lg border border-line p-3">
-                  <div className="mb-1.5 flex flex-wrap items-center gap-2">
+                  <SignalText s={s} />
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
                     <SignalBadges tipus={s.tipus} severity={s.severity} status={s.status} />
-                    {s.collectiu && <span className="badge">{s.collectiu}</span>}
-                    <span className="num ml-auto text-xs text-subtle">n={s.n}</span>
+                    <span className="num ml-auto text-xs text-subtle">{s.periode} · n={s.n}</span>
                   </div>
-                  <p className="text-[13px]">{s.descripcio}</p>
                   <Link href={`/hr/signals/${s.id}`} className="mt-2 inline-block text-xs text-accent-ink hover:underline">Veure detall →</Link>
                 </li>
               ))}
