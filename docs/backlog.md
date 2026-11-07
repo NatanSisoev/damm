@@ -23,6 +23,7 @@ Status: `running`, `ready` (can start now), `blocked` (waiting on a dependency),
 | 10 | `jan/dev` → `main` PR | coordinating session | ready | light |
 | 12 | HR home overview | `jan/hr-home` | done | light |
 | 13 | Publish page: join link, QR and print poster | `jan/publish-qr` | done | light |
+| 14 | E2E fixes: thin new period (B1), HR cookie path (B2), per-shift count leak (B3), daily limit on publish (B5) | `jan/e2e-fixes` | done (R-PRIV-2, R-FLOW-5c) | heavy |
 | 14 | Pitch deck | `jan/deck` | deferred to 8 Nov 9:00 | light |
 | 15 | Demo reset and presenter mode | `jan/demo-reset` | deferred to 8 Nov 9:00 | heavy |
 | 16 | Signal drilldown and follow-up loop view | `jan/signals` | done | light |
