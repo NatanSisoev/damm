@@ -25,7 +25,7 @@ Status: `running`, `ready` (can start now), `blocked` (waiting on a dependency),
 | 13 | Publish page: join link, QR and print poster | `jan/publish-qr` | done | light |
 | 14 | Pitch deck | `jan/deck` | deferred to 8 Nov 9:00 | light |
 | 15 | Demo reset and presenter mode | `jan/demo-reset` | deferred to 8 Nov 9:00 | heavy |
-| 16 | Signal drilldown and follow-up loop view | `jan/signals` | running | light |
+| 16 | Signal drilldown and follow-up loop view | `jan/signals` | done | light |
 | 17 | Statistical rigour: complementary suppression, precision, change rule | `jan/rigour` | done | light |
 | 18 | Methodology page ("Com calculem") | `jan/methodology` | ready | light |
 | 19 | Question-quality checker on drafts | `jan/draft-check` | ready | light |
