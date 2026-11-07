@@ -17,6 +17,7 @@
   },
   "exports": {
     ".": "./src/index.ts",
-    "./hr": "./src/hr.ts"
+    "./hr": "./src/hr.ts",
+    "./join": "./src/join.ts"
   }
 }
