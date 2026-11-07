@@ -1,5 +1,6 @@
 import { estimateSeconds } from "@damm/ai";
 import type { NeedDraftGroup } from "@damm/db/hr";
+import { questionTypeLabel } from "../labels";
 import {
   approveQuestionAction, discardQuestionAction, editNeedHeaderAction, editQuestionAction, moveDraftAction,
   regenerateQuestionAction,
@@ -39,7 +40,7 @@ export function DraftReview({ g }: { g: NeedDraftGroup }) {
             <div className="flex flex-wrap items-center gap-2">
               <span className="num text-xs text-subtle">{i + 1}.</span>
               <span className="badge">{q.domini}</span>
-              <span className="badge">{q.tipus}</span>
+              <span className="badge">{questionTypeLabel(q.tipus)}</span>
               <span className="num text-xs text-subtle">~{estimateSeconds([q.tipusAi])} s</span>
             </div>
             {q.motiu && <p className="text-sm text-subtle">Per què: {q.motiu}</p>}
