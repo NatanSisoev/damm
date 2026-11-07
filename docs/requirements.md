@@ -40,7 +40,7 @@ G-§9: "Criteris excloents". These outrank everything else.
 
 | ID | Requirement | Source | Status | Evidence / gap |
 |----|-------------|--------|--------|----------------|
-| R-CH-1 | An AI-based active-listening platform that creates climate micro-surveys adapted to each collective **and moment** | D-S12, G-§3 | partial | Collective adaptation exists in the seeded pool. "Moment" (timing) depends on the engine (blocked). |
+| R-CH-1 | An AI-based active-listening platform that creates climate micro-surveys adapted to each collective **and moment** | D-S12, G-§3 | partial | Collective adaptation exists in the seeded pool. "Moment" (timing): the engine times extra sampling with HR "Indagar" probes (time-boxed, per segment; `startProbe`, C12). The Indagar button on the signal page is Jan's open item. |
 | R-CH-2 | Representative participation **without saturating** people | D-S11, G-§3 | partial | About 2 questions a day and representativeness per collective are in place. The anti-saturation rules live in the engine (blocked). |
 | R-CH-3 | Answers become insights **and actions** automatically | G-§3 | partial | Engine insights and alarms (`@damm/engine`) are shown on HR results, the Alarmes page and the manager view; the engine job runs after seeding and every 10 min. Themes and recommendations still come from the seed. |
 | R-CH-4 | Anonymity and privacy guaranteed at all times | D-S12, G-§3 | done | See section 6. |
@@ -106,7 +106,7 @@ The guide says "Publicar a Typeform". AGENTS.md decides to ignore Typeform: the 
 | R-FLOW-5b | QR access | done | `/join/[codi]` |
 | R-FLOW-5c | **Frequency** strategy (about 2 a day, no repeats 4 days in a row) | blocked | Pool stub today; engine is Natan's |
 | R-FLOW-5d | **Reminders** | missing | Push is task 4 (ready). Needs HTTPS (task 9). |
-| R-FLOW-5e | **Representativeness control** while collecting (warn when a group is under-sampled) | partial | Shown on results. The engine now raises a `baixa_participacio` alarm (C9); banner pending. Oversampling is still blocked. |
+| R-FLOW-5e | **Representativeness control** while collecting (warn when a group is under-sampled) | partial | Shown on results. The engine now raises a `baixa_participacio` alarm (C9); banner pending. The engine can now act on it: a time-boxed probe samples a domain more in a segment (`startProbe`, C12, engine tests green) with progress (extra answers, confidence before and now). Missing: the Indagar button and progress card in the HR UI. |
 | R-FLOW-5f | Does not saturate anyone | blocked | Engine rules |
 
 ### R-FLOW-6 Collect and analyse

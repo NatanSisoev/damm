@@ -19,6 +19,15 @@ What changed and why.
 
 ---
 
+## C12 · 2026-11-07 · Natan · "Indagar" probe (time-boxed extra sampling)
+
+New table `probe` in `packages/db/schema.sql` (additive; rebuild existing databases with `pnpm --filter @damm/db run init` or the demo builder). New in `@damm/engine/hr`: `startProbe`, `listProbes`, `stopProbe` and the types `ProbeView`, `ProbeProgress`. A probe makes the scheduler ask one domain more often for one segment (collective, optionally one shift) for a number of days, optionally tied to an alarm (`senyalId`). It targets segments, never accounts; segments under 10 people are refused with a `ProbeError`. The engine job refreshes each probe's progress (extra answers, confidence before and now) from aggregates, hidden when fewer than 10 people answered. Details: [engine.md](engine.md), "Probes", and [engine-integration.md](engine-integration.md), "Probes (Indagar)".
+
+Action items:
+- [ ] Jan: rebuild existing databases (new `probe` table).
+- [ ] Jan: on the signal page, next to the recommendations, add an "Indagar" button. HR-only route that calls `startProbe(db, { senyalId, collectiuId, tornId, dominiId, boost, days })` with the alarm's segment and domain (defaults `boost = 2`, `days = 14`). Show `ProbeError.message` if it refuses.
+- [ ] Jan: while a probe exists for the signal (`listProbes(db, { senyalId })`), show its status, days left, extra answers, confidence before and now, and a "Stop" button (`stopProbe`). Show "not enough answers yet" when `progress` is null or `progress.suppressed`.
+
 ## C11 · 2026-11-07 · Natan · Recommendation proposals for open alarms
 
 Additive schema change on `recomanacio`: `titol`, `iniciativa` (Damm initiative), `responsable_suggerit`, `termini_suggerit`, `justificacio` (cites n and confidence), `limits` ("correlació, no causa"), `font` (`llm` | `template`). `text` holds the concrete action. Rows are inserted as `estat = 'proposada'`, linked by `senyal_id`, by `runRecommendations` (`@damm/engine/job`, run with `draftRecommendations` from `@damm/ai`). Owner and timeframe are suggestions only. There is deliberately **no done/completed column**: HR only approves or discards. Old databases need the seven columns added (or a re-init).

@@ -12,6 +12,7 @@ import { combineStrata, segmentStats, type SegmentStats } from "./segment.ts";
 import * as store from "./store.ts";
 import { dayOf, daysBetween, periodEndMs, toMs, toSqlDatetime } from "./time.ts";
 import { runInsights, type InsightConfig } from "./insights.ts";
+import { updateProbeProgress } from "./probe.ts";
 import { runAlarms, type AlarmReport, type AlarmThresholds } from "./alarms.ts";
 
 export { runInsights } from "./insights.ts";
@@ -232,6 +233,7 @@ export function runEngineJob(db: SqlDatabase, opts: JobOptions = {}): JobReport 
   // Both read the aggregates just written, so they run after the transaction above has committed.
   const insights = runInsights(db, { now: nowMs, config: opts.config, insight: opts.insight });
   const alarms = runAlarms(db, { now: nowMs, config: opts.config, thresholds: opts.thresholds });
+  updateProbeProgress(db, nowMs, opts.config); // "Indagar" progress, from the aggregates just written
 
   return {
     engineVersion: ENGINE_VERSION,

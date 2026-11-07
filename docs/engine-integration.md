@@ -33,7 +33,7 @@ Rules that do not change:
 |---|---|---|
 | `@damm/engine` | employee API routes | `createEngine`, `getDailyBatch`, `submitAnswers` |
 | `@damm/engine/job` | server startup, job route, script | `runEngineJob`, `startEngineScheduler` |
-| `@damm/engine/hr` | HR routes and pages | `listInsights`, `listAlarms`, `alarmCounts`, `setAlarmStatus`, `validateQuestion`, `setDomainWeight`, `setFormatPreference`, `getConfig`, `setConfig` |
+| `@damm/engine/hr` | HR routes and pages | `listInsights`, `listAlarms`, `alarmCounts`, `setAlarmStatus`, `validateQuestion`, `setDomainWeight`, `setFormatPreference`, `startProbe`, `listProbes`, `stopProbe`, `getConfig`, `setConfig` |
 | `@damm/engine/core` | tests, simulations | pure functions (normalise, Kalman, segment stats, Thompson) |
 
 ## Employee app
@@ -273,6 +273,24 @@ Status changes:
 
 - **HR** makes these changes. `setAlarmStatus` throws `AlarmTransitionError` on any other move.
 - **The engine** only opens alarms and auto-resolves alarms that are still `open`. It never changes one a human has moved.
+
+### Probes (Indagar)
+
+An "Indagar" button on the signal page, next to the recommendations, asks the engine to sample that alarm's domain more in its segment for a while.
+
+```ts
+import { startProbe, listProbes, stopProbe, ProbeError } from "@damm/engine/hr";
+// HR-only route. Segment and domain come from the alarm.
+const probe = startProbe(db, { senyalId: alarm.id, collectiuId: alarm.collectiuId, tornId: alarm.tornId, dominiId: alarm.domainId, boost: 2, days: 14 });
+const probes = listProbes(db, { senyalId: alarm.id }); // newest first, with status and progress
+stopProbe(db, probe.id);
+```
+
+- `startProbe` needs a collective (an alarm with no collective cannot be probed). It throws `ProbeError` for a segment under 10 people, a second active probe on the same segment and domain, or a bad boost or number of days: show `error.message`.
+- `ProbeView`: `id`, `senyalId`, `collectiuId`, `tornId`, `dominiId`, `boost`, `startsAt`, `endsAt`, `stoppedAt`, `status` (`active`, `expired`, `stopped`), `daysLeft`, `progress`.
+- `progress` is `null` until the next engine job run (at most 10 minutes). Then: `answers`, `answersBefore`, `extraAnswers`, `people`, `confidenceBefore`, `confidenceNow`, `scoreBefore`, `scoreNow`, `updatedAt`. If `progress.suppressed`, every number is null: show "not enough answers yet (fewer than 10 people)".
+- Suggested UI: a "Digging deeper" card with days left, "+N answers", "confidence 42 → 61" and a Stop button. Never show anything per person.
+- Employee side: nothing changes. `GET /api/pool/next` already picks questions through the scheduler.
 
 ### Getting alarms to the screen
 
