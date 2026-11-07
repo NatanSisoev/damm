@@ -15,7 +15,7 @@ Status: `running`, `ready` (can start now), `blocked` (waiting on a dependency),
 | 1 | Frontend refinement, HR side (domain radar, Magenta Desks-style restyle) | `jan/ui` | done | light |
 | 2 | PWA accounts and onboarding | `jan/pwa-auth` | done | heavy |
 | 3 | PWA answer flow | `jan/pwa-answer` | done | heavy |
-| 4 | Installable PWA and push | `jan/pwa-push` | ready | heavy |
+| 4 | Installable PWA and push | `jan/pwa-push` | ready (installable part done in `jan/p0-employee`; push open) | heavy |
 | 5 | Employee UI refinement | `jan/ui-employee` | done | light |
 | 6 | Security demo | `jan/security-demo` | done | light |
 | 7 | Demo script and slide notes | `jan/demo-script` | done | light |
@@ -151,7 +151,7 @@ New read functions for 16 to 20 go in new files under `packages/db/src/` (for ex
 | Item | Why it matters | Unblocks |
 |------|----------------|----------|
 | Engine function signature in `packages/engine` | swap the pool stub for the real selection | 3 (final), demo |
-| Draft-questions call in `packages/ai` | the need form creates real AI drafts | HR need flow |
+| ~~Draft-questions call in `packages/ai`~~ (done 2026-11-07, Jan) | the need form creates real AI drafts | HR need flow |
 | Analysis job writing `agregat`, `tema`, `senyal` from seeded responses | results show seed data instead of the init fixtures | results, demo |
 | New `./employee` export in `packages/db` and `SESSION_SECRET` in `.env.example` (already in `jan/dev`: tell Natan before the PR) | shared contract | 2 (done), 4 |
 | Branch protection on `main` | repo flow | 10 |

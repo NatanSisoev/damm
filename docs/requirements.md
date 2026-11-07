@@ -73,20 +73,20 @@ G-§4 is the authoritative list ("Tots els equips han de cobrir aquest recorregu
 ### R-FLOW-2 Generate the survey with AI
 | ID | Requirement | Status | Evidence / gap |
 |----|-------------|--------|----------------|
-| R-FLOW-2a | Proposes a **title** | missing | `packages/ai` blocked |
-| R-FLOW-2b | Proposes an **introduction** | missing | blocked |
-| R-FLOW-2c | **3 to 6 questions** | partial | Drafts are seeded. Real generation is blocked. |
-| R-FLOW-2d | **Answer type** per question | partial | Types exist (`scale5`, `scale10`, `yes_no`, `pair`, `choice`, `ranking`, `open`, C2) and the answer UI renders all of them. The AI does not pick them yet. |
+| R-FLOW-2a | Proposes a **title** | done | `draftSurvey` in `packages/ai` (ornith, thinking off, JSON mode, about 3.4 s); editable in review |
+| R-FLOW-2b | Proposes an **introduction** | done | `draftSurvey`; editable in review |
+| R-FLOW-2c | **3 to 6 questions** | done | LLM drafts from the need, context and exclusions; template fallback flagged "Plantilla de reserva". Quality eval in progress (`need-ai-quality` branch). |
+| R-FLOW-2d | **Answer type** per question | done | The AI picks among `scale5`, `scale10`, `yes_no`, `ranking`, `open` (C2 English types); scale questions carry their own end labels. |
 | R-FLOW-2e | **Conditional logic** | missing | Not in the schema or the UI. Minimal version: "if score ≤ 2, ask the open follow-up". |
-| R-FLOW-2f | **Estimated time** | missing | Can be computed deterministically from types (for example 8 s per scale and 30 s per open question) and checked against R-FLOW-1d. |
-| R-FLOW-2g | Adapted to the collective in **tone, length and channel** | blocked | Prompt design is in `packages/ai`. S14 asks for "to proper" (a warm tone). |
+| R-FLOW-2f | **Estimated time** | done | `estimateSeconds` per question and per draft; review warns when it exceeds R-FLOW-1d. |
+| R-FLOW-2g | Adapted to the collective in **tone, length and channel** | partial | The prompt takes the collective and a warm tone; channel adaptation not done. |
 
 ### R-FLOW-3 Human validation
 | ID | Requirement | Status | Evidence / gap |
 |----|-------------|--------|----------------|
 | R-FLOW-3a | HR can **edit** each question | done | `editQuestionAction` |
 | R-FLOW-3b | HR can **delete** each question | done | `discardQuestionAction` |
-| R-FLOW-3c | HR can **reorder** questions | missing | There is no order field or control. |
+| R-FLOW-3c | HR can **reorder** questions | done | `moveDraftAction` with `pregunta.ordre` (C3 draft column, contract entry pending). |
 | R-FLOW-3d | HR **approves**. The AI never publishes without approval | done | `approveQuestionAction`; only `aprovada` enters the pool. |
 | R-FLOW-3e | Quality warnings before approval (bias in the wording, D-S9 #4) | missing | Task 19 (ready) |
 
@@ -133,7 +133,7 @@ The guide says "Publicar a Typeform". AGENTS.md decides to ignore Typeform: the 
 | ID | Requirement | Status | Evidence / gap |
 |----|-------------|--------|----------------|
 | R-FLOW-8a | Proposes **concrete actions** | partial | `recomanacio` seeded. Generation is blocked. |
-| R-FLOW-8b | Proposes a **new follow-up micro-survey** | done | `createFollowUp` creates a need |
+| R-FLOW-8b | Proposes a **new follow-up micro-survey** | done | `createDraftedFollowUp`: need for the signal's collective, AI-drafted questions, human review |
 | R-FLOW-8c | Recommendations are proposals, never automatic decisions | done | Approve or discard |
 | R-FLOW-8d | Results go back to the people who answered | done | Employee home lists approved actions for their collective (`approvedActionsForCompte`, n≥10 only) with period and follow-up badge |
 
@@ -303,7 +303,7 @@ Bonus items named by the guide (G-§4 "Bonus") and the deck (D-S18), then our ow
 | N-9 | Methodology page "Com calculem" | ours | Explainability, scenario C6 | missing | Task 18, ready |
 | N-10 | Question-quality checker | ours | Wording bias, R-BIAS-4 | missing | Task 19, ready |
 | N-11 | Decision audit log and AI provenance | ours | Traceability, R-PRIV-10 | blocked | Task 21 |
-| N-12 | Installable PWA plus daily push reminder | ours | Reminders R-FLOW-5d, participation | missing | Task 4, then the tunnel (9) |
+| N-12 | Installable PWA plus daily push reminder | ours | Reminders R-FLOW-5d, participation | partial | Installable: manifest, icons, offline page, service worker (push stub). Push subscribe and send still open (task 4), then the tunnel (9). |
 | N-13 | Participation by channel chart | G-§6.2 | Uses the `canal` field we already store | missing | Small: one aggregate by `canal` with suppression. |
 | N-14 | Initiative ↔ domain mapping | D-S3 | Turns results into "is our policy working?" | missing | R-DOM-5 |
 | N-15 | Retention and purge job | G-§8 | Closes R-PRIV-8 | missing | Document the period; a script deletes old `resposta` rows after aggregation. |
