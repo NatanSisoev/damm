@@ -1,12 +1,14 @@
 import QRCode from "qrcode";
-import { listApprovedUnpublishedNeeds, listDrafts, listPublications } from "@damm/db/hr";
+import { estimateSeconds } from "@damm/ai";
+import { listApprovedUnpublishedNeeds, listNeedDrafts, listPublications } from "@damm/db/hr";
 import {
-  approveQuestionAction, discardQuestionAction, editQuestionAction, publishAction,
+  approveQuestionAction, discardQuestionAction, editNeedHeaderAction, editQuestionAction, moveDraftAction, publishAction,
+  regenerateQuestionAction,
 } from "../actions";
 import { Card, Empty, PageHeader } from "../ui";
 
 export default async function ReviewPage() {
-  const drafts = listDrafts();
+  const groups = listNeedDrafts();
   const ready = listApprovedUnpublishedNeeds();
   const pubs = await Promise.all(
     listPublications().map(async (p) => ({
@@ -21,39 +23,88 @@ export default async function ReviewPage() {
         subtitle="Cap pregunta entra al grup fins que una persona l'aprova. Pots editar el text abans d'aprovar-la."
       />
       <div className="space-y-6">
-        <Card title="Esborranys pendents" meta={<span className="num">{drafts.length}</span>} flush={drafts.length > 0}>
-          {drafts.length === 0 ? (
-            <Empty>No hi ha esborranys pendents.</Empty>
-          ) : (
-            <ul className="divide-y divide-line border-t border-line">
-              {drafts.map((q) => (
-                <li key={q.id} className="space-y-3 px-5 py-4">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="badge">{q.domini}</span>
-                    <span className="badge">{q.tipus}</span>
-                    {q.generadaPerIa && <span className="badge badge-accent">Proposta de la IA</span>}
-                  </div>
-                  <div className="flex flex-wrap items-center justify-end gap-2">
-                    <form action={editQuestionAction} className="flex w-full min-w-0 gap-2 lg:w-auto lg:flex-1">
-                      <input type="hidden" name="id" value={q.id} />
-                      <input name="text" defaultValue={q.text} aria-label="Text de la pregunta" className="input min-w-0 flex-1" />
-                      <button className="btn btn-ghost">Desar text</button>
-                    </form>
-                    <form action={discardQuestionAction}>
-                      <input type="hidden" name="id" value={q.id} />
-                      <button className="btn">Descartar</button>
-                    </form>
-                    <form action={approveQuestionAction}>
-                      <input type="hidden" name="id" value={q.id} />
-                      <button className="btn btn-primary">Aprovar</button>
-                    </form>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </Card>
-
+        {groups.length === 0 && (
+          <Card title="Esborranys pendents"><Empty>No hi ha esborranys pendents.</Empty></Card>
+        )}
+        {groups.map((g) => {
+          const secs = estimateSeconds(g.questions.map((q) => q.tipusAi));
+          const over = g.duradaMaxS != null && secs > g.duradaMaxS;
+          return (
+            <Card
+              key={g.id}
+              title={g.titol ?? "Esborrany sense títol"}
+              meta={<span className="num">{g.questions.length} preguntes</span>}
+            >
+              <div className="space-y-4">
+                <div className="flex flex-wrap items-center gap-2">
+                  {g.draftFont === "fallback" ? (
+                    <span className="badge" title="La IA no ha estat disponible: són preguntes de plantilla">Plantilla de reserva</span>
+                  ) : (
+                    <span className="badge badge-accent">Proposta de la IA</span>
+                  )}
+                  {g.collectiu && <span className="badge">{g.collectiu}</span>}
+                  <span className={`badge num ${over ? "badge-warn" : ""}`}>
+                    ~{secs} s{g.duradaMaxS != null ? ` de ${g.duradaMaxS} s` : ""}
+                  </span>
+                </div>
+                {over && (
+                  <p role="alert" className="rounded-lg border border-line-strong px-3 py-2 text-sm">
+                    Atenció: el temps estimat ({secs} s) supera la durada màxima ({g.duradaMaxS} s). Descarta alguna pregunta o canvia-la per una de més curta.
+                  </p>
+                )}
+                <p className="text-sm text-subtle">Necessitat: {g.textNl}</p>
+                <form action={editNeedHeaderAction} className="space-y-2">
+                  <input type="hidden" name="id" value={g.id} />
+                  <input name="titol" defaultValue={g.titol ?? ""} aria-label="Títol" placeholder="Títol" className="input w-full" />
+                  <textarea name="intro" defaultValue={g.intro ?? ""} aria-label="Introducció" placeholder="Introducció" rows={2} className="input w-full resize-y" />
+                  <button className="btn btn-ghost">Desar títol i introducció</button>
+                </form>
+              </div>
+              <ul className="mt-4 divide-y divide-line border-t border-line">
+                {g.questions.map((q, i) => (
+                  <li key={q.id} className="space-y-3 py-4">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="num text-xs text-subtle">{i + 1}.</span>
+                      <span className="badge">{q.domini}</span>
+                      <span className="badge">{q.tipus}</span>
+                      <span className="num text-xs text-subtle">~{estimateSeconds([q.tipusAi])} s</span>
+                    </div>
+                    {q.motiu && <p className="text-sm text-subtle">Per què: {q.motiu}</p>}
+                    <div className="flex flex-wrap items-center justify-end gap-2">
+                      <form action={editQuestionAction} className="flex w-full min-w-0 gap-2 lg:w-auto lg:flex-1">
+                        <input type="hidden" name="id" value={q.id} />
+                        <input name="text" defaultValue={q.text} aria-label="Text de la pregunta" className="input min-w-0 flex-1" />
+                        <button className="btn btn-ghost">Desar text</button>
+                      </form>
+                      <form action={moveDraftAction}>
+                        <input type="hidden" name="id" value={q.id} />
+                        <input type="hidden" name="dir" value="up" />
+                        <button className="btn btn-ghost" disabled={i === 0} aria-label="Moure amunt">↑</button>
+                      </form>
+                      <form action={moveDraftAction}>
+                        <input type="hidden" name="id" value={q.id} />
+                        <input type="hidden" name="dir" value="down" />
+                        <button className="btn btn-ghost" disabled={i === g.questions.length - 1} aria-label="Moure avall">↓</button>
+                      </form>
+                      <form action={regenerateQuestionAction}>
+                        <input type="hidden" name="id" value={q.id} />
+                        <button className="btn btn-ghost">Regenerar</button>
+                      </form>
+                      <form action={discardQuestionAction}>
+                        <input type="hidden" name="id" value={q.id} />
+                        <button className="btn">Descartar</button>
+                      </form>
+                      <form action={approveQuestionAction}>
+                        <input type="hidden" name="id" value={q.id} />
+                        <button className="btn btn-primary">Aprovar</button>
+                      </form>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </Card>
+          );
+        })}
         {ready.length > 0 && (
           <Card title="Llestes per publicar">
             <ul className="space-y-3">

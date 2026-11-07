@@ -19,11 +19,145 @@ export function createNecessitat(input: {
   textNl: string;
   collectiuId: number | null;
   duradaMaxS: number | null;
+  context?: string | null;
+  exclusions?: string | null;
 }): number {
   const r = getDb()
-    .prepare("INSERT INTO necessitat (text_nl, collectiu_id, durada_max_s) VALUES (?, ?, ?)")
-    .run(input.textNl, input.collectiuId, input.duradaMaxS);
+    .prepare("INSERT INTO necessitat (text_nl, collectiu_id, durada_max_s, context, exclusions) VALUES (?, ?, ?, ?, ?)")
+    .run(input.textNl, input.collectiuId, input.duradaMaxS, input.context || null, input.exclusions || null);
   return Number(r.lastInsertRowid);
+}
+
+// TEMPORARY (C3): question types in the DB are still the Catalan ones. Natan's branch renames them to English
+// (scale5, scale10, yes_no, pair, choice, ranking, open). Delete these two maps and use the type names directly after the sync.
+const TIPUS_FROM_AI: Record<string, string> = { scale5: "escala5", scale10: "escala10", yes_no: "swipe", open: "obert", ranking: "ranking" };
+const TIPUS_TO_AI: Record<string, string> = { escala5: "scale5", escala10: "scale10", swipe: "yes_no", obert: "open", ranking: "ranking" };
+
+export interface DraftInput {
+  text: string;
+  type: string; // English type from @damm/ai
+  domain: string; // domain name
+  reason: string;
+}
+
+function insertDraft(necessitatId: number, collectiuId: number | null, q: DraftInput, ordre: number, byIa: boolean): void {
+  const db = getDb();
+  const dom = db.prepare("SELECT id FROM domini WHERE nom = ?").get(q.domain) as { id: number } | undefined;
+  const tipus = TIPUS_FROM_AI[q.type];
+  if (!dom || !tipus) throw new Error(`Unknown domain or type: ${q.domain} / ${q.type}`);
+  db.prepare(
+    `INSERT INTO pregunta (domini_id, collectiu_id, text, tipus, necessitat_id, generada_per_ia, motiu, ordre)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+  ).run(dom.id, collectiuId, q.text, tipus, necessitatId, byIa ? 1 : 0, q.reason, ordre);
+}
+
+/** Store an AI (or fallback) survey as draft questions of a need. Nothing is approved here. */
+export function saveDraftSurvey(
+  necessitatId: number,
+  survey: { title: string; intro: string; source: "llm" | "fallback"; questions: DraftInput[] },
+): void {
+  const db = getDb();
+  const n = db.prepare("SELECT collectiu_id AS c FROM necessitat WHERE id = ?").get(necessitatId) as { c: number | null } | undefined;
+  if (!n) throw new Error("Necessitat not found");
+  db.transaction(() => {
+    db.prepare("UPDATE necessitat SET titol = ?, intro = ?, draft_font = ? WHERE id = ?").run(
+      survey.title, survey.intro, survey.source, necessitatId,
+    );
+    survey.questions.forEach((q, i) => insertDraft(necessitatId, n.c, q, i + 1, survey.source === "llm"));
+  })();
+}
+
+export function updateNeedHeader(id: number, titol: string, intro: string): void {
+  getDb().prepare("UPDATE necessitat SET titol = ?, intro = ? WHERE id = ?").run(titol, intro, id);
+}
+
+export interface NeedDraftGroup {
+  id: number;
+  textNl: string;
+  titol: string | null;
+  intro: string | null;
+  duradaMaxS: number | null;
+  draftFont: "llm" | "fallback" | null;
+  collectiu: string | null;
+  questions: (DraftQuestion & { motiu: string | null; ordre: number; tipusAi: string })[];
+}
+
+/** Draft questions grouped by need, in review order. */
+export function listNeedDrafts(): NeedDraftGroup[] {
+  const db = getDb();
+  const needs = db
+    .prepare(
+      `SELECT n.id, n.text_nl AS textNl, n.titol, n.intro, n.durada_max_s AS duradaMaxS, n.draft_font AS draftFont, c.nom AS collectiu
+       FROM necessitat n LEFT JOIN collectiu c ON c.id = n.collectiu_id
+       WHERE EXISTS (SELECT 1 FROM pregunta p WHERE p.necessitat_id = n.id AND p.estat = 'draft')
+       ORDER BY n.id DESC`,
+    )
+    .all() as Omit<NeedDraftGroup, "questions">[];
+  const qs = db.prepare(
+    `SELECT p.id, d.nom AS domini, p.tipus, p.text, p.necessitat_id AS necessitatId, p.generada_per_ia AS ia, p.motiu, p.ordre
+     FROM pregunta p JOIN domini d ON d.id = p.domini_id
+     WHERE p.estat = 'draft' AND p.necessitat_id = ? ORDER BY p.ordre, p.id`,
+  );
+  return needs.map((n) => ({
+    ...n,
+    questions: (qs.all(n.id) as any[]).map((r) => ({
+      id: r.id, domini: r.domini, tipus: r.tipus, text: r.text, necessitatId: r.necessitatId,
+      generadaPerIa: !!r.ia, motiu: r.motiu, ordre: r.ordre, tipusAi: TIPUS_TO_AI[r.tipus] ?? r.tipus,
+    })),
+  }));
+}
+
+/** Move a draft one position up or down among the drafts of its need. */
+export function moveDraft(id: number, dir: "up" | "down"): void {
+  const db = getDb();
+  const q = db.prepare("SELECT necessitat_id AS n FROM pregunta WHERE id = ? AND estat = 'draft'").get(id) as { n: number | null } | undefined;
+  if (!q?.n) return;
+  db.transaction(() => {
+    const ids = (db.prepare("SELECT id FROM pregunta WHERE necessitat_id = ? AND estat = 'draft' ORDER BY ordre, id").all(q.n) as { id: number }[]).map((r) => r.id);
+    const i = ids.indexOf(id);
+    const j = dir === "up" ? i - 1 : i + 1;
+    if (i < 0 || j < 0 || j >= ids.length) return;
+    [ids[i], ids[j]] = [ids[j], ids[i]];
+    const set = db.prepare("UPDATE pregunta SET ordre = ? WHERE id = ?");
+    ids.forEach((x, k) => set.run(k + 1, x));
+  })();
+}
+
+/** Everything the AI needs to propose another wording for one draft. */
+export function getRedraftContext(id: number) {
+  const db = getDb();
+  const row = db
+    .prepare(
+      `SELECT p.id, p.text, p.tipus, d.nom AS domini, p.motiu, p.necessitat_id AS nid,
+              n.text_nl AS objective, n.context, n.exclusions, n.durada_max_s AS maxSeconds, c.nom AS collective
+       FROM pregunta p JOIN domini d ON d.id = p.domini_id
+       JOIN necessitat n ON n.id = p.necessitat_id LEFT JOIN collectiu c ON c.id = n.collectiu_id
+       WHERE p.id = ? AND p.estat = 'draft'`,
+    )
+    .get(id) as any;
+  if (!row) return null;
+  const others = (db
+    .prepare(
+      `SELECT p.text, p.tipus, d.nom AS domini, p.motiu FROM pregunta p JOIN domini d ON d.id = p.domini_id
+       WHERE p.necessitat_id = ? AND p.estat = 'draft' AND p.id <> ? ORDER BY p.ordre, p.id`,
+    )
+    .all(row.nid, id) as any[]).map((o) => ({ text: o.text, type: TIPUS_TO_AI[o.tipus] ?? o.tipus, domain: o.domini, reason: o.motiu ?? "" }));
+  return {
+    need: { objective: row.objective, context: row.context, exclusions: row.exclusions, collective: row.collective, maxSeconds: row.maxSeconds },
+    current: { text: row.text, type: TIPUS_TO_AI[row.tipus] ?? row.tipus, domain: row.domini, reason: row.motiu ?? "" },
+    others,
+  };
+}
+
+/** Replace the wording of a draft in place (same row, same position). Still a draft: a human approves later. */
+export function replaceDraft(id: number, q: DraftInput, byIa: boolean): void {
+  const db = getDb();
+  const dom = db.prepare("SELECT id FROM domini WHERE nom = ?").get(q.domain) as { id: number } | undefined;
+  const tipus = TIPUS_FROM_AI[q.type];
+  if (!dom || !tipus) throw new Error(`Unknown domain or type: ${q.domain} / ${q.type}`);
+  db.prepare(
+    "UPDATE pregunta SET text = ?, tipus = ?, domini_id = ?, motiu = ?, generada_per_ia = ? WHERE id = ? AND estat = 'draft'",
+  ).run(q.text, tipus, dom.id, q.reason, byIa ? 1 : 0, id);
 }
 
 export function listCollectius(): { id: number; nom: string }[] {

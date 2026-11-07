@@ -6,6 +6,8 @@ const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
   // Anonymity boundary (AGENTS.md): HR code reads aggregates only, through @damm/db/hr.
+  // @damm/ai is allowed here on purpose: it takes plain input, returns plain output and cannot import the DB
+  // (scripts/check-anonymity.mjs section d). Everything else stays restricted below.
   {
     files: ["app/hr/**/*.{ts,tsx,js,jsx,mjs}"],
     rules: {

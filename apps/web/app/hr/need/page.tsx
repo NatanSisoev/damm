@@ -1,5 +1,5 @@
 import { listCollectius } from "@damm/db/hr";
-import { createNeedAction } from "../actions";
+import { NeedForm } from "./need-form";
 import { Card, PageHeader } from "../ui";
 
 export default function NeedPage() {
@@ -12,36 +12,7 @@ export default function NeedPage() {
       />
       <div className="grid gap-6 lg:grid-cols-[1fr_280px]">
         <Card>
-          <form action={createNeedAction} className="space-y-5">
-            <div>
-              <label htmlFor="text_nl" className="label">Necessitat</label>
-              <textarea
-                id="text_nl"
-                name="text_nl"
-                required
-                rows={6}
-                className="input w-full resize-y"
-                placeholder="Ex.: Volem saber com viuen els equips de planta el nou sistema de torns."
-              />
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div>
-                <label htmlFor="collectiu" className="label">Col·lectiu</label>
-                <select id="collectiu" name="collectiu" className="input w-full">
-                  <option value="0">Tots els col·lectius</option>
-                  {collectius.map((c) => <option key={c.id} value={c.id}>{c.nom}</option>)}
-                </select>
-              </div>
-              <div>
-                <label htmlFor="durada" className="label">Durada màxima per persona (segons)</label>
-                <input id="durada" name="durada" type="number" min={30} step={10} defaultValue={120} className="input num w-full" />
-              </div>
-            </div>
-            <div className="flex items-center justify-end gap-3 border-t border-line pt-4">
-              <span className="text-xs text-subtle">Després passaràs a Revisió.</span>
-              <button className="btn btn-primary">Desar necessitat</button>
-            </div>
-          </form>
+          <NeedForm collectius={collectius} />
         </Card>
         <aside className="space-y-3 text-[13px] text-muted">
           <h2 className="text-xs font-semibold tracking-wide text-subtle uppercase">Com funciona</h2>
