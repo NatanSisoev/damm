@@ -1,0 +1,2529 @@
+{
+ "meta": {
+  "generator": "template",
+  "note": "Synthetic comments. Hidden theme label per entry. Entries with pii=true carry FAKE PII in text_raw for redaction tests; text is the redacted form.",
+  "total": 500
+ },
+ "comments": [
+  {
+   "id": "c001",
+   "tema": "relacio_cap",
+   "text": "En general, quan hi ha un error, es busca solució i no culpables."
+  },
+  {
+   "id": "c002",
+   "tema": "relacio_cap",
+   "text": "Últimament el meu cap és accessible i resol els dubtes ràpidament."
+  },
+  {
+   "id": "c003",
+   "tema": "conciliacio_horaris",
+   "text": "Personalment els canvis de planificació d'última hora compliquen la vida personal. Gràcies per preguntar."
+  },
+  {
+   "id": "c004",
+   "tema": "direccio_visio",
+   "text": "Personalment la direcció explica bé els resultats i els objectius. Ho dic amb sinceritat."
+  },
+  {
+   "id": "c005",
+   "tema": "eines_sistemes",
+   "text": "Últimament les eines informàtiques funcionen bé en general. Gràcies per preguntar."
+  },
+  {
+   "id": "c006",
+   "tema": "comunicacio_interna",
+   "text": "Els correus interns són massa llargs i no els llegeix ningú. Ho dic amb sinceritat."
+  },
+  {
+   "id": "c007",
+   "tema": "carrega_treball",
+   "text": "La veritat és que he notat que ara tinc menys pressió que fa uns mesos. Seria bo millorar-ho."
+  },
+  {
+   "id": "c008",
+   "tema": "formacio",
+   "text": "En general, la formació que rebem és massa genèrica."
+  },
+  {
+   "id": "c009",
+   "tema": "seguretat_calor_epi",
+   "text": "Les botes de seguretat fan mal després de moltes hores. Gràcies per preguntar."
+  },
+  {
+   "id": "c010",
+   "tema": "ambient_equip",
+   "text": "En general, es nota un bon rotllo quan fem activitats fora de la feina. Espero que es tingui en compte."
+  },
+  {
+   "id": "c011",
+   "tema": "carrera_promocio",
+   "text": "En general, fa anys que faig el mateix i no hi ha perspectives de canvi. Espero que es tingui en compte."
+  },
+  {
+   "id": "c012",
+   "tema": "carrega_treball",
+   "text": "Crec que em porto feina a casa més sovint del que voldria."
+  },
+  {
+   "id": "c013",
+   "tema": "ambient_equip",
+   "text": "L'ambient és respectuós però una mica fred. Espero que es tingui en compte."
+  },
+  {
+   "id": "c014",
+   "tema": "ambient_equip",
+   "text": "Crec que tinc molt bona relació amb els companys. Espero que es tingui en compte."
+  },
+  {
+   "id": "c015",
+   "tema": "relacio_cap",
+   "text": "Crec que el tracte és correcte però molt distant."
+  },
+  {
+   "id": "c016",
+   "tema": "formacio",
+   "text": "Últimament la formació que rebem és massa genèrica. Espero que es tingui en compte."
+  },
+  {
+   "id": "c017",
+   "tema": "formacio",
+   "text": "Últimament agraeixo les sessions de formació internes entre companys. Seria bo millorar-ho."
+  },
+  {
+   "id": "c018",
+   "tema": "formacio",
+   "text": "Els horaris de formació no encaixen amb el meu torn. Espero que es tingui en compte."
+  },
+  {
+   "id": "c019",
+   "tema": "col_laboracio",
+   "text": "Últimament no se sap a qui adreçar-se per a segons quins temes."
+  },
+  {
+   "id": "c020",
+   "tema": "comunicacio_interna",
+   "text": "La veritat és que caldria més comunicació abans que després dels canvis. Gràcies per preguntar."
+  },
+  {
+   "id": "c021",
+   "tema": "formacio",
+   "text": "Personalment no tinc temps dins la jornada per fer les formacions. Gràcies per preguntar."
+  },
+  {
+   "id": "c022",
+   "tema": "torns_comunicacio_pauses",
+   "text": "Últimament falta un calendari de torns publicat amb prou antelació. Ho dic amb sinceritat."
+  },
+  {
+   "id": "c023",
+   "tema": "direccio_visio",
+   "text": "Personalment tinc confiança en el rumb que ha pres l'empresa. Seria bo millorar-ho."
+  },
+  {
+   "id": "c024",
+   "tema": "direccio_visio",
+   "text": "Últimament voldria més transparència sobre les decisions estratègiques."
+  },
+  {
+   "id": "c025",
+   "tema": "carrera_promocio",
+   "text": "La veritat és que crec que es premia més l'antiguitat que el talent. Mireu el correu de [EMAIL].",
+   "text_raw": "La veritat és que crec que es premia més l'antiguitat que el talent. Mireu el correu de fals.usuari@exemple.invalid.",
+   "pii": true
+  },
+  {
+   "id": "c026",
+   "tema": "carrega_treball",
+   "text": "La càrrega de treball està bastant ben repartida a l'equip. Seria bo millorar-ho."
+  },
+  {
+   "id": "c027",
+   "tema": "relacio_cap",
+   "text": "Hi ha poca constància en les reunions d'equip. Gràcies per preguntar."
+  },
+  {
+   "id": "c028",
+   "tema": "cansament_descans",
+   "text": "Personalment l'estrès em pesa quan hi ha canvis d'última hora."
+  },
+  {
+   "id": "c029",
+   "tema": "seguretat_calor_epi",
+   "text": "Crec que els EPI es renoven massa tard quan es fan malbé. Espero que es tingui en compte."
+  },
+  {
+   "id": "c030",
+   "tema": "comunicacio_interna",
+   "text": "Crec que no arriba la mateixa informació a tots els torns. Espero que es tingui en compte."
+  },
+  {
+   "id": "c031",
+   "tema": "reconeixement",
+   "text": "Personalment rarament es reconeix la feina ben feta. Ho dic amb sinceritat."
+  },
+  {
+   "id": "c032",
+   "tema": "formacio",
+   "text": "No tinc temps dins la jornada per fer les formacions."
+  },
+  {
+   "id": "c033",
+   "tema": "conciliacio_horaris",
+   "text": "Crec que les hores extra no sempre es compensen amb descans. Espero que es tingui en compte."
+  },
+  {
+   "id": "c034",
+   "tema": "carrera_promocio",
+   "text": "En general, les promocions semblen poc transparents. Seria bo millorar-ho."
+  },
+  {
+   "id": "c035",
+   "tema": "direccio_visio",
+   "text": "Personalment els missatges de la direcció arriben molt tard a la base. Espero que es tingui en compte."
+  },
+  {
+   "id": "c036",
+   "tema": "comunicacio_interna",
+   "text": "Últimament la comunicació ha millorat bastant des de la nova aplicació."
+  },
+  {
+   "id": "c037",
+   "tema": "torns_comunicacio_pauses",
+   "text": "Crec que les pauses s'han reduït i la gent surt cansada de la nit."
+  },
+  {
+   "id": "c038",
+   "tema": "cansament_descans",
+   "text": "Arribo a casa molt cansat i em costa desconnectar. Seria bo millorar-ho."
+  },
+  {
+   "id": "c039",
+   "tema": "comunicacio_interna",
+   "text": "La veritat és que caldria més comunicació abans que després dels canvis. Ho dic amb sinceritat."
+  },
+  {
+   "id": "c040",
+   "tema": "relacio_cap",
+   "text": "Últimament quan hi ha un error, es busca solució i no culpables. Gràcies per preguntar."
+  },
+  {
+   "id": "c041",
+   "tema": "seguretat_calor_epi",
+   "text": "En general, les botes de seguretat fan mal després de moltes hores."
+  },
+  {
+   "id": "c042",
+   "tema": "carrega_treball",
+   "text": "Amb les baixes que no es cobreixen anem tots justos. Gràcies per preguntar."
+  },
+  {
+   "id": "c043",
+   "tema": "relacio_cap",
+   "text": "Últimament sento que el cap decideix sense comptar amb l'equip. Gràcies per preguntar."
+  },
+  {
+   "id": "c044",
+   "tema": "reconeixement",
+   "text": "Rarament es reconeix la feina ben feta. Espero que es tingui en compte."
+  },
+  {
+   "id": "c045",
+   "tema": "cansament_descans",
+   "text": "La veritat és que el cansament físic es nota sobretot a final de mes. Ho dic amb sinceritat."
+  },
+  {
+   "id": "c046",
+   "tema": "col_laboracio",
+   "text": "Crec que la col·laboració funciona millor entre persones que entre processos. Gràcies per preguntar."
+  },
+  {
+   "id": "c047",
+   "tema": "torns_comunicacio_pauses",
+   "text": "Crec que no sabem amb temps quin torn ens tocarà la setmana vinent."
+  },
+  {
+   "id": "c048",
+   "tema": "torns_comunicacio_pauses",
+   "text": "He de reorganitzar la família cada vegada que surt el quadre de torns. Espero que es tingui en compte."
+  },
+  {
+   "id": "c049",
+   "tema": "formacio",
+   "text": "En general, voldria aprendre més sobre les eines que utilitzo cada dia. Espero que es tingui en compte. Això ho porta [NOM], pregunteu-li.",
+   "text_raw": "En general, voldria aprendre més sobre les eines que utilitzo cada dia. Espero que es tingui en compte. Això ho porta l'Albert Exempli, pregunteu-li.",
+   "pii": true
+  },
+  {
+   "id": "c050",
+   "tema": "eines_sistemes",
+   "text": "Voldria accés des del mòbil a les meves dades de feina. Seria bo millorar-ho."
+  },
+  {
+   "id": "c051",
+   "tema": "torns_comunicacio_pauses",
+   "text": "Amb el sistema de torns nou no queda clar quan és la pausa del bocadillo. Ho dic amb sinceritat."
+  },
+  {
+   "id": "c052",
+   "tema": "torns_comunicacio_pauses",
+   "text": "La veritat és que ens canvien el torn i ens n'assabentem pel company. Seria bo millorar-ho."
+  },
+  {
+   "id": "c053",
+   "tema": "torns_comunicacio_pauses",
+   "text": "Al torn de tarda es va avisar més tard del canvi que al de matí. Ho dic amb sinceritat."
+  },
+  {
+   "id": "c054",
+   "tema": "col_laboracio",
+   "text": "Crec que m'agradaria conèixer millor què fan els altres departaments. Ho dic amb sinceritat."
+  },
+  {
+   "id": "c055",
+   "tema": "relacio_cap",
+   "text": "Crec que quan hi ha un error, es busca solució i no culpables. Seria bo millorar-ho. Ho vaig comentar amb [NOM].",
+   "text_raw": "Crec que quan hi ha un error, es busca solució i no culpables. Seria bo millorar-ho. Ho vaig comentar amb en Pere Provafals.",
+   "pii": true
+  },
+  {
+   "id": "c056",
+   "tema": "formacio",
+   "text": "Crec que voldria aprendre més sobre les eines que utilitzo cada dia. Gràcies per preguntar."
+  },
+  {
+   "id": "c057",
+   "tema": "cansament_descans",
+   "text": "Crec que em sento amb ganes i amb energia la major part dels dies. Seria bo millorar-ho."
+  },
+  {
+   "id": "c058",
+   "tema": "seguretat_calor_epi",
+   "text": "Crec que a la nau de dalt s'arriba a temperatures molt altes a la tarda. Espero que es tingui en compte."
+  },
+  {
+   "id": "c059",
+   "tema": "eines_sistemes",
+   "text": "En general, m'agradaria que ens preguntessin abans de canviar un sistema. Seria bo millorar-ho."
+  },
+  {
+   "id": "c060",
+   "tema": "col_laboracio",
+   "text": "Les trobades entre àrees han ajudat molt. Espero que es tingui en compte."
+  },
+  {
+   "id": "c061",
+   "tema": "carrega_treball",
+   "text": "La veritat és que amb les baixes que no es cobreixen anem tots justos. Espero que es tingui en compte."
+  },
+  {
+   "id": "c062",
+   "tema": "ambient_equip",
+   "text": "Personalment es nota un bon rotllo quan fem activitats fora de la feina."
+  },
+  {
+   "id": "c063",
+   "tema": "torns_comunicacio_pauses",
+   "text": "La informació dels torns arriba tard i amb errors. Ho dic amb sinceritat."
+  },
+  {
+   "id": "c064",
+   "tema": "comunicacio_interna",
+   "text": "La veritat és que a vegades les instruccions són contradictòries."
+  },
+  {
+   "id": "c065",
+   "tema": "seguretat_calor_epi",
+   "text": "La veritat és que he vist companys marejats per la calor al moll de càrrega."
+  },
+  {
+   "id": "c066",
+   "tema": "direccio_visio",
+   "text": "Últimament no tinc clar cap on va l'empresa els propers anys."
+  },
+  {
+   "id": "c067",
+   "tema": "comunicacio_interna",
+   "text": "La veritat és que no arriba la mateixa informació a tots els torns."
+  },
+  {
+   "id": "c068",
+   "tema": "formacio",
+   "text": "Crec que agraeixo les sessions de formació internes entre companys."
+  },
+  {
+   "id": "c069",
+   "tema": "eines_sistemes",
+   "text": "Crec que m'agradaria que ens preguntessin abans de canviar un sistema. Seria bo millorar-ho."
+  },
+  {
+   "id": "c070",
+   "tema": "reconeixement",
+   "text": "Valoro el detall que van tenir amb nosaltres a final d'any. Gràcies per preguntar."
+  },
+  {
+   "id": "c071",
+   "tema": "formacio",
+   "text": "No tinc temps dins la jornada per fer les formacions. Espero que es tingui en compte."
+  },
+  {
+   "id": "c072",
+   "tema": "eines_sistemes",
+   "text": "Crec que les màquines tenen un manteniment irregular."
+  },
+  {
+   "id": "c073",
+   "tema": "formacio",
+   "text": "La veritat és que calen més oportunitats per aprendre idiomes."
+  },
+  {
+   "id": "c074",
+   "tema": "conciliacio_horaris",
+   "text": "Crec que el teletreball ha ajudat molt a organitzar-me. Espero que es tingui en compte."
+  },
+  {
+   "id": "c075",
+   "tema": "direccio_visio",
+   "text": "Personalment m'agradaria que visitessin més sovint el lloc de treball."
+  },
+  {
+   "id": "c076",
+   "tema": "formacio",
+   "text": "Últimament calen més oportunitats per aprendre idiomes. Ho dic amb sinceritat."
+  },
+  {
+   "id": "c077",
+   "tema": "comunicacio_interna",
+   "text": "Últimament m'agrada rebre un resum mensual del que passa a l'empresa."
+  },
+  {
+   "id": "c078",
+   "tema": "comunicacio_interna",
+   "text": "La veritat és que la comunicació ha millorat bastant des de la nova aplicació."
+  },
+  {
+   "id": "c079",
+   "tema": "col_laboracio",
+   "text": "Personalment les peticions d'altres àrees arriben sempre amb urgència. Espero que es tingui en compte."
+  },
+  {
+   "id": "c080",
+   "tema": "col_laboracio",
+   "text": "La veritat és que no se sap a qui adreçar-se per a segons quins temes. Seria bo millorar-ho."
+  },
+  {
+   "id": "c081",
+   "tema": "carrera_promocio",
+   "text": "En general, m'agradaria saber quins criteris es fan servir per ascendir."
+  },
+  {
+   "id": "c082",
+   "tema": "carrera_promocio",
+   "text": "En general, valoro poder fer mobilitat interna entre departaments. Espero que es tingui en compte."
+  },
+  {
+   "id": "c083",
+   "tema": "comunicacio_interna",
+   "text": "La veritat és que m'assabento de les novetats pels passadissos i no pels canals oficials."
+  },
+  {
+   "id": "c084",
+   "tema": "reconeixement",
+   "text": "No hi ha cap forma clara de reconèixer les bones idees. Gràcies per preguntar."
+  },
+  {
+   "id": "c085",
+   "tema": "formacio",
+   "text": "En general, m'ha anat molt bé el curs de l'últim trimestre. Espero que es tingui en compte."
+  },
+  {
+   "id": "c086",
+   "tema": "ambient_equip",
+   "text": "Sento que puc ser jo mateix a l'equip. Seria bo millorar-ho."
+  },
+  {
+   "id": "c087",
+   "tema": "eines_sistemes",
+   "text": "Hi ha massa aplicacions diferents per fer una sola tasca."
+  },
+  {
+   "id": "c088",
+   "tema": "conciliacio_horaris",
+   "text": "Últimament agraeixo que es respecti l'horari de sortida. Gràcies per preguntar."
+  },
+  {
+   "id": "c089",
+   "tema": "ambient_equip",
+   "text": "En general, alguns comentaris fora de lloc no haurien de passar. Espero que es tingui en compte."
+  },
+  {
+   "id": "c090",
+   "tema": "formacio",
+   "text": "Últimament la formació d'acollida a la incorporació va ser insuficient."
+  },
+  {
+   "id": "c091",
+   "tema": "reconeixement",
+   "text": "En general, sento que el meu esforç passa desapercebut."
+  },
+  {
+   "id": "c092",
+   "tema": "ambient_equip",
+   "text": "Hi ha tensions entre algunes persones que no es resolen. Ho dic amb sinceritat."
+  },
+  {
+   "id": "c093",
+   "tema": "formacio",
+   "text": "En general, agraeixo les sessions de formació internes entre companys."
+  },
+  {
+   "id": "c094",
+   "tema": "ambient_equip",
+   "text": "Crec que l'ambient és respectuós però una mica fred."
+  },
+  {
+   "id": "c095",
+   "tema": "cansament_descans",
+   "text": "Caldria tenir un espai més tranquil per descansar a la pausa. Gràcies per preguntar."
+  },
+  {
+   "id": "c096",
+   "tema": "carrera_promocio",
+   "text": "Crec que no veig clar quin pot ser el meu creixement aquí. Ho dic amb sinceritat."
+  },
+  {
+   "id": "c097",
+   "tema": "torns_comunicacio_pauses",
+   "text": "Últimament les pauses coincideixen amb el canvi de línia i no es poden fer bé. Ho dic amb sinceritat."
+  },
+  {
+   "id": "c098",
+   "tema": "comunicacio_interna",
+   "text": "En general, se sap tard què es decideix a les oficines centrals. Ho dic amb sinceritat."
+  },
+  {
+   "id": "c099",
+   "tema": "seguretat_calor_epi",
+   "text": "Crec que al magatzem fa molta calor a l'estiu i no hi ha prou ventilació."
+  },
+  {
+   "id": "c100",
+   "tema": "torns_comunicacio_pauses",
+   "text": "La veritat és que falta un calendari de torns publicat amb prou antelació."
+  },
+  {
+   "id": "c101",
+   "tema": "col_laboracio",
+   "text": "Les trobades entre àrees han ajudat molt."
+  },
+  {
+   "id": "c102",
+   "tema": "carrera_promocio",
+   "text": "Crec que fa anys que faig el mateix i no hi ha perspectives de canvi."
+  },
+  {
+   "id": "c103",
+   "tema": "torns_comunicacio_pauses",
+   "text": "Crec que la informació dels torns arriba tard i amb errors."
+  },
+  {
+   "id": "c104",
+   "tema": "conciliacio_horaris",
+   "text": "La veritat és que els horaris de reunió coincideixen amb els de recollir els fills."
+  },
+  {
+   "id": "c105",
+   "tema": "formacio",
+   "text": "Últimament falten cursos pràctics i menys teoria."
+  },
+  {
+   "id": "c106",
+   "tema": "comunicacio_interna",
+   "text": "Personalment no arriba la mateixa informació a tots els torns. Seria bo millorar-ho."
+  },
+  {
+   "id": "c107",
+   "tema": "ambient_equip",
+   "text": "Crec que hi ha molta rotació i costa crear equip. Seria bo millorar-ho."
+  },
+  {
+   "id": "c108",
+   "tema": "carrera_promocio",
+   "text": "Valoro poder fer mobilitat interna entre departaments."
+  },
+  {
+   "id": "c109",
+   "tema": "carrega_treball",
+   "text": "Amb les baixes que no es cobreixen anem tots justos. Espero que es tingui en compte."
+  },
+  {
+   "id": "c110",
+   "tema": "reconeixement",
+   "text": "Rarament es reconeix la feina ben feta."
+  },
+  {
+   "id": "c111",
+   "tema": "seguretat_calor_epi",
+   "text": "La veritat és que al magatzem fa molta calor a l'estiu i no hi ha prou ventilació. Seria bo millorar-ho."
+  },
+  {
+   "id": "c112",
+   "tema": "reconeixement",
+   "text": "La veritat és que em sento orgullós de formar part d'aquesta empresa. Ho dic amb sinceritat."
+  },
+  {
+   "id": "c113",
+   "tema": "reconeixement",
+   "text": "Últimament un simple gràcies de tant en tant ja seria molt. Seria bo millorar-ho."
+  },
+  {
+   "id": "c114",
+   "tema": "carrega_treball",
+   "text": "He notat que ara tinc menys pressió que fa uns mesos. Ho dic amb sinceritat."
+  },
+  {
+   "id": "c115",
+   "tema": "reconeixement",
+   "text": "Un simple gràcies de tant en tant ja seria molt. Gràcies per preguntar."
+  },
+  {
+   "id": "c116",
+   "tema": "reconeixement",
+   "text": "Últimament el reconeixement només arriba quan hi ha un problema. Ho dic amb sinceritat."
+  },
+  {
+   "id": "c117",
+   "tema": "cansament_descans",
+   "text": "El cansament físic es nota sobretot a final de mes. Espero que es tingui en compte."
+  },
+  {
+   "id": "c118",
+   "tema": "formacio",
+   "text": "La veritat és que m'agradaria poder triar quines formacions faig. Gràcies per preguntar."
+  },
+  {
+   "id": "c119",
+   "tema": "conciliacio_horaris",
+   "text": "M'agradaria saber els horaris amb més antelació."
+  },
+  {
+   "id": "c120",
+   "tema": "eines_sistemes",
+   "text": "Necessitaria un portàtil més actual per treballar. Gràcies per preguntar."
+  },
+  {
+   "id": "c121",
+   "tema": "col_laboracio",
+   "text": "La col·laboració funciona millor entre persones que entre processos. Seria bo millorar-ho."
+  },
+  {
+   "id": "c122",
+   "tema": "comunicacio_interna",
+   "text": "M'assabento de les novetats pels passadissos i no pels canals oficials."
+  },
+  {
+   "id": "c123",
+   "tema": "ambient_equip",
+   "text": "Crec que tinc molt bona relació amb els companys. Gràcies per preguntar."
+  },
+  {
+   "id": "c124",
+   "tema": "reconeixement",
+   "text": "La veritat és que m'he sentit valorat quan va sortir bé el projecte. Gràcies per preguntar."
+  },
+  {
+   "id": "c125",
+   "tema": "comunicacio_interna",
+   "text": "Personalment voldria reunions curtes i periòdiques per estar al dia. Ho dic amb sinceritat."
+  },
+  {
+   "id": "c126",
+   "tema": "col_laboracio",
+   "text": "En general, hi ha duplicitat de feina entre equips."
+  },
+  {
+   "id": "c127",
+   "tema": "direccio_visio",
+   "text": "Hi ha poca coherència entre el que es diu i el que es fa. Seria bo millorar-ho."
+  },
+  {
+   "id": "c128",
+   "tema": "formacio",
+   "text": "M'ha anat molt bé el curs de l'últim trimestre. [NOM] ho sap bé.",
+   "text_raw": "M'ha anat molt bé el curs de l'últim trimestre. La Laia Notreal ho sap bé.",
+   "pii": true
+  },
+  {
+   "id": "c129",
+   "tema": "eines_sistemes",
+   "text": "La veritat és que les màquines tenen un manteniment irregular. Ho dic amb sinceritat."
+  },
+  {
+   "id": "c130",
+   "tema": "carrera_promocio",
+   "text": "Crec que es premia més l'antiguitat que el talent."
+  },
+  {
+   "id": "c131",
+   "tema": "formacio",
+   "text": "Calen més oportunitats per aprendre idiomes. Ho dic amb sinceritat."
+  },
+  {
+   "id": "c132",
+   "tema": "seguretat_calor_epi",
+   "text": "Personalment he vist companys marejats per la calor al moll de càrrega. Ho dic amb sinceritat."
+  },
+  {
+   "id": "c133",
+   "tema": "col_laboracio",
+   "text": "La coordinació amb logística és millorable."
+  },
+  {
+   "id": "c134",
+   "tema": "col_laboracio",
+   "text": "La coordinació amb logística és millorable. Seria bo millorar-ho."
+  },
+  {
+   "id": "c135",
+   "tema": "reconeixement",
+   "text": "En general, m'he sentit valorat quan va sortir bé el projecte."
+  },
+  {
+   "id": "c136",
+   "tema": "torns_comunicacio_pauses",
+   "text": "Personalment ningú ens va explicar els motius del canvi de torns. Seria bo millorar-ho."
+  },
+  {
+   "id": "c137",
+   "tema": "relacio_cap",
+   "text": "La veritat és que m'agradaria rebre més feedback del meu cap directe."
+  },
+  {
+   "id": "c138",
+   "tema": "cansament_descans",
+   "text": "Últimament les pauses no sempre són suficients per recuperar-se."
+  },
+  {
+   "id": "c139",
+   "tema": "ambient_equip",
+   "text": "Es nota un bon rotllo quan fem activitats fora de la feina."
+  },
+  {
+   "id": "c140",
+   "tema": "ambient_equip",
+   "text": "Últimament es nota un bon rotllo quan fem activitats fora de la feina. Espero que es tingui en compte."
+  },
+  {
+   "id": "c141",
+   "tema": "ambient_equip",
+   "text": "La veritat és que l'ambient a l'equip és bo i ens ajudem. Gràcies per preguntar."
+  },
+  {
+   "id": "c142",
+   "tema": "cansament_descans",
+   "text": "En general, se'm fa dur acabar la setmana sense energia."
+  },
+  {
+   "id": "c143",
+   "tema": "torns_comunicacio_pauses",
+   "text": "Personalment no sabem amb temps quin torn ens tocarà la setmana vinent. Gràcies per preguntar."
+  },
+  {
+   "id": "c144",
+   "tema": "formacio",
+   "text": "Crec que falten cursos pràctics i menys teoria."
+  },
+  {
+   "id": "c145",
+   "tema": "conciliacio_horaris",
+   "text": "Últimament agraeixo que es respecti l'horari de sortida. Ho dic amb sinceritat."
+  },
+  {
+   "id": "c146",
+   "tema": "cansament_descans",
+   "text": "En general, arribo a casa molt cansat i em costa desconnectar."
+  },
+  {
+   "id": "c147",
+   "tema": "torns_comunicacio_pauses",
+   "text": "El nou sistema de torns es va comunicar només dos dies abans. Gràcies per preguntar."
+  },
+  {
+   "id": "c148",
+   "tema": "reconeixement",
+   "text": "Em sento orgullós de formar part d'aquesta empresa."
+  },
+  {
+   "id": "c149",
+   "tema": "relacio_cap",
+   "text": "Personalment el meu cap és accessible i resol els dubtes ràpidament. Espero que es tingui en compte."
+  },
+  {
+   "id": "c150",
+   "tema": "comunicacio_interna",
+   "text": "En general, caldria més comunicació abans que després dels canvis."
+  },
+  {
+   "id": "c151",
+   "tema": "col_laboracio",
+   "text": "Crec que la col·laboració funciona millor entre persones que entre processos. Espero que es tingui en compte."
+  },
+  {
+   "id": "c152",
+   "tema": "conciliacio_horaris",
+   "text": "Últimament l'horari em permet conciliar bé amb la família."
+  },
+  {
+   "id": "c153",
+   "tema": "carrera_promocio",
+   "text": "Personalment voldria parlar de la meva carrera amb algú de recursos humans. Ho dic amb sinceritat."
+  },
+  {
+   "id": "c154",
+   "tema": "carrera_promocio",
+   "text": "Personalment he tingut oportunitats de canviar de tasques i m'ha agradat."
+  },
+  {
+   "id": "c155",
+   "tema": "conciliacio_horaris",
+   "text": "Crec que m'agradaria saber els horaris amb més antelació. Espero que es tingui en compte."
+  },
+  {
+   "id": "c156",
+   "tema": "carrera_promocio",
+   "text": "Crec que voldria parlar de la meva carrera amb algú de recursos humans."
+  },
+  {
+   "id": "c157",
+   "tema": "carrera_promocio",
+   "text": "En general, fa anys que faig el mateix i no hi ha perspectives de canvi."
+  },
+  {
+   "id": "c158",
+   "tema": "cansament_descans",
+   "text": "Em sento amb ganes i amb energia la major part dels dies."
+  },
+  {
+   "id": "c159",
+   "tema": "torns_comunicacio_pauses",
+   "text": "Les pauses s'han reduït i la gent surt cansada de la nit. Ho dic amb sinceritat."
+  },
+  {
+   "id": "c160",
+   "tema": "reconeixement",
+   "text": "Un simple gràcies de tant en tant ja seria molt. Espero que es tingui en compte."
+  },
+  {
+   "id": "c161",
+   "tema": "cansament_descans",
+   "text": "Dormo poc quan canvio de franja horària. Ho dic amb sinceritat."
+  },
+  {
+   "id": "c162",
+   "tema": "comunicacio_interna",
+   "text": "La comunicació ha millorat bastant des de la nova aplicació."
+  },
+  {
+   "id": "c163",
+   "tema": "reconeixement",
+   "text": "No hi ha cap forma clara de reconèixer les bones idees."
+  },
+  {
+   "id": "c164",
+   "tema": "cansament_descans",
+   "text": "L'estrès em pesa quan hi ha canvis d'última hora."
+  },
+  {
+   "id": "c165",
+   "tema": "carrega_treball",
+   "text": "En època de pics de producció ens falta gent. Gràcies per preguntar."
+  },
+  {
+   "id": "c166",
+   "tema": "comunicacio_interna",
+   "text": "No arriba la mateixa informació a tots els torns."
+  },
+  {
+   "id": "c167",
+   "tema": "carrera_promocio",
+   "text": "Els llocs vacants es publiquen massa tard."
+  },
+  {
+   "id": "c168",
+   "tema": "cansament_descans",
+   "text": "La veritat és que caldria tenir un espai més tranquil per descansar a la pausa."
+  },
+  {
+   "id": "c169",
+   "tema": "conciliacio_horaris",
+   "text": "En general, els canvis de planificació d'última hora compliquen la vida personal. Gràcies per preguntar."
+  },
+  {
+   "id": "c170",
+   "tema": "ambient_equip",
+   "text": "M'agradaria més cohesió entre els diferents torns."
+  },
+  {
+   "id": "c171",
+   "tema": "col_laboracio",
+   "text": "Crec que la col·laboració funciona millor entre persones que entre processos."
+  },
+  {
+   "id": "c172",
+   "tema": "col_laboracio",
+   "text": "Últimament hi ha duplicitat de feina entre equips."
+  },
+  {
+   "id": "c173",
+   "tema": "formacio",
+   "text": "En general, els horaris de formació no encaixen amb el meu torn. Gràcies per preguntar."
+  },
+  {
+   "id": "c174",
+   "tema": "cansament_descans",
+   "text": "Últimament em sento amb ganes i amb energia la major part dels dies. Espero que es tingui en compte."
+  },
+  {
+   "id": "c175",
+   "tema": "carrega_treball",
+   "text": "Personalment els objectius són exigents però assolibles."
+  },
+  {
+   "id": "c176",
+   "tema": "formacio",
+   "text": "En general, no tinc temps dins la jornada per fer les formacions."
+  },
+  {
+   "id": "c177",
+   "tema": "formacio",
+   "text": "Falten cursos pràctics i menys teoria. Gràcies per preguntar."
+  },
+  {
+   "id": "c178",
+   "tema": "ambient_equip",
+   "text": "Últimament hi ha molta rotació i costa crear equip. Gràcies per preguntar."
+  },
+  {
+   "id": "c179",
+   "tema": "comunicacio_interna",
+   "text": "La veritat és que se sap tard què es decideix a les oficines centrals. Ho dic amb sinceritat."
+  },
+  {
+   "id": "c180",
+   "tema": "col_laboracio",
+   "text": "Falten canals directes per resoldre dubtes entre àrees. Gràcies per preguntar."
+  },
+  {
+   "id": "c181",
+   "tema": "carrera_promocio",
+   "text": "Les promocions semblen poc transparents. Seria bo millorar-ho."
+  },
+  {
+   "id": "c182",
+   "tema": "direccio_visio",
+   "text": "La veritat és que es parla de canvis però no se sap què implicaran."
+  },
+  {
+   "id": "c183",
+   "tema": "carrega_treball",
+   "text": "Personalment em porto feina a casa més sovint del que voldria. Ho dic amb sinceritat."
+  },
+  {
+   "id": "c184",
+   "tema": "comunicacio_interna",
+   "text": "Crec que els tauler d'anuncis no s'actualitzen mai."
+  },
+  {
+   "id": "c185",
+   "tema": "cansament_descans",
+   "text": "Últimament dormo poc quan canvio de franja horària. Seria bo millorar-ho."
+  },
+  {
+   "id": "c186",
+   "tema": "cansament_descans",
+   "text": "Se'm fa dur acabar la setmana sense energia. Seria bo millorar-ho."
+  },
+  {
+   "id": "c187",
+   "tema": "relacio_cap",
+   "text": "Sento que el cap decideix sense comptar amb l'equip. Gràcies per preguntar."
+  },
+  {
+   "id": "c188",
+   "tema": "reconeixement",
+   "text": "En general, el reconeixement només arriba quan hi ha un problema. Gràcies per preguntar. Parleu amb [NOM].",
+   "text_raw": "En general, el reconeixement només arriba quan hi ha un problema. Gràcies per preguntar. Parleu amb la Marta Testsintètica.",
+   "pii": true
+  },
+  {
+   "id": "c189",
+   "tema": "comunicacio_interna",
+   "text": "En general, els tauler d'anuncis no s'actualitzen mai. Ho dic amb sinceritat."
+  },
+  {
+   "id": "c190",
+   "tema": "comunicacio_interna",
+   "text": "En general, m'agrada rebre un resum mensual del que passa a l'empresa. Gràcies per preguntar."
+  },
+  {
+   "id": "c191",
+   "tema": "cansament_descans",
+   "text": "En general, l'estrès em pesa quan hi ha canvis d'última hora. Espero que es tingui en compte."
+  },
+  {
+   "id": "c192",
+   "tema": "direccio_visio",
+   "text": "En general, tinc confiança en el rumb que ha pres l'empresa. Espero que es tingui en compte."
+  },
+  {
+   "id": "c193",
+   "tema": "torns_comunicacio_pauses",
+   "text": "Personalment les pauses del nou calendari són més curtes i no donen temps de res. Espero que es tingui en compte."
+  },
+  {
+   "id": "c194",
+   "tema": "comunicacio_interna",
+   "text": "M'agrada rebre un resum mensual del que passa a l'empresa. Espero que es tingui en compte."
+  },
+  {
+   "id": "c195",
+   "tema": "reconeixement",
+   "text": "En general, l'equip es reconeix entre si, i això compta molt. Gràcies per preguntar."
+  },
+  {
+   "id": "c196",
+   "tema": "torns_comunicacio_pauses",
+   "text": "La informació dels torns arriba tard i amb errors. Seria bo millorar-ho."
+  },
+  {
+   "id": "c197",
+   "tema": "ambient_equip",
+   "text": "Personalment hi ha tensions entre algunes persones que no es resolen. Espero que es tingui en compte."
+  },
+  {
+   "id": "c198",
+   "tema": "carrega_treball",
+   "text": "Personalment en època de pics de producció ens falta gent."
+  },
+  {
+   "id": "c199",
+   "tema": "conciliacio_horaris",
+   "text": "En general, la jornada intensiva a l'estiu és un gran encert."
+  },
+  {
+   "id": "c200",
+   "tema": "carrega_treball",
+   "text": "Els objectius són exigents però assolibles."
+  },
+  {
+   "id": "c201",
+   "tema": "carrera_promocio",
+   "text": "Personalment no veig clar quin pot ser el meu creixement aquí."
+  },
+  {
+   "id": "c202",
+   "tema": "eines_sistemes",
+   "text": "Crec que l'ordre i la neteja dels espais de treball han millorat. Gràcies per preguntar."
+  },
+  {
+   "id": "c203",
+   "tema": "cansament_descans",
+   "text": "En general, el cansament físic es nota sobretot a final de mes. Gràcies per preguntar."
+  },
+  {
+   "id": "c204",
+   "tema": "relacio_cap",
+   "text": "Últimament hi ha poca constància en les reunions d'equip. Gràcies per preguntar."
+  },
+  {
+   "id": "c205",
+   "tema": "eines_sistemes",
+   "text": "Les eines per registrar incidències són complicades."
+  },
+  {
+   "id": "c206",
+   "tema": "col_laboracio",
+   "text": "Crec que no se sap a qui adreçar-se per a segons quins temes. Gràcies per preguntar."
+  },
+  {
+   "id": "c207",
+   "tema": "relacio_cap",
+   "text": "Crec que no sempre se'ns explica per què es prenen les decisions. Gràcies per preguntar."
+  },
+  {
+   "id": "c208",
+   "tema": "direccio_visio",
+   "text": "Els missatges de la direcció arriben molt tard a la base."
+  },
+  {
+   "id": "c209",
+   "tema": "cansament_descans",
+   "text": "En general, voldria més marge per descansar entre tasques. Ho dic amb sinceritat."
+  },
+  {
+   "id": "c210",
+   "tema": "reconeixement",
+   "text": "Crec que rarament es reconeix la feina ben feta. Gràcies per preguntar. Podeu trucar a [TELÈFON].",
+   "text_raw": "Crec que rarament es reconeix la feina ben feta. Gràcies per preguntar. Podeu trucar a l'extensió 555 000 02.",
+   "pii": true
+  },
+  {
+   "id": "c211",
+   "tema": "cansament_descans",
+   "text": "En general, les pauses no sempre són suficients per recuperar-se."
+  },
+  {
+   "id": "c212",
+   "tema": "comunicacio_interna",
+   "text": "Crec que m'assabento de les novetats pels passadissos i no pels canals oficials. Gràcies per preguntar."
+  },
+  {
+   "id": "c213",
+   "tema": "carrera_promocio",
+   "text": "Últimament voldria parlar de la meva carrera amb algú de recursos humans."
+  },
+  {
+   "id": "c214",
+   "tema": "cansament_descans",
+   "text": "Voldria més marge per descansar entre tasques."
+  },
+  {
+   "id": "c215",
+   "tema": "reconeixement",
+   "text": "Personalment no hi ha cap forma clara de reconèixer les bones idees. Seria bo millorar-ho."
+  },
+  {
+   "id": "c216",
+   "tema": "torns_comunicacio_pauses",
+   "text": "Amb el sistema de torns nou no queda clar quan és la pausa del bocadillo."
+  },
+  {
+   "id": "c217",
+   "tema": "comunicacio_interna",
+   "text": "En general, els correus interns són massa llargs i no els llegeix ningú."
+  },
+  {
+   "id": "c218",
+   "tema": "reconeixement",
+   "text": "M'agradaria que es destaquessin més els èxits d'equip."
+  },
+  {
+   "id": "c219",
+   "tema": "conciliacio_horaris",
+   "text": "En general, la jornada intensiva a l'estiu és un gran encert. Seria bo millorar-ho."
+  },
+  {
+   "id": "c220",
+   "tema": "conciliacio_horaris",
+   "text": "En general, l'horari em permet conciliar bé amb la família."
+  },
+  {
+   "id": "c221",
+   "tema": "relacio_cap",
+   "text": "Crec que el meu responsable m'escolta quan tinc un problema."
+  },
+  {
+   "id": "c222",
+   "tema": "col_laboracio",
+   "text": "En general, entre departaments sovint es llencen la pilota."
+  },
+  {
+   "id": "c223",
+   "tema": "carrera_promocio",
+   "text": "La veritat és que m'agradaria saber quins criteris es fan servir per ascendir."
+  },
+  {
+   "id": "c224",
+   "tema": "carrera_promocio",
+   "text": "Últimament falta un pla de carrera per a les persones de planta. Espero que es tingui en compte."
+  },
+  {
+   "id": "c225",
+   "tema": "comunicacio_interna",
+   "text": "En general, a vegades les instruccions són contradictòries. Gràcies per preguntar."
+  },
+  {
+   "id": "c226",
+   "tema": "torns_comunicacio_pauses",
+   "text": "En general, ningú ens va explicar els motius del canvi de torns."
+  },
+  {
+   "id": "c227",
+   "tema": "direccio_visio",
+   "text": "Personalment la direcció explica bé els resultats i els objectius."
+  },
+  {
+   "id": "c228",
+   "tema": "relacio_cap",
+   "text": "Hi ha poca constància en les reunions d'equip."
+  },
+  {
+   "id": "c229",
+   "tema": "direccio_visio",
+   "text": "La veritat és que no tinc clar cap on va l'empresa els propers anys. Gràcies per preguntar."
+  },
+  {
+   "id": "c230",
+   "tema": "cansament_descans",
+   "text": "Les pauses no sempre són suficients per recuperar-se."
+  },
+  {
+   "id": "c231",
+   "tema": "seguretat_calor_epi",
+   "text": "Personalment els guants de seguretat no són de la meva talla. Gràcies per preguntar."
+  },
+  {
+   "id": "c232",
+   "tema": "torns_comunicacio_pauses",
+   "text": "Personalment el nou sistema de torns es va comunicar només dos dies abans."
+  },
+  {
+   "id": "c233",
+   "tema": "torns_comunicacio_pauses",
+   "text": "La veritat és que falta un calendari de torns publicat amb prou antelació. Seria bo millorar-ho."
+  },
+  {
+   "id": "c234",
+   "tema": "seguretat_calor_epi",
+   "text": "Els EPI es renoven massa tard quan es fan malbé."
+  },
+  {
+   "id": "c235",
+   "tema": "formacio",
+   "text": "En general, falten cursos pràctics i menys teoria. Seria bo millorar-ho."
+  },
+  {
+   "id": "c236",
+   "tema": "eines_sistemes",
+   "text": "Últimament m'agradaria que ens preguntessin abans de canviar un sistema."
+  },
+  {
+   "id": "c237",
+   "tema": "ambient_equip",
+   "text": "Crec que hi ha molta rotació i costa crear equip. Ho dic amb sinceritat."
+  },
+  {
+   "id": "c238",
+   "tema": "conciliacio_horaris",
+   "text": "La veritat és que voldria més flexibilitat per entrar i sortir. Espero que es tingui en compte."
+  },
+  {
+   "id": "c239",
+   "tema": "direccio_visio",
+   "text": "La veritat és que hi ha poca coherència entre el que es diu i el que es fa. Ho dic amb sinceritat."
+  },
+  {
+   "id": "c240",
+   "tema": "col_laboracio",
+   "text": "La veritat és que m'agradaria conèixer millor què fan els altres departaments. Seria bo millorar-ho."
+  },
+  {
+   "id": "c241",
+   "tema": "relacio_cap",
+   "text": "Personalment tinc un bon tracte amb qui coordina el meu grup."
+  },
+  {
+   "id": "c242",
+   "tema": "direccio_visio",
+   "text": "Crec que falta un full de ruta que entengui tothom."
+  },
+  {
+   "id": "c243",
+   "tema": "carrega_treball",
+   "text": "Crec que no sempre es té en compte el que costa fer una tasca."
+  },
+  {
+   "id": "c244",
+   "tema": "eines_sistemes",
+   "text": "Personalment les eines informàtiques funcionen bé en general."
+  },
+  {
+   "id": "c245",
+   "tema": "torns_comunicacio_pauses",
+   "text": "La informació dels torns arriba tard i amb errors."
+  },
+  {
+   "id": "c246",
+   "tema": "reconeixement",
+   "text": "Sento que el meu esforç passa desapercebut."
+  },
+  {
+   "id": "c247",
+   "tema": "comunicacio_interna",
+   "text": "Se sap tard què es decideix a les oficines centrals."
+  },
+  {
+   "id": "c248",
+   "tema": "direccio_visio",
+   "text": "Tinc confiança en el rumb que ha pres l'empresa. Ho va dir [NOM] a la reunió.",
+   "text_raw": "Tinc confiança en el rumb que ha pres l'empresa. Ho va dir en Joan Nofake a la reunió.",
+   "pii": true
+  },
+  {
+   "id": "c249",
+   "tema": "carrega_treball",
+   "text": "Personalment agraeixo que a vegades es reforci l'equip quan hi ha molta feina. Seria bo millorar-ho."
+  },
+  {
+   "id": "c250",
+   "tema": "col_laboracio",
+   "text": "La veritat és que quan cal, els altres departaments responen ràpid."
+  },
+  {
+   "id": "c251",
+   "tema": "eines_sistemes",
+   "text": "La veritat és que el programa de gestió va molt lent."
+  },
+  {
+   "id": "c252",
+   "tema": "conciliacio_horaris",
+   "text": "En general, els horaris de reunió coincideixen amb els de recollir els fills. Espero que es tingui en compte."
+  },
+  {
+   "id": "c253",
+   "tema": "direccio_visio",
+   "text": "En general, hi ha poca coherència entre el que es diu i el que es fa."
+  },
+  {
+   "id": "c254",
+   "tema": "col_laboracio",
+   "text": "No se sap a qui adreçar-se per a segons quins temes. Seria bo millorar-ho."
+  },
+  {
+   "id": "c255",
+   "tema": "direccio_visio",
+   "text": "Personalment voldria més transparència sobre les decisions estratègiques. Espero que es tingui en compte."
+  },
+  {
+   "id": "c256",
+   "tema": "carrega_treball",
+   "text": "Crec que tinc més feina de la que puc fer en la jornada. Seria bo millorar-ho."
+  },
+  {
+   "id": "c257",
+   "tema": "carrera_promocio",
+   "text": "Últimament he tingut oportunitats de canviar de tasques i m'ha agradat. Ho dic amb sinceritat."
+  },
+  {
+   "id": "c258",
+   "tema": "carrega_treball",
+   "text": "La veritat és que els objectius són exigents però assolibles. Seria bo millorar-ho."
+  },
+  {
+   "id": "c259",
+   "tema": "cansament_descans",
+   "text": "La veritat és que les pauses no sempre són suficients per recuperar-se. Ho dic amb sinceritat."
+  },
+  {
+   "id": "c260",
+   "tema": "relacio_cap",
+   "text": "La veritat és que trobo a faltar més confiança per part del responsable. Ho dic amb sinceritat."
+  },
+  {
+   "id": "c261",
+   "tema": "direccio_visio",
+   "text": "La veritat és que voldria més transparència sobre les decisions estratègiques."
+  },
+  {
+   "id": "c262",
+   "tema": "formacio",
+   "text": "La veritat és que els horaris de formació no encaixen amb el meu torn. Ho dic amb sinceritat."
+  },
+  {
+   "id": "c263",
+   "tema": "col_laboracio",
+   "text": "La veritat és que entre departaments sovint es llencen la pilota."
+  },
+  {
+   "id": "c264",
+   "tema": "cansament_descans",
+   "text": "He pogut descansar millor des que vaig ajustar l'horari."
+  },
+  {
+   "id": "c265",
+   "tema": "formacio",
+   "text": "Últimament agraeixo les sessions de formació internes entre companys."
+  },
+  {
+   "id": "c266",
+   "tema": "ambient_equip",
+   "text": "Personalment sento que puc ser jo mateix a l'equip. Espero que es tingui en compte."
+  },
+  {
+   "id": "c267",
+   "tema": "ambient_equip",
+   "text": "Personalment l'ambient és respectuós però una mica fred."
+  },
+  {
+   "id": "c268",
+   "tema": "relacio_cap",
+   "text": "La veritat és que el meu responsable m'escolta quan tinc un problema."
+  },
+  {
+   "id": "c269",
+   "tema": "conciliacio_horaris",
+   "text": "Últimament la jornada intensiva a l'estiu és un gran encert."
+  },
+  {
+   "id": "c270",
+   "tema": "carrera_promocio",
+   "text": "En general, les promocions semblen poc transparents."
+  },
+  {
+   "id": "c271",
+   "tema": "formacio",
+   "text": "M'agradaria poder triar quines formacions faig. Ho dic amb sinceritat."
+  },
+  {
+   "id": "c272",
+   "tema": "col_laboracio",
+   "text": "Crec que hi ha duplicitat de feina entre equips. Seria bo millorar-ho."
+  },
+  {
+   "id": "c273",
+   "tema": "conciliacio_horaris",
+   "text": "Crec que els horaris de reunió coincideixen amb els de recollir els fills. Espero que es tingui en compte."
+  },
+  {
+   "id": "c274",
+   "tema": "formacio",
+   "text": "En general, voldria aprendre més sobre les eines que utilitzo cada dia. Gràcies per preguntar."
+  },
+  {
+   "id": "c275",
+   "tema": "reconeixement",
+   "text": "Sento que el meu esforç passa desapercebut. Ho dic amb sinceritat."
+  },
+  {
+   "id": "c276",
+   "tema": "reconeixement",
+   "text": "Personalment em sento orgullós de formar part d'aquesta empresa. Ho dic amb sinceritat."
+  },
+  {
+   "id": "c277",
+   "tema": "carrera_promocio",
+   "text": "La veritat és que m'agradaria saber quins criteris es fan servir per ascendir. Espero que es tingui en compte."
+  },
+  {
+   "id": "c278",
+   "tema": "eines_sistemes",
+   "text": "Personalment el sistema cau massa sovint i perdem temps. Espero que es tingui en compte."
+  },
+  {
+   "id": "c279",
+   "tema": "cansament_descans",
+   "text": "Últimament se'm fa dur acabar la setmana sense energia. Truqueu-me al [TELÈFON] si cal.",
+   "text_raw": "Últimament se'm fa dur acabar la setmana sense energia. Truqueu-me al 600 000 001 si cal.",
+   "pii": true
+  },
+  {
+   "id": "c280",
+   "tema": "col_laboracio",
+   "text": "Crec que entre departaments sovint es llencen la pilota."
+  },
+  {
+   "id": "c281",
+   "tema": "cansament_descans",
+   "text": "Últimament he pogut descansar millor des que vaig ajustar l'horari."
+  },
+  {
+   "id": "c282",
+   "tema": "col_laboracio",
+   "text": "Falten canals directes per resoldre dubtes entre àrees."
+  },
+  {
+   "id": "c283",
+   "tema": "carrega_treball",
+   "text": "Em porto feina a casa més sovint del que voldria. Seria bo millorar-ho."
+  },
+  {
+   "id": "c284",
+   "tema": "cansament_descans",
+   "text": "Crec que caldria tenir un espai més tranquil per descansar a la pausa."
+  },
+  {
+   "id": "c285",
+   "tema": "conciliacio_horaris",
+   "text": "Crec que costa agafar festes en les dates que realment les necessito."
+  },
+  {
+   "id": "c286",
+   "tema": "cansament_descans",
+   "text": "Últimament el cansament físic es nota sobretot a final de mes."
+  },
+  {
+   "id": "c287",
+   "tema": "torns_comunicacio_pauses",
+   "text": "Les pauses coincideixen amb el canvi de línia i no es poden fer bé. Espero que es tingui en compte."
+  },
+  {
+   "id": "c288",
+   "tema": "reconeixement",
+   "text": "Crec que m'agradaria que es destaquessin més els èxits d'equip. Seria bo millorar-ho."
+  },
+  {
+   "id": "c289",
+   "tema": "carrega_treball",
+   "text": "La veritat és que he notat que ara tinc menys pressió que fa uns mesos."
+  },
+  {
+   "id": "c290",
+   "tema": "conciliacio_horaris",
+   "text": "En general, els horaris de reunió coincideixen amb els de recollir els fills."
+  },
+  {
+   "id": "c291",
+   "tema": "eines_sistemes",
+   "text": "L'ordre i la neteja dels espais de treball han millorat. Ho dic amb sinceritat."
+  },
+  {
+   "id": "c292",
+   "tema": "direccio_visio",
+   "text": "Falta un full de ruta que entengui tothom. Seria bo millorar-ho."
+  },
+  {
+   "id": "c293",
+   "tema": "direccio_visio",
+   "text": "Els missatges de la direcció arriben molt tard a la base. Ho dic amb sinceritat."
+  },
+  {
+   "id": "c294",
+   "tema": "formacio",
+   "text": "M'ha anat molt bé el curs de l'últim trimestre. Gràcies per preguntar."
+  },
+  {
+   "id": "c295",
+   "tema": "conciliacio_horaris",
+   "text": "Personalment les hores extra no sempre es compensen amb descans. Espero que es tingui en compte."
+  },
+  {
+   "id": "c296",
+   "tema": "seguretat_calor_epi",
+   "text": "Últimament falten ventiladors a la zona de càrrega. Ho dic amb sinceritat."
+  },
+  {
+   "id": "c297",
+   "tema": "carrega_treball",
+   "text": "Últimament he notat que ara tinc menys pressió que fa uns mesos."
+  },
+  {
+   "id": "c298",
+   "tema": "direccio_visio",
+   "text": "Últimament es parla de canvis però no se sap què implicaran. Seria bo millorar-ho."
+  },
+  {
+   "id": "c299",
+   "tema": "torns_comunicacio_pauses",
+   "text": "Últimament he de reorganitzar la família cada vegada que surt el quadre de torns. Gràcies per preguntar."
+  },
+  {
+   "id": "c300",
+   "tema": "relacio_cap",
+   "text": "Crec que m'agradaria rebre més feedback del meu cap directe."
+  },
+  {
+   "id": "c301",
+   "tema": "carrega_treball",
+   "text": "En general, agraeixo que a vegades es reforci l'equip quan hi ha molta feina."
+  },
+  {
+   "id": "c302",
+   "tema": "col_laboracio",
+   "text": "Les peticions d'altres àrees arriben sempre amb urgència. Ho dic amb sinceritat."
+  },
+  {
+   "id": "c303",
+   "tema": "seguretat_calor_epi",
+   "text": "Personalment l'equip de protecció és incòmode amb la calor que fa."
+  },
+  {
+   "id": "c304",
+   "tema": "ambient_equip",
+   "text": "Hi ha molta rotació i costa crear equip. Seria bo millorar-ho."
+  },
+  {
+   "id": "c305",
+   "tema": "col_laboracio",
+   "text": "Personalment les peticions d'altres àrees arriben sempre amb urgència. Ho dic amb sinceritat."
+  },
+  {
+   "id": "c306",
+   "tema": "reconeixement",
+   "text": "Personalment el reconeixement només arriba quan hi ha un problema. Seria bo millorar-ho."
+  },
+  {
+   "id": "c307",
+   "tema": "ambient_equip",
+   "text": "Crec que alguns comentaris fora de lloc no haurien de passar."
+  },
+  {
+   "id": "c308",
+   "tema": "torns_comunicacio_pauses",
+   "text": "Amb el sistema de torns nou no queda clar quan és la pausa del bocadillo. Gràcies per preguntar."
+  },
+  {
+   "id": "c309",
+   "tema": "conciliacio_horaris",
+   "text": "Últimament el teletreball ha ajudat molt a organitzar-me."
+  },
+  {
+   "id": "c310",
+   "tema": "ambient_equip",
+   "text": "L'ambient a l'equip és bo i ens ajudem. Seria bo millorar-ho."
+  },
+  {
+   "id": "c311",
+   "tema": "torns_comunicacio_pauses",
+   "text": "Ens canvien el torn i ens n'assabentem pel company."
+  },
+  {
+   "id": "c312",
+   "tema": "relacio_cap",
+   "text": "En general, tinc un bon tracte amb qui coordina el meu grup. Ho dic amb sinceritat."
+  },
+  {
+   "id": "c313",
+   "tema": "comunicacio_interna",
+   "text": "Personalment els correus interns són massa llargs i no els llegeix ningú."
+  },
+  {
+   "id": "c314",
+   "tema": "cansament_descans",
+   "text": "Últimament em sento amb ganes i amb energia la major part dels dies. Gràcies per preguntar."
+  },
+  {
+   "id": "c315",
+   "tema": "torns_comunicacio_pauses",
+   "text": "En general, ningú ens va explicar els motius del canvi de torns. Espero que es tingui en compte."
+  },
+  {
+   "id": "c316",
+   "tema": "relacio_cap",
+   "text": "En general, hi ha poca constància en les reunions d'equip."
+  },
+  {
+   "id": "c317",
+   "tema": "eines_sistemes",
+   "text": "L'ordre i la neteja dels espais de treball han millorat. Seria bo millorar-ho."
+  },
+  {
+   "id": "c318",
+   "tema": "eines_sistemes",
+   "text": "Personalment les eines informàtiques funcionen bé en general. Ho dic amb sinceritat."
+  },
+  {
+   "id": "c319",
+   "tema": "direccio_visio",
+   "text": "Últimament veig que la direcció s'interessa pel dia a dia de la gent. Ho dic amb sinceritat."
+  },
+  {
+   "id": "c320",
+   "tema": "direccio_visio",
+   "text": "Falta un full de ruta que entengui tothom."
+  },
+  {
+   "id": "c321",
+   "tema": "ambient_equip",
+   "text": "En general, alguns comentaris fora de lloc no haurien de passar. Ho dic amb sinceritat."
+  },
+  {
+   "id": "c322",
+   "tema": "reconeixement",
+   "text": "Un simple gràcies de tant en tant ja seria molt. Ho dic amb sinceritat."
+  },
+  {
+   "id": "c323",
+   "tema": "carrera_promocio",
+   "text": "Voldria parlar de la meva carrera amb algú de recursos humans."
+  },
+  {
+   "id": "c324",
+   "tema": "seguretat_calor_epi",
+   "text": "Últimament no sempre hi ha aigua fresca a prop dels carretons. Ho dic amb sinceritat."
+  },
+  {
+   "id": "c325",
+   "tema": "direccio_visio",
+   "text": "Falta un full de ruta que entengui tothom. Gràcies per preguntar."
+  },
+  {
+   "id": "c326",
+   "tema": "carrega_treball",
+   "text": "La veritat és que hi ha dies que no arribo a tot i se m'acumulen les tasques. Gràcies per preguntar."
+  },
+  {
+   "id": "c327",
+   "tema": "ambient_equip",
+   "text": "La veritat és que m'agradaria més cohesió entre els diferents torns."
+  },
+  {
+   "id": "c328",
+   "tema": "reconeixement",
+   "text": "La veritat és que em sento orgullós de formar part d'aquesta empresa. Espero que es tingui en compte."
+  },
+  {
+   "id": "c329",
+   "tema": "ambient_equip",
+   "text": "En general, amb els nous companys ens ha costat integrar-nos. Seria bo millorar-ho."
+  },
+  {
+   "id": "c330",
+   "tema": "cansament_descans",
+   "text": "En general, dormo poc quan canvio de franja horària. Seria bo millorar-ho."
+  },
+  {
+   "id": "c331",
+   "tema": "relacio_cap",
+   "text": "En general, trobo a faltar més confiança per part del responsable."
+  },
+  {
+   "id": "c332",
+   "tema": "carrera_promocio",
+   "text": "Últimament els llocs vacants es publiquen massa tard."
+  },
+  {
+   "id": "c333",
+   "tema": "ambient_equip",
+   "text": "Personalment l'ambient a l'equip és bo i ens ajudem. Espero que es tingui en compte."
+  },
+  {
+   "id": "c334",
+   "tema": "direccio_visio",
+   "text": "Crec que la direcció explica bé els resultats i els objectius."
+  },
+  {
+   "id": "c335",
+   "tema": "formacio",
+   "text": "Personalment la formació que rebem és massa genèrica."
+  },
+  {
+   "id": "c336",
+   "tema": "relacio_cap",
+   "text": "Personalment trobo a faltar més confiança per part del responsable. Ho dic amb sinceritat."
+  },
+  {
+   "id": "c337",
+   "tema": "cansament_descans",
+   "text": "Personalment se'm fa dur acabar la setmana sense energia."
+  },
+  {
+   "id": "c338",
+   "tema": "relacio_cap",
+   "text": "Personalment quan hi ha un error, es busca solució i no culpables."
+  },
+  {
+   "id": "c339",
+   "tema": "conciliacio_horaris",
+   "text": "En general, m'agradaria saber els horaris amb més antelació."
+  },
+  {
+   "id": "c340",
+   "tema": "comunicacio_interna",
+   "text": "La veritat és que voldria reunions curtes i periòdiques per estar al dia. Ho dic amb sinceritat."
+  },
+  {
+   "id": "c341",
+   "tema": "torns_comunicacio_pauses",
+   "text": "El nou sistema de torns es va comunicar només dos dies abans. Ho dic amb sinceritat."
+  },
+  {
+   "id": "c342",
+   "tema": "direccio_visio",
+   "text": "Crec que veig que la direcció s'interessa pel dia a dia de la gent. Seria bo millorar-ho."
+  },
+  {
+   "id": "c343",
+   "tema": "reconeixement",
+   "text": "M'he sentit valorat quan va sortir bé el projecte."
+  },
+  {
+   "id": "c344",
+   "tema": "torns_comunicacio_pauses",
+   "text": "Últimament no sabem amb temps quin torn ens tocarà la setmana vinent."
+  },
+  {
+   "id": "c345",
+   "tema": "carrega_treball",
+   "text": "La veritat és que tinc més feina de la que puc fer en la jornada. Ho dic amb sinceritat."
+  },
+  {
+   "id": "c346",
+   "tema": "carrega_treball",
+   "text": "La càrrega de treball està bastant ben repartida a l'equip. Espero que es tingui en compte."
+  },
+  {
+   "id": "c347",
+   "tema": "formacio",
+   "text": "En general, la formació que rebem és massa genèrica. Gràcies per preguntar."
+  },
+  {
+   "id": "c348",
+   "tema": "comunicacio_interna",
+   "text": "Els correus interns són massa llargs i no els llegeix ningú."
+  },
+  {
+   "id": "c349",
+   "tema": "torns_comunicacio_pauses",
+   "text": "La veritat és que falta un calendari de torns publicat amb prou antelació. Ho dic amb sinceritat."
+  },
+  {
+   "id": "c350",
+   "tema": "conciliacio_horaris",
+   "text": "Personalment costa agafar festes en les dates que realment les necessito. Espero que es tingui en compte."
+  },
+  {
+   "id": "c351",
+   "tema": "formacio",
+   "text": "En general, m'agradaria poder triar quines formacions faig."
+  },
+  {
+   "id": "c352",
+   "tema": "carrega_treball",
+   "text": "Últimament els objectius són exigents però assolibles."
+  },
+  {
+   "id": "c353",
+   "tema": "direccio_visio",
+   "text": "Últimament veig que la direcció s'interessa pel dia a dia de la gent. Espero que es tingui en compte."
+  },
+  {
+   "id": "c354",
+   "tema": "eines_sistemes",
+   "text": "Últimament les màquines tenen un manteniment irregular."
+  },
+  {
+   "id": "c355",
+   "tema": "formacio",
+   "text": "La veritat és que la formació d'acollida a la incorporació va ser insuficient. Ho dic amb sinceritat. Escriviu a [EMAIL] per ampliar-ho.",
+   "text_raw": "La veritat és que la formació d'acollida a la incorporació va ser insuficient. Ho dic amb sinceritat. Escriviu a persona.falsa@exemple.invalid per ampliar-ho.",
+   "pii": true
+  },
+  {
+   "id": "c356",
+   "tema": "torns_comunicacio_pauses",
+   "text": "En general, el nou sistema de torns es va comunicar només dos dies abans."
+  },
+  {
+   "id": "c357",
+   "tema": "conciliacio_horaris",
+   "text": "Personalment m'agradaria saber els horaris amb més antelació. Gràcies per preguntar."
+  },
+  {
+   "id": "c358",
+   "tema": "relacio_cap",
+   "text": "La veritat és que el tracte és correcte però molt distant. Seria bo millorar-ho."
+  },
+  {
+   "id": "c359",
+   "tema": "eines_sistemes",
+   "text": "El sistema cau massa sovint i perdem temps. Ho dic amb sinceritat."
+  },
+  {
+   "id": "c360",
+   "tema": "comunicacio_interna",
+   "text": "La veritat és que els tauler d'anuncis no s'actualitzen mai."
+  },
+  {
+   "id": "c361",
+   "tema": "carrera_promocio",
+   "text": "Falta un pla de carrera per a les persones de planta."
+  },
+  {
+   "id": "c362",
+   "tema": "direccio_visio",
+   "text": "Personalment la direcció explica bé els resultats i els objectius. Espero que es tingui en compte."
+  },
+  {
+   "id": "c363",
+   "tema": "carrega_treball",
+   "text": "Personalment no sempre es té en compte el que costa fer una tasca."
+  },
+  {
+   "id": "c364",
+   "tema": "eines_sistemes",
+   "text": "Personalment hi ha massa aplicacions diferents per fer una sola tasca."
+  },
+  {
+   "id": "c365",
+   "tema": "eines_sistemes",
+   "text": "Personalment necessitaria un portàtil més actual per treballar. Espero que es tingui en compte."
+  },
+  {
+   "id": "c366",
+   "tema": "comunicacio_interna",
+   "text": "La veritat és que m'agrada rebre un resum mensual del que passa a l'empresa."
+  },
+  {
+   "id": "c367",
+   "tema": "ambient_equip",
+   "text": "La veritat és que m'agradaria més cohesió entre els diferents torns. Espero que es tingui en compte."
+  },
+  {
+   "id": "c368",
+   "tema": "conciliacio_horaris",
+   "text": "La jornada intensiva a l'estiu és un gran encert."
+  },
+  {
+   "id": "c369",
+   "tema": "col_laboracio",
+   "text": "Crec que la coordinació amb logística és millorable. Seria bo millorar-ho."
+  },
+  {
+   "id": "c370",
+   "tema": "torns_comunicacio_pauses",
+   "text": "Ens canvien el torn i ens n'assabentem pel company. Gràcies per preguntar."
+  },
+  {
+   "id": "c371",
+   "tema": "cansament_descans",
+   "text": "He pogut descansar millor des que vaig ajustar l'horari. Espero que es tingui en compte."
+  },
+  {
+   "id": "c372",
+   "tema": "ambient_equip",
+   "text": "Personalment amb els nous companys ens ha costat integrar-nos. Espero que es tingui en compte. El meu telèfon és [TELÈFON].",
+   "text_raw": "Personalment amb els nous companys ens ha costat integrar-nos. Espero que es tingui en compte. El meu telèfon és +34 600 000 003.",
+   "pii": true
+  },
+  {
+   "id": "c373",
+   "tema": "carrega_treball",
+   "text": "Crec que no sempre es té en compte el que costa fer una tasca. Seria bo millorar-ho."
+  },
+  {
+   "id": "c374",
+   "tema": "carrera_promocio",
+   "text": "Últimament crec que es premia més l'antiguitat que el talent. Espero que es tingui en compte."
+  },
+  {
+   "id": "c375",
+   "tema": "direccio_visio",
+   "text": "No tinc clar cap on va l'empresa els propers anys. Seria bo millorar-ho."
+  },
+  {
+   "id": "c376",
+   "tema": "carrega_treball",
+   "text": "No sempre es té en compte el que costa fer una tasca. Espero que es tingui en compte."
+  },
+  {
+   "id": "c377",
+   "tema": "eines_sistemes",
+   "text": "Personalment voldria accés des del mòbil a les meves dades de feina. Seria bo millorar-ho."
+  },
+  {
+   "id": "c378",
+   "tema": "conciliacio_horaris",
+   "text": "La veritat és que l'horari em permet conciliar bé amb la família. Gràcies per preguntar."
+  },
+  {
+   "id": "c379",
+   "tema": "eines_sistemes",
+   "text": "Personalment l'ordre i la neteja dels espais de treball han millorat. Espero que es tingui en compte."
+  },
+  {
+   "id": "c380",
+   "tema": "ambient_equip",
+   "text": "Crec que amb els nous companys ens ha costat integrar-nos."
+  },
+  {
+   "id": "c381",
+   "tema": "reconeixement",
+   "text": "Crec que m'agradaria que es destaquessin més els èxits d'equip. Ho dic amb sinceritat."
+  },
+  {
+   "id": "c382",
+   "tema": "eines_sistemes",
+   "text": "En general, hi ha massa aplicacions diferents per fer una sola tasca. Seria bo millorar-ho."
+  },
+  {
+   "id": "c383",
+   "tema": "carrera_promocio",
+   "text": "Personalment fa anys que faig el mateix i no hi ha perspectives de canvi. Ho dic amb sinceritat."
+  },
+  {
+   "id": "c384",
+   "tema": "carrega_treball",
+   "text": "Personalment em porto feina a casa més sovint del que voldria. Espero que es tingui en compte."
+  },
+  {
+   "id": "c385",
+   "tema": "carrega_treball",
+   "text": "Personalment la càrrega de treball està bastant ben repartida a l'equip. Ho dic amb sinceritat."
+  },
+  {
+   "id": "c386",
+   "tema": "eines_sistemes",
+   "text": "M'agradaria que ens preguntessin abans de canviar un sistema."
+  },
+  {
+   "id": "c387",
+   "tema": "cansament_descans",
+   "text": "Personalment dormo poc quan canvio de franja horària. Espero que es tingui en compte."
+  },
+  {
+   "id": "c388",
+   "tema": "conciliacio_horaris",
+   "text": "Crec que el teletreball ha ajudat molt a organitzar-me."
+  },
+  {
+   "id": "c389",
+   "tema": "torns_comunicacio_pauses",
+   "text": "En general, les pauses s'han reduït i la gent surt cansada de la nit. Gràcies per preguntar."
+  },
+  {
+   "id": "c390",
+   "tema": "conciliacio_horaris",
+   "text": "Personalment els canvis de planificació d'última hora compliquen la vida personal. Seria bo millorar-ho."
+  },
+  {
+   "id": "c391",
+   "tema": "comunicacio_interna",
+   "text": "La veritat és que a vegades les instruccions són contradictòries. Espero que es tingui en compte."
+  },
+  {
+   "id": "c392",
+   "tema": "torns_comunicacio_pauses",
+   "text": "Últimament al torn de tarda es va avisar més tard del canvi que al de matí."
+  },
+  {
+   "id": "c393",
+   "tema": "ambient_equip",
+   "text": "Personalment sento que puc ser jo mateix a l'equip."
+  },
+  {
+   "id": "c394",
+   "tema": "relacio_cap",
+   "text": "En general, el tracte és correcte però molt distant."
+  },
+  {
+   "id": "c395",
+   "tema": "carrera_promocio",
+   "text": "En general, valoro poder fer mobilitat interna entre departaments. Gràcies per preguntar."
+  },
+  {
+   "id": "c396",
+   "tema": "carrega_treball",
+   "text": "Tinc més feina de la que puc fer en la jornada."
+  },
+  {
+   "id": "c397",
+   "tema": "carrera_promocio",
+   "text": "En general, valoro poder fer mobilitat interna entre departaments. Seria bo millorar-ho."
+  },
+  {
+   "id": "c398",
+   "tema": "direccio_visio",
+   "text": "Es parla de canvis però no se sap què implicaran. Ho dic amb sinceritat."
+  },
+  {
+   "id": "c399",
+   "tema": "torns_comunicacio_pauses",
+   "text": "Crec que les pauses coincideixen amb el canvi de línia i no es poden fer bé."
+  },
+  {
+   "id": "c400",
+   "tema": "col_laboracio",
+   "text": "Hi ha duplicitat de feina entre equips."
+  },
+  {
+   "id": "c401",
+   "tema": "direccio_visio",
+   "text": "Voldria més transparència sobre les decisions estratègiques. Seria bo millorar-ho."
+  },
+  {
+   "id": "c402",
+   "tema": "seguretat_calor_epi",
+   "text": "Últimament a la nau de dalt s'arriba a temperatures molt altes a la tarda. Gràcies per preguntar."
+  },
+  {
+   "id": "c403",
+   "tema": "carrega_treball",
+   "text": "Agraeixo que a vegades es reforci l'equip quan hi ha molta feina."
+  },
+  {
+   "id": "c404",
+   "tema": "torns_comunicacio_pauses",
+   "text": "Personalment he de reorganitzar la família cada vegada que surt el quadre de torns. Ho dic amb sinceritat."
+  },
+  {
+   "id": "c405",
+   "tema": "conciliacio_horaris",
+   "text": "La veritat és que agraeixo que es respecti l'horari de sortida."
+  },
+  {
+   "id": "c406",
+   "tema": "reconeixement",
+   "text": "L'equip es reconeix entre si, i això compta molt."
+  },
+  {
+   "id": "c407",
+   "tema": "eines_sistemes",
+   "text": "El programa de gestió va molt lent. Gràcies per preguntar."
+  },
+  {
+   "id": "c408",
+   "tema": "col_laboracio",
+   "text": "Últimament falten canals directes per resoldre dubtes entre àrees. Ho dic amb sinceritat."
+  },
+  {
+   "id": "c409",
+   "tema": "col_laboracio",
+   "text": "En general, les trobades entre àrees han ajudat molt. Espero que es tingui en compte."
+  },
+  {
+   "id": "c410",
+   "tema": "direccio_visio",
+   "text": "En general, no tinc clar cap on va l'empresa els propers anys. Gràcies per preguntar."
+  },
+  {
+   "id": "c411",
+   "tema": "carrera_promocio",
+   "text": "La veritat és que falta un pla de carrera per a les persones de planta. Ho dic amb sinceritat."
+  },
+  {
+   "id": "c412",
+   "tema": "cansament_descans",
+   "text": "Personalment caldria tenir un espai més tranquil per descansar a la pausa."
+  },
+  {
+   "id": "c413",
+   "tema": "ambient_equip",
+   "text": "Crec que alguns comentaris fora de lloc no haurien de passar. Ho dic amb sinceritat."
+  },
+  {
+   "id": "c414",
+   "tema": "carrega_treball",
+   "text": "La veritat és que la càrrega de treball està bastant ben repartida a l'equip."
+  },
+  {
+   "id": "c415",
+   "tema": "reconeixement",
+   "text": "Personalment m'he sentit valorat quan va sortir bé el projecte."
+  },
+  {
+   "id": "c416",
+   "tema": "ambient_equip",
+   "text": "En general, amb els nous companys ens ha costat integrar-nos."
+  },
+  {
+   "id": "c417",
+   "tema": "conciliacio_horaris",
+   "text": "Personalment voldria més flexibilitat per entrar i sortir."
+  },
+  {
+   "id": "c418",
+   "tema": "col_laboracio",
+   "text": "Personalment la coordinació amb logística és millorable."
+  },
+  {
+   "id": "c419",
+   "tema": "torns_comunicacio_pauses",
+   "text": "Les pauses del nou calendari són més curtes i no donen temps de res."
+  },
+  {
+   "id": "c420",
+   "tema": "comunicacio_interna",
+   "text": "Últimament voldria reunions curtes i periòdiques per estar al dia. Espero que es tingui en compte."
+  },
+  {
+   "id": "c421",
+   "tema": "carrera_promocio",
+   "text": "Últimament he tingut oportunitats de canviar de tasques i m'ha agradat. Seria bo millorar-ho."
+  },
+  {
+   "id": "c422",
+   "tema": "relacio_cap",
+   "text": "Crec que sento que el cap decideix sense comptar amb l'equip. Espero que es tingui en compte."
+  },
+  {
+   "id": "c423",
+   "tema": "relacio_cap",
+   "text": "En general, no sempre se'ns explica per què es prenen les decisions. Seria bo millorar-ho."
+  },
+  {
+   "id": "c424",
+   "tema": "carrera_promocio",
+   "text": "Últimament crec que es premia més l'antiguitat que el talent. Seria bo millorar-ho."
+  },
+  {
+   "id": "c425",
+   "tema": "eines_sistemes",
+   "text": "Les màquines tenen un manteniment irregular."
+  },
+  {
+   "id": "c426",
+   "tema": "relacio_cap",
+   "text": "El meu responsable m'escolta quan tinc un problema."
+  },
+  {
+   "id": "c427",
+   "tema": "direccio_visio",
+   "text": "La veritat és que els missatges de la direcció arriben molt tard a la base."
+  },
+  {
+   "id": "c428",
+   "tema": "eines_sistemes",
+   "text": "La veritat és que el programa de gestió va molt lent. Seria bo millorar-ho."
+  },
+  {
+   "id": "c429",
+   "tema": "relacio_cap",
+   "text": "Tinc un bon tracte amb qui coordina el meu grup."
+  },
+  {
+   "id": "c430",
+   "tema": "cansament_descans",
+   "text": "En general, arribo a casa molt cansat i em costa desconnectar. Gràcies per preguntar."
+  },
+  {
+   "id": "c431",
+   "tema": "reconeixement",
+   "text": "Crec que sento que el meu esforç passa desapercebut. Ho dic amb sinceritat."
+  },
+  {
+   "id": "c432",
+   "tema": "eines_sistemes",
+   "text": "En general, el sistema cau massa sovint i perdem temps. Ho dic amb sinceritat."
+  },
+  {
+   "id": "c433",
+   "tema": "carrera_promocio",
+   "text": "No veig clar quin pot ser el meu creixement aquí. Seria bo millorar-ho."
+  },
+  {
+   "id": "c434",
+   "tema": "carrera_promocio",
+   "text": "Crec que he tingut oportunitats de canviar de tasques i m'ha agradat. Ho dic amb sinceritat."
+  },
+  {
+   "id": "c435",
+   "tema": "ambient_equip",
+   "text": "Personalment l'ambient a l'equip és bo i ens ajudem. Ho dic amb sinceritat."
+  },
+  {
+   "id": "c436",
+   "tema": "direccio_visio",
+   "text": "Últimament m'agradaria que visitessin més sovint el lloc de treball."
+  },
+  {
+   "id": "c437",
+   "tema": "ambient_equip",
+   "text": "Personalment tinc molt bona relació amb els companys. Espero que es tingui en compte."
+  },
+  {
+   "id": "c438",
+   "tema": "conciliacio_horaris",
+   "text": "Les hores extra no sempre es compensen amb descans. Gràcies per preguntar."
+  },
+  {
+   "id": "c439",
+   "tema": "carrega_treball",
+   "text": "En època de pics de producció ens falta gent."
+  },
+  {
+   "id": "c440",
+   "tema": "col_laboracio",
+   "text": "En general, les peticions d'altres àrees arriben sempre amb urgència. Ho dic amb sinceritat."
+  },
+  {
+   "id": "c441",
+   "tema": "conciliacio_horaris",
+   "text": "Voldria més flexibilitat per entrar i sortir. Gràcies per preguntar."
+  },
+  {
+   "id": "c442",
+   "tema": "conciliacio_horaris",
+   "text": "Costa agafar festes en les dates que realment les necessito. Gràcies per preguntar."
+  },
+  {
+   "id": "c443",
+   "tema": "reconeixement",
+   "text": "Últimament no hi ha cap forma clara de reconèixer les bones idees."
+  },
+  {
+   "id": "c444",
+   "tema": "conciliacio_horaris",
+   "text": "Personalment l'horari em permet conciliar bé amb la família."
+  },
+  {
+   "id": "c445",
+   "tema": "reconeixement",
+   "text": "Personalment valoro el detall que van tenir amb nosaltres a final d'any."
+  },
+  {
+   "id": "c446",
+   "tema": "torns_comunicacio_pauses",
+   "text": "Les pauses coincideixen amb el canvi de línia i no es poden fer bé."
+  },
+  {
+   "id": "c447",
+   "tema": "carrega_treball",
+   "text": "Crec que amb les baixes que no es cobreixen anem tots justos. Gràcies per preguntar."
+  },
+  {
+   "id": "c448",
+   "tema": "torns_comunicacio_pauses",
+   "text": "Últimament al torn de tarda es va avisar més tard del canvi que al de matí. Ho dic amb sinceritat."
+  },
+  {
+   "id": "c449",
+   "tema": "comunicacio_interna",
+   "text": "Crec que a vegades les instruccions són contradictòries."
+  },
+  {
+   "id": "c450",
+   "tema": "eines_sistemes",
+   "text": "Necessitaria un portàtil més actual per treballar."
+  },
+  {
+   "id": "c451",
+   "tema": "relacio_cap",
+   "text": "El meu responsable m'escolta quan tinc un problema. Gràcies per preguntar."
+  },
+  {
+   "id": "c452",
+   "tema": "torns_comunicacio_pauses",
+   "text": "Les pauses del nou calendari són més curtes i no donen temps de res. Seria bo millorar-ho."
+  },
+  {
+   "id": "c453",
+   "tema": "carrera_promocio",
+   "text": "Crec que falta un pla de carrera per a les persones de planta. Gràcies per preguntar."
+  },
+  {
+   "id": "c454",
+   "tema": "conciliacio_horaris",
+   "text": "El teletreball ha ajudat molt a organitzar-me. Ho dic amb sinceritat."
+  },
+  {
+   "id": "c455",
+   "tema": "carrera_promocio",
+   "text": "Les promocions semblen poc transparents. Espero que es tingui en compte."
+  },
+  {
+   "id": "c456",
+   "tema": "relacio_cap",
+   "text": "Crec que no sempre se'ns explica per què es prenen les decisions. Seria bo millorar-ho."
+  },
+  {
+   "id": "c457",
+   "tema": "relacio_cap",
+   "text": "La veritat és que tinc un bon tracte amb qui coordina el meu grup."
+  },
+  {
+   "id": "c458",
+   "tema": "relacio_cap",
+   "text": "M'agradaria rebre més feedback del meu cap directe."
+  },
+  {
+   "id": "c459",
+   "tema": "torns_comunicacio_pauses",
+   "text": "Ens canvien el torn i ens n'assabentem pel company. Seria bo millorar-ho."
+  },
+  {
+   "id": "c460",
+   "tema": "eines_sistemes",
+   "text": "La veritat és que necessitaria un portàtil més actual per treballar. Gràcies per preguntar."
+  },
+  {
+   "id": "c461",
+   "tema": "ambient_equip",
+   "text": "Crec que sento que puc ser jo mateix a l'equip."
+  },
+  {
+   "id": "c462",
+   "tema": "formacio",
+   "text": "Crec que m'agradaria poder triar quines formacions faig. Espero que es tingui en compte."
+  },
+  {
+   "id": "c463",
+   "tema": "eines_sistemes",
+   "text": "Últimament les eines per registrar incidències són complicades. Ho dic amb sinceritat."
+  },
+  {
+   "id": "c464",
+   "tema": "torns_comunicacio_pauses",
+   "text": "Les pauses s'han reduït i la gent surt cansada de la nit. Espero que es tingui en compte."
+  },
+  {
+   "id": "c465",
+   "tema": "cansament_descans",
+   "text": "La veritat és que he pogut descansar millor des que vaig ajustar l'horari."
+  },
+  {
+   "id": "c466",
+   "tema": "comunicacio_interna",
+   "text": "Personalment els tauler d'anuncis no s'actualitzen mai. Seria bo millorar-ho."
+  },
+  {
+   "id": "c467",
+   "tema": "comunicacio_interna",
+   "text": "Caldria més comunicació abans que després dels canvis. Gràcies per preguntar."
+  },
+  {
+   "id": "c468",
+   "tema": "relacio_cap",
+   "text": "Últimament no sempre se'ns explica per què es prenen les decisions. Gràcies per preguntar."
+  },
+  {
+   "id": "c469",
+   "tema": "reconeixement",
+   "text": "Crec que valoro el detall que van tenir amb nosaltres a final d'any. Gràcies per preguntar."
+  },
+  {
+   "id": "c470",
+   "tema": "comunicacio_interna",
+   "text": "Crec que m'assabento de les novetats pels passadissos i no pels canals oficials."
+  },
+  {
+   "id": "c471",
+   "tema": "carrega_treball",
+   "text": "Últimament en època de pics de producció ens falta gent."
+  },
+  {
+   "id": "c472",
+   "tema": "reconeixement",
+   "text": "Últimament l'equip es reconeix entre si, i això compta molt."
+  },
+  {
+   "id": "c473",
+   "tema": "eines_sistemes",
+   "text": "Personalment les eines informàtiques funcionen bé en general. Seria bo millorar-ho."
+  },
+  {
+   "id": "c474",
+   "tema": "carrera_promocio",
+   "text": "En general, no veig clar quin pot ser el meu creixement aquí."
+  },
+  {
+   "id": "c475",
+   "tema": "eines_sistemes",
+   "text": "En general, el programa de gestió va molt lent."
+  },
+  {
+   "id": "c476",
+   "tema": "torns_comunicacio_pauses",
+   "text": "Personalment al torn de tarda es va avisar més tard del canvi que al de matí. Seria bo millorar-ho."
+  },
+  {
+   "id": "c477",
+   "tema": "direccio_visio",
+   "text": "Crec que m'agradaria que visitessin més sovint el lloc de treball."
+  },
+  {
+   "id": "c478",
+   "tema": "relacio_cap",
+   "text": "En general, el meu cap és accessible i resol els dubtes ràpidament. Espero que es tingui en compte."
+  },
+  {
+   "id": "c479",
+   "tema": "direccio_visio",
+   "text": "La veritat és que veig que la direcció s'interessa pel dia a dia de la gent. Ho dic amb sinceritat."
+  },
+  {
+   "id": "c480",
+   "tema": "col_laboracio",
+   "text": "Crec que quan cal, els altres departaments responen ràpid."
+  },
+  {
+   "id": "c481",
+   "tema": "col_laboracio",
+   "text": "La veritat és que falten canals directes per resoldre dubtes entre àrees. Espero que es tingui en compte."
+  },
+  {
+   "id": "c482",
+   "tema": "direccio_visio",
+   "text": "En general, tinc confiança en el rumb que ha pres l'empresa."
+  },
+  {
+   "id": "c483",
+   "tema": "col_laboracio",
+   "text": "Entre departaments sovint es llencen la pilota."
+  },
+  {
+   "id": "c484",
+   "tema": "carrega_treball",
+   "text": "Crec que agraeixo que a vegades es reforci l'equip quan hi ha molta feina. Espero que es tingui en compte."
+  },
+  {
+   "id": "c485",
+   "tema": "reconeixement",
+   "text": "Últimament m'agradaria que es destaquessin més els èxits d'equip. Gràcies per preguntar."
+  },
+  {
+   "id": "c486",
+   "tema": "torns_comunicacio_pauses",
+   "text": "Ningú ens va explicar els motius del canvi de torns."
+  },
+  {
+   "id": "c487",
+   "tema": "carrega_treball",
+   "text": "Tinc més feina de la que puc fer en la jornada. Espero que es tingui en compte."
+  },
+  {
+   "id": "c488",
+   "tema": "relacio_cap",
+   "text": "La veritat és que trobo a faltar més confiança per part del responsable."
+  },
+  {
+   "id": "c489",
+   "tema": "col_laboracio",
+   "text": "La veritat és que quan cal, els altres departaments responen ràpid. Espero que es tingui en compte."
+  },
+  {
+   "id": "c490",
+   "tema": "eines_sistemes",
+   "text": "Personalment el sistema cau massa sovint i perdem temps."
+  },
+  {
+   "id": "c491",
+   "tema": "formacio",
+   "text": "M'ha anat molt bé el curs de l'últim trimestre. Ho dic amb sinceritat."
+  },
+  {
+   "id": "c492",
+   "tema": "formacio",
+   "text": "Crec que els horaris de formació no encaixen amb el meu torn. Gràcies per preguntar."
+  },
+  {
+   "id": "c493",
+   "tema": "formacio",
+   "text": "Voldria aprendre més sobre les eines que utilitzo cada dia. Ho dic amb sinceritat."
+  },
+  {
+   "id": "c494",
+   "tema": "relacio_cap",
+   "text": "En general, m'agradaria rebre més feedback del meu cap directe. Seria bo millorar-ho."
+  },
+  {
+   "id": "c495",
+   "tema": "col_laboracio",
+   "text": "Les trobades entre àrees han ajudat molt. Seria bo millorar-ho."
+  },
+  {
+   "id": "c496",
+   "tema": "torns_comunicacio_pauses",
+   "text": "Últimament amb el sistema de torns nou no queda clar quan és la pausa del bocadillo."
+  },
+  {
+   "id": "c497",
+   "tema": "ambient_equip",
+   "text": "En general, tinc molt bona relació amb els companys. Gràcies per preguntar."
+  },
+  {
+   "id": "c498",
+   "tema": "torns_comunicacio_pauses",
+   "text": "En general, les pauses del nou calendari són més curtes i no donen temps de res."
+  },
+  {
+   "id": "c499",
+   "tema": "cansament_descans",
+   "text": "Crec que l'estrès em pesa quan hi ha canvis d'última hora."
+  },
+  {
+   "id": "c500",
+   "tema": "ambient_equip",
+   "text": "Personalment hi ha tensions entre algunes persones que no es resolen."
+  }
+ ]
+}

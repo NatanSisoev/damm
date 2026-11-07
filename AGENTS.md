@@ -128,6 +128,7 @@ Commands (run from the repo root, pnpm 10):
 - Run: `pnpm dev`
 - Lint: `pnpm lint`
 - Build: `pnpm build`
+- Seed the dev DB (fresh, deterministic, ~1,200 synthetic employees, ~700 responses, ~500 comments): `pnpm --filter @damm/seed run seed`. Regenerate comments (template mode, or `-- --llm` with `LLM_BASE_URL`/`LLM_API_KEY`/`LLM_MODEL`): `pnpm --filter @damm/seed run comments`.
 - Test: no test suite yet.
 
 Config: copy `.env.example` to `.env` and fill it in. `PUBLIC_BASE_URL` (default `http://localhost:3000`) is the base for join links.
