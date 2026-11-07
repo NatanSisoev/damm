@@ -65,7 +65,7 @@ export function buildDemo(opts: DemoOptions = {}): DemoSummary {
   db.exec("PRAGMA journal_mode = WAL");
   db.exec(readFileSync(resolve(REPO, "packages/db/schema.sql"), "utf8"));
 
-  const world = createWorld({ seed, start: opts.start ?? "2026-08-01", days: opts.days ?? 92, participationScale: 1 });
+  const world = createWorld({ seed, start: opts.start ?? "2026-08-01", days: opts.days ?? 92, participationScale: 1.6 });
   const rng = createRng(`demo|${seed}`);
 
   // --- reference data, population, accounts ------------------------------------------------
