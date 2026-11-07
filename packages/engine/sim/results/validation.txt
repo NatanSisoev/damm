@@ -1,0 +1,31 @@
+Default config  (seed damm-sim, 92 days, 137/1200 accounts, 37812 answers, 53.8 s)
+config: half_life=21 process_noise=0.0005 followup_z=2.5 shrinkage=20 noise={"scale10":0.1,"scale5":0.12,"yes_no":0.25,"pair":0.22,"choice":0.17}
+score vs truth (0..10, 162 rows): RMSE 0.289  MAE 0.231  bias 0.022  (manager bias accounts for ~0.048)
+confidence calibration (1223 rows): |err| ≤ tol in 91.3%, implied by SE 86.7%, mean confidence 35.039, z rms 1.031 (1 = calibrated)
+  confidence 0-25    rows  315  coverage  87.0%  implied  76.0%
+  confidence 25-50   rows  718  coverage  91.5%  implied  88.1%
+  confidence 50-75   rows  190  coverage  97.4%  implied  99.0%
+  confidence 75-100  rows    0  coverage   NaN%  implied   NaN%
+signal logistica_condicions_weak_decline (Logística × Condicions i organització, onset 2026-08-15): detected 2026-10-31, delay 77 d; true drop 1.188, estimated 0.83
+signal fabriques_october_shift_communication (Fàbriques × Condicions i organització, onset 2026-10-01): detected 2026-10-15, delay 14 d; true drop 1.197, estimated 0.91
+false segment drops: 0/44 control collective × domain tests
+follow-ups: 929 asked, 76 confirmed changes (14 Lideratge drops); planted 8, caught 4; precision 0.286 recall 0.5 F1 0.364; median delay 5 d
+question share by domain: Benestar 16.7%, Lideratge 17.2%, Desenvolupament 16.7%, Cultura i pertinença 16.7%, Entorn i relacions 15.6%, Condicions i organització 17.0%
+  by type: choice 15.8%, pair 16.0%, scale10 31.6%, scale5 19.1%, yes_no 17.5%; by reason: followup 2.5%, monitor 97.5%
+answer noise sd, realised vs engine: scale10 0.103/0.1, scale5 0.124/0.12, yes_no 0.464/0.25, pair 0.222/0.22, choice 0.155/0.17
+
+Tuned config (trial 13)  (seed damm-sim, 92 days, 137/1200 accounts, 37812 answers, 54.1 s)
+config: half_life=21 process_noise=0.00033 followup_z=2.5 shrinkage=61 noise={"scale10":0.13,"scale5":0.12,"yes_no":0.38,"pair":0.14,"choice":0.18}
+score vs truth (0..10, 162 rows): RMSE 0.293  MAE 0.238  bias 0.037  (manager bias accounts for ~0.048)
+confidence calibration (1224 rows): |err| ≤ tol in 91.7%, implied by SE 86.9%, mean confidence 35.427, z rms 0.999 (1 = calibrated)
+  confidence 0-25    rows  291  coverage  89.7%  implied  75.6%
+  confidence 25-50   rows  740  coverage  91.1%  implied  88.1%
+  confidence 50-75   rows  193  coverage  96.9%  implied  99.1%
+  confidence 75-100  rows    0  coverage   NaN%  implied   NaN%
+signal logistica_condicions_weak_decline (Logística × Condicions i organització, onset 2026-08-15): NOT detected; true drop 1.188, estimated 0.81
+signal fabriques_october_shift_communication (Fàbriques × Condicions i organització, onset 2026-10-01): detected 2026-10-11, delay 10 d; true drop 1.198, estimated 0.85
+false segment drops: 0/44 control collective × domain tests
+follow-ups: 620 asked, 57 confirmed changes (15 Lideratge drops); planted 8, caught 5; precision 0.333 recall 0.625 F1 0.435; median delay 8 d
+question share by domain: Benestar 16.5%, Lideratge 17.4%, Desenvolupament 17.3%, Cultura i pertinença 17.4%, Entorn i relacions 14.5%, Condicions i organització 16.9%
+  by type: choice 17.9%, pair 16.9%, scale10 31.7%, scale5 16.5%, yes_no 17.1%; by reason: followup 1.6%, monitor 98.4%
+answer noise sd, realised vs engine: scale10 0.104/0.13, scale5 0.124/0.12, yes_no 0.463/0.38, pair 0.222/0.14, choice 0.153/0.18

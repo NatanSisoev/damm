@@ -79,7 +79,7 @@ All six domains stay active. Per person per day:
    `priority_d = hr_weight(collective, d) · (info_gain_d + floor) · outlier_boost_d`
    - `info_gain_d` = drop in the segment's `SE²` from one more answer, normalised across domains. High when the domain is uncertain, low when it is well known.
    - `floor = 0.15`: no domain ever stops being asked.
-   - `outlier_boost_d = 1 + 0.5 · min(segment_surprise_d, 3)`, where segment surprise is the share of recent personal `|z| ≥ 2` in that domain. Outliers make the engine insist.
+   - `outlier_boost_d = 1 + 0.5 · clamp(outlier_share_d / 0.0455 − 1, 0, 3)`: the share of recent (14 days) personal `|z| ≥ 2` in that domain, compared with the 4.55 % expected by chance. Only excess outliers boost, so the engine insists where something is really happening.
    - `hr_weight` from `domain_weight` (default 1).
    - Domains are drawn **without replacement with probability ∝ priority** (stochastic, so near-equal domains alternate naturally). No two monitoring questions from the same domain in one batch.
 4. **Facet**: within the chosen domain, the facet this person has gone longest without (ties random).
@@ -87,7 +87,7 @@ All six domains stay active. Per person per day:
 
 ### Format choice by Thompson sampling
 
-For each (collective, shift, format) keep `Beta(α, β)` (`format_stats`). Reward = a *good answer*: not careless (answer time ≥ `min_answer_ms` 1500 ms, and not the same raw value on all of the day's batch). Per decision, for each eligible format f draw `θ_f ~ Beta(α_f, β_f)` and pick `argmax θ_f · pref(collective, f)`, where `pref` comes from `format_preference` (HR; 0 = banned, default 1).
+For each (collective, shift, format) keep `Beta(α, β)` (`format_stats`). Reward = a *good answer*: answer time ≥ `min_answer_ms` (1500 ms). Answers without `answer_ms` do not update the arm. (Planned: also flag the same raw value across a whole batch.) Per decision, for each eligible format f draw `θ_f ~ Beta(α_f, β_f)` and pick `argmax θ_f · pref(collective, f)`, where `pref` comes from `format_preference` (HR; 0 = banned, default 1).
 
 Example: HR sets Fàbriques to yes_no 3, scale5 2, pair 1, ranking 0. The engine never shows rankings in Fàbriques and leans to yes/no, but if night shift turns out to answer `scale5` carefully and rush through yes/no, the Beta for yes_no drops and `scale5` wins more often. Formats with little data have wide Betas and still get tried.
 
@@ -109,6 +109,8 @@ All per segment with n ≥ 10. Written to `insight` with `kind`:
 | `segment_gap` | night vs. day, managers vs. non-managers (manager positivity bias) |
 | `action_effect` | score before vs. after an approved `recomanacio`, on its domain |
 
+**Implemented** (`src/insights.ts`, `runInsights(db, { now })`, run after `runEngineJob`): every kind above except `driver` and `action_effect`. Each run replaces its own kinds for the periods it covers (idempotent). Rows with n < `minGroupSize` are written suppressed (`value`, `detail_json` NULL). `value` per kind: `domain_state` score; `top_mover` score change (top 5 per period, |change| ≥ 0.3, confidence ≥ `insight_min_confidence` in both periods); `polarisation` consensus drop; `importance_gap` importance × (1 − score/10), with `rank` and `quadrant` in the detail; `trajectory_mix` % declining (detail: improving / stable / declining %, change ≥ 0.5 on 0–10 over 30 days counts as a move); `followup_confirmation` % of resolved follow-ups that confirmed; `segment_gap` highest − lowest shift score (`detail.dimension = "shift"`, `torn_id` = lowest shift) or manager − non-manager score (`detail.dimension = "manager"`). Trajectories, follow-up outcomes and the manager split come from replaying `resposta` (follow-ups = `assignment.reason = 'followup'` or a follow-up-worded item), since `person_domain_state` keeps only the latest state.
+
 ## 7. Alarms (`senyal`)
 
 Each alarm has `severity`, `status` (`open` → `acknowledged` → `action_linked` → `resolved`), `audience`, a trigger level and a separate clear level (hysteresis), and a cooldown of 7 days per (type, segment, domain). Warnings go in a weekly digest; critical alarms are pushed immediately. The AI may attach a proposed `recomanacio`; a human decides.
@@ -129,6 +131,8 @@ Routing:
 - `hr_manager` = HR plus the manager of that collective. Managers see only their own collective and only n ≥ 10. Smaller teams roll up to the next level.
 - **Lideratge alarms go to HR only**, never to the manager being assessed.
 - Safety or harassment content in comments never becomes an alarm that exposes the comment. The app points the person to the official confidential reporting channel (Ley 2/2023). HR only sees aggregate theme trends.
+
+**Implemented** in `packages/engine/src/alarms.ts` (`runAlarms(db, { now })`, run after `runEngineJob`), all types above except `emergent` and `baixa_participacio`. Thresholds live in `ALARM_DEFAULTS` (overridable via `opts.thresholds`). Because `agregat` is per month, "within 14 days" for `sharp_drop` and `polarisation` is read as "vs. the previous period"; `low_confidence` needs two low periods or 14 days into the current one. Clear levels: `sharp_drop` drop < 0.5, `sustained_decline` slope ≥ 0, `changepoint_cluster` < 5 people, `polarisation` fall < 7.5, `feble` fall < 0.15, `low_confidence` ≥ 50, `improvement` rise < 0.25. Cooldown counts from the last alarm's `created_at` (there is no resolved-at column). `changepoint_cluster` is evaluated on non-nesting segments only (collective × shift where the collective has shifts, else the collective) so counts cannot be differenced. Company-wide and Lideratge alarms go to `hr`. Open alarms whose segment falls below n = 10 get `suprimit = 1` until it recovers.
 
 ## 8. Configuration
 

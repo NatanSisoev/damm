@@ -88,6 +88,19 @@ importers:
         specifier: ^4.0.0
         version: 4.23.15
 
+  packages/engine:
+    dependencies:
+      '@damm/shared':
+        specifier: workspace:*
+        version: link:../shared
+    devDependencies:
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.20.5
+      typescript:
+        specifier: ^5.8.0
+        version: 5.9.3
+
   packages/seed:
     dependencies:
       '@damm/shared':
