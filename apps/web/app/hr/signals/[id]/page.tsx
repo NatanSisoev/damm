@@ -42,7 +42,7 @@ export default async function SignalPage({ params }: { params: Promise<{ id: str
   const { id } = await params;
   const detail = Number.isInteger(Number(id)) ? getSignalDetail(Number(id)) : null;
   if (!detail) notFound();
-  const { signal, periodes, trend, themes, hiddenThemes, recommendations, followUps, timeline } = detail;
+  const { signal, periodes, trend, trendScope, themes, hiddenThemes, recommendations, followUps, timeline } = detail;
 
   return (
     <>
@@ -79,15 +79,15 @@ export default async function SignalPage({ params }: { params: Promise<{ id: str
       <div className="grid gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
         <div className="space-y-6">
           <Card
-            title="Tendència per domini"
-            meta={signal.collectiu ?? "Tots"}
+            title={`Evolució per domini · ${trendScope} (0-10)`}
+            meta="Puntuació 0-10"
             flush
           >
             {trend.length === 0 ? (
               <div className="px-5 pb-5"><Empty>Encara no hi ha agregats per a aquest col·lectiu.</Empty></div>
             ) : (
               <>
-                <TrendChart periodes={periodes} rows={trend} highlight={trend.filter((r) => r.related).map((r) => r.domini)} />
+                <TrendChart periodes={periodes} rows={trend} highlight={trend.filter((r) => r.related).map((r) => r.domini)} scale="0-10" />
                 <details className="border-t border-line">
                   <summary className="cursor-pointer px-5 py-3 text-xs font-medium text-subtle">Veure taula</summary>
                   <div className="overflow-x-auto">
@@ -115,8 +115,11 @@ export default async function SignalPage({ params }: { params: Promise<{ id: str
                                 <span className="text-subtle">–</span>
                               ) : (
                                 <>
-                                  {c.mitjana.toFixed(1)}
+                                  {((c.mitjana - 1) * 2.5).toFixed(1)}
                                   <div className={`text-[11px] whitespace-nowrap ${c.precisio === "indicativa" ? "text-warn" : "text-subtle"}`}>n={c.n} · {c.precisio}</div>
+                                  {c.sd !== null && c.consensus !== null && (
+                                    <div className="text-[11px] whitespace-nowrap text-subtle">±{(c.sd * 2.5).toLocaleString("ca-ES", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} · consens {Math.round(c.consensus)}%</div>
+                                  )}
                                 </>
                               )}
                             </td>
