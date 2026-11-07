@@ -1,4 +1,5 @@
 import "./alarms.css";
+import { GenerateButton } from "./generate-button";
 import Link from "next/link";
 import { MIN_GROUP_SIZE } from "@damm/shared";
 import { getTrends, listCollectius, listDomains, listRecommendations, listTorns } from "@damm/db/hr";
@@ -296,7 +297,7 @@ function AlarmItem({ r, spark, rec, drafted }: { r: Row; spark: number[] | null;
         {!drafted && r.domainId != null && !NON_ACTIONABLE.has(r.type) && (
           <form action={generateRecommendationsAction}>
             <input type="hidden" name="signal" value={r.id} />
-            <button className="btn" type="submit">Genera recomanacions</button>
+            <GenerateButton />
           </form>
         )}
         {next.length > 0 && (
