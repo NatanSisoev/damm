@@ -14,7 +14,9 @@
   "scripts": {
     "test": "node --experimental-strip-types --experimental-sqlite --no-warnings --test \"test/**/*.test.ts\"",
     "typecheck": "tsc -p .",
-    "job": "node --experimental-strip-types --experimental-sqlite --no-warnings scripts/job.ts"
+    "job": "node --experimental-strip-types --experimental-sqlite --no-warnings scripts/job.ts",
+    "sim": "node --experimental-strip-types --experimental-sqlite --no-warnings sim/run.ts",
+    "tune": "node --experimental-strip-types --experimental-sqlite --no-warnings sim/tune.ts"
   },
   "dependencies": {
     "@damm/shared": "workspace:*"
