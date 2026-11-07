@@ -3,6 +3,7 @@ import { MIN_GROUP_SIZE } from "@damm/shared";
 import { Radar, type RadarSeries } from "./radar";
 import { Card, Empty, PageHeader, Stat, SuppressedBadge } from "../ui";
 import { RepTable, TrendTable, suppressedHint } from "./tables";
+import { TrendChart } from "./trend-chart";
 import {
   accountCounts,
   getRepresentativeness,
@@ -237,12 +238,19 @@ export default async function ResultsPage({ searchParams }: { searchParams: Prom
         <Card title="Tendències per domini" meta="Mitjana 1–5 per període · tots els col·lectius" flush={!!overall}>
           {overall ? (
             <>
-              <p className="border-b border-line px-5 py-3 text-xs text-subtle">
+              <TrendChart periodes={trends.periodes} rows={overall.rows} />
+              <details className="group border-t border-line">
+                <summary className="flex cursor-pointer list-none items-center gap-2 px-5 py-3 font-medium hover:bg-surface-muted">
+                  <span aria-hidden className="text-subtle transition-transform group-open:rotate-90">›</span>
+                  Veure taula
+                </summary>
+              <p className="border-t border-line px-5 py-3 text-xs text-subtle">
                 Cada mitjana mostra la seva n i una precisió: <span className="font-medium">indicativa</span> (n &lt; {PRECISION_MODERADA_MIN_N}),{" "}
                 <span className="font-medium">moderada</span> ({PRECISION_MODERADA_MIN_N}–{PRECISION_SOLIDA_MIN_N - 1}) o{" "}
                 <span className="font-medium">sòlida</span> (n ≥ {PRECISION_SOLIDA_MIN_N}). Un canvi només és «puja» o «baixa» si |Δ| ≥ {CHANGE_MIN_DELTA} i els dos períodes tenen n ≥ {CHANGE_MIN_N}; si no, «sense canvi clar».
               </p>
               <TrendTable periodes={trends.periodes} rows={overall.rows} />
+              </details>
               {perCollective.map((s) => (
                 <details key={s.scope} className="group border-t border-line">
                   <summary className="flex cursor-pointer list-none items-center gap-2 px-5 py-3 font-medium hover:bg-surface-muted">
