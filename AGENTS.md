@@ -50,9 +50,27 @@ Non-negotiable rules:
 - Always aggregated, with a minimum group size. Never show individual answers.
 - AI proposes, a human decides.
 
+## Product decisions
+
+- **Collectives (4):** Fàbriques, Logística, Comercial, Oficines. Manager is a role flag, not a collective.
+- **Domains (6):** Benestar, Lideratge, Desenvolupament, Cultura i pertinença, Entorn i relacions, Condicions i organització. Each collective gets a different subset of items per domain.
+- **Minimum group size: 10.** Any segment (collective, shift, period, domain) with fewer than 10 respondents is suppressed everywhere, dashboard and exports included.
+- **No time tracking, no clock-in anchor.**
+- **Typeform is ignored.** The app is the only channel. "Publish" means putting approved questions in the survey pool and generating the join link and QR.
+- **App:** standalone mobile app (PWA). Onboarding: join code (identifies company and collective), then the user picks a username and password. The account maps to an opaque internal ID. No email or phone, no personal data. Credentials are salted-hashed. Recovery uses a one-time code.
+- **Admin sees only counts per collective, never identities.**
+- **Longitudinal tracking** per internal ID is for trajectory clustering only. It is never shown per person and never leaves the analysis layer.
+- **Hybrid engine:** continuous monitoring is the base (dynamic question pool over the 6 domains, about 2 questions a day, no same question 4 days in a row, more sampling on outliers). An approved HR need enters the pool with top priority.
+- **Synthetic data:** about 1,200 synthetic employees as the representativeness denominator, about 700 responses over 3 periods (Aug, Sep, Oct 2026), about 500 open comments. Deliberate biases: low night-shift response, an October emerging theme (shift system communication and breaks), a weak signal in Logística (safety equipment, heat), manager positivity bias, one sub-threshold group. Comments are generated once with the LLM and committed as JSON, so nobody needs the key to seed.
+
+## LLM
+
+- OpenAI-compatible API served by UAB DCC: `https://dcc-llm-gw.uab.cat/uabthehack/v1`, models `ornith` and `nemotron`.
+- The team key goes in `.env` only (`LLM_API_KEY`), never in code, commits, slides or chat. `.env.example` has the variable names with empty values.
+
 ## Stack and commands
 
-- TypeScript monorepo, Next.js frontend, LLM API for question generation and comment clustering, SQLite with a seed script generating synthetic employees (plant, logistics, sales, offices).
+- TypeScript monorepo, Next.js frontend (PWA), LLM via the endpoint above for question generation and comment clustering, SQLite with a seed script generating synthetic employees (Fàbriques, Logística, Comercial, Oficines).
 
 Install, run, test and build commands: add them here as soon as they exist.
 
