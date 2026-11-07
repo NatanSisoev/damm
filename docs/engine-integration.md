@@ -278,3 +278,28 @@ The engine works with the seed as it is:
 
 - `ENGINE_VERSION` (exported) is written to `engine_config.engine_version` by every job, so a demo can show which model produced the numbers.
 - Changes to this API are logged in [contract-changes.md](contract-changes.md).
+
+## Demo data
+
+`pnpm --filter @damm/engine run demo` builds `data/demo.db` from scratch, in about 4 minutes. It is separate from the seed's `data/app.db`, so nothing of Jan's is overwritten. Run the app on it with `DB_PATH=data/demo.db pnpm dev`.
+
+What it contains (all synthetic):
+- **Population:** 1,200 invented employees across the 4 collectives and 3 shifts, of whom 344 have accounts. Night shifts are deliberately thin.
+- **Questions:** the 163-question sample bank, plus one published HR need ("shift-change communication" for Fàbriques, two questions).
+- **Format preferences per collective:** quick formats for Fàbriques and Logística, reading formats for Oficines.
+- **Answers:** 92 days (1 Aug to 31 Oct 2026) of daily batches, answered through the real engine, about 95,000 answers of every type including rankings.
+- **Comments:** about 20,000 English template comments, with recurring themes (see below).
+- **Results:** at the end it runs `runEngineJob`, so `agregat`, `domain_importance`, `insight` and `senyal` are filled.
+
+Planted stories and what they produce:
+
+| Story | Where | Shows up as |
+|---|---|---|
+| Shift changes announced too late, from 1 Oct | Fàbriques, Condicions | `sharp_drop` (critical), `top_mover`, theme comments |
+| Heat and safety equipment, slow decline from mid-August | Logística, Condicions | `sustained_decline`, theme comments |
+| A group of people whose view of their supervisor collapses, from 14 Oct | Logística morning shift, Lideratge | follow-ups, `changepoint_cluster` (critical, HR only), `followup_confirmation` |
+| The team splits in two, average unchanged, from 1 Oct | Oficines, Entorn i relacions | `polarisation` alarm and insight |
+| Managers answer more positively | everywhere | `segment_gap` (manager) |
+| Few night-shift accounts | Fàbriques and Logística night | suppressed segments (n < 10) |
+
+The run is deterministic: the same seed gives the same database. `--seed` changes it, and `--days` makes it shorter.

@@ -19,6 +19,18 @@ What changed and why.
 
 ---
 
+## C6 · 2026-11-07 · Natan · Demo database, question bank, simulator
+
+No schema or API change.
+- **Demo database:** `pnpm --filter @damm/engine run demo` builds `data/demo.db` with three months of synthetic answers and planted stories, so every insight card and most alarm types have real data. See [engine-integration.md](engine-integration.md), "Demo data".
+- **Question bank:** `packages/engine/fixtures/question-bank.json` holds 163 English sample questions in every type, loadable with `loadQuestionBank(db)`.
+- **Simulator:** `packages/engine/sim/` checks the engine against known ground truth.
+- **Engine speed:** segment statistics are now cached per collective per day, so batch requests no longer scan every person.
+
+Action items:
+- [ ] Jan: build the demo DB once and check every HR page with `DB_PATH=data/demo.db`. The cards and alarms listed in "Demo data" should all appear.
+- [ ] Jan (optional): use `loadQuestionBank` in the seed instead of the old Catalan bank, if you want English questions there too.
+
 ## C5 · 2026-11-07 · Natan · Read API for insights and alarms, job scheduler
 
 New in `@damm/engine/hr`:

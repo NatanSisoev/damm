@@ -15,6 +15,8 @@ Engine commands (from `packages/engine`, after `pnpm install`; Node 22.5+, no na
 - Test: `pnpm test` (Node test runner, in-memory SQLite)
 - Typecheck: `pnpm typecheck`
 - Run the job on the dev DB: `pnpm --filter @damm/engine run job` (`DB_PATH`, default `data/app.db`)
+- Build the demo DB (3 months of synthetic answers with planted alarms and insights, about 4 min): `pnpm --filter @damm/engine run demo`, then run the app with `DB_PATH=data/demo.db`
+- Simulate and tune the engine against known ground truth: `pnpm --filter @damm/engine run sim` / `run tune`
 
 ## Branches
 
