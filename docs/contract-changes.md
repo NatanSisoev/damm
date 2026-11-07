@@ -19,6 +19,13 @@ What changed and why.
 
 ---
 
+## C19 · 2026-11-08 · Jan · Data retention constants and purge (R-PRIV-8)
+
+`packages/shared` gains `RETENTION` (`rawResponseMonths: 24`, `inactiveAccountMonths: 24`, `pushSubscriptionMonths: 12`). `@damm/db` gains `purgeExpired(db, { dryRun })` (`packages/db/src/retention.ts`): deletes `resposta` rows with `periode` older than the window plus their `comentari_tema` and `resposta_seed` rows, accounts with no recent answer (their `assignment` and `person_domain_state` rows cascade), and old push subscriptions. Aggregate tables (`agregat`, `tema`, `senyal`, `insight`, `recomanacio`, `domain_importance`) are never touched. `POST /api/jobs/run` calls it as its last step (`?dryRun=1` only counts); also `pnpm --filter @damm/db run purge [-- --dry-run]`. No schema change.
+
+- [ ] Natan: confirm the engine tolerates `resposta` rows disappearing for old periods (`runEngineJob` only rewrites `agregat` for periods that still have rows, so older aggregates survive; `comments.ts` does `DELETE FROM tema` and rebuilds, so check that old-period themes are not lost once their comments are purged), and tell Jan if a window should be longer.
+- [ ] Jan: add the purge to the Railway scheduled job once the windows are agreed.
+
 ## C18 · 2026-11-07 · Jan · Join code lookup ignores accents; DEMO-FÀB becomes DEMO-FAB
 
 `lookupJoinCode` (`@damm/db/join`) matches on a key without diacritics, hyphens, spaces and case, and now returns the stored `codi`; `registerAccount` resolves the code through it. No schema change. The deployed DB renames `DEMO-FÀB` to `DEMO-FAB` at startup (`scripts/fix-join-codes.mjs`, idempotent). `packages/engine/demo/build-demo.ts` still derives `DEMO-<first 3 letters>` from the collective name, so a fresh demo DB has `DEMO-FÀB` until the generator strips diacritics.

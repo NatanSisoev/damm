@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
-import { COLLECTIUS, DOMINIS, MIN_GROUP_SIZE, PERIODES_SEED, TORNS } from "@damm/shared";
+import { COLLECTIUS, DOMINIS, MIN_GROUP_SIZE, PERIODES_SEED, RETENTION, TORNS } from "@damm/shared";
 import {
   CHANGE_MIN_DELTA,
   CHANGE_MIN_N,
@@ -105,6 +105,11 @@ export default async function MethodologyPage() {
             <li>{bold(t("meth_s6_li3", { n: PERIODES_SEED.length, periods: PERIODES_SEED.join(", ") }))}</li>
             <li>{bold(t("meth_s6_li4", { domains: DOMINIS.length, collectives: COLLECTIUS.length }))}</li>
           </ul>
+        </Section>
+
+        <Section title={t("meth_s7")}>
+          <p>{bold(t("meth_s7_p1", { raw: RETENTION.rawResponseMonths, inactive: RETENTION.inactiveAccountMonths, push: RETENTION.pushSubscriptionMonths }))}</p>
+          <p>{bold(t("meth_s7_p2", { min: MIN_GROUP_SIZE }))}</p>
         </Section>
       </div>
     </>

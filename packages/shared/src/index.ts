@@ -180,3 +180,17 @@ export interface Recomanacio {
 
 /** True when a segment must be hidden everywhere (dashboard and exports). */
 export const isSuppressed = (n: number): boolean => n < MIN_GROUP_SIZE;
+
+/**
+ * Data retention (R-PRIV-8). Raw rows are kept only as long as analysis needs them; aggregates, themes,
+ * signals and insights are kept (they hold no per-person data). Windows are in whole calendar months.
+ * 24 months keeps the seeded Aug-Oct 2026 demo data until Aug 2028.
+ */
+export const RETENTION = {
+  /** Raw `resposta` rows (and their redacted comments, comment-theme links and seed labels) older than this are deleted. */
+  rawResponseMonths: 24,
+  /** Accounts with no answer for this long (and created before the cutoff) are deleted with their per-person engine state. */
+  inactiveAccountMonths: 24,
+  /** Push subscriptions are deleted on logout; a subscription with no matching activity is also dropped after this long. */
+  pushSubscriptionMonths: 12,
+} as const;
