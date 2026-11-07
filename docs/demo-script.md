@@ -42,7 +42,7 @@ Checklist:
 | Status | ✅ Works now |
 | Who | HR person (presenter 1) |
 | URL | `http://localhost:3000/hr/needs` |
-| Click | On the page "Quina necessitat vols escoltar?", fill the "Necessitat" box (placeholder: "Ex.: Volem saber com viuen els equips de planta el nou sistema de torns."). Pick the "Col·lectiu", set "Durada màxima per persona (segons)". Click "Desar necessitat". |
+| Click | On the page "Quina necessitat vols escoltar?", fill the "Necessitat" box (placeholder: "Ex.: Volem saber com viuen els equips de planta el nou sistema de torns."). Pick the "Col·lectiu", set "Durada màxima per persona (segons)". Click "Genera els esborranys". |
 | Audience should notice | The need is plain language, no survey-design skill needed. A note says "Després passaràs a Revisió." |
 | Fallback | If the form errors, go to `/hr/needs`: the fixture already holds a need (Fàbriques) with its drafts. |
 
@@ -56,7 +56,7 @@ Suggested text: "Volem saber com viuen els equips de planta el nou sistema de to
 | Who | HR person |
 | URL | `http://localhost:3000/hr/needs` |
 | Click | Open the "Esborranys pendents" list. Each card is marked "Proposta de la IA". |
-| Audience should notice | The questions are proposals. The banner reads "La IA proposa, una persona decideix." and the page states "Cap pregunta entra al grup fins que una persona l'aprova." |
+| Audience should notice | The questions are proposals. The banner reads "La IA proposa, una persona decideix." and the page states "Cap pregunta entra al banc de preguntes fins que una persona l'aprova." |
 | Fallback | AI or LLM down, slow, or not landed: use the three seeded drafts of the fixture need. Say "these are the drafts the AI proposed earlier" and carry on. Never wait on the gateway on stage. |
 
 ### 3. Human approval
@@ -66,7 +66,7 @@ Suggested text: "Volem saber com viuen els equips de planta el nou sistema de to
 | Status | ✅ Works now (on fixture drafts) |
 | Who | HR person |
 | URL | `http://localhost:3000/hr/needs` |
-| Click | Edit one question's text in the "Text de la pregunta" box and click "Desar text". Click "Aprovar" on two drafts. Click "Descartar" on the third. |
+| Click | Edit one question's text in the "Text de la pregunta" box and click "Desa el text". Click "Aprova" on two drafts. Click "Descarta" on the third. |
 | Audience should notice | A human edited and decided. Approved questions move to "Llestes per publicar". Questions linked to a need get top priority in the pool (priority 100). |
 | Fallback | If an action fails, reload the page; state is in the DB. If all drafts are already approved from a rehearsal, reset the DB. |
 
@@ -89,8 +89,8 @@ Suggested text: "Volem saber com viuen els equips de planta el nou sistema de to
 | Who | Employee (presenter 2, on a phone) |
 | URL | `<PUBLIC_BASE_URL>/join/<codi>`, then `/onboarding?codi=<codi>`, then `/` |
 | Click | Scan the QR. Page "Codi d'accés". Continue to "Crea el teu compte": choose "Nom d'usuari", "Contrasenya", "Repeteix la contrasenya". Note the "Codi de recuperació" shown once. Land on `/`. Answer the questions. |
-| Audience should notice | No email, no phone, no personal data: a join code that identifies only company and collective, a username and a password, and a one-time recovery code. The page says "Les teves respostes són anònimes i només es mostren de forma agregada." |
-| Fallback | Answer flow not merged: stop after onboarding and say "the answer screens are in the next branch". Show `/settings` ("Configuració": change password, "Tanca la sessió"). Or play a short pre-recorded screen capture of the answer flow. Wrong or expired code gives "Codi no vàlid"; use `/login` ("Inicia la sessió") with the account you made in rehearsal, or "He perdut la contrasenya" for recovery. |
+| Audience should notice | No email, no phone, no personal data: a join code that identifies only company and collective, a username and a password, and a one-time recovery code. The page says "Les teves respostes són anònimes i només es mostren agregades." |
+| Fallback | Answer flow not merged: stop after onboarding and say "the answer screens are in the next branch". Show `/settings` ("Configuració": change password, "Tanca la sessió"). Or play a short pre-recorded screen capture of the answer flow. Wrong or expired code gives "Codi no vàlid"; use `/login` ("Entra") with the account you made in rehearsal, or "He perdut la contrasenya" for recovery. |
 
 The fixture DB has no join codes. For a live scan use the seed DB, or publish in step 4 (which creates a code).
 
@@ -114,7 +114,7 @@ Talking point for the suppression: Logística night shift has 6 respondents in t
 | Status | ✅ Works now (fixture). 🔶 Needs Natan for live generation: `packages/ai` proposes recommendations from signals; today only the fixture row exists. |
 | Who | HR person |
 | URL | `http://localhost:3000/hr/recommendations` |
-| Click | Read "Senyals" (the Logística weak signal about safety equipment and heat) and "Recomanacions". Click "Aprovar" on the recommendation (or "Descartar"). |
+| Click | Read "Senyals" (the Logística weak signal about safety equipment and heat) and "Recomanacions". Click "Aprova" on the recommendation (or "Descarta"). |
 | Audience should notice | The signal is a weak one: few mentions, easy to miss in an average. Signals under the minimum group size do not appear. The page says "Senyals detectats a l'anàlisi i accions proposades per la IA. Una persona decideix quines tirar endavant." |
 | Fallback | Empty states read "Encara no hi ha senyals." and "Encara no hi ha recomanacions.": switch to the fixture DB. |
 
@@ -125,7 +125,7 @@ Talking point for the suppression: Logística night shift has 6 respondents in t
 | Status | Button and redirect ✅ Works now. The follow-up questions themselves are 🔶 Needs Natan (AI drafting). |
 | Who | HR person |
 | URL | `http://localhost:3000/hr/recommendations`, then `/hr/needs` |
-| Click | On the approved recommendation click "Crear enquesta de seguiment". The recommendation gets a "Seguiment creat" badge and the follow-up need shows up in `/hr/needs`. |
+| Click | On the approved recommendation click "Crea l'enquesta de seguiment". The recommendation gets a "Seguiment creat" badge and the follow-up need shows up in `/hr/needs`. |
 | Audience should notice | The loop closes: signal → recommendation → a new need → drafts → approval → publish, always with a person approving. |
 | Fallback | No follow-up drafts appear: say the AI drafts for follow-ups arrive with the AI work, and show the need created in `/hr/needs`. |
 

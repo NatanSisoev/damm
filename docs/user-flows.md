@@ -45,18 +45,18 @@ Preconditions: DB-seed or DB-demo, EMP-OUT, an active `joincode` row.
 
 | # | Route and action | Expected result |
 |---|---|---|
-| 1 | Open `/join/DAMM-LOG` (link or QR from the publish page). | Eyebrow = company (from `joincode.empresa`), title "Benvinguda", lede "Et donem la benvinguda a {empresa}. Les teves respostes són anònimes i només es mostren de forma agregada." A "Col·lectiu" card shows Logística. Privacy note "Anònim de debò. No et demanem nom ni correu. Només veiem grups de 10 persones o més." A link "Com tractem les teves dades" goes to `/privacitat`. Button-link "Continua". |
+| 1 | Open `/join/DAMM-LOG` (link or QR from the publish page). | Eyebrow = company (from `joincode.empresa`), title "Et donem la benvinguda", lede "Les teves respostes a {empresa} són anònimes i només es mostren agregades." A "Col·lectiu" card shows Logística. Privacy note "Anònim de debò. No et demanem nom ni correu. Només veiem grups de 10 persones o més." A link "Com tractem les teves dades" goes to `/privacitat`. Button-link "Continua". |
 | 2 | Press "Continua". | URL becomes `/onboarding?codi=DAMM-LOG`. The code travels in the query, not in the session (the spec says session; the code differs). |
 
 Branches:
 
-- **B1 typed entry.** Open `/join`: title "Escoltem la teva veu", lede "Dues preguntes breus al dia. Sense nom, sense rastre.", field "Codi d'unió" (placeholder `DAMM-XXX`, hint "Està al cartell o al missatge del teu equip. Si tens el QR, escaneja'l directament."), button "Entra", the same privacy note as step 1. `goToJoinAction` trims, uppercases, turns spaces and underscores into `-` and drops anything outside `A-Z0-9-`. ` damm fab ` and `damm_fab` both give `/join/DAMM-FAB`.
+- **B1 typed entry.** Open `/join`: title "Escoltem la teva veu", lede "Dues preguntes breus al dia. Sense nom ni correu.", field "Codi d'invitació" (placeholder `DAMM-XXX`, hint "Està al cartell o al missatge del teu equip. Si tens el QR, escaneja'l directament."), button "Entra", the same privacy note as step 1. `goToJoinAction` trims, uppercases, turns spaces and underscores into `-` and drops anything outside `A-Z0-9-`. ` damm fab ` and `damm_fab` both give `/join/DAMM-FAB`.
 - **B2 missing hyphen.** `dammfab` goes to `/join/DAMMFAB` and shows "Codi no vàlid". The form does not insert the hyphen. This is a known finding, not a bug in the test.
 - **B3 empty field.** Submit with nothing: redirected back to `/join`.
 - **B4 lowercase URL.** `/join/damm-fab` works (code uppercased).
 - **B5 wrong code.** `/join/XXXX`: "Codi no vàlid", text "Aquest codi no existeix o ja no està actiu. Comprova l'enllaç o demana un codi nou al teu equip.", link "Torna a provar amb un altre codi" to `/join`.
 - **B6 inactive code.** `joincode.actiu = 0`: same screen as B5.
-- **B7 direct onboarding with a bad code.** `/onboarding?codi=NOPE` shows "Codi no vàlid" with link "Introdueix un altre codi".
+- **B7 direct onboarding with a bad code.** `/onboarding?codi=NOPE` shows "Codi no vàlid" with link "Escriu un altre codi".
 
 Invariants: the page shows company and collective only. No personal field. A join code identifies one collective, never a person.
 
@@ -67,7 +67,7 @@ Preconditions: F-EMP-1 reached step 2 with a valid code.
 
 | # | Route and action | Expected result |
 |---|---|---|
-| 1 | `/onboarding?codi=DAMM-LOG` | Eyebrow "{empresa} · Logística", title "Crea el teu compte", intro "Tria un nom d'usuari i una contrasenya. No et demanem correu, telèfon ni nom: les teves respostes són anònimes." Fields "Nom d'usuari" (hint "No facis servir el teu nom real."), "Contrasenya" (hint "Mínim 8 caràcters (n/8 ✓)."), "Repeteix la contrasenya"; the password toggle reads "Mostra" / "Amaga". Button "Crea el compte". Link "Ja tens compte? Inicia la sessió". No centre, shift or manager question (expected gap vs the spec: R-DOM-5, N-8). |
+| 1 | `/onboarding?codi=DAMM-LOG` | Eyebrow "{empresa} · Logística", title "Crea el teu compte", intro "Tria un nom d'usuari i una contrasenya. No et demanem correu, telèfon ni nom: les teves respostes són anònimes." Fields "Nom d'usuari" (hint "No facis servir el teu nom real."), "Contrasenya" (hint "Mínim 8 caràcters (n/8 ✓)."), "Repeteix la contrasenya"; the password toggle reads "Mostra" / "Amaga". Button "Crea el compte". Link "Ja tens compte? Entra". No centre, shift or manager question (expected gap vs the spec: R-DOM-5, N-8). |
 | 2 | Fill `usuari.prova`, a password of 8+ characters twice, press "Crea el compte". | A session cookie `damm_session` is set. The screen shows the title "Compte creat" and a one-time recovery code (groups of 4 characters, alphabet without 0/O/1/I/L) with the text "Desa'l ara. Aquest codi només el veuràs una vegada." Button "Copia el codi" (status "Copiat." or "No s'ha pogut copiar: selecciona'l i copia'l a mà."). Checkbox "L'he desat en un lloc segur". The continue button is disabled. |
 | 3 | Tick "L'he desat en un lloc segur", press the continue button. | Redirect to `/`. |
 
@@ -76,7 +76,7 @@ DB effect after step 2: one `compte` row with `id` = random UUID, `collectiu_id`
 Branches (exact errors):
 
 - **B1** repeat differs: "Les contrasenyes no coincideixen."
-- **B2** username not matching `^[a-z0-9._-]{3,30}$` after trim and lowercase (2 characters, spaces, accents): "L'usuari ha de tenir entre 3 i 30 caràcters: lletres minúscules, xifres, punt, guió o guió baix." Capitals are lowercased first, so `Prova` is accepted as `prova`.
+- **B2** username not matching `^[a-z0-9._-]{3,30}$` after trim and lowercase (2 characters, spaces, accents): "El nom d'usuari té entre 3 i 30 caràcters: lletres minúscules, xifres, punt, guió o guió baix." Capitals are lowercased first, so `Prova` is accepted as `prova`.
 - **B3** password under 8: "La contrasenya ha de tenir almenys 8 caràcters."
 - **B4** username taken: "Aquest nom d'usuari ja existeix. Prova'n un altre." (SQLite unique constraint.)
 - **B5** code became inactive between pages: "Aquest codi no és vàlid o ja no està actiu."
@@ -99,7 +99,7 @@ Preconditions: an account exists, EMP-OUT.
 Branches:
 
 - **B1** wrong password or unknown username: same text "Usuari o contrasenya incorrectes." (no user enumeration; the unknown-user path burns comparable hash time).
-- **B2** rate limit: 5 failed attempts per username in 15 minutes. From the sixth try, even with the right password: "Massa intents. Torna-ho a provar d'aquí a una estona." In memory, per process, so a server restart resets it.
+- **B2** rate limit: 5 failed attempts per username in 15 minutes. From the sixth try, even with the right password: "Has fet massa intents. Torna-ho a provar d'aquí a una estona." In memory, per process, so a server restart resets it.
 - **B3** deleted account with a still-valid cookie: `getCompteId()` also checks `compteExists`, so the session is treated as invalid and the user goes to `/login`.
 - **B4** username case: `USUARI.PROVA` matches `usuari.prova` (lowercased).
 
@@ -112,12 +112,12 @@ Preconditions: account exists, recovery code known.
 
 | # | Route and action | Expected result |
 |---|---|---|
-| 1 | `/login` → "He perdut la contrasenya". | h2 "Recupera el compte" with the text "Introdueix el teu usuari, el codi de recuperació que vas desar i una contrasenya nova. El codi només serveix una vegada; te'n donarem un de nou." Fields "Nom d'usuari", "Codi de recuperació", "Contrasenya nova", button "Canvia la contrasenya". Button "Torna a l'inici de sessió". |
+| 1 | `/login` → "He perdut la contrasenya". | h2 "Recupera el compte" with the text "Escriu el teu usuari, el codi de recuperació que vas desar i una contrasenya nova. El codi només serveix una vegada; te'n donarem un de nou." Fields "Nom d'usuari", "Codi de recuperació", "Contrasenya nova", button "Canvia la contrasenya". Button "Torna a l'inici de sessió". |
 | 2 | Enter username, code (dashes and case ignored), a new password of 8+. | Password changes, the user is logged in, title "Contrasenya canviada" with a **new** recovery code and the "L'he desat en un lloc segur" checkbox. |
 | 3 | Try the old password. | "Usuari o contrasenya incorrectes." |
 | 4 | Try the **old** recovery code again. | "Usuari o codi de recuperació incorrectes." (compare-and-set on `recovery_hash`: a used code never works twice.) |
 
-Branches: wrong code or unknown user gives the same message "Usuari o codi de recuperació incorrectes." Short new password gives "La contrasenya ha de tenir almenys 8 caràcters." Recovery attempts share the 5 per 15 minutes limiter with login ("Massa intents…").
+Branches: wrong code or unknown user gives the same message "Usuari o codi de recuperació incorrectes." Short new password gives "La contrasenya ha de tenir almenys 8 caràcters." Recovery attempts share the 5 per 15 minutes limiter with login ("Has fet massa intents…").
 
 ### F-EMP-5 Answer today's questions
 
@@ -162,11 +162,11 @@ Preconditions: EMP-IN, a question on screen.
 
 | # | Action | Expected result |
 |---|---|---|
-| 1 | Type a comment, set the browser offline, press "Envia". | Alert: "Sense connexió. La teva resposta continua aquí: torna-ho a provar quan tornis a tenir xarxa." Button now says "Torna-ho a provar". Text is kept. |
+| 1 | Type a comment, set the browser offline, press "Envia". | Alert: "Sense connexió. La teva resposta continua aquí: torna-ho a provar quan tornis a tenir connexió." Button now says "Torna-ho a provar". Text is kept. |
 | 2 | Go online, press "Torna-ho a provar". | Sent, next question or the done card. |
 | 3 | Reload before sending. | The draft is restored from `localStorage` key `damm:draft:v1:<compteId>:<questionId>`. After a successful send the key is removed. Drafts of questions not in today's pool are pruned. |
 
-Branches: server 5xx on POST gives "No s'ha pogut enviar la resposta. La teva resposta continua aquí: torna-ho a provar." Server unreachable while online: "No hem pogut connectar amb el servidor. …". Pool load fails: "No s'han pogut carregar les preguntes." with button "Torna-ho a provar"; offline variant: "Sembla que no tens connexió. Comprova la xarxa i torna-ho a provar." Blocked `localStorage`: the app still works, the draft just does not survive a reload.
+Branches: server 5xx on POST gives "No s'ha pogut enviar la resposta. La teva resposta continua aquí: torna-ho a provar." Server unreachable while online: "No hem pogut connectar amb el servidor. …". Pool load fails: "No s'han pogut carregar les preguntes." with button "Torna-ho a provar"; offline variant: "Sembla que no tens connexió. Comprova la connexió i torna-ho a provar." Blocked `localStorage`: the app still works, the draft just does not survive a reload.
 
 Invariant: the draft lives on the device only and is never sent before the person presses send.
 
@@ -177,7 +177,7 @@ Preconditions: EMP-IN.
 
 | # | Route and action | Expected result |
 |---|---|---|
-| 1 | `/settings` | h1 "Configuració", subtitle "Les teves respostes són anònimes i només es mostren de forma agregada, en grups de 10 persones o més." In order: card "Privadesa" with link "Llegeix com tractem les dades"; panel "Canvia la contrasenya"; panel "Codi de recuperació"; card "Sessió" with button "Tanca la sessió"; panel "Esborra el compte" (details in F-EMP-10). |
+| 1 | `/settings` | h1 "Configuració", subtitle "Les teves respostes són anònimes i només es mostren agregades, en grups de 10 persones o més." In order: card "Privadesa" with link "Llegeix com tractem les dades"; panel "Canvia la contrasenya"; panel "Codi de recuperació"; card "Sessió" with button "Tanca la sessió"; panel "Esborra el compte" (details in F-EMP-10). |
 | 2 | Follow the privacy link or `/privacitat` | Heading "Com tractem les teves dades" with sections "Què recollim", "Què veu Recursos Humans", "Què no fem mai", "Comentaris lliures", "Sessió i compte" (verify the exact headings in the browser). Reachable without a session from `/join/[codi]`, `/onboarding` and `/login` (link "Com tractem les teves dades"). |
 
 Push toggle: see F-EMP-9. Retention beyond account deletion (R-PRIV-8) is not built.
@@ -218,9 +218,9 @@ Preconditions: EMP-IN, on `/settings`.
 | 1 | Panel "Canvia la contrasenya": fill "Contrasenya actual", "Contrasenya nova", "Repeteix la contrasenya nova", press "Canvia la contrasenya". | role=status "Contrasenya canviada." The old password no longer logs in; the new one does. |
 | 2 | Panel "Codi de recuperació" (text "Si has perdut el codi que et vam donar, en pots generar un de nou. El vell deixarà de servir i el nou només el veuràs una vegada."): fill "Contrasenya actual", press "Genera un codi nou". | Screen "Codi de recuperació nou" with a code and the note "El codi anterior ja no funciona."; button "Fet" goes to `/settings`. The old code fails in F-EMP-4 with "Usuari o codi de recuperació incorrectes." |
 | 3 | Panel "Esborra el compte": press "Vull esborrar el compte". | Confirmation "Segur que vols esborrar-lo? Escriu la contrasenya per confirmar." with buttons "Sí, esborra el compte" and "Cancel·la". |
-| 4 | Enter the password, press "Sí, esborra el compte". | Account and push subscription rows removed, cookie destroyed, redirect to `/join?compte=esborrat` with role=status "Compte esborrat. Les respostes que vas donar es queden com a dades anònimes." Past `resposta` rows stay (`compte_id` has no cascade) and cannot be traced to a person. Logging in with the old credentials fails. |
+| 4 | Enter the password, press "Sí, esborra el compte". | Account and push subscription rows removed, cookie destroyed, redirect to `/join?compte=esborrat` with role=status "Compte esborrat. Les respostes que vas donar es conserven com a dades anònimes." Past `resposta` rows stay (`compte_id` has no cascade) and cannot be traced to a person. Logging in with the old credentials fails. |
 
-Branches (exact errors in the panels): wrong current password "La contrasenya actual no és correcta."; new password under 8 "La contrasenya nova ha de tenir almenys 8 caràcters."; mismatch "Les contrasenyes noves no coincideixen."; rate limit "Massa intents. Espera uns minuts i torna-ho a provar." "Cancel·la" returns to the closed panel and deletes nothing. A deleted account with a still-valid cookie is treated as logged out (F-EMP-3 B3).
+Branches (exact errors in the panels): wrong current password "La contrasenya actual no és correcta."; new password under 8 "La contrasenya nova ha de tenir almenys 8 caràcters."; mismatch "Les contrasenyes noves no coincideixen."; rate limit "Has fet massa intents. Espera uns minuts i torna-ho a provar." "Cancel·la" returns to the closed panel and deletes nothing. A deleted account with a still-valid cookie is treated as logged out (F-EMP-3 B3).
 
 Expected gap: retention of old responses is not configurable (R-PRIV-8 is only the delete-account behaviour above).
 
@@ -233,7 +233,7 @@ Preconditions: GATE-ON.
 
 | # | Route and action | Expected result |
 |---|---|---|
-| 1 | Open `/hr` with no cookie | Redirect to `/hr-login?next=/hr`. Page "Portal de persones", "Accés restringit a l'equip de persones. Introdueix el codi d'accés de la demo.", field "Codi d'accés", button "Entra". |
+| 1 | Open `/hr` with no cookie | Redirect to `/hr-login?next=/hr`. Page "Portal de persones", "Accés restringit a l'equip de persones. Escriu el codi d'accés de la demo.", field "Codi d'accés", button "Entra". |
 | 2 | Wrong code, "Entra" | Stays on the page with the alert "Codi incorrecte." No cookie. |
 | 3 | Right code, "Entra" | Cookie `hr_access` set, redirect to the `next` path (`/hr` here). Nav: "Inici", "Necessitats", "Enllaços i QR", "Resultats", "Alarmes" (with a count badge), "Recomanacions", "Com es calcula?", "Vista de responsables". |
 
@@ -254,7 +254,7 @@ Preconditions: GATE-ON and logged in, LLM-ON (LLM-OFF is branch B1).
 | # | Route and action | Expected result |
 |---|---|---|
 | 1 | `/hr/needs` → open "Nova necessitat". Optionally press an example (for instance "B · Logística des del mòbil"). | Fields "Objectiu", "Context", "Què no s'ha de preguntar", "Col·lectiu" (all or one), "Durada màxima per persona (segons)". |
-| 2 | Fill an objective of 15+ characters, a duration of 30+ seconds, press "Generar esborranys". | Button "Generant…" and text "La IA està redactant les preguntes…". |
+| 2 | Fill an objective of 15+ characters, a duration of 30+ seconds, press "Genera els esborranys". | Button "Generant…" and text "La IA està redactant les preguntes…". |
 | 3 | Wait | Redirect to `/hr/needs`. A card in state "Esborrany" with badge "Proposta de la IA" appears. |
 
 DB effect: one `necessitat` row (`estat = 'oberta'`, `text_nl`, `collectiu_id` or NULL, `durada_max_s`, `context`, `exclusions`) and its `pregunta` rows with `estat = 'draft'`, `generada_per_ia` = 1, ordered by `ordre`. Nothing is `aprovada`. The need row is written only after drafting succeeds, so a failure leaves no orphan.
@@ -280,14 +280,14 @@ Preconditions: F-HR-2 done, a need in "Esborrany".
 
 | # | Action | Expected result |
 |---|---|---|
-| 1 | Edit a question text, press "Desar text" | `pregunta.text` updated (draft rows only). |
+| 1 | Edit a question text, press "Desa el text" | `pregunta.text` updated (draft rows only). |
 | 2 | Move a question with the up or down control | `ordre` swaps with its neighbour. |
-| 3 | Press "Regenerar" on a question | The AI (or template) replaces that draft; badge reflects its source. |
-| 4 | Press "Descartar" on a question | `pregunta.estat = 'retirada'`. Gone from the draft list. |
-| 5 | Edit title and introduction, press "Desar títol i introducció" | `necessitat` header updated; empty title is ignored. |
-| 6 | Press "Aprovar" on each remaining question | Each moves to "Preguntes aprovades". `pregunta.estat = 'aprovada'`, `prioritat = 100` (when tied to a need), `aprovada_per = 'hr-demo'`, `aprovada_el` set. When no draft is left and at least one is approved, the need card shows "Llesta per publicar". |
+| 3 | Press "Torna a generar" on a question | The AI (or template) replaces that draft; badge reflects its source. |
+| 4 | Press "Descarta" on a question | `pregunta.estat = 'retirada'`. Gone from the draft list. |
+| 5 | Edit title and introduction, press "Desa el títol i la introducció" | `necessitat` header updated; empty title is ignored. |
+| 6 | Press "Aprova" on each remaining question | Each moves to "Preguntes aprovades". `pregunta.estat = 'aprovada'`, `prioritat = 100` (when tied to a need), `aprovada_per = 'hr-demo'`, `aprovada_el` set. When no draft is left and at least one is approved, the need card shows "Llesta per publicar". |
 
-Branches: approving or editing a question that is no longer `draft` does nothing (SQL guards on `estat = 'draft'`). Discarding every question leaves the need in "Esborrany" with no approved question, so "Publicar i avisar per notificació" must not appear (verify). `approveQuestion` is the only code path that sets `estat = 'aprovada'`.
+Branches: approving or editing a question that is no longer `draft` does nothing (SQL guards on `estat = 'draft'`). Discarding every question leaves the need in "Esborrany" with no approved question, so "Publica i envia la notificació" must not appear (verify). `approveQuestion` is the only code path that sets `estat = 'aprovada'`.
 
 Invariant: AI proposes, a human decides. Nothing reaches the pool before step 6.
 
@@ -298,13 +298,13 @@ Preconditions: a need in "Llesta per publicar".
 
 | # | Route and action | Expected result |
 |---|---|---|
-| 1 | On the need card press "Publicar i avisar per notificació" | State "Publicada", hint "Les preguntes són al grup de preguntes i el col·lectiu ha rebut una notificació al mòbil." `necessitat.estat = 'publicada'`. No `joincode` or `publicacio` row is created. Every subscribed device in the need's collective (all collectives when it has none) gets a push. A notice above the list reads "S'han enviat notificacions a N dispositius del col·lectiu.", or "…menys de 10 dispositius…" under 10, or says notifications are off when the VAPID keys are missing. HR never sees which accounts. |
+| 1 | On the need card press "Publica i envia la notificació" | State "Publicada", hint "Les preguntes són al banc de preguntes i el col·lectiu ha rebut una notificació al mòbil." `necessitat.estat = 'publicada'`. No `joincode` or `publicacio` row is created. Every subscribed device in the need's collective (all collectives when it has none) gets a push. A notice above the list reads "S'han enviat notificacions a N dispositius del col·lectiu.", or "…menys de 10 dispositius…" under 10, or says notifications are off when the VAPID keys are missing. HR never sees which accounts. |
 | 2 | `/hr/publish` | Title "Enllaços i QR per col·lectiu". One card per collective with the code, link, QR, a "Copia" button, "Cartell per imprimir" (A4 poster at `/hr/publish/<codi>/poster`), "Publica a Teams" (`/hr/publish/<codi>/teams`, Adaptive Card titled "Escolta activa"), and "comptes al col·lectiu" (count only, `<10` when under 10). |
 | 3 | Open a collective's join link on a phone (onboarding) | F-EMP-1. |
 
 Notes: the card text shows the code and the link uses `PUBLIC_BASE_URL` (default `http://localhost:3000`; missing from `.env.example`, a known finding). Approved questions were already in the pool at F-HR-3 (the engine serves `aprovada` questions whatever the need's state); publishing marks the need and tells the collective. Join codes, links and QR are per collective, for onboarding only; the seed codes `DAMM-*` are always active.
 
-Branches: `/hr/publish` with no code shows "Encara no hi ha cap codi d'accés." and with no need "Encara no hi ha cap necessitat." The Teams card is a copyable payload; sending to Teams is not built (N-1 roadmap in `docs/teams-integration.md`).
+Branches: `/hr/publish` with no code shows "Encara no hi ha cap codi d'invitació." and with no need "Encara no hi ha cap necessitat." The Teams card is a copyable payload; sending to Teams is not built (N-1 roadmap in `docs/teams-integration.md`).
 
 ### F-HR-5 Read the results
 
@@ -313,10 +313,10 @@ Preconditions: GATE-ON logged in, DB-demo (richer) or DB-seed, analysis tables f
 
 | # | Route and action | Expected result |
 |---|---|---|
-| 1 | `/hr/results` | Header "Resultats", subtitle "Sempre en agregat. Els segments amb menys de 10 respondents es mostren com a Suprimit". KPIs "Comptes actius", "Temes detectats", "Temes emergents", "Segments suprimits". |
+| 1 | `/hr/results` | Header "Resultats", subtitle "Sempre en agregat. Els segments amb menys de 10 persones que han respost es mostren com a Suprimit". KPIs "Comptes actius", "Temes detectats", "Temes emergents", "Segments suprimits". |
 | 2 | Scroll | Sections "Perfil per domini" (radar), "Temes dels comentaris", "Representativitat" (columns respostes, població, diferència; differences of 5 pp or more marked; per collective and per shift), "Tendències per domini" (mean 1–5 per period with n and precision: indicativa, moderada, sòlida), "Comptes per col·lectiu" ("Només recomptes, mai identitats"). |
 | 3 | Choose a period in "Compara amb" (`?vs=`) | Comparison view for two periods. |
-| 4 | Look at the Logística night segment (6 accounts in the seed) | "Suprimit" with hint "Menys de 10 respondents" everywhere (profile, representativity, trends, signals). Themes with under 10 comments show "Suprimit" with "Menys de 10 comentaris". |
+| 4 | Look at the Logística night segment (6 accounts in the seed) | "Suprimit" with hint "Menys de 10 persones han respost" everywhere (profile, representativity, trends, signals). Themes with under 10 comments show "Suprimit" with "Menys de 10 comentaris". |
 
 Branches: no data gives "Encara no hi ha dades." / "Encara no hi ha temes." (empty states, no crash). Complementary suppression: if one hidden segment could be recovered by subtracting from a total, a second segment is also hidden. Direct reads never expose a comment tied to a person; only anonymised snippets of themes with 10 or more comments are shown. Engine insight cards are **built** (`hr/insight-cards.tsx`). Card titles: "Estat del domini", "Canvi destacat", "Polarització", "Importància i puntuació" (quadrants "Actua primer", "Mantén", "Vigila", "Prioritat baixa"), "Trajectòries", "Confirmació del seguiment", "Diferència entre grups". Bodies read like "Puntuació x/10 … confiança … consens …", "↑ Puja" / "↓ Baixa", each with a badge `n=`; suppressed rows are never shown. They need DB-demo (or a run of the engine job on DB-seed) to have content; the empty text depends on the page that embeds them.
 
@@ -345,9 +345,9 @@ Preconditions: GATE-ON logged in, DB with `senyal` and `recomanacio` rows (seed 
 | 2 | `/hr/recommendations` | Title "Recomanacions", subtitle "Senyals detectats a l'anàlisi i accions proposades per la IA. Una persona decideix quines tirar endavant." Cards "Senyals" and "Recomanacions". |
 | 3 | Press "Veure detall →" on a signal | `/hr/signals/<id>` shows badges (type, severity, status, collective, period, `n=`, confidence), the status buttons under "Estat del senyal:", the timeline "Del senyal a l'acció", the trend table with "Relacionat" rows, "Temes relacionats" (only themes with 10+ comments; hidden ones counted in a note) and "Recomanacions". |
 | 4 | Change the signal status | `senyal.status` changes. |
-| 5 | On a recommendation press "Aprovar" or "Descartar" | `recomanacio.estat` goes `proposada` → `aprovada` or `descartada`. Nothing is executed. |
+| 5 | On a recommendation press "Aprova" or "Descarta" | `recomanacio.estat` goes `proposada` → `aprovada` or `descartada`. Nothing is executed. |
 
-Engine alarms have their own page, `/hr/signals` ("Alarmes", nav tab with a count badge): PageHeader title "Alarmes", subtitle "Senyals que detecta el motor a partir dels agregats. Cap és individual; cada una és revisada per una persona.", button "Recalcula ara"; card "Alarmes" with a count, empty text "Cap alarma activa."; each item has type and severity badges, a "Només RH" badge when the audience is HR only, "{periode} · n={n}", the description, status transition buttons and a link "Veure detall →" to `/hr/signals/<id>`. Alarm types: `sharp_drop`, `sustained_decline`, `changepoint_cluster`, `polarisation`, `feble`, `low_confidence`, `improvement`. Statuses: open, acknowledged, action_linked, resolved. A 7-day cooldown stops the same alarm being re-raised. The detail page `/hr/signals/<id>` has the title of the signal type, the description, a button "← Recomanacions", "Estat del senyal:" status buttons and the card "Del senyal a l'acció" (4-step timeline, each step "Fet" or "Pendent"). Managers only see alarms of audience `hr_manager`.
+Engine alarms have their own page, `/hr/signals` ("Alarmes", nav tab with a count badge): PageHeader title "Alarmes", subtitle "Senyals que detecta el motor a partir dels agregats. Cap és individual; cada una és revisada per una persona.", button "Recalcula ara"; card "Alarmes" with a count, empty text "Cap alarma activa."; each item has type and severity badges, a "Només l'equip de persones" badge when the audience is HR only, "{periode} · n={n}", the description, status transition buttons and a link "Veure detall →" to `/hr/signals/<id>`. Alarm types: `sharp_drop`, `sustained_decline`, `changepoint_cluster`, `polarisation`, `feble`, `low_confidence`, `improvement`. Statuses: open, acknowledged, action_linked, resolved. A 7-day cooldown stops the same alarm being re-raised. The detail page `/hr/signals/<id>` has the title of the signal type, the description, a button "← Recomanacions", "Estat del senyal:" status buttons and the card "Del senyal a l'acció" (4-step timeline, each step "Fet" or "Pendent"). Managers only see alarms of audience `hr_manager`.
 
 Branches: `/hr/signals/abc` or an unknown id gives 404. A decided recommendation cannot be decided again (SQL guard on `estat = 'proposada'`). A signal with a hidden group shows `Suprimit`, never a number under 10.
 
@@ -360,7 +360,7 @@ Preconditions: an **approved** recommendation with no follow-up yet.
 
 | # | Action | Expected result |
 |---|---|---|
-| 1 | Press "Crear enquesta de seguiment" | Redirect to `/hr/needs`. A new need in "Esborrany", AI drafted, linked via `recomanacio.seguiment_necessitat_id`. Nothing approved. |
+| 1 | Press "Crea l'enquesta de seguiment" | Redirect to `/hr/needs`. A new need in "Esborrany", AI drafted, linked via `recomanacio.seguiment_necessitat_id`. Nothing approved. |
 | 2 | Back on `/hr/recommendations` | Badge "Seguiment creat". The button is gone. |
 | 3 | Continue with F-HR-3 and F-HR-4 | Questions enter the pool on approval; the collective is notified on publish. |
 | 4 | Employee side | The collective's employees see the action in "Has dit, hem fet" with the badge "Enquesta de seguiment en marxa" (F-EMP-8). |
@@ -374,7 +374,7 @@ Preconditions: a need in any state except "Tancada".
 
 | # | Action | Expected result |
 |---|---|---|
-| 1 | Press "Tanca la necessitat" (on `/hr/needs` or `/hr/publish`) | `necessitat.estat = 'tancada'`. Card shows "Tancada", hint "Decisió de l'equip: no hi entren noves respostes de seguiment." |
+| 1 | Press "Tanca la necessitat" (on `/hr/needs` or `/hr/publish`) | `necessitat.estat = 'tancada'`. Card shows "Tancada", hint "L'equip l'ha tancada: ja no recull respostes de seguiment." |
 | 2 | Filter `/hr/needs?estat=tancada` | The need is listed. A filter with no match shows `No hi ha cap necessitat en estat «…».` |
 
 Branches:
