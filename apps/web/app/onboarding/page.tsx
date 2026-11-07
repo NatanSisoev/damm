@@ -18,6 +18,9 @@ export default async function OnboardingPage({ searchParams }: { searchParams: P
           <p className="text-center text-sm">
             Ja tens compte? <Link href="/login" className="underline">Inicia la sessió</Link>
           </p>
+          <p className="text-center text-sm">
+            <Link href="/privacitat" className="underline">Com tractem les teves dades</Link>
+          </p>
         </>
       ) : (
         <div className="space-y-2">

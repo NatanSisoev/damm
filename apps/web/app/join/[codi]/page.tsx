@@ -29,6 +29,9 @@ export default async function JoinPage({ params }: { params: Promise<{ codi: str
           >
             Continua
           </Link>
+          <p className="text-center text-sm">
+            <Link href="/privacitat" className="underline">Com tractem les teves dades</Link>
+          </p>
         </>
       ) : (
         <div className="space-y-2">
