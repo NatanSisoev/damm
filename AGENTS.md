@@ -10,6 +10,7 @@ Two people work on this repo: **Jan** and **Natan**. Goal: move fast, keep `main
 | [`docs/engine.md`](docs/engine.md) | engine model: scheduling, scores / confidence / consensus, follow-ups, insights, alarms, learning | working on or with the engine |
 | [`docs/engine-integration.md`](docs/engine-integration.md) | how the employee app, HR dashboard and jobs call `@damm/engine` | wiring routes or pages to the engine |
 | [`docs/question-types.md`](docs/question-types.md) | every question type with an example DB row and answers | writing questions, the seed or the answer UI |
+| [`docs/demo-walkthrough.md`](docs/demo-walkthrough.md) | 2-minute demo story on the demo DB, backup facts, engine slide | rehearsing or presenting |
 
 Engine commands (from `packages/engine`, after `pnpm install`; Node 22.5+, no native modules needed):
 - Test: `pnpm test` (Node test runner, in-memory SQLite)
