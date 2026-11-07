@@ -80,10 +80,25 @@ export function createEngine(opts: EngineOptions): Engine {
     return a;
   }
 
+  // Segment statistics per collective, cached for the day: recomputing them on every batch request
+  // scans every person in the collective (quadratic in headcount over a day). HR weights stay live.
+  const signalCache = new Map<string, Omit<DomainSignal, "weight">[]>();
+
   function domainSignals(cfg: EngineConfig, collectiuId: number, nowMs: number): DomainSignal[] {
+    const weight = store.domainWeights(db, collectiuId);
+    const key = `${collectiuId}|${dayOf(nowMs, cfg.timezone)}`;
+    let base = signalCache.get(key);
+    if (!base) {
+      if (signalCache.size > 64) signalCache.clear();
+      base = computeSignals(cfg, collectiuId, nowMs);
+      signalCache.set(key, base);
+    }
+    return base.map((s) => ({ ...s, weight: weight(s.domainId) }));
+  }
+
+  function computeSignals(cfg: EngineConfig, collectiuId: number, nowMs: number): Omit<DomainSignal, "weight">[] {
     const states = store.collectiveStates(db, collectiuId);
     const N = store.population(db).filter((p) => p.collectiuId === collectiuId).reduce((s, p) => s + p.n, 0);
-    const weight = store.domainWeights(db, collectiuId);
     const nowSql = toSqlDatetime(nowMs);
     return store.domainIds(db).map((domainId) => {
       const mine = states.filter((s) => s.domini_id === domainId);
@@ -94,7 +109,6 @@ export function createEngine(opts: EngineOptions): Engine {
         domainId,
         infoGain: infoGain(points, N, cfg),
         outlierShare: recent.length ? outliers / recent.length : 0,
-        weight: weight(domainId),
       };
     });
   }
