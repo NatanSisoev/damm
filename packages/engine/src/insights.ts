@@ -20,9 +20,10 @@ export type InsightKind =
   | "importance_gap"
   | "trajectory_mix"
   | "followup_confirmation"
-  | "segment_gap";
+  | "segment_gap"
+  | "narrative";
 
-/** Kinds this module writes (and replaces on every run). `driver` and `action_effect` are not implemented yet. */
+/** Kinds this module writes (and replaces on every run). `narrative` comes from narrative.ts and is not replaced here. `driver` and `action_effect` are not implemented yet. */
 export const INSIGHT_KINDS: readonly InsightKind[] = [
   "domain_state",
   "top_mover",
