@@ -24,6 +24,11 @@ Find out who you are working for (Jan or Natan) from `git config user.name` or b
 - **Merge, never rebase** a branch that has been pushed. **Never force-push.**
 - On any merge conflict: stop, show the conflict, and ask. Do not guess at resolutions.
 - When the user says "sync", do the above.
+- **After every sync or pull, process the contract change log** (`docs/contract-changes.md`) before any other work:
+  1. Find every entry with an open action item (`- [ ]`) for your person.
+  2. Apply it in your own area, then tick it (`- [x]`) and add `(done YYYY-MM-DD, <commit>)`. If you cannot apply it yet, leave it open and tell the user why.
+  3. Commit the ticks with the work, so the other person sees what was incorporated.
+  4. Never edit or tick the other person's items. Never delete entries: the log is the history.
 
 ## Hard rules
 
@@ -39,8 +44,8 @@ Find out who you are working for (Jan or Natan) from `git config user.name` or b
 Work is split by area so the two of you rarely edit the same files. Stay in the areas your person has claimed. The shared contract (DB schema and API types) is agreed by both before anyone builds on it; change it only after telling the other person.
 
 - **Natan:** the engine (`packages/engine`): question scheduling, domain scores with confidence and consensus, personal trajectories and follow-ups, insights and alarms. Design: `docs/engine.md`.
-- **Contract change log:** every change to `packages/db/schema.sql` or `packages/shared` gets an entry in `docs/contract-changes.md` (newest first, with what the other person must do). After pulling `main`, read the new entries before building on the schema.
-- **Naming:** new code, tables, columns and docs are in English. Existing Catalan identifiers stay as they are until both agree to rename them. User-facing text stays in Catalan.
+- **Contract change log:** every change to `packages/db/schema.sql`, `packages/shared` or an API another person calls gets an entry in `docs/contract-changes.md`, in the same commit. Each entry lists action items as checkboxes per person. See the sync rules for how to process it.
+- **Naming:** new code, tables, columns, enum values and docs are in English. Existing Catalan table and column names stay until both agree to rename them.
 
 ## Challenge
 
