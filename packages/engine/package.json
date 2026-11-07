@@ -1,0 +1,29 @@
+{
+  "name": "@damm/engine",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./job": "./src/job.ts",
+    "./hr": "./src/hr.ts",
+    "./core": "./src/core.ts"
+  },
+  "scripts": {
+    "test": "node --experimental-strip-types --experimental-sqlite --no-warnings --test \"test/**/*.test.ts\"",
+    "typecheck": "tsc -p .",
+    "job": "node --experimental-strip-types --experimental-sqlite --no-warnings scripts/job.ts",
+    "sim": "node --experimental-strip-types --experimental-sqlite --no-warnings sim/run.ts",
+    "tune": "node --experimental-strip-types --experimental-sqlite --no-warnings sim/tune.ts",
+    "demo": "node --experimental-strip-types --experimental-sqlite --no-warnings demo/build-demo.ts"
+  },
+  "dependencies": {
+    "@damm/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.8.0"
+  }
+}
