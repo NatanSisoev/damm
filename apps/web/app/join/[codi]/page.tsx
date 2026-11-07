@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { lookupJoinCode } from "@damm/db/join";
 
 export const dynamic = "force-dynamic";
@@ -22,12 +23,12 @@ export default async function JoinPage({ params }: { params: Promise<{ codi: str
           <p className="text-sm opacity-70">
             Les teves respostes són anònimes i només es mostren de forma agregada.
           </p>
-          <button
-            disabled
-            className="rounded bg-black px-4 py-3 text-white disabled:opacity-40 dark:bg-white dark:text-black"
+          <Link
+            href={`/onboarding?codi=${encodeURIComponent(codi.toUpperCase())}`}
+            className="rounded bg-black px-4 py-3 text-center text-white dark:bg-white dark:text-black"
           >
             Continua
-          </button>
+          </Link>
         </>
       ) : (
         <div className="space-y-2">
