@@ -155,7 +155,7 @@ New read functions for 16 to 20 go in new files under `packages/db/src/` (for ex
 |------|----------------|----------|
 | Engine function signature in `packages/engine` | swap the pool stub for the real selection | 3 (final), demo |
 | ~~Draft-questions call in `packages/ai`~~ (done 2026-11-07, Jan) | the need form creates real AI drafts | HR need flow |
-| Analysis job writing `agregat`, `tema`, `senyal` from seeded responses | results show seed data instead of the init fixtures | results, demo |
+| ~~Analysis job writing `agregat`, `tema`, `senyal` from seeded responses~~ (done 2026-11-07, 362f275: seed and `POST /api/jobs/run` run engine, comment analysis, recommendations; fixtures removed) | results show seed data instead of the init fixtures | results, demo |
 | New `./employee` export in `packages/db` and `SESSION_SECRET` in `.env.example` (already in `jan/dev`: tell Natan before the PR) | shared contract | 2 (done), 4 |
 | Branch protection on `main` | repo flow | 10 |
 | A standard deviation (`desviacio`) per `agregat` row, written by the analysis job | real confidence intervals instead of n bands | 17 (full) |

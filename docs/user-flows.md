@@ -456,7 +456,7 @@ Preconditions: a DB (dev or demo), `DB_PATH` set if not the default.
 1. Run `pnpm --filter @damm/engine run job` (start with `source ~/.claude/bin/heavy-gate.sh` on this machine).
 2. Expected: a JSON report with counts for aggregates, insights and alarms, and no error. Running it twice gives the same counts for the same data (deterministic).
 3. The job is the only reader of per-account history (trajectories). It writes aggregates only, nothing per person.
-Branch: there is no `POST /api/jobs/run` (known finding); only the script exists.
+Also available as `POST /api/jobs/run` (HR-gated like `/hr`; 409 while a run is in progress): `runEngineJob`, then `runCommentAnalysisSync`, then `runRecommendations`; returns the three reports. Idempotent: a second call opens no alarms and drafts no proposals.
 
 ### F-JOB-2 Daily batch from the engine (wired)
 

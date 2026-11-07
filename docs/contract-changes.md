@@ -88,7 +88,7 @@ Action items:
 
 Additive schema change on `recomanacio`: `titol`, `iniciativa` (Damm initiative), `responsable_suggerit`, `termini_suggerit`, `justificacio` (cites n and confidence), `limits` ("correlació, no causa"), `font` (`llm` | `template`). `text` holds the concrete action. Rows are inserted as `estat = 'proposada'`, linked by `senyal_id`, by `runRecommendations` (`@damm/engine/job`, run with `draftRecommendations` from `@damm/ai`). Owner and timeframe are suggestions only. There is deliberately **no done/completed column**: HR only approves or discards. Old databases need the seven columns added (or a re-init).
 - [ ] Jan: show these fields on the signal page (title, action, initiative, suggested owner and timeframe, justification, limits, source). Keep approve/discard only, with no "done" tick.
-- [ ] Jan: call `runRecommendations` where the job runs (see engine-integration.md, "Recommendations"), never in a request. `createDraftedFollowUp` stays as is.
+- [x] Jan: call `runRecommendations` where the job runs (see engine-integration.md, "Recommendations"), never in a request. `createDraftedFollowUp` stays as is. (done 2026-11-07, 362f275: `POST /api/jobs/run` and the seed.)
 
 ## C10 · 2026-11-07 · Natan · Comment analysis: themes, summaries, emergent alarm
 
@@ -100,8 +100,8 @@ Design: [engine.md](engine.md) section 12. `runCommentAnalysis` fills `tema` and
 - **Entry points:** `runCommentAnalysisSync` / `runCommentAnalysis` from `@damm/engine/job`; script `pnpm --filter @damm/engine run comments`; `scripts/job.ts` and the demo build call it. `runEngineJob` is unchanged.
 
 Action items:
-- [ ] Jan: show `tema.resum` and `emergent` on the HR results and signals pages, filtered by collective (`tema.collectiu_id`; the company row, `collectiu_id IS NULL`, for "all"), and show only "not enough data" for `suprimit = 1`. `listThemes` in `hr-repository.ts` currently lists every row without the collective.
-- [ ] Jan: stop relying on the seeded `tema` rows (`init.ts`, `dashboard-fixtures.ts`): call `runCommentAnalysisSync(db, { now })` after `runEngineJob` in `POST /api/jobs/run` and after seeding, and let the `emergent` alarm come from there instead of the hand-written `senyal` row.
+- [ ] Jan: show `tema.resum` and `emergent` on the HR results and signals pages, filtered by collective (`tema.collectiu_id`; the company row, `collectiu_id IS NULL`, for "all"), and show only "not enough data" for `suprimit = 1`. `listThemes` in `hr-repository.ts` currently lists every row without the collective. (`listThemes({ collectiuId })` now filters, default = company row, and returns `collectiuId`, `share`, `font`; the manager page uses it, the HR pages still need to pass the collective: not ticked, 2026-11-07, 362f275.)
+- [x] Jan: stop relying on the seeded `tema` rows (`init.ts`, `dashboard-fixtures.ts`): call `runCommentAnalysisSync(db, { now })` after `runEngineJob` in `POST /api/jobs/run` and after seeding, and let the `emergent` alarm come from there instead of the hand-written `senyal` row. (done 2026-11-07, 362f275: `dashboard-fixtures.ts` deleted, placeholders removed from `init.ts`, the seed runs the analysis, `/api/jobs/run` is new.)
 - [ ] Jan (optional): a "limits of the analysis" note on the themes view, from the list in engine.md section 12.
 
 ---
