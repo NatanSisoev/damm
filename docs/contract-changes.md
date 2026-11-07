@@ -19,6 +19,18 @@ What changed and why.
 
 ---
 
+## C19 · 2026-11-07 · Natan · Brain tab: engine parameters, signals and what-if simulator
+
+- New HR-side engine API in `@damm/engine/hr`: `getBrain` (every config value with its default, HR weights and format preferences with their source, per-collective domain statistics and priorities, format arms per shift, active probes), `simulateBrain` (plays hypothetical people with no history over up to 28 days against the real question bank; config, weights, format preferences and probe boosts can be overridden for the run, nothing is stored), `resetConfig`, `clearDomainWeight`, `clearFormatPreference`, `describeConfig`, `parseConfigPatch`.
+- Statistics are hidden for a collective with fewer accounts than the minimum group size; the simulator then uses neutral signals. No account is read or returned.
+- The per-collective domain statistics moved from `engine.ts` to `signals.ts` so the live batch and the brain view share them. Behaviour is the same.
+- New page `/hr/brain` ("Cervell", sidebar footer) with server actions in `apps/web/app/hr/brain/actions.ts`. It writes only through the existing HR setters (`setConfig`, `setDomainWeight`, `setFormatPreference`). No schema or API change for the employee side.
+
+Action items:
+- [ ] Jan: FYI only. If you rework the HR sidebar, keep the `/hr/brain` link.
+
+---
+
 ## C18 · 2026-11-07 · Natan · The engine tops up published needs itself
 
 - `getDailyBatch` (`@damm/engine`) now always appends the unanswered questions of `publicada` needs for the account's collective to the day's batch, past `questionsPerDay` and `maxNeedsPerDay`, in slots after the existing ones. It runs on every call, so a need published later shows up the same day.
