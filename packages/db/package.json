@@ -18,6 +18,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./hr": "./src/hr.ts",
-    "./join": "./src/join.ts"
+    "./join": "./src/join.ts",
+    "./employee": "./src/employee.ts"
   }
 }
