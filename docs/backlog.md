@@ -38,7 +38,7 @@ Status: `running`, `ready` (can start now), `blocked` (waiting on a dependency),
 | 25 | Signal page: recommendation fields (C11), Indagar probes (C12), context events and "des de" effects (C13); R-DIFF-6, R-FLOW-8e | `jan/signal-actions` | done (51458d3) | light |
 | 26 | Multi-language CAT/ES/EN: per-question translations and portal strings | `jan/i18n` | running | heavy |
 | 27 | Product name: pick a proper name to replace the working name "Escolta activa" (wordmark, PWA manifest and short name, page titles, push title, poster, deck, `docs/visual-identity.md`) | `jan/product-name` | deferred (Jan decides the name first) | light |
-| 28 | Paper redesign to strict white, black and red: neutral white paper and black ink instead of the current green-tinted tokens (`--bg #eef0ea`, ink `#17211a`), red stays signal only; update `globals.css`, icons, manifest and `themeColor`, `docs/visual-identity.md`; re-run the dataviz validation if chart tokens change | `jan/paper-bw` | ready (after 26 merges, to avoid conflicts) | heavy |
+| 28 | Paper redesign to strict white, black and red: neutral white paper and black ink instead of the current green-tinted tokens (`--bg #eef0ea`, ink `#17211a`), red stays signal only; update `globals.css`, icons, manifest and `themeColor`, `docs/visual-identity.md`; re-run the dataviz validation if chart tokens change | `jan/paper-bw` | phase 1 tokens done on jan/paper-bw, phase 2 per-screen after i18n | heavy |
 
 Order for the next free slots: 18, 19, then 4. Pitch deck and demo work (14, 15) go last and are not raised before 8 Nov 9:00.
 
