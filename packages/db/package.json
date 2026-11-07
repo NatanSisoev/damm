@@ -7,7 +7,8 @@
   "scripts": {
     "init": "tsx src/init.ts",
     "rigour-check": "tsx scripts/rigour-check.mts",
-    "madrid-check": "tsx scripts/madrid-day-check.mts"
+    "madrid-check": "tsx scripts/madrid-day-check.mts",
+    "redaction-check": "tsx scripts/redaction-check.mts"
   },
   "dependencies": {
     "@damm/shared": "workspace:*",

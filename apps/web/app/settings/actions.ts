@@ -1,8 +1,14 @@
 "use server";
 
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { changePassword, deleteAccount, deletePushSubscription, regenerateRecoveryCode } from "@damm/db/employee";
 import { destroySession, getCompteId } from "@/lib/session";
+
+async function clientIp(): Promise<string> {
+  const h = await headers();
+  return h.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+}
 
 export type SettingsState = { error?: string; ok?: string; recoveryCode?: string };
 
@@ -28,6 +34,7 @@ export async function changePasswordAction(_prev: SettingsState, formData: FormD
     compteId,
     currentPassword: String(formData.get("currentPassword") ?? ""),
     newPassword: next,
+    clientIp: await clientIp(),
   });
   if (!res.ok) return { error: ERRORS[res.error] };
   return { ok: "Contrasenya canviada." };
@@ -36,7 +43,7 @@ export async function changePasswordAction(_prev: SettingsState, formData: FormD
 export async function regenerateRecoveryAction(_prev: SettingsState, formData: FormData): Promise<SettingsState> {
   const compteId = await getCompteId();
   if (!compteId) redirect("/login");
-  const res = await regenerateRecoveryCode({ compteId, currentPassword: String(formData.get("currentPassword") ?? "") });
+  const res = await regenerateRecoveryCode({ compteId, currentPassword: String(formData.get("currentPassword") ?? ""), clientIp: await clientIp() });
   if (!res.ok) return { error: ERRORS[res.error] };
   return { recoveryCode: res.recoveryCode };
 }
@@ -44,7 +51,7 @@ export async function regenerateRecoveryAction(_prev: SettingsState, formData: F
 export async function deleteAccountAction(_prev: SettingsState, formData: FormData): Promise<SettingsState> {
   const compteId = await getCompteId();
   if (!compteId) redirect("/login");
-  const res = await deleteAccount({ compteId, currentPassword: String(formData.get("currentPassword") ?? "") });
+  const res = await deleteAccount({ compteId, currentPassword: String(formData.get("currentPassword") ?? ""), clientIp: await clientIp() });
   if (!res.ok) return { error: ERRORS[res.error] };
   await destroySession();
   redirect("/join?compte=esborrat");
