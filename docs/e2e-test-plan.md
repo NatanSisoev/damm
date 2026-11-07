@@ -17,7 +17,7 @@ A manual runbook for the full loop plus a catalogue of smaller scenarios. Rework
 
 | Feature | Where tested | Flow |
 |---|---|---|
-| Web push (toggle in `/settings` and on `/`, send on publish) | M-12, M-13, S-30 to S-32 | F-EMP-9, F-JOB-4 |
+| Web push (toggle in `/settings` and on `/`, send on publish) | M-12, M-13, S-30 to S-33 | F-EMP-9, F-JOB-4 |
 | Named HR users, per-person audit (one shared access code; approver is the constant `hr-demo`) | S-75, S-89 | F-HR-1, F-PRIV-5 |
 | Manager scoping (any collective reachable behind the HR gate), manager role, centre or shift question in onboarding | M-23, S-72, S-89 | F-MGR-1, F-MGR-2, F-EMP-2 |
 | Configurable retention (only delete-account exists) | S-25, S-89 | F-EMP-10, F-PRIV-5 |
@@ -215,6 +215,7 @@ IDs are `S-n`. Each row has the flow, requirements, mode, steps and the expected
 | S-30 | F-EMP-9 | R-FLOW-5d, N-12 | [B] Use the employee app for a full answer cycle without touching the push button; call `Notification.permission` with `javascript_tool` | No permission prompt appears; the value stays `default`. Only the compact "Notificacions" card offers it | ☐ |
 | S-31 | F-EMP-9 | R-FLOW-5d, N-12 | [P] Jan: iPhone Safari, PWA not added to the home screen, open `/settings` | Nothing breaks; "Aquest navegador no admet notificacions. A l'iPhone, afegeix l'app a la pantalla d'inici…"; no prompt | ☐ SKIP-P |
 | S-32 | F-EMP-9, F-JOB-4 | R-FLOW-5d, R-PRIV-1 | [T] After M-12, log out and run `select count(*) from push_subscripcio` | The account's row is gone. No scheduled job sends anything (F-JOB-4 absent). `/hr/needs` HTML never contains an endpoint or account id | ☐ |
+| S-33 | F-EMP-5, F-HR-4 | R-FLOW-4a, R-FLOW-5d | [B] With a Logística account that already answered today's batch (M-15, "Gràcies"), create a second Logística need with two questions, approve and publish it (M-4 to M-8). On the employee tab reload `/` (or click the notification, M-13) | With no extra tap, "Pregunta 1 de 2" shows the new need's two questions; nothing already answered comes back. Both answers are accepted (204), then "Gràcies". [T] the account's `assignment` rows for today gain two `reason='need'` rows after the original slots (verified 2026-11-07 on a copy of the dev DB) | ☐ |
 
 ### 3.5 Question pacing and answer API
 
@@ -315,12 +316,12 @@ Every flow in `docs/user-flows.md` has at least one case. Cases cite the flow in
 | F-EMP-6 Failure handling | S-50 to S-53, S-55 |
 | F-EMP-7 Settings and privacy page | M-12, S-76 |
 | F-EMP-8 "Has dit, hem fet" | M-15, M-22, S-87 |
-| F-EMP-9 Push | M-12, M-13, S-30 to S-32 |
+| F-EMP-9 Push | M-12, M-13, S-30 to S-33 |
 | F-EMP-10 Account management | S-24 to S-26 |
 | F-HR-1 Enter the portal | M-1 to M-3, S-70, S-71, S-73, S-75, S-79, S-89 |
 | F-HR-2 Need and AI drafts | M-4, M-5, S-60 to S-61, S-63 to S-65 |
 | F-HR-3 Review and approve | M-6, M-7, S-42, S-62, S-75 |
-| F-HR-4 Publish | M-8, M-9, S-8 |
+| F-HR-4 Publish | M-8, M-9, S-8, S-33 |
 | F-HR-5 Results | M-16, M-18 to M-20b, S-1, S-3, S-7, S-8, S-80, S-81, S-90 |
 | F-HR-6 CSV export | S-2, S-4, S-88 |
 | F-HR-7 Signals and recommendations | M-20, M-21, S-78, S-85, S-90 |
@@ -345,7 +346,7 @@ Every flow in `docs/user-flows.md` has at least one case. Cases cite the flow in
 | Requirement group | Covered by |
 |---|---|
 | R-FLOW-1 to 4 (need, drafts, approval, publish) | M-4 to M-9, S-60 to S-65 |
-| R-FLOW-5 (answering, frequency, reminders) | M-10 to M-15, S-30 to S-32, S-40 to S-48, S-50 to S-55 |
+| R-FLOW-5 (answering, frequency, reminders) | M-10 to M-15, S-30 to S-33, S-40 to S-48, S-50 to S-55 |
 | R-FLOW-6 to 8 (analysis, dashboard, actions) | M-16 to M-22, S-85 to S-88 |
 | R-PRIV (anonymity, redaction, credentials, retention) | S-1 to S-9, S-15 to S-29, S-70 to S-76, S-89 |
 | R-X-3, R-PRIV-7, R-PRIV-10 (AI proposes, human decides, approver) | M-7, M-21, S-62, S-75 |
@@ -373,7 +374,7 @@ M-10 ☐  M-11 ☐  M-12 ☐  M-13 ☐  M-14 ☐  M-15 ☐  M-16 ☐  M-17 ☐  
 M-19 ☐  M-20 ☐  M-20b ☐ M-21 ☐  M-22 ☐  M-23 ☐  M-24 ☐
 
 Further scenarios (ID and result):
-S-1 ☐ ... S-9 ☐ | S-10 ☐ ... S-19 ☐ | S-20 ☐ ... S-29 ☐ | S-30 ☐ S-31 ☐ S-32 ☐
+S-1 ☐ ... S-9 ☐ | S-10 ☐ ... S-19 ☐ | S-20 ☐ ... S-29 ☐ | S-30 ☐ S-31 ☐ S-32 ☐ S-33 ☐
 S-40 ☐ ... S-48 ☐ | S-50 ☐ ... S-55 ☐ | S-60 ☐ ... S-65 ☐ | S-70 ☐ ... S-79 ☐
 S-80 ☐ ... S-90 ☐
 

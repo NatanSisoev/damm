@@ -94,7 +94,7 @@ G-§4 is the authoritative list ("Tots els equips han de cobrir aquest recorregu
 The guide says "Publicar a Typeform". AGENTS.md decides to ignore Typeform: the app is the channel. The equivalent requirement is below. **Explain this choice on the pitch** (we own the anonymity boundary end to end).
 | ID | Requirement | Status | Evidence / gap |
 |----|-------------|--------|----------------|
-| R-FLOW-4a | Publishing makes the approved questions live | done | `publishNecessitat` sets `publicada`; `notifyNeedPublished` (`apps/web/lib/push.ts`) sends web push to the need's collective and returns only a device count (`<10` under 10). Button "Publicar i avisar per notificació" on `/hr/needs`. |
+| R-FLOW-4a | Publishing makes the approved questions live | done | `publishNecessitat` sets `publicada`; `notifyNeedPublished` (`apps/web/lib/push.ts`) sends web push to the need's collective and returns only a device count (`<10` under 10). Button "Publicar i avisar per notificació" on `/hr/needs`. An employee in the collective who opens `/` (login or push tap) gets the published need's unanswered questions at once, past the daily cap (`addPublishedNeedsToDay` via `getTodaysBatch`). |
 | R-FLOW-4b | A shareable **link** | done | `/hr/publish`, onboarding join URL per collective (not per need: a need reaches people by push) |
 | R-FLOW-4c | A **QR** | done | Server-side SVG plus a printable A4 poster |
 | R-FLOW-4d | Publish via **API** / M365 integration (D-S13) | done | `/hr/publish/[codi]/teams`: Adaptive Card preview, copyable JSON, optional send to `TEAMS_WEBHOOK_URL`. The webhook send is not yet tested against a real Teams channel. |

@@ -351,3 +351,41 @@ export function listPushTargetsForNecessitat(necessitatId: number): PushTarget[]
 export function deletePushSubscriptionByEndpoint(endpoint: string): void {
   getDb().prepare("DELETE FROM push_subscripcio WHERE endpoint = ?").run(endpoint);
 }
+
+/**
+ * Adds the unanswered questions of published HR needs for this account's collective to an
+ * existing day's batch, past the daily cap, so a need published after the batch was built shows
+ * up straight away (on login or from the push). Never adds a question the account already
+ * answered or that is already in that day's batch. Returns how many rows were added.
+ * Call it after the engine has built the day (it only appends, it never creates the batch).
+ */
+export function addPublishedNeedsToDay(compteId: string, day: string): number {
+  const db = getDb();
+  return db.transaction(() => {
+    const existing = db
+      .prepare("SELECT COUNT(*) AS n, COALESCE(MAX(slot), -1) AS maxSlot FROM assignment WHERE compte_id = ? AND day = ?")
+      .get(compteId, day) as { n: number; maxSlot: number };
+    if (existing.n === 0) return 0;
+    const missing = db
+      .prepare(
+        `SELECT p.id FROM pregunta p
+           JOIN necessitat n ON n.id = p.necessitat_id
+           JOIN compte c ON c.id = ?
+          WHERE p.estat = 'aprovada' AND p.is_followup = 0 AND n.estat = 'publicada'
+            AND (n.collectiu_id IS NULL OR n.collectiu_id = c.collectiu_id)
+            AND (p.collectiu_id IS NULL OR p.collectiu_id = c.collectiu_id)
+            AND NOT EXISTS (SELECT 1 FROM resposta r WHERE r.compte_id = c.id AND r.pregunta_id = p.id)
+            AND NOT EXISTS (SELECT 1 FROM assignment a WHERE a.compte_id = c.id AND a.day = ? AND a.pregunta_id = p.id)
+          ORDER BY p.prioritat DESC, p.id`,
+      )
+      .all(compteId, day) as { id: number }[];
+    const insert = db.prepare(
+      "INSERT OR IGNORE INTO assignment (compte_id, pregunta_id, day, slot, reason) VALUES (?, ?, ?, ?, 'need')",
+    );
+    let added = 0;
+    missing.forEach((q, i) => {
+      added += insert.run(compteId, q.id, day, existing.maxSlot + 1 + i).changes;
+    });
+    return added;
+  })();
+}
