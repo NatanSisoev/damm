@@ -1,7 +1,7 @@
 // Engine job: replays all answers in time order and writes aggregate tables. docs/engine.md sections 4 and 11.
 // Writes only aggregates (n >= minGroupSize or suppressed) plus, on a fresh database, the engine's own state.
 import type { RankingOption } from "@damm/shared";
-import { ENGINE_VERSION, loadConfig, writeSystemKey, type EngineConfig } from "./config.ts";
+import { ENGINE_VERSION, resolveConfig, writeSystemKey, type EngineConfig } from "./config.ts";
 import { all, one, run, transaction, type SqlDatabase } from "./db.ts";
 import { EMPTY_ITEM, type ItemStats } from "./item-bias.ts";
 import { isClosed, learn, priorLevel } from "./learn.ts";
@@ -56,7 +56,7 @@ interface ReplayRow {
 const key = (a: string, d: number) => `${a}|${d}`;
 
 export function runEngineJob(db: SqlDatabase, opts: JobOptions = {}): JobReport {
-  const cfg: EngineConfig = { ...loadConfig(db), ...opts.config };
+  const cfg: EngineConfig = resolveConfig(db, opts.config);
   const nowMs = opts.now ?? Date.now();
   const questions = store.allQuestions(db);
   const domains = store.domainIds(db);

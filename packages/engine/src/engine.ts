@@ -1,7 +1,7 @@
 // Employee-side engine API: daily batch and answer submission. docs/engine-integration.md.
 import type { Canal, QuestionType } from "@damm/shared";
 import { selectBatch, type DomainSignal } from "./batch.ts";
-import { loadConfig, type EngineConfig } from "./config.ts";
+import { resolveConfig, type EngineConfig } from "./config.ts";
 import { run, transaction, type SqlDatabase } from "./db.ts";
 import { isClosed, learn } from "./learn.ts";
 import { parseAnswer, type QuestionDef } from "./normalize.ts";
@@ -72,7 +72,7 @@ export function createEngine(opts: EngineOptions): Engine {
   if (typeof opts.redact !== "function") throw new EngineError("createEngine needs a redact function");
   const { db, redact } = opts;
   const now = opts.now ?? Date.now;
-  const config = (): EngineConfig => ({ ...loadConfig(db), ...opts.config });
+  const config = (): EngineConfig => resolveConfig(db, opts.config);
 
   function account(accountId: string) {
     const a = store.getAccount(db, accountId);

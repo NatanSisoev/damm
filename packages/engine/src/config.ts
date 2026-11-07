@@ -37,6 +37,8 @@ export interface EngineConfig {
   minAnswerMs: number;
   domainFloor: number;
   outlierZ: number;
+  /** Types precise enough for a single answer to trigger a follow-up. */
+  followupTriggerTypes: ClosedType[];
   outlierBoost: number;
   outlierWindowDays: number;
   maxNeedsPerDay: number;
@@ -63,6 +65,7 @@ export const DEFAULT_CONFIG: EngineConfig = {
   minAnswerMs: 1500,
   domainFloor: 0.15,
   outlierZ: 2,
+  followupTriggerTypes: ["scale10", "scale5", "choice"],
   outlierBoost: 0.5,
   outlierWindowDays: 14,
   maxNeedsPerDay: 1,
@@ -89,6 +92,7 @@ const KEY_MAP: Record<string, keyof EngineConfig> = {
   min_answer_ms: "minAnswerMs",
   domain_floor: "domainFloor",
   outlier_z: "outlierZ",
+  followup_trigger_types: "followupTriggerTypes",
   outlier_boost: "outlierBoost",
   outlier_window_days: "outlierWindowDays",
   max_needs_per_day: "maxNeedsPerDay",
@@ -111,6 +115,11 @@ function coerce(key: keyof EngineConfig, value: unknown): EngineConfig[keyof Eng
   if (typeof def === "string") {
     if (typeof value !== "string" || value.length === 0) throw new ConfigError(`${key} must be a string`);
     return value;
+  }
+  if (key === "followupTriggerTypes") {
+    const ok = Array.isArray(value) && value.every((t) => typeof t === "string" && t in DEFAULT_CONFIG.noiseSd);
+    if (!ok) throw new ConfigError("followup_trigger_types must be a list of closed question types");
+    return value as ClosedType[];
   }
   if (key === "noiseSd") {
     if (typeof value !== "object" || value === null) throw new ConfigError("noise_sd must be an object");
@@ -167,3 +176,22 @@ export function setConfig(db: SqlDatabase, patch: Record<string, unknown>): void
 export function writeSystemKey(db: SqlDatabase, key: string, value: unknown): void {
   run(db, "INSERT INTO engine_config (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value", key, JSON.stringify(value));
 }
+
+/** Config with overrides applied. Nested objects (noise per type, priors) are merged key by key, not replaced. */
+export function mergeConfig(base: EngineConfig, override: Partial<EngineConfig> | undefined): EngineConfig {
+  if (!override) return base;
+  const { noiseSd, priors, ...flat } = override;
+  return {
+    ...base,
+    ...flat,
+    noiseSd: { ...base.noiseSd, ...noiseSd },
+    priors: {
+      ...base.priors,
+      ...priors,
+      domainLevel: { ...base.priors.domainLevel, ...priors?.domainLevel },
+      formatBeta: { ...base.priors.formatBeta, ...priors?.formatBeta },
+    },
+  };
+}
+
+export const resolveConfig = (db: SqlDatabase, override?: Partial<EngineConfig>): EngineConfig => mergeConfig(loadConfig(db), override);

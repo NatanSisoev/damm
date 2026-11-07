@@ -2,7 +2,7 @@
 // Runs after runEngineJob has written `agregat` and `domain_importance`. Reads those plus engine-internal
 // per-account history (`resposta`, `assignment`) which never leaves this module: every row written is an
 // aggregate over at least minGroupSize people, or a suppressed row with value and detail_json NULL.
-import { getConfig, loadConfig, type EngineConfig } from "./config.ts";
+import { getConfig, resolveConfig, type EngineConfig } from "./config.ts";
 import { all, transaction, type SqlDatabase } from "./db.ts";
 import { EMPTY_ITEM, type ItemStats } from "./item-bias.ts";
 import { isClosed, learn, priorLevel } from "./learn.ts";
@@ -600,7 +600,7 @@ function loadLabels(db: SqlDatabase): Labels {
  * Call after runEngineJob. Returns the number of rows written and how many of them are suppressed (n < minGroupSize).
  */
 export function runInsights(db: SqlDatabase, opts: InsightOptions): { written: number; suppressed: number } {
-  const cfg: EngineConfig = { ...loadConfig(db), ...opts.config };
+  const cfg: EngineConfig = resolveConfig(db, opts.config);
   const ic = loadInsightConfig(db, opts.insight);
   const L = loadLabels(db);
   const domains = store.domainIds(db);

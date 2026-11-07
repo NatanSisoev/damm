@@ -2,7 +2,7 @@
 // Reads only aggregate history plus a per-domain *count* of confirmed personal drops; nothing per account leaves here.
 // AI proposes, a human decides: the engine only opens alarms, upgrades a persisting weak signal and auto-resolves
 // alarms that are still `open`. Alarms a human moved to `acknowledged` or `action_linked` are never touched.
-import { DEFAULT_CONFIG, loadConfig, type EngineConfig } from "./config.ts";
+import { DEFAULT_CONFIG, resolveConfig, type EngineConfig } from "./config.ts";
 import { all, one, run, transaction, type SqlDatabase } from "./db.ts";
 import { addDays, dayOf, toMs, toSqlDatetime } from "./time.ts";
 
@@ -278,7 +278,7 @@ const alarmKey = (type: string, c: number | null, t: number | null, d: number | 
 const ACTIVE = new Set(["open", "acknowledged", "action_linked"]);
 
 export function runAlarms(db: SqlDatabase, opts: AlarmOptions): AlarmReport {
-  const cfg: EngineConfig = { ...loadConfig(db), ...opts.config };
+  const cfg: EngineConfig = resolveConfig(db, opts.config);
   const t: AlarmThresholds = { ...ALARM_DEFAULTS, ...opts.thresholds };
   const minN = cfg.minGroupSize ?? DEFAULT_CONFIG.minGroupSize;
   const nowSql = toSqlDatetime(opts.now);
