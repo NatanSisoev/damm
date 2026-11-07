@@ -26,6 +26,8 @@ const SORTS = [
   { key: "responses", label: "Respostes" },
   { key: "rate", label: "Taxa de resposta" },
   { key: "last", label: "Última vegada" },
+  { key: "confidence", label: "Confiança" },
+  { key: "consensus", label: "Consens" },
   { key: "priority", label: "Prioritat" },
   { key: "pending", label: "Pendents de respondre" },
 ] as const;
@@ -64,6 +66,8 @@ const SORT_FN: Record<SortKey, (q: PoolQuestion) => number> = {
   responses: (q) => q.responses,
   rate: (q) => q.answerRate ?? -1,
   last: (q) => (q.lastAskedDay ? Date.parse(q.lastAskedDay) : -1),
+  confidence: (q) => q.confidence ?? -1,
+  consensus: (q) => q.consensus ?? -1,
   priority: (q) => q.priority,
   pending: (q) => q.pendingAccounts ?? -1,
 };
@@ -177,6 +181,8 @@ export default async function PoolPage({ searchParams }: { searchParams: Promise
                 <SortTh p={p} k="asked" cur={sort} dir={dir}>Demanada</SortTh>
                 <SortTh p={p} k="responses" cur={sort} dir={dir}>Respostes</SortTh>
                 <SortTh p={p} k="rate" cur={sort} dir={dir}>Taxa</SortTh>
+                <SortTh p={p} k="confidence" cur={sort} dir={dir}>Confiança</SortTh>
+                <SortTh p={p} k="consensus" cur={sort} dir={dir}>Consens</SortTh>
                 <th className="text-right">7 dies</th>
                 <SortTh p={p} k="last" cur={sort} dir={dir} left>Última vegada</SortTh>
                 <th>Pròxim lot</th>
@@ -186,7 +192,7 @@ export default async function PoolPage({ searchParams }: { searchParams: Promise
               group === "none" ? (
                 <tbody key="all">
                   {list.filter((q) => shown.has(q.id)).map((q) => (
-                    <QuestionRows key={q.id} q={q} today={s.today} minGroup={s.minGroupSize} />
+                    <QuestionRows key={q.id} q={q} today={s.today} />
                   ))}
                 </tbody>
               ) : (
@@ -203,7 +209,7 @@ export default async function PoolPage({ searchParams }: { searchParams: Promise
                   }
                 >
                   {list.filter((q) => shown.has(q.id)).map((q) => (
-                    <QuestionRows key={q.id} q={q} today={s.today} minGroup={s.minGroupSize} />
+                    <QuestionRows key={q.id} q={q} today={s.today} />
                   ))}
                 </GroupBody>
               )
@@ -257,7 +263,7 @@ function SortTh({ p, k, cur, dir, children, left }: { p: Params; k: SortKey; cur
   );
 }
 
-function QuestionRows({ q, today, minGroup }: { q: PoolQuestion; today: string; minGroup: number }) {
+function QuestionRows({ q, today }: { q: PoolQuestion; today: string }) {
   const st = STATE[q.state];
   return (
     <>
@@ -286,6 +292,8 @@ function QuestionRows({ q, today, minGroup }: { q: PoolQuestion; today: string; 
         <td className="num text-right">{num(q.asked)}</td>
         <td className="num text-right">{num(q.responses)}</td>
         <td className="num text-right">{pct(q.answerRate)}</td>
+        <td className="num text-right" title="Fiabilitat de la puntuació segons quanta gent ha respost i com de dispersa és (0–100)">{q.confidence === null ? "—" : Math.round(q.confidence)}</td>
+        <td className="num text-right" title="Com de semblants són les respostes (0–100)">{q.consensus === null ? "—" : Math.round(q.consensus)}</td>
         <td className="num text-right">
           {q.asked7d}
           <div className="text-xs text-subtle">{q.responses7d} resp.</div>

@@ -4,7 +4,9 @@
 import { QUESTION_TYPES, type QuestionType } from "@damm/shared";
 import { resolveConfig, type EngineConfig } from "./config.ts";
 import { all, one, run, type SqlDatabase } from "./db.ts";
-import { addDays, dayOf } from "./time.ts";
+import { segmentStats, type PersonPoint } from "./segment.ts";
+import { population } from "./store.ts";
+import { addDays, dayOf, daysBetween, toSqlDatetime } from "./time.ts";
 
 export type PoolState = "live" | "waiting" | "inactive";
 /** Why a question is, or is not, in the rotation. */
@@ -84,6 +86,10 @@ export interface PoolQuestion {
 
   // Content statistics, null under the minimum group size
   avgScore: number | null;
+  /** 0..100, engine formula (docs/engine.md section 4) over the people who answered this question. null under the minimum group size and for open/ranking questions. */
+  confidence: number | null;
+  /** 0..100: how alike the answers are. Same rules as `confidence`. */
+  consensus: number | null;
   avgAnswerMs: number | null;
   carelessShare: number | null;
   comments: number | null;
@@ -217,6 +223,21 @@ export function listPool(db: SqlDatabase, opts: { now?: number; config?: Partial
     ).map((r) => [r.q as number, r as unknown as Ans]),
   );
 
+  // Confidence and consensus per question: the engine's segment formulas, with each answering person as one point.
+  const nowSql = toSqlDatetime(nowMs);
+  const popBy = new Map<number | "all", number>();
+  for (const r of population(db)) {
+    popBy.set(r.collectiuId, (popBy.get(r.collectiuId) ?? 0) + r.n);
+    popBy.set("all", (popBy.get("all") ?? 0) + r.n);
+  }
+  const people = new Map<number, PersonPoint[]>();
+  for (const r of all<{ q: number; s: number; d: string }>(
+    db,
+    "SELECT pregunta_id AS q, AVG(score) AS s, MAX(data) AS d FROM resposta WHERE score IS NOT NULL GROUP BY pregunta_id, compte_id",
+  )) {
+    (people.get(r.q) ?? people.set(r.q, []).get(r.q)!).push({ level: r.s, variance: 0, daysSince: daysBetween(r.d, nowSql) });
+  }
+
   const byCol = new Map<number, PoolByCollective[]>();
   const askedByCol = new Map<string, number>(
     all<{ q: number; c: number; n: number }>(
@@ -261,6 +282,16 @@ export function listPool(db: SqlDatabase, opts: { now?: number; config?: Partial
     const asked = del?.asked ?? 0;
     const responses = ans?.n ?? 0;
     const enough = responses >= cfg.minGroupSize;
+    const pts = people.get(r.id) ?? [];
+    let confidence: number | null = null;
+    let consensus: number | null = null;
+    if (pts.length >= cfg.minGroupSize) {
+      const sd = (cfg.noiseSd as Record<string, number>)[r.tipus] ?? 0.15;
+      const N = Math.max(pts.length, collectiuId === null ? popBy.get("all") ?? 0 : popBy.get(collectiuId) ?? 0);
+      const st = segmentStats(pts.map((x) => ({ ...x, variance: sd * sd })), N, cfg);
+      confidence = st.confidence;
+      consensus = st.consensus;
+    }
     return {
       id: r.id,
       text: r.text,
@@ -302,6 +333,8 @@ export function listPool(db: SqlDatabase, opts: { now?: number; config?: Partial
       lastAskedDay: del?.last ?? null,
       lastAnsweredAt: ans?.last ?? null,
       avgScore: enough ? ans?.avgScore ?? null : null,
+      confidence,
+      consensus,
       avgAnswerMs: enough && ans?.avgMs != null ? Math.round(ans.avgMs) : null,
       carelessShare: enough && ans && ans.withMs > 0 ? ans.careless / ans.withMs : null,
       comments: enough ? ans?.comments ?? 0 : null,

@@ -15,7 +15,7 @@ export function GroupBody({ header, children, count }: { header: ReactNode; chil
   return (
     <tbody>
       <tr className="pool-group">
-        <td colSpan={9}>
+        <td colSpan={11}>
           <button type="button" onClick={() => setOpen(!open)} aria-expanded={open} className="pool-group-btn">
             <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ transform: open ? "rotate(90deg)" : "none", transition: "transform .12s" }}>
               <path d="M6 3l5 5-5 5" />

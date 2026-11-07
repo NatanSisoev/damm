@@ -89,3 +89,23 @@ test("pool detail: weekly series, distribution and suppression", async () => {
   assert.equal(ds.distribution, null);
   assert.equal(ds.periods[0]!.avgScore, null);
 });
+
+test("pool: confidence and consensus follow the engine formulas and are suppressed under the minimum", () => {
+  const db = makeDb({ accountsPerCollective: 12 });
+  const same = addQuestion(db, { domain: 1, type: "scale5", facet: "a" });
+  const split = addQuestion(db, { domain: 1, type: "scale5", facet: "b" });
+  const few = addQuestion(db, { domain: 1, type: "scale5", facet: "c" });
+  const ins = db.prepare("INSERT INTO resposta (compte_id, pregunta_id, valor_num, score, periode, data) VALUES (?,?,?,?,?,?)");
+  for (let i = 0; i < 12; i++) {
+    ins.run(`f${i}`, same, 4, 0.75, "2026-10", "2026-10-01 08:00:00");
+    ins.run(`f${i}`, split, i % 2 ? 1 : 5, i % 2 ? 0 : 1, "2026-10", "2026-10-01 08:00:00");
+  }
+  for (let i = 0; i < 3; i++) ins.run(`f${i}`, few, 3, 0.5, "2026-10", "2026-10-01 08:00:00");
+  const pool = listPool(db, { now: T0 });
+  const by = (id: number) => pool.questions.find((q) => q.id === id)!;
+  assert.equal(by(same).consensus, 100);
+  assert.ok(by(split).consensus! < 10, "opposed answers give near-zero consensus");
+  assert.ok(by(same).confidence! > by(split).confidence!);
+  assert.equal(by(few).confidence, null);
+  assert.equal(by(few).consensus, null);
+});

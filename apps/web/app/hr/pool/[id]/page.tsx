@@ -42,10 +42,12 @@ export default async function QuestionPage({ params }: { params: Promise<{ id: s
         }
       />
 
-      <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-6">
+      <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-4">
         <Stat label="Demanada" value={num(q.asked)} hint={`${q.asked7d} els últims 7 dies`} />
         <Stat label="Respostes" value={num(q.responses)} hint={`${q.responses7d} els últims 7 dies`} />
         <Stat label="Taxa de resposta" value={pct(q.answerRate)} hint={`${num(q.answeredAssigned)} de ${num(q.asked)} assignacions`} />
+        <Stat label="Confiança" value={q.confidence === null ? "—" : Math.round(q.confidence)} hint={q.confidence === null ? (q.type === "open" || q.type === "ranking" ? "No aplica a aquest format" : `Suprimit (<${MIN} persones)`) : "Fiabilitat de la puntuació (0–100)"} />
+        <Stat label="Consens" value={q.consensus === null ? "—" : Math.round(q.consensus)} hint={q.consensus === null ? undefined : "100 = tothom respon igual"} />
         <Stat label="Abast" value={`${num(q.reachedAccounts)} / ${num(q.eligibleAccounts)}`} hint="Persones que l'han respost" />
         <Stat label="Puntuació mitjana" value={q.avgScore === null ? "—" : `${score10(q.avgScore)} / 10`} hint={q.avgScore === null ? `Suprimit (<${MIN} respostes)` : "0 pitjor, 10 millor"} />
         <Stat
