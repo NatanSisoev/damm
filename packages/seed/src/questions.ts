@@ -11,7 +11,7 @@ export const BANK: Record<string, QItem[]> = {
   "Benestar": [
     { text: "Com valores el teu nivell d'energia aquesta setmana?", tipus: "scale5" },
     { text: "Tens una càrrega de feina assumible?", tipus: "scale5" },
-    { text: "Del 0 al 10, quant recomanaries el teu entorn de treball per a la salut?", tipus: "scale10" },
+    { text: "Del 0 al 10, quant cuida la teva salut el teu entorn de treball?", tipus: "scale10" },
     { text: "Has pogut desconnectar després de la jornada?", tipus: "yes_no" },
     { text: "Ordena què t'ajudaria més a estar millor: descans, horari, espais, suport.", tipus: "ranking" },
     { text: "Gestiones bé l'estrès del dia a dia?", tipus: "scale5" },
@@ -42,7 +42,7 @@ export const BANK: Record<string, QItem[]> = {
     { text: "Et sents part de l'empresa?", tipus: "scale5" },
     { text: "Se't reconeix la feina ben feta?", tipus: "scale5" },
     { text: "Del 0 al 10, quant recomanaries l'empresa com a lloc de treball?", tipus: "scale10" },
-    { text: "Et sents orgullós de treballar aquí?", tipus: "yes_no" },
+    { text: "Treballar aquí et fa sentir orgull?", tipus: "yes_no" },
     { text: "Ordena què defineix millor la cultura: confiança, esforç, qualitat, proximitat.", tipus: "ranking" },
     { text: "La informació de l'empresa t'arriba a temps?", tipus: "scale5" },
     { text: "Del 0 al 10, quant coneixes els valors de l'empresa?", tipus: "scale10" },
@@ -50,12 +50,12 @@ export const BANK: Record<string, QItem[]> = {
   ],
   "Entorn i relacions": [
     { text: "Tens una bona relació amb els teus companys?", tipus: "scale5" },
-    { text: "Pots ser tu mateix a l'equip?", tipus: "scale5" },
+    { text: "Pots ser com ets a l'equip?", tipus: "scale5" },
     { text: "Del 0 al 10, com valores l'ambient de l'equip?", tipus: "scale10" },
     { text: "Col·labores bé amb altres departaments?", tipus: "yes_no" },
     { text: "Ordena què fomentaria l'equip: trobades, reconeixement, comunicació, formació conjunta.", tipus: "ranking" },
     { text: "Els conflictes es resolen de manera justa?", tipus: "scale5" },
-    { text: "Del 0 al 10, quant et sents respectat a la feina?", tipus: "scale10" },
+    { text: "Del 0 al 10, quant respecte sents a la feina?", tipus: "scale10" },
     { text: "Què milloraries de la relació entre equips?", tipus: "open" },
   ],
   "Condicions i organització": [

@@ -101,7 +101,7 @@ export function fallbackSurvey(need: NeedInput) {
     title: titleOf(need.objective),
     intro: short
       ? "Gràcies per dedicar-nos un minut. Són poques preguntes, i les respostes són anònimes."
-      : "Gràcies per participar. Són unes poques preguntes i les respostes són anònimes: només veiem resultats de grups.",
+      : "Gràcies per participar. Són poques preguntes. Les respostes són anònimes i només veiem resultats de grups.",
     questions: fallbackQuestions(need),
   };
 }
