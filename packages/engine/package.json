@@ -17,6 +17,7 @@
     "job": "node --experimental-strip-types --experimental-sqlite --no-warnings scripts/job.ts",
     "sim": "node --experimental-strip-types --experimental-sqlite --no-warnings sim/run.ts",
     "tune": "node --experimental-strip-types --experimental-sqlite --no-warnings sim/tune.ts",
+    "health": "node --experimental-strip-types --experimental-sqlite --no-warnings scripts/health.ts",
     "demo": "node --experimental-strip-types --experimental-sqlite --no-warnings demo/build-demo.ts"
   },
   "dependencies": {

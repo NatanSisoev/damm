@@ -34,7 +34,15 @@ export function learn(input: LearnInput, cfg: EngineConfig, rng: Rng): LearnOutp
   const item = updateItemStats(input.item, input.score - prev.level, cfg.itemBiasShrinkage);
   const { state, z, followup } = observe(
     prev,
-    { y: input.score - input.item.bias, noiseSd: cfg.noiseSd[type], at: input.at, day: input.day, isFollowup: input.isFollowup },
+    {
+      // Bias-adjusted observation stays on the 0..1 scale, so a person level can never leave it.
+      y: Math.min(1, Math.max(0, input.score - input.item.bias)),
+      noiseSd: cfg.noiseSd[type],
+      at: input.at,
+      day: input.day,
+      isFollowup: input.isFollowup,
+      canTriggerFollowup: cfg.followupTriggerTypes.includes(type),
+    },
     cfg,
     rng,
   );

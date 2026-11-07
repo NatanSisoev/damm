@@ -23,6 +23,8 @@ export interface Observation {
   at: string; // SQLite datetime
   day: string; // 'YYYY-MM-DD'
   isFollowup: boolean;
+  /** Coarse formats (yes_no, pair) update the level but cannot trigger a follow-up on their own. */
+  canTriggerFollowup?: boolean;
 }
 
 export type FollowupOutcome = "scheduled" | "confirmed" | "noise" | null;
@@ -77,7 +79,7 @@ export function observe(prev: PersonDomainState, obs: Observation, cfg: EngineCo
     s.pendingFollowupLevel = null;
     s.followupDue = null;
     followup = confirmed ? "confirmed" : "noise";
-  } else if (s.pendingFollowupLevel === null && !obs.isFollowup && s.n > 1 && Math.abs(z) >= cfg.followupZ) {
+  } else if (s.pendingFollowupLevel === null && !obs.isFollowup && obs.canTriggerFollowup !== false && s.n > 1 && Math.abs(z) >= cfg.followupZ) {
     // Outlier on an established trajectory: let the filter move faster and ask again in a few days.
     s.pendingFollowupLevel = levelBefore;
     s.followupDue = addDays(obs.day, randInt(rng, cfg.followupMinDays, cfg.followupMaxDays));
