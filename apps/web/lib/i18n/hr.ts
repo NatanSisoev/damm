@@ -327,6 +327,9 @@ export const hrDict = defineDict({
     meth_s6_li2: "**Biaixos deliberats a les dades.** Hi ha poca resposta al torn de nit, positivitat de les persones responsables d'equip, un tema emergent a l'octubre i un senyal feble a Logística (equips de protecció i calor). Hi són per comprovar que la plataforma els detecta.",
     meth_s6_li3: "**Períodes.** Les dades cobreixen {n} períodes ({periods}); amb tan poques mesures, una tendència és una indicació, no una prova.",
     meth_s6_li4: "**Àmbit.** {domains} dominis i {collectives} col·lectius; cada col·lectiu respon un subconjunt diferent de preguntes per domini, per això no es comparen directament tots els ítems.",
+    meth_s7: "7. Quant de temps guardem les dades",
+    meth_s7_p1: "**Respostes individuals i comentaris (ja anonimitzats):** s'esborren passats {raw} mesos. **Comptes sense activitat** durant {inactive} mesos s'esborren amb el seu historial intern. **La subscripció de notificacions** s'esborra en tancar la sessió i, en tot cas, als {push} mesos.",
+    meth_s7_p2: "**Què es conserva:** només els resultats agregats (mitjanes, temes, senyals i recomanacions per grups de {min} persones o més), que no permeten identificar ningú. Una tasca periòdica fa la neteja; es pot executar abans en mode de prova, que només compta files i no n'esborra cap.",
   },
   es: {
     shell_subtitle: "Portal de personas",
@@ -634,6 +637,9 @@ export const hrDict = defineDict({
     meth_s6_li2: "**Sesgos deliberados en los datos.** Hay poca respuesta en el turno de noche, positividad de las personas responsables de equipo, un tema emergente en octubre y una señal débil en Logística (equipos de protección y calor). Están para comprobar que la plataforma los detecta.",
     meth_s6_li3: "**Periodos.** Los datos cubren {n} periodos ({periods}); con tan pocas mediciones, una tendencia es una indicación, no una prueba.",
     meth_s6_li4: "**Ámbito.** {domains} dominios y {collectives} colectivos; cada colectivo responde un subconjunto distinto de preguntas por dominio, por eso no se comparan directamente todos los ítems.",
+    meth_s7: "7. Cuánto tiempo guardamos los datos",
+    meth_s7_p1: "**Respuestas individuales y comentarios (ya anonimizados):** se borran pasados {raw} meses. **Las cuentas sin actividad** durante {inactive} meses se borran con su historial interno. **La suscripción a notificaciones** se borra al cerrar sesión y, en todo caso, a los {push} meses.",
+    meth_s7_p2: "**Qué se conserva:** solo los resultados agregados (medias, temas, señales y recomendaciones por grupos de {min} personas o más), que no permiten identificar a nadie. Una tarea periódica hace la limpieza; se puede ejecutar antes en modo de prueba, que solo cuenta filas y no borra ninguna.",
   },
   en: {
     shell_subtitle: "People portal",
@@ -941,6 +947,9 @@ export const hrDict = defineDict({
     meth_s6_li2: "**Deliberate biases in the data.** There is a low response on the night shift, positivity among team managers, an emerging theme in October and a weak signal in Logistics (protective equipment and heat). They are there to check that the platform detects them.",
     meth_s6_li3: "**Periods.** The data covers {n} periods ({periods}); with so few measurements, a trend is an indication, not proof.",
     meth_s6_li4: "**Scope.** {domains} domains and {collectives} collectives; each collective answers a different subset of questions per domain, which is why not all items are compared directly.",
+    meth_s7: "7. How long we keep data",
+    meth_s7_p1: "**Individual answers and comments (already anonymised):** deleted after {raw} months. **Accounts with no activity** for {inactive} months are deleted with their internal history. **The notification subscription** is deleted on logout and in any case after {push} months.",
+    meth_s7_p2: "**What is kept:** only aggregated results (averages, themes, signals and recommendations for groups of {min} people or more), which cannot identify anyone. A scheduled job does the clean-up; it can first be run in dry-run mode, which only counts rows and deletes none.",
   },
 });
 

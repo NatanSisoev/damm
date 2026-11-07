@@ -197,6 +197,9 @@ export const employeeDict = defineDict({
     priv_comments_title: "Comentaris lliures",
     priv_comments_text:
       "Abans de guardar un comentari, l'app amaga automàticament correus, telèfons, DNI/NIE, números de compte i noms que comencen amb «em dic…». És una ajuda, no una garantia: per això et demanem que no hi posis dades personals.",
+    priv_retention_title: "Quant de temps guardem les dades",
+    priv_retention_text:
+      "Les respostes i els comentaris (ja sense dades personals) s'esborren als {raw} mesos. Si un compte passa {inactive} mesos sense activitat, s'esborra amb el seu historial intern. La subscripció a les notificacions s'esborra quan tanques la sessió. Només es conserven resultats agregats de grups de {min} persones o més.",
     priv_account_title: "Sessió i compte",
     priv_account_1: "Pots tancar la sessió a Configuració. Això esborra la subscripció a notificacions del dispositiu.",
     priv_account_2:
@@ -392,6 +395,9 @@ export const employeeDict = defineDict({
     priv_comments_title: "Comentarios libres",
     priv_comments_text:
       "Antes de guardar un comentario, la app oculta automáticamente correos, teléfonos, DNI/NIE, números de cuenta y nombres que empiezan por «me llamo…». Es una ayuda, no una garantía: por eso te pedimos que no pongas datos personales.",
+    priv_retention_title: "Cuánto tiempo guardamos los datos",
+    priv_retention_text:
+      "Las respuestas y los comentarios (ya sin datos personales) se borran a los {raw} meses. Si una cuenta pasa {inactive} meses sin actividad, se borra con su historial interno. La suscripción a las notificaciones se borra cuando cierras sesión. Solo se conservan resultados agregados de grupos de {min} personas o más.",
     priv_account_title: "Sesión y cuenta",
     priv_account_1: "Puedes cerrar la sesión en Ajustes. Esto borra la suscripción a notificaciones del dispositivo.",
     priv_account_2:
@@ -585,6 +591,9 @@ export const employeeDict = defineDict({
     priv_comments_title: "Free comments",
     priv_comments_text:
       "Before saving a comment, the app automatically hides emails, phone numbers, ID numbers, account numbers and names that follow “my name is…”. It is a help, not a guarantee: that is why we ask you not to include personal data.",
+    priv_retention_title: "How long we keep data",
+    priv_retention_text:
+      "Answers and comments (already free of personal data) are deleted after {raw} months. If an account is inactive for {inactive} months, it is deleted with its internal history. The notification subscription is deleted when you log out. Only aggregated results for groups of {min} people or more are kept.",
     priv_account_title: "Session and account",
     priv_account_1: "You can sign out in Settings. This deletes the device's notification subscription.",
     priv_account_2:

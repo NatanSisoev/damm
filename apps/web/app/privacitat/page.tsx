@@ -1,4 +1,4 @@
-import { MIN_GROUP_SIZE } from "@damm/shared";
+import { MIN_GROUP_SIZE, RETENTION } from "@damm/shared";
 import { employeeDict } from "@/lib/i18n/employee";
 import { getT } from "@/lib/i18n/server";
 import { getCompteId } from "@/lib/session";
@@ -66,6 +66,12 @@ export default async function PrivacyPage() {
 
       <Section title={t("priv_comments_title")}>
         <p className="text-muted">{t("priv_comments_text")}</p>
+      </Section>
+
+      <Section title={t("priv_retention_title")}>
+        <p className="text-muted">
+          {t("priv_retention_text", { raw: RETENTION.rawResponseMonths, inactive: RETENTION.inactiveAccountMonths, min })}
+        </p>
       </Section>
 
       <Section title={t("priv_account_title")}>
