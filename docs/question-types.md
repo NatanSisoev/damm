@@ -5,6 +5,7 @@ Reference for everyone building questions, the answer UI, the seed or analysis. 
 - Type values are English and stable: `scale5`, `scale10`, `yes_no`, `pair`, `choice`, `ranking`, `open` (`QUESTION_TYPES` in `@damm/shared`).
 - `domini_id` follows `DOMINIS` order: 1 Benestar (wellbeing), 2 Lideratge (leadership), 3 Desenvolupament (development), 4 Cultura i pertinença (culture and belonging), 5 Entorn i relacions (environment and relationships), 6 Condicions i organització (conditions and organisation).
 - `score` is computed by the engine: 0..1, **1 = best outcome**, after polarity. It is the value every type shares.
+- A sample bank of ~160 questions for the engine and simulator is in `packages/engine/fixtures/question-bank.json` (load it with `loadQuestionBank` from `fixtures/load-question-bank.ts`).
 - Every question can carry an optional `comentari` (comment), redacted before insert.
 - `facet` groups interchangeable wordings. The engine rotates items within a facet so people do not see the same question twice.
 
