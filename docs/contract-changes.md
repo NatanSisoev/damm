@@ -23,7 +23,7 @@ What changed and why.
 
 `NeedCard` (`@damm/db/hr`, read-only HR type) gains `publicat`, `responses`, `population`, `publications[].creat` and `approved[].answers`. Counts come from `v_resposta_analitica` and are `null` under the minimum group size. No schema change.
 
-- [x] Jan: the Necessitats page shows them (done 2026-11-07).
+- [x] Jan: the Necessitats page shows them (done 2026-11-07, 4bc0db3).
 - [x] Natan: nothing to do.
 
 ## C11 · 2026-11-07 · Jan · HR respondent counts fall back to per-domain aggregates
