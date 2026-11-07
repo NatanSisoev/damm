@@ -11,6 +11,7 @@ const links = [
   { href: "/hr/results", label: "Resultats", step: "3" },
   { href: "/hr/recommendations", label: "Recomanacions", step: "4" },
   { href: "/hr/methodology", label: "Com es calcula?", step: "?" },
+  { href: "/manager", label: "Vista de responsables", step: "↗" },
 ];
 
 export function HrNav() {
