@@ -59,6 +59,11 @@ export interface CampaignSet {
   items: CampaignItem[];
 }
 
+/** Open follow-up triggered by an answer: shown right after it, skippable, outside the daily cap. */
+export interface FollowupItem extends CampaignItem {
+  parentId: number;
+}
+
 export interface AnswerInput {
   preguntaId: number;
   valorNum?: number | null;
@@ -75,6 +80,8 @@ export interface SubmitResult {
   remainingToday: number;
   /** Unanswered questions left in the person's pending campaign sets (all of them). */
   remainingCampaign: number;
+  /** Conditional follow-ups triggered by the accepted answers (a low scale answer, a "no"). Never counted in remaining*. */
+  followups: FollowupItem[];
 }
 
 export class EngineError extends Error {}
@@ -206,7 +213,7 @@ export function createEngine(opts: EngineOptions): Engine {
     const day = dayOf(nowMs, cfg.timezone);
     const at = toSqlDatetime(nowMs);
     const acc = account(accountId);
-    const result: SubmitResult = { accepted: [], rejected: [], remainingToday: 0, remainingCampaign: 0 };
+    const result: SubmitResult = { accepted: [], rejected: [], remainingToday: 0, remainingCampaign: 0, followups: [] };
 
     transaction(db, () => {
       const rows = store.assignmentsFor(db, accountId, day);
@@ -221,8 +228,18 @@ export function createEngine(opts: EngineOptions): Engine {
         // Anything that is not an answer object (null, a number, a string) cannot belong to today's batch.
         const id = (a as Partial<AnswerInput> | null)?.preguntaId;
         const row = typeof id === "number" ? byQuestion.get(id) : undefined;
-        const q = typeof id === "number" ? (row ? qs.get(id) : campaign.get(id)) : undefined;
-        if (!q || (!row && typeof id === "number" && !campaign.has(id))) {
+        let q = typeof id === "number" ? (row ? qs.get(id) : campaign.get(id)) : undefined;
+        // A conditional follow-up is answerable once, only after its parent was answered in a way that triggers it.
+        let isChildAnswer = false;
+        if (!q && typeof id === "number") {
+          const link = store.followupById(db, id);
+          const parent = link ? store.answerValue(db, accountId, link.parentId) : undefined;
+          if (link && parent && store.followupTriggered(link.when, parent.valorNum)) {
+            q = link.question;
+            isChildAnswer = true;
+          }
+        }
+        if (!q || (!row && !isChildAnswer && typeof id === "number" && !campaign.has(id))) {
           result.rejected.push({ questionId: id as number, reason: "not_in_todays_batch" });
           continue;
         }
@@ -278,6 +295,11 @@ export function createEngine(opts: EngineOptions): Engine {
         if (row) run(db, "UPDATE assignment SET answered_at = ? WHERE id = ?", at, row.id);
         done.add(q.id);
         result.accepted.push(q.id);
+        // Trigger the linked follow-up: it is not part of the cap and is never assigned, only returned here.
+        const link = store.followupOfParent(db, q.id);
+        if (link && !alreadyAnswered.has(link.question.id) && store.followupTriggered(link.when, valorNum)) {
+          result.followups.push({ ...campaignItem(link.question), parentId: q.id });
+        }
       }
       result.remainingToday = rows.filter((r) => r.answered_at === null && !done.has(r.pregunta_id)).length;
       result.remainingCampaign = [...campaign.keys()].filter((qid) => !alreadyAnswered.has(qid) && !done.has(qid)).length;

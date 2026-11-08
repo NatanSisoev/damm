@@ -5,7 +5,7 @@ import { QUESTION_TYPES, type QuestionType } from "@damm/shared";
 import { resolveConfig, type EngineConfig } from "./config.ts";
 import { all, one, run, type SqlDatabase } from "./db.ts";
 import { segmentStats, type PersonPoint } from "./segment.ts";
-import { population } from "./store.ts";
+import { notChild, population } from "./store.ts";
 import { addDays, dayOf, daysBetween, toSqlDatetime } from "./time.ts";
 
 export type PoolState = "live" | "waiting" | "inactive";
@@ -188,6 +188,7 @@ export function listPool(db: SqlDatabase, opts: { now?: number; config?: Partial
        JOIN domini d ON d.id = p.domini_id
   LEFT JOIN collectiu c ON c.id = p.collectiu_id
   LEFT JOIN necessitat n ON n.id = p.necessitat_id
+      WHERE 1 = 1${notChild(db, "p.")}
    ORDER BY p.id`,
   );
 

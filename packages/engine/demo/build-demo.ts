@@ -27,7 +27,7 @@ import { createRng, pick, type Rng } from "../src/rng.ts";
 import type { QuestionDef } from "../src/normalize.ts";
 import { toQuestion } from "../src/store.ts";
 import { createWorld, normal, type Person } from "../sim/world.ts";
-import { loadQuestionBank } from "../fixtures/load-question-bank.ts";
+import { loadBankFollowups, loadQuestionBank } from "../fixtures/load-question-bank.ts";
 import { COMMENTS, THEME_COMMENTS } from "./comments.ts";
 
 const REPO = resolve(import.meta.dirname, "../../..");
@@ -103,6 +103,7 @@ export async function buildDemo(opts: DemoOptions = {}): Promise<DemoSummary> {
 
   // --- questions, one HR need, format preferences --------------------------------------------
   loadQuestionBank(db);
+  loadBankFollowups(db); // a few scale / yes-no questions with a conditional open follow-up
   transaction(db, () => {
     run(
       db,

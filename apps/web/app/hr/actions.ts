@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { draftSurvey, redraftQuestion, translateQuestionTexts } from "@damm/ai";
 import { DEFAULT_QUESTION_COUNT, QUESTION_COUNT_OPTIONS, type QueryDelivery } from "@damm/shared";
 import {
-  approveQuestion, fillQuestionTranslations, getQuestionWording, getRedraftContext, listCollectius, listNeedCards, moveDraft, replaceDraft, saveDraftSurvey, updateNeedHeader, approveRecommendation, createNecessitat, discardQuestion,
+  approveQuestion, fillQuestionTranslations, getDraftFollowup, removeDraftFollowup, getQuestionWording, getRedraftContext, listCollectius, listNeedCards, moveDraft, replaceDraft, saveDraftSurvey, updateNeedHeader, approveRecommendation, createNecessitat, discardQuestion,
   discardRecommendation, publishNecessitat, updateDraftText, closeNecessitat, setSignalStatus, setAlarmArchived, reopenClosedAlarm,
 } from "@damm/db/hr";
 import { createDraftedFollowUp } from "./follow-up";
@@ -84,8 +84,16 @@ async function ensureQuestionTranslations(id: number): Promise<void> {
 export async function approveQuestionAction(formData: FormData) {
   const id = Number(formData.get("id"));
   await ensureQuestionTranslations(id);
+  const fu = getDraftFollowup(id);
+  if (fu) await ensureQuestionTranslations(fu.id);
   approveQuestion(id, HR_USER);
   invalidateHrPool();
+  revalidatePath("/hr/review");
+  revalidatePath("/hr/needs");
+}
+
+export async function removeFollowupAction(formData: FormData) {
+  removeDraftFollowup(Number(formData.get("id")));
   revalidatePath("/hr/review");
   revalidatePath("/hr/needs");
 }
