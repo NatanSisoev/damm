@@ -6,6 +6,7 @@ import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type Re
 import { useT } from "@/lib/i18n/client";
 import { hrDict, type HrKey } from "@/lib/i18n/hr";
 import { Wordmark } from "@/app/wordmark";
+import { ThemeToggle } from "@/components/theme-toggle";
 import type { ViewRole } from "@/lib/view-role";
 import { setViewRoleAction } from "./view-role-action";
 
@@ -182,6 +183,7 @@ export function HrSidebar({ subtitle, logo, role = "hr" }: { subtitle: string; l
       <div className="hr-side-foot">
         {footer.map((l) => renderItem(l, compact))}
         <RoleToggle role={role} compact={compact} />
+        <div className="hr-theme-row"><ThemeToggle /></div>
       </div>
     </>
   );

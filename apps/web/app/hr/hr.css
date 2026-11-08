@@ -270,3 +270,6 @@ main:focus { outline: none; }
 html:has(.hr-modal[open]) { overflow: hidden; }
 @keyframes hr-modal-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .hr-modal[open] { animation: none; } }
+
+/* Theme toggle row in the sidebar footer and drawer. */
+.hr-theme-row { display: flex; margin-top: 8px; }
