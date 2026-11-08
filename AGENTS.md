@@ -181,6 +181,7 @@ Read these before planning work. Both people's agents keep them current.
 - `docs/security-demo.md`: the steps for the anonymity and security demo (exclusion criteria, R-PRIV).
 - `docs/demo-script.md` and `docs/slide-notes.md`: the pitch flow and the slide content.
 - `docs/demo-video.md`: the agreed 3-minute run of show (video, live demo, close), video format and pre-recording checklist.
+- `docs/demo-video-story.md`: draft option B for the demo video: follows one question through the product (alternative to the screen tour in `demo-video.md`; not decided).
 - `docs/teams-integration.md`: what the Teams publish card does today and the Graph/bot/Entra roadmap (R-FLOW-4d, N-1).
 - `docs/frontend-audit.md`: employee, HR and manager frontend audit (2026-11-07) with P0/P1/P2 findings and owners.
 - `docs/hr-ui-audit.md`: HR portal and manager view audit (2026-11-07), one table per screen with severity, fix and status.
