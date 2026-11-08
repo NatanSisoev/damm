@@ -47,7 +47,7 @@ self.addEventListener("push", (event) => {
     data = { body: event.data ? event.data.text() : "" };
   }
   event.waitUntil(
-    self.registration.showNotification(data.title || "Escolta activa", {
+    self.registration.showNotification(data.title || "Give a Damm", {
       body: data.body || fallbackBody(),
       icon: "/icons/icon-192.png",
       badge: "/icons/icon-192.png",

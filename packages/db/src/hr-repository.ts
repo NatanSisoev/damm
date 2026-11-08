@@ -956,7 +956,7 @@ export function exportResultsCsv(now: Date = new Date()): string {
     }
   }
   const meta = [
-    "# Escolta activa · resultats agregats (dades sintètiques)",
+    "# Give a Damm · resultats agregats (dades sintètiques)",
     `# Període: ${rep.periode ?? "–"} (representativitat); tendències: ${trends.periodes.join(", ") || "–"}`,
     `# Generat: ${now.toISOString()}`,
     `# Mida mínima de grup: n >= ${MIN_GROUP_SIZE}`,

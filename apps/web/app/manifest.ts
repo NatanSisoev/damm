@@ -2,12 +2,12 @@ import type { MetadataRoute } from "next";
 import { employeeDict } from "@/lib/i18n/employee";
 import { getTL } from "@/lib/i18n/server";
 
-// Web app manifest for the employee PWA. Icons: white "E" on the Paper ink square (source: app/icon.svg; maskable keeps the glyph inside the safe zone).
+// Web app manifest for the employee PWA. Icons: white "G" on the Paper ink square (source: app/icon.svg; maskable keeps the glyph inside the safe zone).
 export default async function manifest(): Promise<MetadataRoute.Manifest> {
   const { t, lang } = await getTL(employeeDict);
   return {
-    name: "Escolta activa",
-    short_name: "Escolta",
+    name: "Give a Damm",
+    short_name: "Give a Damm",
     description: t("manifest_description"),
     lang,
     start_url: "/",

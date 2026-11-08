@@ -1,4 +1,4 @@
-// Browser tab titles, one per page. The layout adds the product name ("Escolta activa") through a title template.
+// Browser tab titles, one per page. The layout adds the product name ("Give a Damm") through a title template.
 // Catalan is the source; es and en must have the same keys (checked by tsc).
 import type { Metadata } from "next";
 import { defineDict } from "./core";

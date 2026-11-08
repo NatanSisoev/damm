@@ -38,7 +38,7 @@ export default async function TeamsPage({ params }: PageProps<"/hr/publish/[codi
           <div className="rounded-lg bg-[#f5f5f5] p-4" style={{ fontFamily: "'Segoe UI', system-ui, sans-serif" }}>
             <div className="mb-2 flex items-center gap-2 text-xs text-[#616161]">
               <span className="grid size-6 place-items-center rounded-full bg-[#5b5fc7] text-[10px] font-semibold text-white">EA</span>
-              <span className="font-semibold text-[#242424]">Escolta activa</span>
+              <span className="font-semibold text-[#242424]">Give a Damm</span>
               <span>{t("teams_now")}</span>
             </div>
             <div className="max-w-md rounded-md border border-[#e0e0e0] bg-white p-4 text-[#242424] shadow-sm">
