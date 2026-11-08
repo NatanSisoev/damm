@@ -9,7 +9,6 @@ import { Wordmark } from "@/app/wordmark";
 import type { ViewRole } from "@/lib/view-role";
 import { setViewRoleAction } from "./view-role-action";
 
-export type NavBadges = { alarms?: { critical: number; total: number }; recommendations?: number };
 
 type Item = { href: string; label: HrKey; icon: ReactNode };
 
@@ -103,7 +102,7 @@ function RoleToggle({ role, compact }: { role: ViewRole; compact: boolean }) {
   );
 }
 
-export function HrSidebar({ badges, subtitle, logo, role = "hr" }: { badges?: NavBadges; subtitle: string; logo: ReactNode; role?: ViewRole }) {
+export function HrSidebar({ subtitle, logo, role = "hr" }: { subtitle: string; logo: ReactNode; role?: ViewRole }) {
   const path = usePathname();
   const t = useT(hrDict);
   // Collapsed state lives in localStorage (per viewer); server and first render use the expanded layout.
@@ -148,32 +147,20 @@ export function HrSidebar({ badges, subtitle, logo, role = "hr" }: { badges?: Na
     };
   }, [open, close]);
 
-  const badgeFor = (href: string) => {
-    if (href === "/hr/recommendations" && badges?.recommendations)
-      return { n: badges.recommendations, warn: false, title: t("nav_pending_decision"), sr: t("nav_pending") };
-    return null;
-  };
-
   const renderItem = (l: Item, compact: boolean) => {
     const active = (l.href === "/hr" ? path === "/hr" : path.startsWith(l.href)) || (alias[l.href] ?? []).some((p) => path.startsWith(p));
-    const b = badgeFor(l.href);
     const label = t(l.label);
     return (
       <Link
         key={l.href}
         href={l.href}
         aria-current={active ? "page" : undefined}
-        aria-label={compact ? `${label}${b ? `, ${b.n} ${b.sr}` : ""}` : undefined}
+        aria-label={compact ? label : undefined}
         title={compact ? label : undefined}
         className="hr-side-item"
       >
         <span className="hr-side-icon">{l.icon}</span>
         <span className="hr-side-label">{label}</span>
-        {b && (
-          <span className={`badge num hr-side-badge ${b.warn ? "badge-warn" : ""}`} title={b.title}>
-            {b.n}
-          </span>
-        )}
       </Link>
     );
   };

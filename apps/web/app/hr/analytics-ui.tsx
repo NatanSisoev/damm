@@ -220,6 +220,8 @@ export async function HeatmapCard({ map, selected, cellHref = segHref }: { map: 
   const { t, lang } = await getTL(hrResultsDict);
   return (
     <Card
+      id="mapa"
+      className="scroll-mt-20"
       title={t("an_heat")}
       meta={map.periode ? rich(t("an_heat_meta", { periode: "{periode}" }), { periode: <span className="num">{map.periode}</span> }) : undefined}
     >
@@ -246,17 +248,28 @@ export async function HeatmapCard({ map, selected, cellHref = segHref }: { map: 
                       const on = selected?.seg === c.collective && selected?.dom === c.domain;
                       return (
                         <td key={c.domain} className="p-0">
-                          <Link
-                            href={cellHref(c.collective, c.domain)}
-                            scroll={false}
-                            title={cellTitle(t, lang, c)}
-                            aria-label={cellTitle(t, lang, c)}
-                            aria-current={on ? "true" : undefined}
-                            className={`hr-heat-cell ${c.suppressed ? "hr-heat-hatch" : ""} ${on ? "hr-heat-on" : ""}`}
-                            style={cellStyle(c, map.maxAbs)}
-                          >
-                            {c.suppressed ? <span className="sr-only">{t("an_supp")}</span> : c.mean === null ? "—" : <span className="num">{numD(c.mean, lang, 1)}</span>}
-                          </Link>
+                          {c.suppressed ? (
+                            <span
+                              title={cellTitle(t, lang, c)}
+                              aria-label={cellTitle(t, lang, c)}
+                              className="hr-heat-cell hr-heat-hatch"
+                              style={cellStyle(c, map.maxAbs)}
+                            >
+                              <span className="sr-only">{t("an_supp")}</span>
+                            </span>
+                          ) : (
+                            <Link
+                              href={cellHref(c.collective, c.domain)}
+                              scroll={false}
+                              title={cellTitle(t, lang, c)}
+                              aria-label={cellTitle(t, lang, c)}
+                              aria-current={on ? "true" : undefined}
+                              className={`hr-heat-cell ${on ? "hr-heat-on" : ""}`}
+                              style={cellStyle(c, map.maxAbs)}
+                            >
+                              {c.mean === null ? "—" : <span className="num">{numD(c.mean, lang, 1)}</span>}
+                            </Link>
+                          )}
                         </td>
                       );
                     })}

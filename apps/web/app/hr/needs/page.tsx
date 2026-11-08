@@ -49,8 +49,8 @@ function StateBadge({ state, lang }: { state: NeedState; lang: Lang }) {
 
 const fmtDate = (d: string | null, lang: Lang) => (d ? new Date(d.replace(" ", "T") + "Z").toLocaleDateString(LOCALES[lang], { day: "numeric", month: "short", year: "numeric" }) : null);
 
-export default async function NeedsPage({ searchParams }: { searchParams: Promise<{ estat?: string; publicada?: string; recordatori?: string; avis?: string; nova?: string }> }) {
-  const { estat, publicada, recordatori, avis, nova } = await searchParams;
+export default async function NeedsPage({ searchParams }: { searchParams: Promise<{ estat?: string; publicada?: string; recordatori?: string; avis?: string; nova?: string; regenError?: string }> }) {
+  const { estat, publicada, recordatori, avis, nova, regenError } = await searchParams;
   const { t, lang } = await getTL(hrDict);
   const filter: Filter = isFilter(estat) ? estat : "totes";
   const all = listNeedCards(lang);
@@ -70,9 +70,11 @@ export default async function NeedsPage({ searchParams }: { searchParams: Promis
         title={t("needs_title")}
         subtitle={t("needs_subtitle")}
         actions={
-          <Link href={showForm ? "/hr/needs" : "/hr/needs?nova=1#nova"} className="btn btn-primary" aria-expanded={showForm}>
-            {showForm && all.length > 0 ? t("needs_close_form") : t("needs_new_btn")}
-          </Link>
+          all.length > 0 ? (
+            <Link href={showForm ? "/hr/needs" : "/hr/needs?nova=1#nova"} className="btn btn-primary" aria-expanded={showForm}>
+              {showForm ? t("needs_close_form") : t("needs_new_btn")}
+            </Link>
+          ) : undefined
         }
       />
       {publicada && avis && /^(off|<?\d+)$/.test(avis) && <PublishNotice avis={avis} t={t} />}
@@ -118,7 +120,7 @@ export default async function NeedsPage({ searchParams }: { searchParams: Promis
       {showList && shown.length > 0 && (
         <div className="space-y-4">
           {shown.map((n) => (
-            <NeedItem key={n.id} n={n} draft={drafts.get(n.id)} domainIdx={domainIdx} t={t} lang={lang} />
+            <NeedItem key={n.id} n={n} draft={drafts.get(n.id)} domainIdx={domainIdx} t={t} lang={lang} regenError={Number(regenError) || null} />
           ))}
         </div>
       )}
@@ -135,7 +137,7 @@ function Fact({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 
-function NeedItem({ n, draft, domainIdx, t, lang }: { n: NeedCard; draft?: ReturnType<typeof listNeedDrafts>[number]; domainIdx: Map<string, number>; t: TFn<HrKey>; lang: Lang }) {
+function NeedItem({ n, draft, domainIdx, t, lang, regenError }: { n: NeedCard; draft?: ReturnType<typeof listNeedDrafts>[number]; domainIdx: Map<string, number>; t: TFn<HrKey>; lang: Lang; regenError: number | null }) {
   const state = STATES.find((s) => s.key === n.state)!;
   const live = n.state === "publicada" || n.state === "tancada";
   const pct = n.responses != null && n.population > 0 ? Math.min(100, Math.round((n.responses / n.population) * 100)) : null;
@@ -182,7 +184,7 @@ function NeedItem({ n, draft, domainIdx, t, lang }: { n: NeedCard; draft?: Retur
         {n.titol && <p className="text-sm text-subtle">{t("need_text_prefix", { text: n.textNl })}</p>}
         <p className="text-xs text-subtle">{t(state.hint)}</p>
 
-        {draft && <DraftReview g={draft} />}
+        {draft && <DraftReview g={draft} regenError={regenError} />}
 
         {n.approved.length > 0 && (
           <div>

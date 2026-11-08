@@ -10,7 +10,7 @@ import {
 } from "../actions";
 
 /** Draft review for one need: title and intro, then each proposed question with its actions. */
-export async function DraftReview({ g }: { g: NeedDraftGroup }) {
+export async function DraftReview({ g, regenError = null }: { g: NeedDraftGroup; regenError?: number | null }) {
   const { t, lang } = await getTL(draftReviewDict);
   const { t: th } = await getTL(hrDict);
   const typeLabel = (tipus: string) => (t(`type_${tipus}` as never) === `type_${tipus}` ? tipus : t(`type_${tipus}` as never));
@@ -107,6 +107,7 @@ export async function DraftReview({ g }: { g: NeedDraftGroup }) {
               <form action={regenerateQuestionAction}>
                 <input type="hidden" name="id" value={q.id} />
                 <button className="btn btn-ghost">{t("regenerate")}</button>
+                {regenError === q.id && <p role="alert" className="mt-1 text-xs font-semibold text-warn">{t("regenerate_failed")}</p>}
               </form>
               <form action={discardQuestionAction}>
                 <input type="hidden" name="id" value={q.id} />

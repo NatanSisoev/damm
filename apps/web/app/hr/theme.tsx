@@ -4,7 +4,7 @@ import { MIN_GROUP_SIZE } from "@damm/shared";
 import { getT } from "@/lib/i18n/server";
 import { hrDict } from "@/lib/i18n/hr";
 import { Wordmark } from "../wordmark";
-import { HrSidebar, type NavBadges } from "./nav";
+import { HrSidebar } from "./nav";
 import type { ViewRole } from "@/lib/view-role";
 import "./hr.css";
 
@@ -12,8 +12,6 @@ import "./hr.css";
 export function HrScope({ children }: { children: ReactNode }) {
   return <div className={`hr-shell flex min-h-screen flex-col`}>{children}</div>;
 }
-
-export type { NavBadges };
 
 async function Footer() {
   const t = await getT(hrDict);
@@ -28,7 +26,7 @@ async function Footer() {
  * Shared chrome. /hr gets a grouped sidebar (drawer below 1024px); /manager keeps the neutral top bar.
  * Red only on the active nav item.
  */
-export async function HrShell({ children, subtitle, manager = false, badges, role = "hr" }: { children: ReactNode; subtitle?: string; manager?: boolean; badges?: NavBadges; role?: ViewRole }) {
+export async function HrShell({ children, subtitle, manager = false, role = "hr" }: { children: ReactNode; subtitle?: string; manager?: boolean; role?: ViewRole }) {
   const t = await getT(hrDict);
   subtitle ??= t("shell_subtitle");
   if (manager) {
@@ -56,7 +54,6 @@ export async function HrShell({ children, subtitle, manager = false, badges, rol
     <div className={`hr-shell hr-layout`} data-role={role}>
       <HrSidebar
         role={role}
-        badges={badges}
         subtitle={subtitle}
         logo={
           <Link href="/hr" aria-label={t("logo_aria")} className="flex items-center">

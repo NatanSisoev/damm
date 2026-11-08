@@ -48,15 +48,17 @@ export async function createNeedAction(_prev: NeedFormState, formData: FormData)
 export async function moveDraftAction(formData: FormData) {
   moveDraft(Number(formData.get("id")), formData.get("dir") === "up" ? "up" : "down");
   revalidatePath("/hr/review");
+  revalidatePath("/hr/needs");
 }
 
 export async function regenerateQuestionAction(formData: FormData) {
   const id = Number(formData.get("id"));
   const ctx = getRedraftContext(id);
-  if (!ctx) return;
-  const r = await redraftQuestion(ctx.need, ctx.current as never, ctx.others as never);
-  if (r) replaceDraft(id, r.question, r.source === "llm");
+  const r = ctx ? await redraftQuestion(ctx.need, ctx.current as never, ctx.others as never) : null;
+  if (!r) redirect(`/hr/needs?regenError=${id}`);
+  replaceDraft(id, r.question, r.source === "llm");
   revalidatePath("/hr/review");
+  revalidatePath("/hr/needs");
 }
 
 export async function editNeedHeaderAction(formData: FormData) {
@@ -64,16 +66,19 @@ export async function editNeedHeaderAction(formData: FormData) {
   const intro = String(formData.get("intro") ?? "").trim();
   if (titol) updateNeedHeader(Number(formData.get("id")), titol, intro);
   revalidatePath("/hr/review");
+  revalidatePath("/hr/needs");
 }
 
 export async function approveQuestionAction(formData: FormData) {
   approveQuestion(Number(formData.get("id")), HR_USER);
   revalidatePath("/hr/review");
+  revalidatePath("/hr/needs");
 }
 
 export async function discardQuestionAction(formData: FormData) {
   discardQuestion(Number(formData.get("id")));
   revalidatePath("/hr/review");
+  revalidatePath("/hr/needs");
 }
 
 export async function editQuestionAction(formData: FormData) {
