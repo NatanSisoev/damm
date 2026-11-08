@@ -150,22 +150,22 @@
   background: linear-gradient(90deg, color-mix(in oklab, var(--div-neg) 58%, var(--div-mid)), var(--div-mid), color-mix(in oklab, var(--div-pos) 58%, var(--div-mid)));
 }
 
-/* Radar cohort chips: 44px tap targets, wrap on phones. */
+/* Radar cohort chips: slim (30px, 36px on phones), wrap on phones. */
 .hr-chip {
-  display: inline-flex; min-height: 44px; align-items: center; gap: 0.5rem;
-  padding: 0 0.85rem; border: 1px solid var(--line); border-radius: 2px;
-  font-size: 13px; color: var(--text); background: transparent;
+  display: inline-flex; min-height: 30px; align-items: center; gap: 0.4rem;
+  padding: 0 0.65rem; border: 1px solid var(--line); border-radius: 2px;
+  font-size: 12.5px; line-height: 1; color: var(--text); background: transparent;
 }
 .hr-chip:hover { background: var(--surface-muted); }
 .hr-chip[aria-pressed="true"] { border-color: var(--text); background: var(--surface-muted); font-weight: 600; }
 .hr-chip[aria-disabled="true"] { opacity: 0.5; pointer-events: none; }
-.hr-chip-dot { width: 10px; height: 10px; border-radius: 9999px; flex: none; }
+.hr-chip-dot { width: 8px; height: 8px; border-radius: 9999px; flex: none; }
 
 /* Touch targets: 44px on phones. */
 @media (max-width: 767px) {
   .hr-shell .btn,
-  .hr-shell .hr-chip,
   .hr-shell summary { min-height: 44px; }
+  .hr-shell .hr-chip { min-height: 36px; }
   .hr-shell .btn { display: inline-flex; align-items: center; justify-content: center; }
 }
 
