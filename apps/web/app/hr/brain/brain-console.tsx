@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, useTransition, type ReactNode } from "react";
-import type { QuestionType } from "@damm/shared";
+import { MIN_GROUP_SIZE, type QuestionType } from "@damm/shared";
 import type { Brain, BrainCollective, SimResult } from "@/lib/hr-engine";
 import { Card, Empty, SuppressedBadge } from "../ui";
 import { recomputeAction } from "../actions";
@@ -430,8 +430,8 @@ function Summary({ brain, c }: { brain: Brain; c: BrainCollective }) {
                       <div className="flex flex-wrap gap-x-4 gap-y-1">
                         {f.arms.map((a) => (
                           <span key={a.tornId} className="num">
-                            {shiftLabel(a.shift, lang)}: <strong>{c.suppressed ? "—" : pct(a.mean)}</strong>
-                            <span className="text-xs text-subtle"> {t("obs", { n: a.observations })}</span>
+                            {shiftLabel(a.shift, lang)}: <strong>{c.suppressed || a.observations < MIN_GROUP_SIZE ? "—" : pct(a.mean)}</strong>
+                            <span className="text-xs text-subtle"> {a.observations < MIN_GROUP_SIZE ? `(<${MIN_GROUP_SIZE} obs.)` : t("obs", { n: a.observations })}</span>
                           </span>
                         ))}
                       </div>
