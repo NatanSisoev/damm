@@ -221,7 +221,7 @@ export default async function HrDashboard({ searchParams }: { searchParams: Prom
               })}
             </div>
           )}
-          {radarSeries.length && hasData ? <Radar axes={axes} series={radarSeries} /> : <Empty>{tr("rs_nodata")}</Empty>}
+          {radarSeries.length && hasData ? <Radar axes={axes} series={radarSeries} legend={false} /> : <Empty>{tr("rs_nodata")}</Empty>}
         </Card>
 
         {/* 2. Collectives x domains map */}
@@ -238,27 +238,33 @@ export default async function HrDashboard({ searchParams }: { searchParams: Prom
             <>
               {coarsened && <p className="px-5 pt-3 text-xs text-subtle">{t(chartBucket === "week" ? "dash_coarse_week" : "dash_coarse_month", { min: MIN_GROUP_SIZE })}</p>}
               <TrendChart periodes={series.periodes} rows={series.series[0].rows} />
-              <details className="group border-t border-line">
+              <details className="group/all border-t border-line">
                 <summary className="flex cursor-pointer list-none items-center gap-2 px-5 py-3 font-medium hover:bg-surface-muted">
-                  <span aria-hidden className="text-subtle transition-transform group-open:rotate-90">›</span>
-                  {tr("rs_show_table")}
+                  <span aria-hidden className="text-subtle transition-transform group-open/all:rotate-90">›</span>
+                  {t("dash_trend_tables")}
                 </summary>
-                <p className="border-t border-line px-5 py-3 text-xs text-subtle">
-                  {tr("rs_prec_a")}<span className="font-medium">{tr("prec_indicativa")}</span>{tr("rs_prec_b", { a: PRECISION_MODERADA_MIN_N })}
-                  <span className="font-medium">{tr("prec_moderada")}</span>{tr("rs_prec_c", { a: PRECISION_MODERADA_MIN_N, b: PRECISION_SOLIDA_MIN_N - 1 })}
-                  <span className="font-medium">{tr("prec_solida")}</span>{tr("rs_prec_d", { c: PRECISION_SOLIDA_MIN_N, delta: numD(CHANGE_MIN_DELTA, lang, 1), n: CHANGE_MIN_N })}
-                </p>
-                <TrendTable periodes={series.periodes} rows={series.series[0].rows} />
-              </details>
-              {perCollective.map((s) => (
-                <details key={s.scope} className="group border-t border-line">
-                  <summary className="flex cursor-pointer list-none items-center gap-2 px-5 py-3 font-medium hover:bg-surface-muted">
+                <details className="group border-t border-line">
+                  <summary className="flex cursor-pointer list-none items-center gap-2 py-3 pl-10 pr-5 font-medium hover:bg-surface-muted">
                     <span aria-hidden className="text-subtle transition-transform group-open:rotate-90">›</span>
-                    {collectiveLabel(s.scope, lang)}
+                    {tr("rs_show_table")}
                   </summary>
-                  <TrendTable periodes={series.periodes} rows={s.rows} />
+                  <p className="border-t border-line px-5 py-3 text-xs text-subtle">
+                    {tr("rs_prec_a")}<span className="font-medium">{tr("prec_indicativa")}</span>{tr("rs_prec_b", { a: PRECISION_MODERADA_MIN_N })}
+                    <span className="font-medium">{tr("prec_moderada")}</span>{tr("rs_prec_c", { a: PRECISION_MODERADA_MIN_N, b: PRECISION_SOLIDA_MIN_N - 1 })}
+                    <span className="font-medium">{tr("prec_solida")}</span>{tr("rs_prec_d", { c: PRECISION_SOLIDA_MIN_N, delta: numD(CHANGE_MIN_DELTA, lang, 1), n: CHANGE_MIN_N })}
+                  </p>
+                  <TrendTable periodes={series.periodes} rows={series.series[0].rows} />
                 </details>
-              ))}
+                {perCollective.map((s) => (
+                  <details key={s.scope} className="group border-t border-line">
+                    <summary className="flex cursor-pointer list-none items-center gap-2 py-3 pl-10 pr-5 font-medium hover:bg-surface-muted">
+                      <span aria-hidden className="text-subtle transition-transform group-open:rotate-90">›</span>
+                      {collectiveLabel(s.scope, lang)}
+                    </summary>
+                    <TrendTable periodes={series.periodes} rows={s.rows} />
+                  </details>
+                ))}
+              </details>
             </>
           ) : (
             <Empty>{t(col ? "dash_evo_empty_col" : "dash_evo_empty", { min: MIN_GROUP_SIZE })}</Empty>
