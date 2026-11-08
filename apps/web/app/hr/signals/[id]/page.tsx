@@ -278,7 +278,7 @@ export default async function SignalPage({ params, searchParams }: { params: Pro
         </div>
 
         <div className="space-y-6">
-          <Card id="recomanacions" title={t("sd_recs")} meta={<span className="num">{recommendations.length}</span>}>
+          <Card id="recomanacions" title={t("sd_tl_recomanacio")} meta={<span className="num">{recommendations.length}</span>}>
             {recommendations.length === 0 ? (
               signal.dominiId != null ? (
                 <form action={generateRecommendationsAction}>
