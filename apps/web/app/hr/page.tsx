@@ -5,6 +5,7 @@ import { MIN_GROUP_SIZE } from "@damm/shared";
 import {
   getDataBounds,
   getRepresentativeness,
+  getChannelParticipation,
   getWindowTrends,
   listCollectius,
   getParticipation,
@@ -25,7 +26,7 @@ import { numD } from "@/lib/i18n/num";
 import { Card, Empty, PageHeader, Stat } from "./ui";
 import { TrendChart } from "./trend-chart";
 import { Radar, type RadarSeries } from "./radar";
-import { RepTable, TrendTable } from "./tables";
+import { ChannelTable, RepTable, TrendTable } from "./tables";
 import { InsightCards } from "./insight-cards";
 import { getHeadlines, getHeatmap, getNarrative, getProposals, getReachGaps, getSegmentTrend } from "./analytics";
 import { HeadlineStrip, HeatmapCard, NarrativeCard, ProposalsCard, ManagerGapCard, ReachCard, SegmentTrendCard, InitiativesCard } from "./analytics-ui";
@@ -75,6 +76,7 @@ export default async function HrDashboard({ searchParams }: { searchParams: Prom
   const everyone = col ? getWindowTrends({ ...win, bucket: "all" }, null) : whole;
 
   const rep = getRepresentativeness();
+  const channels = getChannelParticipation();
   const heatmap = { ...getHeatmap(everyone), periode: `${fmtDay(range.from)} – ${fmtDay(range.to)}` };
 
   const overall = whole.series[0];
@@ -297,6 +299,12 @@ export default async function HrDashboard({ searchParams }: { searchParams: Prom
             </>
           )}
         </Card>
+
+        {channels.periode && (
+          <Card title={tr("rs_channel")} meta={<span>{tr("rs_channel_meta", { period: channels.periode, min: MIN_GROUP_SIZE })}</span>} flush>
+            <ChannelTable rows={channels.rows} />
+          </Card>
+        )}
 
         {/* Everything else: collapsed by default */}
         <NarrativeCard fold narrative={getNarrative(col?.nom ?? "All", lang)} title={t("dash_narr", { scope: col ? collectiveLabel(col.nom, lang) : t("dash_scope_all") })} />
