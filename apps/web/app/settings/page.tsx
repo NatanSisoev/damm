@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { getShiftChoice } from "@damm/db/employee";
 import { MIN_GROUP_SIZE } from "@damm/shared";
 import { LangSwitcher } from "@/components/lang-switcher";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { employeeDict } from "@/lib/i18n/employee";
 import { getTL } from "@/lib/i18n/server";
 import { shiftChoices } from "@/lib/shift-options";
@@ -35,6 +36,14 @@ export default async function SettingsPage() {
           <h2 className="section-title">{t("settings_language")}</h2>
           <p className="text-muted">{t("settings_language_hint")}</p>
           <LangSwitcher />
+        </div>
+      </section>
+
+      <section className="card mt-4">
+        <div className="card-body space-y-2">
+          <h2 className="section-title">{t("settings_theme")}</h2>
+          <p className="text-muted">{t("settings_theme_hint")}</p>
+          <ThemeToggle />
         </div>
       </section>
 

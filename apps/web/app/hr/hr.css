@@ -255,3 +255,6 @@ main:focus { outline: none; }
 @keyframes gen-spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .gen-spinner { animation-duration: 2s; } }
 .rec-hint { margin-bottom: 8px; font-size: 13px; color: var(--muted, inherit); }
+
+/* Theme toggle row in the sidebar footer and drawer. */
+.hr-theme-row { display: flex; margin-top: 8px; }
