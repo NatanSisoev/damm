@@ -214,11 +214,12 @@
 @keyframes hr-spin { to { transform: rotate(360deg); } } .gen-spinner-svg { animation: hr-spin 0.9s linear infinite; }
 
 /* Folded Panell sections: native details, summary is the card heading. */
-.hr-card-fold > summary { display: flex; align-items: center; gap: 8px; list-style: none; cursor: pointer; min-height: 44px; }
+.hr-card-fold > summary { display: flex; align-items: center; justify-content: flex-start; gap: 8px; list-style: none; cursor: pointer; min-height: 44px; height: auto; padding-top: 12px; padding-bottom: 12px; }
+.hr-card-fold > summary .section-title { margin: 0; text-align: left; }
 .hr-card-fold > summary::-webkit-details-marker { display: none; }
 .hr-card-fold > summary:hover .section-title { text-decoration: underline; }
 .hr-card-fold > summary:focus-visible { outline: 2px solid var(--text); outline-offset: -2px; border-radius: 2px; }
 .hr-card-fold:not([open]) > summary { border-bottom: 0; }
-.hr-card-fold-chev { color: var(--text-subtle); transition: transform 0.15s; }
+.hr-card-fold-chev { color: var(--text-subtle); line-height: 1; transition: transform 0.15s; }
 .hr-card-fold[open] > summary .hr-card-fold-chev { transform: rotate(90deg); }
 @media (prefers-reduced-motion: reduce) { .hr-card-fold-chev { transition: none; } }
