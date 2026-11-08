@@ -1,6 +1,6 @@
 // DEMO ONLY, off unless DEMO_LIVE_JOB=1. After a phone answer is stored, the analysis job runs in the background so
 // the engine itself decides whether the answer tips a primed segment into an alarm, and HR browsers get the web push
-// seconds later. Unlike DEMO_TRIPWIRE nothing is staged: the alarm comes from the normal engine job on real aggregates.
+// seconds later. The alarm comes from the normal engine job; only when it finds none, a labelled staged one is opened (see demo-alarm.ts).
 // The answer response never waits for it. Nothing here reads or stores who answered; the job only sees the normal
 // `resposta` rows, exactly like a scheduled run.
 import { getDb } from "@damm/db";
@@ -9,7 +9,7 @@ import { runEngineJob, runRecommendations } from "@damm/engine/job";
 import { templateRecommendations } from "@damm/ai";
 import { alarmPayload, notifyNewAlarms } from "@/lib/hr-push";
 import { invalidateHrMemo } from "@/lib/hr-memo";
-import { fireDemoAlarmForAnyAnswer } from "@/lib/demo-tripwire";
+import { fireDemoAlarm, resolveDemoTarget, type DemoTarget } from "@/lib/demo-alarm";
 
 const DEBOUNCE_MS = Number(process.env.DEMO_LIVE_JOB_DEBOUNCE_MS ?? 1500);
 
@@ -17,18 +17,24 @@ type EngineDb = Parameters<typeof runEngineJob>[0];
 let timer: ReturnType<typeof setTimeout> | null = null;
 let running = false;
 let again = false;
+let target: DemoTarget | null = null; // collective and domain of the latest answer; no account id kept
 
 export const liveJobEnabled = () => process.env.DEMO_LIVE_JOB === "1";
 
 /** Call after a successful submit. Never throws and never blocks the response. */
 let loggedOff = false;
-export function scheduleLiveJob(): void {
+export function scheduleLiveJob(compteId?: string | number, preguntaIds: number[] = []): void {
   if (!liveJobEnabled()) {
     if (!loggedOff) {
       loggedOff = true;
       console.log(`[demo-live-job] answer stored but DEMO_LIVE_JOB is "${process.env.DEMO_LIVE_JOB ?? ""}" (needs "1"): no alarm will run`);
     }
     return;
+  }
+  try {
+    if (compteId != null) target = resolveDemoTarget(compteId, preguntaIds);
+  } catch (e) {
+    console.warn("[demo-live-job] target lookup failed:", e instanceof Error ? e.message : e);
   }
   console.log(`[demo-live-job] answer stored, ${running ? "run in progress, queued one more pass" : `run scheduled in ${DEBOUNCE_MS} ms`}`);
   if (running) {
@@ -62,7 +68,7 @@ async function run(): Promise<void> {
       const push = await notifyNewAlarms(before);
       // The engine found nothing new for this answer: open the staged "Demo:" alarm so any answer reaches the laptop.
       if (!payload) {
-        const staged = await fireDemoAlarmForAnyAnswer();
+        const staged = await fireDemoAlarm(target);
         console.log(`[demo-live-job] engine found no new alarm, staged fallback: ${staged}`);
       }
       console.log(`[demo-live-job] done in ${Date.now() - t0} ms, new alarms after #${before}, push: ${JSON.stringify(push)}, payload: ${payload ?? "none"}`);
