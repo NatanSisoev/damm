@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { SubmitButton } from "@/app/hr/submit-button";
 import Link from "next/link";
 import { MIN_GROUP_SIZE, type Lang } from "@damm/shared";
-import { listDecisions, listDomains, listNeedCards, listNeedDrafts, type NeedCard, type NeedState } from "@damm/db/hr";
+import { listDecisions, listDomains, listNeedCards, listNeeds, listNeedDrafts, type NeedCard, type NeedState } from "@damm/db/hr";
 import { ConfirmButton } from "../confirm-button";
 import { closeNeedAction, publishAction, remindNeedAction } from "../actions";
 import { LOW_PARTICIPATION_PCT, participationOf } from "../participation";
@@ -16,6 +16,7 @@ import { trailDict } from "@/lib/i18n/hr-trail";
 import { makeT } from "@/lib/i18n/core";
 import { DecisionList } from "../trail";
 import { DraftReview } from "./draft-review";
+import { RouteModal } from "../modal";
 import { pageTitle } from "@/lib/i18n/titles";
 
 export const generateMetadata = pageTitle("hr_needs");
@@ -53,8 +54,8 @@ function StateBadge({ state, lang }: { state: NeedState; lang: Lang }) {
 
 const fmtDate = (d: string | null, lang: Lang) => (d ? new Date(d.replace(" ", "T") + "Z").toLocaleDateString(LOCALES[lang], { day: "numeric", month: "short", year: "numeric" }) : null);
 
-export default async function NeedsPage({ searchParams }: { searchParams: Promise<{ estat?: string; publicada?: string; recordatori?: string; avis?: string; nova?: string; regenError?: string }> }) {
-  const { estat, publicada, recordatori, avis, nova, regenError } = await searchParams;
+export default async function NeedsPage({ searchParams }: { searchParams: Promise<{ estat?: string; publicada?: string; recordatori?: string; avis?: string; nova?: string; historial?: string; regenError?: string }> }) {
+  const { estat, publicada, recordatori, avis, nova, historial, regenError } = await searchParams;
   const { t, lang } = await getTL(hrDict);
   const filter: Filter = isFilter(estat) ? estat : "totes";
   const all = listNeedCards(lang);
@@ -72,7 +73,12 @@ export default async function NeedsPage({ searchParams }: { searchParams: Promis
       <PageHeader
         title={t("needs_title")}
         subtitle={t("needs_subtitle")}
-        actions={<Link href="/hr/needs/new" className="btn btn-primary">{t("needs_new_btn")}</Link>}
+        actions={
+          <>
+            <Link href={`/hr/needs?${filter === "totes" ? "" : `estat=${filter}&`}historial=1`} scroll={false} className="btn btn-ghost">{t("hist_btn")}</Link>
+            <Link href="/hr/needs/new" className="btn btn-primary">{t("needs_new_btn")}</Link>
+          </>
+        }
       />
       {publicada && avis && /^(off|<?\d+)$/.test(avis) && <PublishNotice avis={avis} t={t} />}
       {recordatori && avis && /^(off|<?\d+)$/.test(avis) && <PublishNotice avis={avis} t={t} reminder />}
@@ -118,7 +124,33 @@ export default async function NeedsPage({ searchParams }: { searchParams: Promis
           ))}
         </div>
       )}
+      {historial === "1" && <HistoryModal filter={filter} t={t} lang={lang} />}
     </>
+  );
+}
+
+/** Every query with its state, opened from the header. Titles and states only, no answers. The open state lives in the URL (`?historial=1`). */
+function HistoryModal({ filter, t, lang }: { filter: Filter; t: TFn<HrKey>; lang: Lang }) {
+  const needs = listNeeds();
+  return (
+    <RouteModal wide closeHref={filter === "totes" ? "/hr/needs" : `/hr/needs?estat=${filter}`} title={<>{t("hist_title")} <span className="num text-subtle">{needs.length}</span></>}>
+      {needs.length === 0 ? (
+        <Empty>{t("hist_empty")}</Empty>
+      ) : (
+        <ul className="divide-y divide-line">
+          {needs.map((n) => (
+            <li key={n.id} className="flex flex-wrap items-center gap-3 py-2.5">
+              <span className={`badge ${needStatus(n.estat, lang).cls}`}>{needStatus(n.estat, lang).label}</span>
+              <span className="min-w-0 flex-1 text-[13px]">{n.textNl}{n.collectiu ? ` · ${collectiveLabel(n.collectiu, lang)}` : ""}</span>
+              {n.estat !== "tancada" && (
+                <form action={closeNeedAction}><input type="hidden" name="id" value={n.id} /><ConfirmButton className="btn" message={t("hist_close_confirm")}>{t("hist_close")}</ConfirmButton></form>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+      <p className="mt-3 text-xs text-subtle">{t("hist_close_note")}</p>
+    </RouteModal>
   );
 }
 
