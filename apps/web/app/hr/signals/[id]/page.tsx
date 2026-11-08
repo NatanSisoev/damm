@@ -208,7 +208,7 @@ export default async function SignalPage({ params, searchParams }: { params: Pro
         ))}
       </div>
 
-      <Card title={t("sd_flow")} className="mb-6">
+      <Card className="mb-6">
         <Timeline steps={timeline} t={t} hasFollowUps={followUps.length > 0} />
       </Card>
 
