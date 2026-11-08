@@ -213,15 +213,23 @@ export default async function AlarmsPage({ searchParams }: { searchParams: Promi
       ) : (
         <div className="space-y-6">
           <FoldList as="div" visible={4} className="space-y-6" items={grouped.map(([segment, items]) => (
-            <Card key={segment} title={segment} meta={<span className="num">{t(items.length === 1 ? "sg_count_one" : "sg_count_many", { n: items.length })}</span>}>
-              <FoldList
-                className="divide-y divide-line"
-                items={items.map((r) => (
-                  <AlarmItem key={r.id} t={t} lang={lang} r={r} spark={sparkFor(r)} rec={recs.find((x) => x.senyalId === r.id && x.estat === "aprovada")} drafted={recs.some((x) => x.senyalId === r.id)} />
-
-                ))}
-              />
-            </Card>
+            <details key={segment} className="card alarm-group" open>
+              <summary className="card-header cursor-pointer select-none">
+                <span className="flex items-center gap-2">
+                  <svg className="alarm-group-chev" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6" /></svg>
+                  <h2 className="section-title">{segment}</h2>
+                </span>
+                <span className="num text-xs text-subtle">{t(items.length === 1 ? "sg_count_one" : "sg_count_many", { n: items.length })}</span>
+              </summary>
+              <div className="card-body">
+                <FoldList
+                  className="divide-y divide-line"
+                  items={items.map((r) => (
+                    <AlarmItem key={r.id} t={t} lang={lang} r={r} spark={sparkFor(r)} rec={recs.find((x) => x.senyalId === r.id && x.estat === "aprovada")} drafted={recs.some((x) => x.senyalId === r.id)} />
+                  ))}
+                />
+              </div>
+            </details>
           ))} />
 
           {good.length > 0 && (
@@ -321,19 +329,23 @@ function AlarmItem({ t, lang, r, spark, rec, drafted }: { t: HrResultsT; lang: L
             <GenerateButton />
           </form>
         )}
-        {next.length > 0 && (
-          <details className="alarm-status">
-            <summary className="btn">{t("sg_mark")}</summary>
-            <div className="alarm-status-menu">
-              {next.map((s) => (
-                <form key={s} action={setAlarmStatusAction}>
-                  <input type="hidden" name="id" value={r.id} />
-                  <input type="hidden" name="status" value={s} />
-                  <button type="submit">{statusLabel(s, lang)}</button>
-                </form>
-              ))}
-            </div>
-          </details>
+        {r.status === "open" && (
+          <form action={setAlarmStatusAction}>
+            <input type="hidden" name="id" value={r.id} />
+            <input type="hidden" name="status" value="acknowledged" />
+            <button type="submit" className="alarm-icon-btn" aria-label={t("sg_dismiss")} title={t("sg_dismiss")}>
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
+            </button>
+          </form>
+        )}
+        {next.includes("resolved") && (
+          <form action={setAlarmStatusAction}>
+            <input type="hidden" name="id" value={r.id} />
+            <input type="hidden" name="status" value="resolved" />
+            <button type="submit" className="alarm-icon-btn" aria-label={t("sg_resolve")} title={t("sg_resolve")}>
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7" /></svg>
+            </button>
+          </form>
         )}
       </div>
     </li>
