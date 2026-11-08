@@ -183,7 +183,6 @@ export function HrSidebar({ subtitle, logo, role = "hr" }: { subtitle: string; l
       <div className="hr-side-foot">
         {footer.map((l) => renderItem(l, compact))}
         <RoleToggle role={role} compact={compact} />
-        <div className="hr-theme-row"><ThemeToggle /></div>
       </div>
     </>
   );
@@ -212,9 +211,12 @@ export function HrSidebar({ subtitle, logo, role = "hr" }: { subtitle: string; l
           <nav id="hr-drawer" ref={drawerRef} aria-label={t("sections")} role="dialog" aria-modal="true" className="hr-drawer">
             <div className="hr-drawer-head">
               <Wordmark className="h-4 w-auto" />
+              <span className="hr-drawer-actions">
+                <ThemeToggle className="hr-side-theme" />
               <button type="button" className="hr-icon-btn" aria-label={t("nav_close_menu")} onClick={close}>
                 {svg(<path d="M6 6l12 12M18 6L6 18" />)}
               </button>
+              </span>
             </div>
             {body(false)}
           </nav>
@@ -230,6 +232,7 @@ export function HrSidebar({ subtitle, logo, role = "hr" }: { subtitle: string; l
         <nav aria-label={t("sections")} className="hr-side-nav">
           {body(collapsed)}
         </nav>
+        <div className="hr-side-bottom">
         <button
           type="button"
           className="hr-side-toggle"
@@ -241,6 +244,8 @@ export function HrSidebar({ subtitle, logo, role = "hr" }: { subtitle: string; l
           {svg(<path d={collapsed ? "M9 6l6 6-6 6" : "M15 6l-6 6 6 6"} />)}
           <span className="hr-side-label">{t("nav_collapse_short")}</span>
         </button>
+        <ThemeToggle className="hr-side-theme" />
+        </div>
       </aside>
     </>
   );
