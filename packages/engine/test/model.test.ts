@@ -11,7 +11,7 @@ import { updateItemStats } from "../src/item-bias.ts";
 const cfg = DEFAULT_CONFIG;
 const q = (over: Partial<QuestionDef>): QuestionDef => ({
   id: 1, domainId: 1, collectiuId: null, type: "scale10", text: "t", facet: "f", polarity: 1,
-  options: null, isFollowup: false, needId: null, priority: 0, ...over,
+  options: null, isFollowup: false, needId: null, priority: 0, campaign: false, ...over,
 });
 
 test("normalise: every closed type maps to 0..1 with 1 = best", () => {

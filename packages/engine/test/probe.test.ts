@@ -136,7 +136,7 @@ test("pure scheduler: priority multiplies by the boost, and open prompts are nev
   assert.equal(domainPriority({ ...d, probeBoost: 1 }, 1, cfg), domainPriority(d, 1, cfg));
 
   const mk = (id: number, type: "scale10" | "open"): QuestionDef => ({
-    id, domainId: 1, collectiuId: null, type, text: "q", facet: "shift", polarity: 1, options: null, isFollowup: false, needId: null, priority: 0,
+    id, domainId: 1, collectiuId: null, type, text: "q", facet: "shift", polarity: 1, options: null, isFollowup: false, needId: null, priority: 0, campaign: false,
   });
   const questions = [mk(1, "scale10"), mk(2, "open")];
   const openShare = (probeBoost: number) => {

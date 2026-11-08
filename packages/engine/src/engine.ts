@@ -41,6 +41,24 @@ export interface DailyBatch {
   items: BatchItem[];
 }
 
+/** Item of a campaign set. Like BatchItem, without an assignment: campaign questions are answered once and tracked by `resposta`. */
+export interface CampaignItem {
+  questionId: number;
+  domainId: number;
+  type: QuestionType;
+  text: string;
+  options: { label: string }[] | null;
+  scale: { min: number; max: number } | null;
+}
+
+/** The pending one-off set of one published campaign query. */
+export interface CampaignSet {
+  needId: number;
+  title: string | null;
+  intro: string | null;
+  items: CampaignItem[];
+}
+
 export interface AnswerInput {
   preguntaId: number;
   valorNum?: number | null;
@@ -55,12 +73,19 @@ export interface SubmitResult {
   accepted: number[];
   rejected: { questionId: number; reason: RejectReason }[];
   remainingToday: number;
+  /** Unanswered questions left in the person's pending campaign sets (all of them). */
+  remainingCampaign: number;
 }
 
 export class EngineError extends Error {}
 
 export interface Engine {
   getDailyBatch(accountId: string): DailyBatch;
+  /**
+   * The extra one-off set of the oldest published campaign query the person has not finished, or null.
+   * Never part of the daily batch. Empty once every question is answered or HR closes the query.
+   */
+  getCampaign(accountId: string): CampaignSet | null;
   submitAnswers(accountId: string, answers: AnswerInput[], opts?: { channel?: Canal }): SubmitResult;
 }
 
@@ -114,6 +139,32 @@ export function createEngine(opts: EngineOptions): Engine {
     };
   }
 
+  function campaignItem(q: QuestionDef): CampaignItem {
+    return {
+      questionId: q.id,
+      domainId: q.domainId,
+      type: q.type,
+      text: q.text,
+      options: q.options ? q.options.map((o) => ({ label: o.label })) : null,
+      scale: SCALES[q.type] ?? null,
+    };
+  }
+
+  function getCampaign(accountId: string): CampaignSet | null {
+    const acc = account(accountId);
+    const answered = store.answeredQuestionIds(db, accountId);
+    const pending = store.campaignQuestionsFor(db, acc.collectiuId).filter((c) => !answered.has(c.question.id));
+    if (pending.length === 0) return null;
+    const first = pending[0];
+    if (!first) return null;
+    return {
+      needId: first.needId,
+      title: first.title,
+      intro: first.intro,
+      items: pending.filter((c) => c.needId === first.needId).map((c) => campaignItem(c.question)),
+    };
+  }
+
   function getDailyBatch(accountId: string): DailyBatch {
     const cfg = config();
     const nowMs = now();
@@ -155,24 +206,27 @@ export function createEngine(opts: EngineOptions): Engine {
     const day = dayOf(nowMs, cfg.timezone);
     const at = toSqlDatetime(nowMs);
     const acc = account(accountId);
-    const result: SubmitResult = { accepted: [], rejected: [], remainingToday: 0 };
+    const result: SubmitResult = { accepted: [], rejected: [], remainingToday: 0, remainingCampaign: 0 };
 
     transaction(db, () => {
       const rows = store.assignmentsFor(db, accountId, day);
       const byQuestion = new Map(rows.map((r) => [r.pregunta_id, r]));
       const qs = store.questionsByIds(db, rows.map((r) => r.pregunta_id));
       const done = new Set<number>();
+      // Campaign questions are answerable once each while their query is published for the person's collective.
+      const campaign = new Map(store.campaignQuestionsFor(db, acc.collectiuId).map((c) => [c.question.id, c.question]));
+      const alreadyAnswered = store.answeredQuestionIds(db, accountId);
 
       for (const a of Array.isArray(answers) ? answers : []) {
         // Anything that is not an answer object (null, a number, a string) cannot belong to today's batch.
         const id = (a as Partial<AnswerInput> | null)?.preguntaId;
         const row = typeof id === "number" ? byQuestion.get(id) : undefined;
-        const q = typeof id === "number" ? qs.get(id) : undefined;
-        if (!row || !q) {
+        const q = typeof id === "number" ? (row ? qs.get(id) : campaign.get(id)) : undefined;
+        if (!q || (!row && typeof id === "number" && !campaign.has(id))) {
           result.rejected.push({ questionId: id as number, reason: "not_in_todays_batch" });
           continue;
         }
-        if (row.answered_at !== null || done.has(a.preguntaId)) {
+        if ((row ? row.answered_at !== null : alreadyAnswered.has(q.id)) || done.has(a.preguntaId)) {
           result.rejected.push({ questionId: a.preguntaId, reason: "already_answered" });
           continue;
         }
@@ -211,7 +265,7 @@ export function createEngine(opts: EngineOptions): Engine {
               score,
               at,
               day,
-              isFollowup: row.reason === "followup" || q.isFollowup,
+              isFollowup: row?.reason === "followup" || q.isFollowup,
             },
             cfg,
             createRng(`${accountId}|${q.domainId}|${day}`),
@@ -221,14 +275,15 @@ export function createEngine(opts: EngineOptions): Engine {
         }
         if (answerMs !== null) store.bumpFormatStats(db, cfg, acc.collectiuId, acc.tornId, q.type, answerMs >= cfg.minAnswerMs);
 
-        run(db, "UPDATE assignment SET answered_at = ? WHERE id = ?", at, row.id);
+        if (row) run(db, "UPDATE assignment SET answered_at = ? WHERE id = ?", at, row.id);
         done.add(q.id);
         result.accepted.push(q.id);
       }
       result.remainingToday = rows.filter((r) => r.answered_at === null && !done.has(r.pregunta_id)).length;
+      result.remainingCampaign = [...campaign.keys()].filter((qid) => !alreadyAnswered.has(qid) && !done.has(qid)).length;
     });
     return result;
   }
 
-  return { getDailyBatch, submitAnswers };
+  return { getDailyBatch, getCampaign, submitAnswers };
 }
