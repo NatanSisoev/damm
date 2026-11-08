@@ -32,19 +32,27 @@ const icons = {
   comments: svg(<><path d="M4 5h16v11H9l-5 4z" /><path d="M8 9h8M8 12h5" /></>),
 };
 
-const main: Item[] = [
-  { href: "/hr", label: "nav_home", icon: icons.home },
-  { href: "/hr/pool", label: "nav_pool", icon: icons.pool },
-  { href: "/hr/signals", label: "nav_alarms", icon: icons.alarms },
-  { href: "/hr/needs", label: "nav_needs", icon: icons.needs },
+const groups: { title: HrKey; items: Item[] }[] = [
+  {
+    title: "nav_understand",
+    items: [
+      { href: "/hr", label: "nav_home", icon: icons.home },
+      { href: "/hr/signals", label: "nav_alarms", icon: icons.alarms },
+      { href: "/hr/comments", label: "nav_comments", icon: icons.comments },
+    ],
+  },
+  {
+    title: "nav_listen",
+    items: [
+      { href: "/hr/needs", label: "nav_needs", icon: icons.needs },
+      { href: "/hr/pool", label: "nav_pool", icon: icons.pool },
+      { href: "/hr/brain", label: "nav_brain", icon: icons.brain },
+      { href: "/hr/publish", label: "nav_publish", icon: icons.publish },
+    ],
+  },
 ];
 
-const footer: Item[] = [
-  { href: "/hr/publish", label: "nav_publish", icon: icons.publish },
-  { href: "/hr/comments", label: "nav_comments", icon: icons.comments },
-  { href: "/hr/brain", label: "nav_brain", icon: icons.brain },
-  { href: "/hr/methodology", label: "nav_method", icon: icons.method },
-];
+const footer: Item[] = [{ href: "/hr/methodology", label: "nav_method", icon: icons.method }];
 
 /** Pages that live under a main item (results under Panell, recommendations under Alarmes). */
 const alias: Record<string, string[]> = {
@@ -165,10 +173,17 @@ export function HrSidebar({ badges, subtitle, logo, role = "hr" }: { badges?: Na
   const body = (compact: boolean) => (
     <>
       <div className="hr-side-scroll">
-        {(role === "manager" ? main.filter((l) => l.href === "/hr") : main).map((l) => renderItem(l, compact))}
+        {role === "manager"
+          ? groups[0].items.filter((l) => l.href === "/hr").map((l) => renderItem(l, compact))
+          : groups.map((g) => (
+              <div key={g.title} className="hr-side-group">
+                <p className="hr-side-title">{t(g.title)}</p>
+                {g.items.map((l) => renderItem(l, compact))}
+              </div>
+            ))}
       </div>
       <div className="hr-side-foot">
-        {(role === "manager" ? footer.filter((l) => l.href === "/hr/methodology") : footer).map((l) => renderItem(l, compact))}
+        {footer.map((l) => renderItem(l, compact))}
         <RoleToggle role={role} compact={compact} />
       </div>
     </>
