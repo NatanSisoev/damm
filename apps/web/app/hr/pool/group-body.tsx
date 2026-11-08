@@ -1,11 +1,14 @@
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
+import { useT } from "@/lib/i18n/client";
+import { poolDict } from "@/lib/i18n/hr-pool";
 
 const EVENT = "pool-fold-all";
 
 /** One table group: a clickable header row and its question rows. Folding is per viewer and per page load. */
 export function GroupBody({ header, children, count }: { header: ReactNode; children: ReactNode; count: number }) {
+  const t = useT(poolDict);
   const [open, setOpen] = useState(true);
   useEffect(() => {
     const on = (e: Event) => setOpen(!(e as CustomEvent<boolean>).detail);
@@ -21,7 +24,7 @@ export function GroupBody({ header, children, count }: { header: ReactNode; chil
               <path d="M6 3l5 5-5 5" />
             </svg>
             {header}
-            {!open && <span className="text-subtle font-normal">· {count} amagades</span>}
+            {!open && <span className="text-subtle font-normal">{t("hidden_n", { n: count })}</span>}
           </button>
         </td>
       </tr>
@@ -31,11 +34,12 @@ export function GroupBody({ header, children, count }: { header: ReactNode; chil
 }
 
 export function FoldAll() {
+  const t = useT(poolDict);
   const fire = (fold: boolean) => window.dispatchEvent(new CustomEvent(EVENT, { detail: fold }));
   return (
     <span className="flex gap-2">
-      <button type="button" className="btn btn-ghost border border-line-strong px-3 py-1.5 text-xs" onClick={() => fire(false)}>Desplega-ho tot</button>
-      <button type="button" className="btn btn-ghost border border-line-strong px-3 py-1.5 text-xs" onClick={() => fire(true)}>Plega-ho tot</button>
+      <button type="button" className="btn btn-ghost border border-line-strong px-3 py-1.5 text-xs" onClick={() => fire(false)}>{t("unfold_all")}</button>
+      <button type="button" className="btn btn-ghost border border-line-strong px-3 py-1.5 text-xs" onClick={() => fire(true)}>{t("fold_all")}</button>
     </span>
   );
 }
