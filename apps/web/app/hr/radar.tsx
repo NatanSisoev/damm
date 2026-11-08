@@ -29,19 +29,15 @@ const angle = (i: number, n: number) => -Math.PI / 2 + (i * 2 * Math.PI) / n;
 
 type Scale = { lo: number; hi: number; rings: number[]; full: boolean };
 
-/** Range from the visible values with ~0.25 padding, rounded to 0.5, at least 1 point wide, clamped to 1-5. */
+/** Outer ring is always 5. The inner edge follows the lowest visible value (~0.25 padding, rounded to 0.5, clamped to 1). */
 function scaleFor(series: RadarSeries[]): Scale {
   const vals = series.flatMap((s) => s.values).filter((v): v is number => v !== null);
   if (vals.length === 0) return { lo: 1, hi: 5, rings: [2, 3, 4, 5], full: true };
-  let lo = Math.max(1, Math.floor((Math.min(...vals) - 0.25) * 2) / 2);
-  let hi = Math.min(5, Math.ceil((Math.max(...vals) + 0.25) * 2) / 2);
-  if (hi - lo < 1) {
-    if (hi < 5) hi = Math.min(5, lo + 1);
-    if (hi - lo < 1) lo = hi - 1;
-  }
+  const hi = 5;
+  const lo = Math.min(4, Math.max(1, Math.floor((Math.min(...vals) - 0.25) * 2) / 2));
   const step = hi - lo <= 2 ? 0.5 : 1;
   const rings: number[] = [];
-  for (let v = lo + step; v <= hi + 1e-9; v += step) rings.push(Math.round(v * 2) / 2);
+  for (let v = hi; v > lo + 1e-9; v -= step) rings.unshift(v);
   return { lo, hi, rings, full: lo === 1 && hi === 5 };
 }
 

@@ -31,11 +31,11 @@ export function OnboardingForm({ codi, shifts = [], demoSkip = false }: { codi: 
         </p>
       )}
       <button disabled={pending} className="btn btn-primary h-14 w-full justify-center text-base disabled:opacity-50">
-        {t("onb_submit")}
+        {pending ? t("sending") : t("onb_submit")}
       </button>
       <p className="text-center text-sm">
         {t("onb_have_account")}{" "}
-        <Link href="/login" className="font-semibold underline">
+        <Link href="/login" className="inline-flex min-h-11 items-center font-semibold underline">
           {t("enter")}
         </Link>
       </p>

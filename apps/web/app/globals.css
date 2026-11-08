@@ -470,6 +470,10 @@ body {
   opacity: 0.4;
   cursor: not-allowed;
 }
+.emp select {
+  min-height: 44px;
+}
+
 .emp .input {
   min-height: 48px;
   font-size: 16px;

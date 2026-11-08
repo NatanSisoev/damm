@@ -21,7 +21,7 @@ Status legend:
 - `missing`: nobody has built it.
 - `blocked`: waiting on Natan's area (engine, AI, analysis, schema).
 
-Status snapshot: 7 Nov 2026, evening. `packages/engine` (Natan's) and `packages/ai` exist and are wired in; there is no separate `packages/analysis`, its jobs live in the engine (`packages/engine/src/job.ts`, `comments.ts`). Natan's engine spec is `docs/engine.md`.
+Status snapshot: 8 Nov 2026, pre-demo check (earlier rows from 7 Nov). `packages/engine` (Natan's) and `packages/ai` exist and are wired in; there is no separate `packages/analysis`, its jobs live in the engine (`packages/engine/src/job.ts`, `comments.ts`). Natan's engine spec is `docs/engine.md`.
 
 ---
 
@@ -34,14 +34,14 @@ G-§9: "Criteris excloents". These outrank everything else.
 | R-X-1 | No real personal data anywhere: code, seed, DB, slides, screenshots, LLM prompts | done | Seed is synthetic (`packages/seed`). Re-check slide screenshots before the deck. |
 | R-X-2 | No identifiable individual results on any screen or export | done | n≥10 suppression plus complementary suppression (task 17), CSV export with `suprimit` (task 8). Free text: at most 1 verbatim snippet per theme, only when the theme has ≥10 comments in scope (`hr-signals.ts`); otherwise counts only. Redaction is still regex only (`pii.ts`). |
 | R-X-3 | Human control: nothing the AI proposes takes effect without a person approving it | done | Questions need `aprovada`; recommendations need approval. Re-verify once Natan's AI calls land. Approver recorded: `recomanacio.aprovada_per` (non-personal label HR types, max 60 chars, default "HR") plus `aprovada_el`, shown as "Aprovada per X, data". `/hr/*`, `/manager/*` and `POST /api/jobs/run` sit behind `HR_ACCESS_CODE` and fail closed in production when it is unset. |
-| R-X-4 | No tokens or secrets exposed in code, git history, slides or screenshots | partial | `.env` is gitignored and `.env.example` has empty values. History scan on all branches (2026-11-08): no key, token or private key in any commit, no `.env` tracked; only a usage comment mentions `LLM_API_KEY=`. Still to do: a check of the slides and screenshots. |
+| R-X-4 | No tokens or secrets exposed in code, git history, slides or screenshots | partial | `.env` is gitignored and was never committed; `.env.example` has empty values for every key, token, VAPID key, webhook and access code in every revision (only the public LLM base URL and model name are filled). Full-history scan on all branches (`git log -p --all`, 2026-11-08 pre-demo check): no API key, token, private key or webhook URL in any commit or tracked file; the one pattern hit is the synthetic demo password in `scripts/security-demo-account.mts`, which is local seed data. Still to do: a check of the slides and screenshots. |
 
 ## 1. Challenge statement and principle
 
 | ID | Requirement | Source | Status | Evidence / gap |
 |----|-------------|--------|--------|----------------|
 | R-CH-1 | An AI-based active-listening platform that creates climate micro-surveys adapted to each collective **and moment** | D-S12, G-§3 | partial | Collective adaptation exists in the seeded pool. "Moment" (timing): the engine times extra sampling with HR "Indagar" probes (time-boxed, per segment; `startProbe`, C12). The Indagar button and progress card are on the signal page (51458d3). |
-| R-CH-2 | Representative participation **without saturating** people | D-S11, G-§3 | partial | About 2 questions a day and representativeness per collective are in place. The anti-saturation rules live in the engine (blocked). |
+| R-CH-2 | Representative participation **without saturating** people | D-S11, G-§3 | done | About 2 questions a day (hard cap 3, published needs included), no same question 4 days in a row and representativeness per collective are in place. The anti-saturation rules live in `@damm/engine` (`batch.ts`, `scheduler.ts`) and the health check verifies the cap on the demo DB. Not blocked. |
 | R-CH-3 | Answers become insights **and actions** automatically | G-§3 | done | Engine insights and alarms (`@damm/engine`) are shown on HR results, the Alarmes page and the manager view; the engine job runs after seeding and every 10 min. Themes and recommendations are produced by the AI and analysis jobs and approved by a person. |
 | R-CH-4 | Anonymity and privacy guaranteed at all times | D-S12, G-§3 | done | See section 6. |
 | R-CH-5 | **One continuous flow**, not three projects. All parts present; going deeper on one is fine | G-§3, G-§10 FAQ | done | Every step has a screen. Real AI drafting (step 2) and the analysis job (step 6) are live. |
@@ -181,7 +181,7 @@ D-S9 and D-S10. Each needs a named mitigation we can point at in the demo. "AI d
 | ID | Bias | Our mitigation | Status |
 |----|------|----------------|--------|
 | R-BIAS-1 | Coverage | Representativeness against the 1,200 synthetic population, per collective and shift | done |
-| R-BIAS-2 | Non-response | Night shift under-response shown and alarmed (`baixa_participacio`, C9); engine oversampling of under-represented groups | partial (warning banner and optional shift at signup done; oversampling blocked) |
+| R-BIAS-2 | Non-response | Night shift under-response shown and alarmed (`baixa_participacio`, C9); engine oversampling of under-represented groups | partial (warning banner, `baixa_participacio` alarm and optional shift at signup done. The engine boosts domains with many outlier answers and HR can start a time-boxed "Indagar" probe on a segment (`outlierBoost`, `startProbe`); it does not yet sample a low-response group more on its own) |
 | R-BIAS-3 | Self-selection | Push-driven continuous micro-questions rather than opt-in surveys; representativeness weighting | partial (push on publish built; no daily reminder) |
 | R-BIAS-4 | Wording | Question-quality checker (19); human approval | done (per-question warnings in the draft review, N-10) |
 | R-BIAS-5 | Social desirability | Anonymity promise plus `/privacitat`; **show the manager positivity gap** (seeded `MANAGER_BONUS`) | done (dashboard card "Responsables d'equip i la resta": manager vs other mean per domain, each side hidden under 10; demo DB shows +0.25 to +0.48 points) |
@@ -204,8 +204,8 @@ D-S9 and D-S10. Each needs a named mitigation we can point at in the demo. "AI d
 ### R-TENSION (D-S11)
 | ID | Tension | Status |
 |----|---------|--------|
-| R-TENSION-1 | Participation: representative without saturating | partial (engine) |
-| R-TENSION-2 | Personalisation: relevant per collective without designing dozens of surveys by hand | partial (AI blocked) |
+| R-TENSION-1 | Participation: representative without saturating | done (daily cap, no 4-day repeat, representativeness banner and `baixa_participacio` alarm; automatic oversampling of low-response groups is the open part, see R-BIAS-2) |
+| R-TENSION-2 | Personalisation: relevant per collective without designing dozens of surveys by hand | done (AI drafts per collective from one natural-language need, a human approves; seeded per-collective item subsets; channel adaptation is the open part, see R-FLOW-2g) |
 | R-TENSION-3 | Analysis and action: decide earlier | partial |
 
 ## 6. Privacy, trust and responsible use
@@ -225,7 +225,7 @@ G-§8 principles, D-S16 trust pillars and D-S17 golden rules, merged. All Must.
 | R-PRIV-9 | Equity: check coverage and results per collective | D-S16 | done | |
 | R-PRIV-10 | **Traceability**: record sources, criteria and decisions | D-S16 | done | `decisio` table (who, what, when, source `font`), written by every HR action on AI output; trail on `/hr/traceability` and per need. No employee data |
 | R-PRIV-11 | Synthetic data only | D-S17, G-§6 | done | |
-| R-PRIV-12 | Zero secrets | D-S17, G-§7 | partial | See R-X-4 |
+| R-PRIV-12 | Zero secrets | D-S17, G-§7 | partial | See R-X-4. Code and history are clean; slides and screenshots still to scan |
 | R-PRIV-13 | Credentials salted and hashed; recovery by one-time code | A | done | scrypt. `/settings`: change password (current one required), regenerate the recovery code (shown once), delete account (deletes `compte` and the push subscription; answers move to an anonymous tombstone account, excluded from HR counts). |
 
 ## 7. Synthetic data
@@ -251,7 +251,7 @@ G-§6.
 | R-DOM-1 | 4 collectives: Fàbriques, Logística, Comercial, Oficines (manager is a role flag) | D-S2, A | done |
 | R-DOM-2 | 6 dimensions: Benestar, Lideratge, Desenvolupament, Cultura i pertinença, Entorn i relacions, Condicions i organització | D-S5 | done |
 | R-DOM-3 | "Not every reality needs the same questions": a different item subset per collective and domain | D-S5 | done (seed) |
-| R-DOM-4 | Formats suited to each reality (little screen time on the plant, mobile in sales) | D-S2 | partial (types exist; selection is in the engine) |
+| R-DOM-4 | Formats suited to each reality (little screen time on the plant, mobile in sales) | D-S2 | done (the engine picks the day's format by Thompson sampling per collective and shift, with an HR format preference per collective that can ban a type: `thompson.ts`, `formatPref` in `batch.ts`) |
 | R-DOM-5 | Link the company initiatives (conciliació, formació, igualtat, seguretat i salut, comunicació i lideratge) to domains so a result answers "is this initiative working?" | D-S3, D-S4 | done: Panell card "Iniciatives per domini" (`InitiativesCard`, `getDomainInitiatives` in `packages/db/src/hr-initiatives.ts`) lists per domain the approved recommendations (with their Damm initiative), follow-up surveys, HR needs and sampling probes, with status and the domain score before and after (from `getTrends`, so n >= 10 and suppression hold); correlation, not cause |
 
 ## 9. Delivery checklist
@@ -264,11 +264,11 @@ G-§11 and G-§7. All Must before submitting.
 | R-DEL-2 | Human validation before publishing | done |
 | R-DEL-3 | Data is 100% synthetic | done |
 | R-DEL-4 | Minimum threshold and aggregated results only | done |
-| R-DEL-5 | No token or secret in the code or the slides | partial (history and slide scan pending) |
-| R-DEL-6 | README and `.env.example` included | done (check that the README covers setup from a clean clone) |
+| R-DEL-5 | No token or secret in the code or the slides | partial (code and full git history scanned clean 2026-11-08; slide scan pending) |
+| R-DEL-6 | README and `.env.example` included | done (README setup verified from a clean clone, 2026-11-08) |
 | R-DEL-7 | Security demo (video or screenshots) prepared | partial (`docs/security-demo.md` exists; recording is with the deck work, after 8 Nov 09:00) |
 | R-DEL-8 | A fallback video or screenshots in case the live demo fails | missing (deck work, after 8 Nov 09:00) |
-| R-DEL-9 | `main` builds and runs from a clean clone | partial (task 10 PR pending) |
+| R-DEL-9 | `main` builds and runs from a clean clone | done (2026-11-08, clone of `jan/dev` at b5c34dd, now in `main`, no `.env`: `pnpm install`, `pnpm demo-db` (82 s), engine job, health 17/17, `pnpm build` and `next start` all pass; `/`, `/join/DEMO-COM`, `/login` load. `/hr` needs `HR_ACCESS_CODE` (and `SESSION_SECRET`) in the environment, it fails closed otherwise) |
 
 ## 10. Evaluation criteria and where we score
 
