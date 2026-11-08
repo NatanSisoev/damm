@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { notFound } from "next/navigation";
 import { MIN_GROUP_SIZE } from "@damm/shared";
 import { getRecommendationDetail } from "@damm/db/hr";
+import { getLang } from "@/lib/lang";
 import { signalDetail, signalHeadline } from "@/lib/signal-text";
 import { Card, Empty, PageHeader } from "../../ui";
 import { recommendationStatus } from "../../labels";
