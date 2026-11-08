@@ -79,7 +79,7 @@ export async function buildDemo(opts: DemoOptions = {}): Promise<DemoSummary> {
   db.exec("PRAGMA journal_mode = WAL");
   db.exec(readFileSync(resolve(REPO, "packages/db/schema.sql"), "utf8"));
 
-  const world = createWorld({ seed, start: opts.start ?? "2026-08-01", days: opts.days ?? 92, participationScale: 1.6, participation: opts.participation });
+  const world = createWorld({ seed, start: opts.start ?? "2026-08-01", days: opts.days ?? 99, participationScale: 1.6, participation: opts.participation });
   const rng = createRng(`demo|${seed}`);
 
   // --- reference data, population, accounts ------------------------------------------------
@@ -159,6 +159,10 @@ export async function buildDemo(opts: DemoOptions = {}): Promise<DemoSummary> {
     return pick(r, pool.COMMENTS[q.domainId]![tone])!;
   };
 
+  /** Chance a served question is answered: by type (effort), minus a little for long text. Kept within 0.70-0.90. */
+  const BASE_RATE: Record<string, number> = { yes_no: 0.9, pair: 0.87, scale5: 0.85, scale10: 0.82, choice: 0.79, ranking: 0.74, open: 0.71 };
+  const answerRate = (q: QuestionDef) => clamp((BASE_RATE[q.type] ?? 0.8) - Math.max(0, (q.text?.length ?? 0) - 80) / 2000, 0.7, 0.9);
+
   const answerFor = (r: Rng, p: Person, item: BatchItem, t: number) => {
     const q = questions.get(item.questionId)!;
     const level = truth(p, q.domainId, t);
@@ -215,12 +219,17 @@ export async function buildDemo(opts: DemoOptions = {}): Promise<DemoSummary> {
     for (const acct of byId.keys()) {
       const p = byId.get(acct)!;
       const r = createRng(`answer|${seed}|${acct}|${t}`);
-      // Everyone answers (current assumption), at a time that fits their shift.
+      // Answers come at a time that fits the shift.
       // Hours after 05:00 UTC; the latest answer is 20:00 UTC, still the same day in Madrid all year.
       const shiftOffset = p.tornId === 2 ? 9 : p.tornId === 3 ? 12 : 3;
       now = dayStart + (shiftOffset + r() * 3) * 3_600_000;
       const batch = engine.getDailyBatch(acct);
-      const res = engine.submitAnswers(acct, batch.items.map((it) => answerFor(r, p, it, t)));
+      // Not every served question gets answered: easy ones (yes/no) about 90%, long reads and open text about 70%.
+      const answered = batch.items.filter((it) => {
+        const q = questions.get(it.questionId)!;
+        return createRng(`skip|${seed}|${acct}|${t}|${q.id}`)() < answerRate(q);
+      });
+      const res = engine.submitAnswers(acct, answered.map((it) => answerFor(r, p, it, t)));
       answers += res.accepted.length;
     }
     if (t % 15 === 0) log(`day ${t + 1}/${world.days} (${world.dates[t]}): ${answers} answers so far`);
