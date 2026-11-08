@@ -23,6 +23,7 @@ import {
   clearDomainWeight,
   clearFormatPreference,
   ConfigError,
+  ALARM_DEFAULTS,
   type SimulateInput,
   type StartProbeInput,
   type AlarmQuery,
@@ -36,7 +37,7 @@ import type { QuestionType } from "@damm/shared";
 const db = () => getDb() as unknown as Parameters<typeof listInsights>[0];
 
 export type { PoolQuestionDetail, PoolWeek, PoolSegment, Pool, PoolQuestion, PoolSummary, PoolState, PoolReason, PoolByCollective, SetPoolStatusResult, AlarmView, AlarmStatus, InsightView, InsightDetails, Viewer, ProbeView, ProbeProgress } from "@damm/engine/hr";
-export { ProbeError };
+export { ProbeError, ALARM_DEFAULTS };
 
 // Insights default to the latest period that clears the minimum group size, not the newest (possibly thin) one.
 export const hrInsights = (viewer: Viewer, q?: InsightQuery) => {
@@ -66,6 +67,21 @@ export { ConfigError };
 export type { Brain, BrainCollective, BrainDomain, BrainFormat, SimResult, SimulateInput, ConfigEntry } from "@damm/engine/hr";
 
 // Question pool inspector: every question with delivery statistics and schedule. Aggregates only.
-export const hrPool = () => listPool(db());
-export const hrSetQuestionActive = (id: number, active: boolean, by: string) => setQuestionActive(db(), id, active, by);
+// Memoised for a minute: listPool scans assignments and responses. Actions that change the pool call invalidateHrPool().
+const POOL_TTL_MS = 60_000;
+let poolMemo: { at: number; value: ReturnType<typeof listPool> } | null = null;
+export const hrPool = () => {
+  const now = Date.now();
+  if (poolMemo && now - poolMemo.at < POOL_TTL_MS) return poolMemo.value;
+  poolMemo = { at: now, value: listPool(db()) };
+  return poolMemo.value;
+};
+export const invalidateHrPool = () => {
+  poolMemo = null;
+};
+export const hrSetQuestionActive = (id: number, active: boolean, by: string) => {
+  const r = setQuestionActive(db(), id, active, by);
+  invalidateHrPool();
+  return r;
+};
 export const hrPoolQuestion = (id: number, grain: "week" | "day" = "week") => getPoolQuestion(db(), id, { grain });

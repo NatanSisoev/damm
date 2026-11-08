@@ -57,7 +57,7 @@ export async function deleteAccountAction(_prev: SettingsState, formData: FormDa
   redirect("/join?compte=esborrat");
 }
 
-/** Stores this device's push subscription for the signed-in account (one device per account). */
+/** Stores this device's push subscription for the signed-in account (an account can have several devices). */
 export async function savePushSubscriptionAction(sub: { endpoint?: string; keys?: { p256dh?: string; auth?: string } }): Promise<{ ok: boolean }> {
   const compteId = await getCompteId();
   if (!compteId) return { ok: false };
@@ -69,9 +69,10 @@ export async function savePushSubscriptionAction(sub: { endpoint?: string; keys?
   return { ok: true };
 }
 
-export async function deletePushSubscriptionAction(): Promise<{ ok: boolean }> {
+/** Turns push off on this device only (the endpoint); without one, every device of the account. */
+export async function deletePushSubscriptionAction(endpoint?: string): Promise<{ ok: boolean }> {
   const compteId = await getCompteId();
   if (!compteId) return { ok: false };
-  deletePushSubscription(compteId);
+  deletePushSubscription(compteId, typeof endpoint === "string" && endpoint ? endpoint : undefined);
   return { ok: true };
 }

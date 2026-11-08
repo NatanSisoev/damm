@@ -17,7 +17,7 @@ export default async function HrLoginPage({ searchParams }: { searchParams: Prom
       <p className="text-[13px] text-muted">{t("login_intro")}</p>
       <form action={loginAction} className="space-y-3">
         <input type="hidden" name="next" value={next ?? "/hr"} />
-        <label className="block text-xs font-medium text-subtle" htmlFor="code">{t("login_code")}</label>
+        <label className="block text-xs font-semibold text-subtle" htmlFor="code">{t("login_code")}</label>
         <input id="code" name="code" type="password" autoComplete="off" required className="input w-full" />
         {error && <p role="alert" className="text-[13px] text-warn">{error === "unconfigured" ? t("login_unconfigured") : t("login_error")}</p>}
         <button className="btn btn-primary w-full">{t("login_submit")}</button>

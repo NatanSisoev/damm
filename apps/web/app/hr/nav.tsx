@@ -5,10 +5,10 @@ import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { useT } from "@/lib/i18n/client";
 import { hrDict, type HrKey } from "@/lib/i18n/hr";
+import { Wordmark } from "@/app/wordmark";
 import type { ViewRole } from "@/lib/view-role";
 import { setViewRoleAction } from "./view-role-action";
 
-export type NavBadges = { alarms?: { critical: number; total: number }; recommendations?: number };
 
 type Item = { href: string; label: HrKey; icon: ReactNode };
 
@@ -27,6 +27,7 @@ const icons = {
   recs: svg(<><path d="M9 18h6M10 21h4M12 3a6 6 0 00-3.5 10.9c.7.6 1 1.3 1 2.1h5c0-.8.3-1.5 1-2.1A6 6 0 0012 3z" /></>),
   pool: svg(<><rect x="4" y="4" width="16" height="4" /><rect x="4" y="10" width="16" height="4" /><rect x="4" y="16" width="16" height="4" /></>),
   method: svg(<><circle cx="12" cy="12" r="9" /><path d="M9.5 9.5a2.5 2.5 0 114 2c-.9.6-1.5 1-1.5 2M12 17h.01" /></>),
+  trace: svg(<><path d="M8 4h9l3 3v13H8z" /><path d="M5 8v12h3M11 11h6M11 15h6" /></>),
   brain: svg(<><circle cx="12" cy="12" r="3" /><path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M18.4 5.6l-2.8 2.8M8.4 15.6l-2.8 2.8" /></>),
   comments: svg(<><path d="M4 5h16v11H9l-5 4z" /><path d="M8 9h8M8 12h5" /></>),
   settings: svg(<><path d="M4 7h10M18 7h2M4 17h4M12 17h8" /><circle cx="16" cy="7" r="2" /><circle cx="10" cy="17" r="2" /></>),
@@ -59,6 +60,7 @@ const groups: { title: HrKey; items: Item[] }[] = [
 ];
 
 const footer: Item[] = [
+  { href: "/hr/traceability", label: "nav_trace", icon: icons.trace },
   { href: "/hr/methodology", label: "nav_method", icon: icons.method },
   { href: "/hr/settings", label: "nav_settings", icon: icons.settings },
 ];
@@ -102,7 +104,7 @@ function RoleToggle({ role, compact }: { role: ViewRole; compact: boolean }) {
   );
 }
 
-export function HrSidebar({ badges, subtitle, logo, role = "hr" }: { badges?: NavBadges; subtitle: string; logo: ReactNode; role?: ViewRole }) {
+export function HrSidebar({ subtitle, logo, role = "hr" }: { subtitle: string; logo: ReactNode; role?: ViewRole }) {
   const path = usePathname();
   const t = useT(hrDict);
   // Collapsed state lives in localStorage (per viewer); server and first render use the expanded layout.
@@ -147,34 +149,20 @@ export function HrSidebar({ badges, subtitle, logo, role = "hr" }: { badges?: Na
     };
   }, [open, close]);
 
-  const badgeFor = (href: string) => {
-    if (href === "/hr/signals" && badges?.alarms && badges.alarms.total > 0)
-      return { n: badges.alarms.total, warn: badges.alarms.critical > 0, title: t("nav_critical", { n: badges.alarms.critical }), sr: t("nav_open_alarms") };
-    if (href === "/hr/recommendations" && badges?.recommendations)
-      return { n: badges.recommendations, warn: false, title: t("nav_pending_decision"), sr: t("nav_pending") };
-    return null;
-  };
-
   const renderItem = (l: Item, compact: boolean) => {
     const active = (l.href === "/hr" ? path === "/hr" : path.startsWith(l.href)) || (alias[l.href] ?? []).some((p) => path.startsWith(p));
-    const b = badgeFor(l.href);
     const label = t(l.label);
     return (
       <Link
         key={l.href}
         href={l.href}
         aria-current={active ? "page" : undefined}
-        aria-label={compact ? `${label}${b ? `, ${b.n} ${b.sr}` : ""}` : undefined}
+        aria-label={compact ? label : undefined}
         title={compact ? label : undefined}
         className="hr-side-item"
       >
         <span className="hr-side-icon">{l.icon}</span>
         <span className="hr-side-label">{label}</span>
-        {b && (
-          <span className={`badge num hr-side-badge ${b.warn ? "badge-warn" : ""}`} title={b.title}>
-            {b.n}
-          </span>
-        )}
       </Link>
     );
   };
@@ -221,7 +209,7 @@ export function HrSidebar({ badges, subtitle, logo, role = "hr" }: { badges?: Na
           <div className="hr-scrim" onClick={close} aria-hidden="true" />
           <nav id="hr-drawer" ref={drawerRef} aria-label={t("sections")} role="dialog" aria-modal="true" className="hr-drawer">
             <div className="hr-drawer-head">
-              <span className="text-[13px] font-bold">Escolta activa</span>
+              <Wordmark className="h-4 w-auto" />
               <button type="button" className="hr-icon-btn" aria-label={t("nav_close_menu")} onClick={close}>
                 {svg(<path d="M6 6l12 12M18 6L6 18" />)}
               </button>

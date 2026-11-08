@@ -19,6 +19,37 @@ What changed and why.
 
 ---
 
+## 2026-11-08: decision trail, table `decisio` (Jan)
+
+`packages/db/schema.sql`: new table `decisio` (id, created_at, entity, entity_id, necessitat_id, action, from_state, to_state, font, actor, subject, text_original, text_final) with two indexes, created idempotently by `getDb()` (`ensureDecisionTable`). One row per human decision on AI output: approve, reject, edit or regenerate a drafted question, approve or dismiss a recommendation, publish or close a need, alarm status changes, retire or restore of a bank question. `actor` is an HR label (`hr-demo`), never an employee; there is no `compte_id`. Provenance is stored per decision in `decisio.font` (`ai_draft`, `ai_redraft`, `ai_followup`, `ai_recommendation`, `hr_edit`, `engine_alarm`, `engine_pool`, `hr_need`); no `font` columns were added to `pregunta` or `recomanacio`. `@damm/db/hr` exports `recordDecision`, `listDecisions`, `decisionSummary`, `alarmInfo`, `questionInfo`; the repository functions take an optional `actor`. UI: `/hr/traceability` and a folded trail on each need. `pnpm demo-db` seeds a few synthetic decisions.
+
+Action items:
+- [x] Jan: schema, migration, repository writes, HR actions, UI, demo seed. (done 2026-11-08)
+- [ ] Natan: after sync, run `pnpm demo-db`. Engine functions that change an alarm or a bank question state are recorded from `apps/web/app/hr/actions.ts`; if you add another human-triggered state change in the engine, call `recordDecision` from the web action.
+
+## 2026-11-08: conditional follow-up questions, `pregunta.followup_of` / `followup_when` (Jan)
+
+`packages/db`: two nullable columns on `pregunta`, created idempotently by `getDb()` (`ensureFollowupColumns`): `followup_of` (parent question id) and `followup_when` (`'low'` = scale5/scale10 raw value <= 2, `'no'` = yes_no answered no). The link lives on the **child** open question. Children are never part of the daily batch, a campaign set or the pool list (the engine filters `followup_of IS NULL`) and do not count toward the ~2/day cap. `packages/shared`: `FollowupWhen`, `Pregunta.followupOf/followupWhen`, `PoolFollowup`, `PostResponsesResult`. `POST /api/responses` now answers 200 with `{ followups: PoolFollowup[] }` (translated, `parentId` set) when a stored answer triggers one, and still 204 otherwise. A follow-up answer goes to `resposta` as an open answer with the comment redacted as usual. `@damm/db/hr`: `DraftInput.followup`, `getDraftFollowup`, `removeDraftFollowup`; approving or discarding a draft question cascades to its draft follow-up. `@damm/ai`: `draftQuestionSchema.followup` (optional). Engine: `loadBankFollowups` links 5 bank questions in the demo DB.
+
+Action items:
+- [x] Jan: schema, connection, shared types, engine, API, employee UI, AI drafting, HR draft review. (done 2026-11-08)
+- [ ] Natan: after sync, run `pnpm demo-db` (calls `loadBankFollowups`). If you add a query that lists `pregunta` for serving, add `followup_of IS NULL` (use `notChild` from `store.ts`). Reload-recovery of a pending follow-up through `GET /api/pool/next` is not implemented (it is skippable).
+
+## 2026-11-08: index `idx_assignment_pregunta` (Jan)
+
+`packages/db`: new index `CREATE INDEX IF NOT EXISTS idx_assignment_pregunta ON assignment(pregunta_id, day)` in `schema.sql`, and created idempotently by `listPool` (`packages/engine/src/pool.ts`) for existing databases. It speeds up the HR pool inspector (`listPool`, which groups assignments by question). No table or column change, no API change.
+
+Action items:
+- [x] Jan: schema, index creation in listPool. (done 2026-11-08)
+- [ ] Natan: nothing required. If you rebuild the demo DB with your own schema path, the index comes from `schema.sql` or from `listPool` on first call.
+
+## 2026-11-08: `TrendCell.confidence' for chart metric panels (Jan)
+
+`@damm/db/hr`: `TrendCell` gains `confidence: number | null` (0-100 from `agregat.confidence`, null when suppressed). `getTrends` and `getShiftTrend` fill it. `TrendChart` uses it, with `consensus`, for its optional Consensus and Confidence panels; a polarisation alarm opens the consensus panel by default and a low-confidence alarm opens the confidence panel. No schema change.
+
+Action items:
+- [x] Jan: repository field, chart panels and toggles, alarm defaults, copy. (done 2026-11-08)
+
 ## 2026-11-08: HR alarm push, `hr_push_subscription` (Jan)
 
 HR browsers can subscribe to web push on `/hr/settings`. When the analysis job (`POST /api/jobs/run`) creates new open warning or critical alarms for HR, every subscribed HR browser gets one notification in its saved language, linking to `/hr/signals`.
@@ -243,7 +274,7 @@ Action items:
 ## C6 · 2026-11-07 · Natan · Demo database, question bank, simulator
 
 No schema or API change.
-- **Demo database:** `pnpm --filter @damm/engine run demo` builds `data/demo.db` with three months of synthetic answers and planted stories, so every insight card and most alarm types have real data. See [engine-integration.md](engine-integration.md), "Demo data".
+- **Demo database:** `pnpm --filter @damm/engine run demo` builds `data/demo.db` with synthetic answers (now 1 Aug to 7 Nov 2026) and planted stories, so every insight card and most alarm types have real data. See [engine-integration.md](engine-integration.md), "Demo data".
 - **Question bank:** `packages/engine/fixtures/question-bank.json` holds 163 English sample questions in every type, loadable with `loadQuestionBank(db)`.
 - **Simulator:** `packages/engine/sim/` checks the engine against known ground truth.
 - **Engine speed:** segment statistics are now cached per collective per day, so batch requests no longer scan every person.
@@ -452,9 +483,30 @@ Additive and backward compatible. Catalan stays canonical in the source column; 
 - Narrative insights may carry `detail.i18n.{es,en}.{summary,highlights[]}`; `getNarrative(collective, lang)` in `apps/web/app/hr/analytics.ts` applies it.
 - Engine hooks, no behaviour change when unused: `buildDemo` options `participation` (per `collectiuId:tornId` account share) and `commentPools` (comment language per account); `sim/world.ts` takes the participation override.
 - Engine health check: the "daily batches" check stays strict (at most the daily cap per person per day, needs included, C23). The looser variant from the demo-db branch was dropped.
-- `pnpm demo-db` builds the one demo DB (`data/demo.db`): 3 months (Aug-Oct 2026), 638 accounts in 4 collectives, 6 domains, every segment n >= 10, nothing suppressed, ca/es/en content. See `AGENTS.md`.
+- `pnpm demo-db` builds the one demo DB (`data/demo.db`): 99 days (1 Aug to 7 Nov 2026), 638 accounts in 4 collectives, 6 domains, every segment n >= 10, nothing suppressed, ca/es/en content. See `AGENTS.md`.
 
 Action items:
 - [ ] Natan: review the two engine hooks (`sim/world.ts`, `demo/build-demo.ts`); keep them or move them where you prefer.
 - [ ] Natan (optional): when the engine writes themes, recommendations or signal text, also write es/en rows to `traduccio` (or store keys instead of sentences).
 - [x] Jan: schema, overlay, HR/manager pages, build script. (done 2026-11-08)
+
+## 2026-11-08: Archive resolved and dismissed alarms, reopen dismissed ones (Jan)
+
+Additive and backward compatible.
+
+- `senyal.archived_at TEXT` (new nullable column, added on boot by `ensureAlarmArchiveColumn`): set when HR archives a resolved or dismissed alarm. Archived alarms leave the Resolved and Dismissed tabs and show under Archived on `/hr/signals`. Status is unchanged.
+- `reopenDismissedAlarm(id)` in `@damm/db/hr` sets a dismissed alarm back to `open` and clears `archived_at`. It writes the DB directly; the engine's `ALARM_TRANSITIONS` still has no move out of `dismissed`.
+
+Action items:
+- [ ] Natan (optional): if the engine should own reopening, add `dismissed -> open` to `ALARM_TRANSITIONS` and we switch the action to `setAlarmStatus`.
+- [x] Jan: column, repository functions, alarms page tabs and buttons. (done 2026-11-08)
+
+## 2026-11-08: Push subscriptions per device, not per account (R-FLOW-4) (Jan)
+
+Backward compatible; old databases are rebuilt on first use by `ensurePushPerDevice` in the employee repository (rows kept).
+
+- `push_subscripcio` is keyed by `endpoint` (one row per device) instead of `compte_id`, with an index on `compte_id`. An account can now get notifications on several devices (phone and laptop); before, the device opened last replaced the other.
+- `savePushSubscription` upserts on `endpoint` (a device signed in with another account moves to it). `deletePushSubscription(compteId, endpoint?)` removes one device when given the endpoint (push toggle off), all of the account's devices otherwise (logout).
+
+Action items:
+- [x] Jan: schema, migration, repository, settings action and push toggle. (done 2026-11-08)

@@ -1,8 +1,9 @@
 import Link from "next/link";
+import { alarmReason } from "@/lib/alarm-reason";
 import { Comments, People } from "../../glyphs";
 import { notFound } from "next/navigation";
-import { MIN_GROUP_SIZE, type Lang } from "@damm/shared";
-import { getSignalDetail, type SignalTimelineStep } from "@damm/db/hr";
+import { MIN_GROUP_SIZE } from "@damm/shared";
+import { advanceSignalStatus, getSignalDetail, type SignalTimelineStep } from "@damm/db/hr";
 
 import { hrListProbes, type ProbeView } from "@/lib/hr-engine";
 import { Card, Empty, PageHeader } from "../../ui";
@@ -16,11 +17,12 @@ import { startProbeAction, stopProbeAction } from "./actions";
 import { recommendationStatus } from "../../labels";
 import { ChangeBadge, Sparkline } from "../../trend";
 import { TrendChart } from "../../trend-chart";
-import { STATUS_ORDER, SignalBadges, statusLabel } from "../../signal-labels";
-import { signalDetail, signalHeadline } from "@/lib/signal-text";
+import { SignalBadges, statusLabel } from "../../signal-labels";
+import { signalHeadline } from "@/lib/signal-text";
+import { SignalSummary } from "@/components/signal-trend-line";
 import { getT, getTL } from "@/lib/i18n/server";
 import { hrResultsDict, type HrResultsKey, type HrResultsT } from "@/lib/i18n/hr-results";
-import { collectiveLabel, domainLabel, shiftLabel } from "@/lib/i18n/names";
+import { domainLabel } from "@/lib/i18n/names";
 import { numD } from "@/lib/i18n/num";
 import { signalsDict } from "@/lib/i18n/hr-signals";
 import { rich } from "@/lib/i18n/rich";
@@ -52,43 +54,50 @@ function timelineText(s: SignalTimelineStep, t: HrResultsT): { label: string; de
   return { label, detail };
 }
 
-function Timeline({ steps, t }: { steps: SignalTimelineStep[]; t: HrResultsT }) {
+/** Where the first unfinished step is done on this page (no follow-up card yet: the recommendations, where a follow-up starts). */
+function activeTarget(steps: SignalTimelineStep[], hasFollowUps: boolean): { index: number; href: string; label: HrResultsKey } | null {
+  const index = steps.findIndex((s) => s.state !== "done");
+  const step = index >= 0 ? NEXT[steps[index].key] : undefined;
+  if (!step) return null;
+  return { index, label: step.label, href: !hasFollowUps && step.href === "#seguiment" ? "#recomanacions" : step.href };
+}
+
+function Timeline({ steps, t, active }: { steps: SignalTimelineStep[]; t: HrResultsT; active: ReturnType<typeof activeTarget> }) {
   return (
     <ol className="grid gap-4 sm:grid-cols-4">
       {steps.map((s, i) => {
         const tx = timelineText(s, t);
-        const next = s.state !== "done" ? NEXT[s.key] : undefined;
+        const done = s.state === "done";
+        const isActive = active?.index === i;
+        // Steps after the active one wait for it: greyed out, not clickable.
+        const locked = !done && !isActive;
         const body = (
           <>
             <span
               className={`num mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full border text-xs font-semibold ${
-                s.state === "done"
-                  ? "border-good bg-good-soft text-good"
-                  : next
-                    ? "border-line-strong bg-surface-muted text-subtle group-hover:border-ink group-hover:text-ink"
-                    : "border-line-strong bg-surface-muted text-subtle"
+                done ? "border-good bg-good-soft text-good" : isActive ? "loop-num-active" : "border-line-strong bg-surface-muted text-subtle"
               }`}
               aria-hidden
             >
-              {s.state === "done" ? "✓" : i + 1}
+              {done ? "✓" : i + 1}
             </span>
             <div>
-              <div className={`text-[13px] font-medium ${next ? "group-hover:underline" : ""}`}>
+              <div className={`text-[13px] font-semibold ${isActive ? "group-hover:underline" : ""}`}>
                 {tx.label}
-                {next && <span aria-hidden className="ml-1 text-subtle">›</span>}
+                {isActive && <span aria-hidden className="ml-1 text-subtle">›</span>}
               </div>
               <div className="text-xs text-subtle">
-                {s.state === "done" ? t("sd_done") : t("sd_pending")} · {tx.detail}
+                {done ? t("sd_done") : isActive ? t("sd_next_step") : t("sd_pending")} · {tx.detail}
               </div>
             </div>
           </>
         );
         return (
-        <li key={s.key} className="sm:border-l sm:border-line sm:pl-4 sm:first:border-l-0 sm:first:pl-0">
-          {next ? (
-            <Link href={next.href} title={t(next.label)} className="group flex items-start gap-3">{body}</Link>
+        <li key={s.key} className={`sm:border-l sm:border-line sm:pl-4 sm:first:border-l-0 sm:first:pl-0 ${locked ? "loop-step-locked" : ""}`}>
+          {isActive && active ? (
+            <Link href={active.href} title={t(active.label)} className="group flex items-start gap-3" aria-current="step">{body}</Link>
           ) : (
-            <div className="flex items-start gap-3">{body}</div>
+            <div className="flex items-start gap-3" title={locked ? t("sd_locked") : undefined} aria-disabled={locked || undefined}>{body}</div>
           )}
         </li>
         );
@@ -106,25 +115,30 @@ function recTitle(r: { titol?: string | null; text: string }): string {
 
 const pct = (v: number) => `${Math.round(v <= 1 ? v * 100 : v)}%`;
 
-function ProbeCard({ t, lang, probes, signal, error }: { t: HrResultsT; lang: Lang; probes: ProbeView[]; signal: { id: number; collectiuId: number | null; tornId: number | null; dominiId: number | null; collectiu: string | null; domini: string | null }; error?: string }) {
+function ProbeCard({ t, probes, signal, error }: { t: HrResultsT; probes: ProbeView[]; signal: { id: number; collectiuId: number | null; tornId: number | null; dominiId: number | null; collectiu: string | null; domini: string | null }; error?: string }) {
   const active = probes.filter((p) => p.status === "active");
   const canProbe = signal.collectiuId !== null && signal.dominiId !== null;
   return (
     <Card id="indagar" title={t("sd_probe")} meta={t("sd_probe_meta")}>
-      <p className="mb-3 text-[13px] text-muted">
-        {t("sd_probe_p", { domain: signal.domini ? domainLabel(signal.domini, lang) : t("sd_probe_this") })}
-      </p>
       {error && <p role="alert" className="mb-3 rounded-lg border border-line-strong px-3 py-2 text-[13px]">{error}</p>}
       {active.length === 0 && (
-        <form action={startProbeAction}>
+        <form action={startProbeAction} className="flex items-end gap-3">
           <input type="hidden" name="signal" value={signal.id} />
           <input type="hidden" name="collectiu" value={signal.collectiuId ?? ""} />
           <input type="hidden" name="torn" value={signal.tornId ?? ""} />
           <input type="hidden" name="domini" value={signal.dominiId ?? ""} />
+          <label className="text-xs text-muted">
+            {t("sd_probe_mult")}
+            <input type="number" name="boost" defaultValue={2} min={1.5} max={10} step={0.5} required disabled={!canProbe} className="input num mt-1 block w-24" />
+          </label>
+          <label className="text-xs text-muted">
+            {t("sd_probe_days")}
+            <input type="number" name="days" defaultValue={14} min={1} max={90} step={1} required disabled={!canProbe} className="input num mt-1 block w-24" />
+          </label>
           <button className="btn btn-primary" disabled={!canProbe}>{t("sd_probe_btn")}</button>
-          {!canProbe && <span className="ml-3 text-xs text-subtle">{t("sd_probe_need")}</span>}
         </form>
       )}
+      {active.length === 0 && !canProbe && <p className="mt-2 text-xs text-subtle">{t("sd_probe_need")}</p>}
       {probes.length > 0 && (
         <ul className={`${active.length === 0 ? "mt-4" : ""} space-y-3`}>
           {probes.map((p) => (
@@ -164,17 +178,30 @@ export default async function SignalPage({ params, searchParams }: { params: Pro
   const { t, lang } = await getTL(hrResultsDict);
   const ts = await getT(signalsDict);
   const { probeError } = await searchParams;
-  const detail = Number.isInteger(Number(id)) ? getSignalDetail(Number(id), lang) : null;
+  let detail = Number.isInteger(Number(id)) ? getSignalDetail(Number(id), lang) : null;
   if (!detail) notFound();
-  const { signal, periodes, trend, trendScope, themes, hiddenThemes, recommendations, followUps, timeline } = detail;
+  // First view by HR: an open signal becomes acknowledged (forward only).
+  if (detail.signal.status === "open" && advanceSignalStatus(detail.signal.id, "acknowledged")) {
+    detail = getSignalDetail(detail.signal.id, lang) ?? detail;
+  }
+  const { signal, periodes, trend, themes, hiddenThemes, recommendations, followUps, timeline } = detail;
+  // A signal about one domain shows only that domain's line; the other domains are noise here.
+  const related = trend.filter((r) => r.related);
+  const shownTrend = related.length > 0 ? related : trend;
   const probes = hrListProbes(signal.id);
+  const commentsHref = (key: string) => `/hr/comments?tema=${encodeURIComponent(key)}&per=${signal.periode}${signal.collectiuId != null ? `&col=${signal.collectiuId}` : ""}`;
+  const emergentTheme = signal.tipus === "emergent" ? themes.find((th) => th.emergent) : undefined;
+  const active = activeTarget(timeline, followUps.length > 0);
+  // The card where the active step is done gets a red edge and a "next step" tag.
+  const stepCard = (anchor: string) => (active?.href === `#${anchor}` ? "loop-target" : "");
+  const stepTag = (anchor: string) => (active?.href === `#${anchor}` ? <span className="loop-target-tag">{t("sd_next_step")}</span> : null);
 
   return (
     <>
       <PageHeader
         title={signalHeadline(signal, lang)}
-        subtitle={signalDetail(signal, lang)}
-        actions={<Link href="/hr/signals" className="btn">{t("sd_back")}</Link>}
+        subtitle={<SignalSummary s={signal} lang={lang} />}
+        actions={<>{emergentTheme && <Link href={commentsHref(emergentTheme.key)} className="btn btn-primary">{t("sd_view_comments")}</Link>}<Link href="/hr/signals" className="btn">{t("sd_back")}</Link></>}
       />
 
       <div className="mb-6 flex flex-wrap items-center gap-2">
@@ -185,27 +212,43 @@ export default async function SignalPage({ params, searchParams }: { params: Pro
 
       </div>
 
+      {signal.severity && alarmReason({ tipus: signal.tipus, descripcio: signal.descripcio, severity: signal.severity, n: signal.n, confidence: signal.confianca }, lang) && (
+        <p className="-mt-3 mb-6 text-xs text-subtle">{alarmReason({ tipus: signal.tipus, descripcio: signal.descripcio, severity: signal.severity, n: signal.n, confidence: signal.confianca }, lang)}</p>
+      )}
+
       <div className="mb-6 flex flex-wrap items-center gap-2">
-        <span className="text-xs font-medium text-subtle">{t("sd_status_lbl")}</span>
-        {STATUS_ORDER.map((st) => (
-          <form key={st} action={setSignalStatusAction}>
+        <span className="text-xs font-semibold text-subtle">{t("sd_status_lbl")}</span>
+        <span className="badge badge-accent">{statusLabel(signal.status ?? "open", lang)}</span>
+        {signal.status === "resolved" || signal.status === "dismissed" ? (
+          <form action={setSignalStatusAction}>
             <input type="hidden" name="id" value={signal.id} />
-            <input type="hidden" name="status" value={st} />
-            <button className={`btn ${signal.status === st ? "btn-primary" : ""}`} disabled={signal.status === st} aria-pressed={signal.status === st}>
-              {statusLabel(st, lang)}
-            </button>
+            <input type="hidden" name="status" value="acknowledged" />
+            <button className="btn">{t("sd_st_reopen")}</button>
           </form>
-        ))}
+        ) : (
+          <>
+            <form action={setSignalStatusAction}>
+              <input type="hidden" name="id" value={signal.id} />
+              <input type="hidden" name="status" value="resolved" />
+              <button className="btn btn-primary" disabled={signal.status !== "action_linked"} title={signal.status !== "action_linked" ? t("sd_st_resolve_hint") : undefined}>{t("sd_st_resolve")}</button>
+            </form>
+            <form action={setSignalStatusAction}>
+              <input type="hidden" name="id" value={signal.id} />
+              <input type="hidden" name="status" value="dismissed" />
+              <button className="btn">{t("sd_st_dismiss")}</button>
+            </form>
+          </>
+        )}
       </div>
 
-      <Card title={t("sd_flow")} className="mb-6">
-        <Timeline steps={timeline} t={t} />
+      <Card className="mb-6">
+        <Timeline steps={timeline} t={t} active={active} />
       </Card>
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
         <div className="space-y-6">
           <Card
-            title={t("sd_evo", { scope: trendScope.split(" · ").map((x) => (x === "Tots" ? t("sd_all") : collectiveLabel(x, lang) !== x ? collectiveLabel(x, lang) : shiftLabel(x, lang))).join(" · ") })}
+            title={t("sd_tl_senyal")}
             meta={t("sd_score010")}
             flush
           >
@@ -213,9 +256,9 @@ export default async function SignalPage({ params, searchParams }: { params: Pro
               <div className="px-5 pb-5"><Empty>{t("sd_trend_empty")}</Empty></div>
             ) : (
               <>
-                <TrendChart periodes={periodes} rows={trend} highlight={trend.filter((r) => r.related).map((r) => r.domini)} scale="0-10" />
+                <TrendChart periodes={periodes} rows={shownTrend} highlight={shownTrend.filter((r) => r.related).map((r) => r.domini)} scale="0-10" defaultMetrics={signal.tipus === "polarisation" ? ["consensus"] : signal.tipus === "low_confidence" ? ["confidence"] : []} />
                 <details className="border-t border-line">
-                  <summary className="cursor-pointer px-5 py-3 text-xs font-medium text-subtle">{t("rs_show_table")}</summary>
+                  <summary className="cursor-pointer px-5 py-3 text-xs font-semibold text-subtle">{t("rs_show_table")}</summary>
                   <div className="overflow-x-auto">
                 <table className="table min-w-[32rem]">
                     <thead>
@@ -227,9 +270,9 @@ export default async function SignalPage({ params, searchParams }: { params: Pro
                       </tr>
                     </thead>
                     <tbody>
-                      {trend.map((r) => (
+                      {shownTrend.map((r) => (
                         <tr key={r.domini} className={r.related ? "bg-accent-soft" : ""}>
-                          <td className="font-medium">
+                          <td className="font-semibold">
                             {domainLabel(r.domini, lang)}
                             {r.related && <span className="badge badge-accent ml-2">{t("sd_related")}</span>}
                           </td>
@@ -265,6 +308,31 @@ export default async function SignalPage({ params, searchParams }: { params: Pro
         </div>
 
         <div className="space-y-6">
+          <Card id="recomanacions" className={stepCard("recomanacions")} title={<>{t("sd_tl_recomanacio")}{stepTag("recomanacions")}</>} meta={<span className="num">{recommendations.length}</span>}>
+            {recommendations.length === 0 ? (
+              signal.dominiId != null ? (
+                <form action={generateRecommendationsAction}>
+                  <input type="hidden" name="signal" value={signal.id} />
+                  <GenerateButton variant="panel" />
+                </form>
+              ) : (
+                <Empty>{ts("no_recs_domain")}</Empty>
+              )
+            ) : (
+              <ul className="divide-y divide-line">
+                {recommendations.map((r) => (
+                  <li key={r.id} className={r.estat === "descartada" ? "opacity-60" : ""}>
+                    <Link href={`/hr/recommendations/${r.id}`} className="group flex items-center gap-3 py-2.5">
+                      <span className="min-w-0 flex-1 truncate text-[13px] font-medium group-hover:underline">{recTitle(r)}</span>
+                      <span className={`badge shrink-0 ${recommendationStatus(r.estat, lang).cls}`}>{recommendationStatus(r.estat, lang).label}</span>
+                      <span aria-hidden className="text-subtle">›</span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Card>
+
           <Card fold title={<>{t("sd_themes")} <span className="num text-xs font-normal text-subtle">{themes.length}</span></>}>
             {themes.length === 0 ? (
               <Empty>{t("sd_themes_empty", { min: MIN_GROUP_SIZE })}</Empty>
@@ -273,9 +341,9 @@ export default async function SignalPage({ params, searchParams }: { params: Pro
                 {themes.map((th) => (
                   <li key={th.id} className="rounded-lg border border-line p-3">
                     <div className="mb-1.5 flex flex-wrap items-center gap-2">
-                      <h3 className="font-medium">{th.etiqueta}</h3>
+                      <h3 className="font-semibold">{th.etiqueta}</h3>
                       {th.emergent && <span className="badge badge-warn">{t("rs_emergent")}</span>}
-                      <span className="num ml-auto text-xs text-subtle"><Comments n={th.n} /></span>
+                      <Link href={commentsHref(th.key)} className="num ml-auto text-xs text-accent-ink hover:underline"><Comments n={th.n} /> →</Link>
 
                     </div>
                     {th.resum && <p className="text-[13px] text-muted">{th.resum} <span className="text-xs text-subtle">{t("sd_ai_summary")}</span></p>}
@@ -296,45 +364,10 @@ export default async function SignalPage({ params, searchParams }: { params: Pro
             </p>
           </Card>
 
-          <Card id="recomanacions" title={t("sd_recs")} meta={<span className="num">{recommendations.length}</span>}>
-            {recommendations.length === 0 ? (
-              signal.dominiId != null ? (
-                <div className="gen-panel">
-                  <span className="gen-panel-mark" aria-hidden>
-                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" strokeLinecap="round"><path d="M8 1.5 9.6 6.4 14.5 8 9.6 9.6 8 14.5 6.4 9.6 1.5 8 6.4 6.4Z" /></svg>
-                  </span>
-                  <h3>{ts("no_recs_title")}</h3>
-                  <p>{ts("no_recs_text")}</p>
-                  <form action={generateRecommendationsAction}>
-                    <input type="hidden" name="signal" value={signal.id} />
-                    <GenerateButton variant="panel" />
-                  </form>
-                  <small>{ts("no_recs_note")}</small>
-                </div>
-              ) : (
-                <Empty>{ts("no_recs_domain")}</Empty>
-              )
-            ) : (
-              <ul className="divide-y divide-line">
-                {recommendations.map((r) => (
-                  <li key={r.id} className={r.estat === "descartada" ? "opacity-60" : ""}>
-                    <Link href={`/hr/recommendations/${r.id}`} className="group flex items-center gap-3 py-2.5">
-                      <span className="min-w-0 flex-1 truncate text-[13px] font-medium group-hover:underline">{recTitle(r)}</span>
-                      <span className={`badge shrink-0 ${recommendationStatus(r.estat, lang).cls}`}>{recommendationStatus(r.estat, lang).label}</span>
-                      <span aria-hidden className="text-subtle">›</span>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </Card>
+          <ProbeCard t={t} probes={probes} signal={signal} error={probeError} />
 
-          <ProbeCard t={t} lang={lang} probes={probes} signal={signal} error={probeError} />
-
-          <Card id="seguiment" title={t("sd_follow")}>
-            {followUps.length === 0 ? (
-              <Empty>{t("sd_follow_empty")}</Empty>
-            ) : (
+          {followUps.length > 0 && (
+          <Card id="seguiment" className={stepCard("seguiment")} title={<>{t("sd_follow")}{stepTag("seguiment")}</>}>
               <ul className="space-y-4">
                 {followUps.map((f) => (
                   <li key={f.necessitatId} className="rounded-lg border border-line p-4">
@@ -342,7 +375,7 @@ export default async function SignalPage({ params, searchParams }: { params: Pro
                       <span className={`badge ${f.published ? "badge-good" : "badge-warn"}`}>{f.published ? t("sd_published") : t("sd_unpublished")}</span>
                       <Link href="/hr/needs" className="ml-auto text-xs text-accent-ink hover:underline">{t("sd_review_pub")}</Link>
                     </div>
-                    <p className="text-[13px] font-medium">{f.textNl}</p>
+                    <p className="text-[13px] font-semibold">{f.textNl}</p>
                     {f.questions.length > 0 ? (
                       <ul className="mt-2 list-disc space-y-1 pl-5 text-[13px] text-muted">
                         {f.questions.map((q) => (
@@ -361,8 +394,8 @@ export default async function SignalPage({ params, searchParams }: { params: Pro
                   </li>
                 ))}
               </ul>
-            )}
           </Card>
+          )}
         </div>
       </div>
     </>

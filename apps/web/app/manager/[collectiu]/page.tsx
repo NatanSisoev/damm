@@ -23,7 +23,8 @@ import { RepTable, TrendTable } from "../../hr/tables";
 import { Card, Empty, PageHeader } from "../../hr/ui";
 import { SuppressedBadge } from "../../hr/ui-server";
 import { SignalBadges } from "../../hr/signal-labels";
-import { compareSignals, signalDetail, signalHeadline } from "@/lib/signal-text";
+import { compareSignals, signalHeadline } from "@/lib/signal-text";
+import { SignalSummary } from "@/components/signal-trend-line";
 import { getTL } from "@/lib/i18n/server";
 import { managerDict } from "@/lib/i18n/manager";
 import { collectiveLabel } from "@/lib/i18n/names";
@@ -57,9 +58,9 @@ export default async function ManagerCollectivePage({ params }: { params: Promis
   const tornName = new Map(listTorns().map((tn) => [tn.id, tn.nom]));
   // One list for alarms and signals, same text and order (severity, then size of the drop).
   const cards = [
-    ...alarms.map((a) => ({ key: `alarm-${a.id}`, tipus: a.type, descripcio: a.description, severity: a.severity, n: a.n,
+    ...alarms.map((a) => ({ key: `alarm-${a.id}`, tipus: a.type, descripcio: a.description, periode: a.periode, severity: a.severity, n: a.n,
       domini: a.domainId ? domainName.get(a.domainId) ?? null : null, torn: a.tornId ? tornName.get(a.tornId) ?? null : null, collectiu: collectiu.nom })),
-    ...signals.filter((s) => !alarms.some((a) => a.id === s.id)).map((s) => ({ key: `signal-${s.id}`, tipus: s.tipus, descripcio: s.descripcio,
+    ...signals.filter((s) => !alarms.some((a) => a.id === s.id)).map((s) => ({ key: `signal-${s.id}`, tipus: s.tipus, descripcio: s.descripcio, periode: s.periode,
       severity: s.severity, n: s.n, domini: s.domini, torn: s.torn, collectiu: collectiu.nom })),
   ].sort(compareSignals);
 
@@ -117,9 +118,9 @@ export default async function ManagerCollectivePage({ params }: { params: Promis
           {series ? (
             <>
               <p className="border-b border-line px-5 py-3 text-xs text-subtle">
-                {t("prec_a")}<span className="font-medium">{t("prec_indicative")}</span>{t("prec_b", { a: PRECISION_MODERADA_MIN_N })}
-                <span className="font-medium">{t("prec_moderate")}</span>{t("prec_c", { a: PRECISION_MODERADA_MIN_N, b: PRECISION_SOLIDA_MIN_N - 1 })}
-                <span className="font-medium">{t("prec_solid")}</span>{t("prec_d", { c: PRECISION_SOLIDA_MIN_N, delta: num1L(CHANGE_MIN_DELTA, lang), n: CHANGE_MIN_N })}
+                {t("prec_a")}<span className="font-semibold">{t("prec_indicative")}</span>{t("prec_b", { a: PRECISION_MODERADA_MIN_N })}
+                <span className="font-semibold">{t("prec_moderate")}</span>{t("prec_c", { a: PRECISION_MODERADA_MIN_N, b: PRECISION_SOLIDA_MIN_N - 1 })}
+                <span className="font-semibold">{t("prec_solid")}</span>{t("prec_d", { c: PRECISION_SOLIDA_MIN_N, delta: num1L(CHANGE_MIN_DELTA, lang), n: CHANGE_MIN_N })}
               </p>
               <TrendTable periodes={trends.periodes} rows={series.rows} />
             </>
@@ -157,7 +158,7 @@ export default async function ManagerCollectivePage({ params }: { params: Promis
                 {themes.map((th) => (
                   <li key={th.id} className="py-3">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-medium">{th.etiqueta}</span>
+                      <span className="font-semibold">{th.etiqueta}</span>
                       {th.emergent && <span className="badge badge-accent">{t("emergent")}</span>}
                       <span className="num ml-auto text-xs text-subtle">{th.periode}</span>
                     </div>
@@ -177,7 +178,7 @@ export default async function ManagerCollectivePage({ params }: { params: Promis
                 {cards.map((c) => (
                   <li key={c.key} className="rounded-lg border border-line p-3">
                     <p className="text-[14px] font-semibold">{signalHeadline(c, lang)}</p>
-                    <p className="mt-0.5 text-[13px] text-muted">{signalDetail(c, lang)}</p>
+                    <p className="mt-0.5 text-[13px] text-muted"><SignalSummary s={c} lang={lang} /></p>
                     <div className="mt-2 flex flex-wrap items-center gap-2">
                       <SignalBadges tipus={c.tipus} severity={c.severity} />
                       <span className="num ml-auto text-xs text-subtle"><People n={c.n} scoped={true} /></span>

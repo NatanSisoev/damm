@@ -107,6 +107,8 @@ export const employeeDict = defineDict({
     err_send_server: "No hem pogut connectar amb el servidor. La teva resposta continua aquí: torna-ho a provar.",
 
     // answer inputs
+    followup_badge: "Una pregunta més",
+    followup_skip: "Ara no, continuar",
     open_label: "La teva resposta",
     open_placeholder: "Escriu amb les teves paraules…",
     open_note: "Anònim. No hi posis dades personals (noms, telèfons, correus).",
@@ -218,7 +220,7 @@ export const employeeDict = defineDict({
       "Pots esborrar el compte a Configuració. S'esborren l'usuari, la contrasenya i la subscripció a notificacions. Les respostes que ja has donat es conserven com a dades anònimes dins dels resultats de grup, ja sense cap enllaç amb tu, i no es poden tornar a vincular al teu compte.",
 
     // push payload + manifest
-    push_payload_title: "Escolta activa",
+    push_payload_title: "Give a Damm",
     push_payload_body: "Tens preguntes noves. Només et prendrà un minut.",
     push_campaign_body: "Avui tens unes preguntes extra d'una consulta puntual. Només et prendrà uns minuts.",
     manifest_description: "Respon unes quantes preguntes curtes cada dia, de manera anònima.",
@@ -320,6 +322,8 @@ export const employeeDict = defineDict({
       "Sin conexión. Tu respuesta sigue aquí: vuelve a intentarlo cuando tengas conexión de nuevo.",
     err_send_server: "No hemos podido conectar con el servidor. Tu respuesta sigue aquí: vuelve a intentarlo.",
 
+    followup_badge: "Una pregunta más",
+    followup_skip: "Ahora no, continuar",
     open_label: "Tu respuesta",
     open_placeholder: "Escribe con tus palabras…",
     open_note: "Anónimo. No pongas datos personales (nombres, teléfonos, correos).",
@@ -426,7 +430,7 @@ export const employeeDict = defineDict({
     priv_account_3:
       "Puedes eliminar la cuenta en Ajustes. Se eliminan el usuario, la contraseña y la suscripción a notificaciones. Las respuestas que ya has dado se conservan como datos anónimos dentro de los resultados de grupo, ya sin ningún enlace contigo, y no se pueden volver a vincular a tu cuenta.",
 
-    push_payload_title: "Escolta activa",
+    push_payload_title: "Give a Damm",
     push_payload_body: "Tienes preguntas nuevas. Solo te llevará un minuto.",
     push_campaign_body: "Hoy tienes unas preguntas extra de una consulta puntual. Solo te llevará unos minutos.",
     manifest_description: "Responde unas pocas preguntas cortas cada día, de forma anónima.",
@@ -527,6 +531,8 @@ export const employeeDict = defineDict({
     err_send_offline: "No connection. Your answer is still here: try again once you're back online.",
     err_send_server: "We couldn't reach the server. Your answer is still here: try again.",
 
+    followup_badge: "One more question",
+    followup_skip: "Not now, continue",
     open_label: "Your answer",
     open_placeholder: "Write in your own words…",
     open_note: "Anonymous. Don't include personal data (names, phone numbers, emails).",
@@ -633,7 +639,7 @@ export const employeeDict = defineDict({
     priv_account_3:
       "You can delete the account in Settings. The username, password and notification subscription are deleted. The answers you've already given are kept as anonymous data within group results, with no link to you any more, and cannot be linked back to your account.",
 
-    push_payload_title: "Escolta activa",
+    push_payload_title: "Give a Damm",
     push_payload_body: "You have new questions. It will only take a minute.",
     push_campaign_body: "You have extra one-off questions today. It will only take a few minutes.",
     manifest_description: "Answer a few short questions each day, anonymously.",

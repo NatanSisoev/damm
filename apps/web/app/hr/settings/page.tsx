@@ -6,13 +6,17 @@ import { LangSwitcher } from "@/components/lang-switcher";
 import { vapidPublicKey } from "@/lib/push";
 import { Card, PageHeader } from "../ui";
 import { AlarmPushToggle } from "./alarm-push-toggle";
+import { ConfirmButton } from "../confirm-button";
+import { demoResetEnabled } from "@/lib/demo-reset";
+import { resetDemoAction } from "./actions";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getT(hrDict);
   return { title: t("set_meta_title") };
 }
 
-export default async function SettingsPage() {
+export default async function SettingsPage({ searchParams }: { searchParams: Promise<{ reset?: string }> }) {
+  const { reset } = await searchParams;
   const t = await getT(hrDict);
   return (
     <>
@@ -33,6 +37,17 @@ export default async function SettingsPage() {
             <a href="/hr/results/export" className="btn" download>{t("set_export_btn")}</a>
           </div>
         </Card>
+        {demoResetEnabled() && (
+          <Card title={t("set_reset_title")}>
+            <form action={resetDemoAction} className="flex flex-wrap items-center justify-between gap-4">
+              <p className="max-w-md text-[14px] text-muted">{t("set_reset_body")}</p>
+              <ConfirmButton message={t("set_reset_confirm")} className="btn">{t("set_reset_btn")}</ConfirmButton>
+            </form>
+            {(reset === "done" || reset === "nosnap" || reset === "fail") && (
+              <p role="status" className="mt-3 text-[14px]">{t(`set_reset_${reset}` as "set_reset_done")}</p>
+            )}
+          </Card>
+        )}
       </div>
     </>
   );

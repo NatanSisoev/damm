@@ -65,3 +65,39 @@ export function listNewAlarms(afterId: number): NewAlarm[] {
     )
     .all(afterId, MIN_GROUP_SIZE) as unknown as NewAlarm[];
 }
+
+export interface NewCriticalAlarm {
+  id: number;
+  tipus: string;
+  /** The engine's own sentence (English): callers read the figures from it, as the HR pages do. */
+  descripcio: string;
+  periode: string;
+  severity: "critical";
+  n: number;
+  confianca: number | null;
+  /** Reference names (stable keys), null when the alarm is not scoped to it. */
+  collectiu: string | null;
+  domini: string | null;
+  torn: string | null;
+}
+
+/**
+ * Open critical alarms created after `afterId`, for the Teams channel post. Same selection as `listNewAlarms`
+ * (so a re-run never repeats an alarm), narrowed to critical and re-checked against the minimum group size.
+ * Aggregate fields only: no account ids, no answers.
+ */
+export function listNewCriticalAlarms(afterId: number): NewCriticalAlarm[] {
+  return getDb()
+    .prepare(
+      `SELECT s.id, s.tipus, s.descripcio, s.periode, s.severity, s.n, s.confianca,
+              c.nom AS collectiu, d.nom AS domini, t.nom AS torn
+       FROM senyal s
+       LEFT JOIN collectiu c ON c.id = s.collectiu_id
+       LEFT JOIN domini d ON d.id = s.domini_id
+       LEFT JOIN torn t ON t.id = s.torn_id
+       WHERE s.id > ? AND s.suprimit = 0 AND s.n >= ? AND COALESCE(s.status, 'open') = 'open'
+         AND s.severity = 'critical' AND COALESCE(s.audience, 'hr') IN ('hr','hr_manager')
+       ORDER BY s.id`,
+    )
+    .all(afterId, MIN_GROUP_SIZE) as NewCriticalAlarm[];
+}

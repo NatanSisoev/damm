@@ -16,7 +16,7 @@ Engine commands (from `packages/engine`, after `pnpm install`; Node 22.5+, no na
 - Test: `pnpm test` (Node test runner, in-memory SQLite)
 - Typecheck: `pnpm typecheck`
 - Run the job on the dev DB: `pnpm --filter @damm/engine run job` (`DB_PATH`, default `data/app.db`)
-- Build the one database (trilingual demo DB, 3 months of synthetic answers with planted alarms and insights, about 90 s): `pnpm demo-db` writes `data/app.db` (the default `DB_PATH`), so `pnpm dev`, the job and the health check run on it with no env vars. `-- --out path` to change. The bare `pnpm --filter @damm/engine run demo` (English only, `data/demo.db`) is legacy
+- Build the one database (trilingual demo DB, 99 days of synthetic answers (1 Aug to 7 Nov 2026) with 70-90% of served questions answered, planted alarms and insights, about 90 s): `pnpm demo-db` writes `data/app.db` (the default `DB_PATH`), so `pnpm dev`, the job and the health check run on it with no env vars. `-- --out path` to change. The bare `pnpm --filter @damm/engine run demo` (English only, `data/demo.db`) is legacy
 - Health check on a real DB (ranges, suppression, no NaN, fresh job, deduplicated alarms; exits non-zero on failure; run it before and during the demo): `pnpm --filter @damm/engine run health` (`DB_PATH`, default `data/app.db`)
 - Simulate and tune the engine against known ground truth: `pnpm --filter @damm/engine run sim` / `run tune`
 
@@ -160,7 +160,7 @@ Commands (run from the repo root, pnpm 10):
 - Run: `pnpm dev`
 - Lint: `pnpm lint`
 - Build: `pnpm build`
-- Build the demo DB (one command, one DB, about 90 s; start with `source ~/.claude/bin/heavy-gate.sh`): `pnpm demo-db` writes `data/app.db` (`-- --out path` to change). It wraps the engine demo pipeline (3 months Aug-Oct 2026, 4 collectives, 6 domains, every segment n >= 10, nothing suppressed, trilingual ca/es/en, alarms: sharp drop in Fàbriques Condicions i organització, October emerging theme on shift communication, polarisation in Oficines, a weak signal, and the Logística heat/PPE theme in the comments; no sub-threshold group is kept). Run the app on it with `pnpm dev`, check with `pnpm --filter @damm/engine run health`. Railway builds the same DB on first boot. The seed pipeline below is legacy. Demo accounts have no usable password.
+- Build the demo DB (one command, one DB, about 90 s; start with `source ~/.claude/bin/heavy-gate.sh`): `pnpm demo-db` writes `data/app.db` (`-- --out path` to change). It wraps the engine demo pipeline (1 Aug to 7 Nov 2026, November is a partial 7-day period; 70-90% of served questions answered, easy ones most; 4 collectives, 6 domains, every segment n >= 10, nothing suppressed, trilingual ca/es/en, alarms: sharp drop in Fàbriques Condicions i organització, October emerging theme on shift communication, polarisation in Oficines, a weak signal, and the Logística heat/PPE theme in the comments; no sub-threshold group is kept). Run the app on it with `pnpm dev`, check with `pnpm --filter @damm/engine run health`. Railway builds the same DB on first boot. The seed pipeline below is legacy. Demo accounts have no usable password.
 - Legacy, not the recommended path (use `pnpm demo-db`): seed the dev DB (fresh, deterministic, ~1,200 synthetic employees, ~700 responses, ~500 comments): `pnpm --filter @damm/seed run seed`. Large, lived-in variant (~660 accounts, ~18k responses, ~2.4k comments, writes `data/large.db`; run the app with `DB_PATH=data/large.db`): `pnpm --filter @damm/seed run seed:large`. Regenerate comments (template mode, or `-- --llm` with `LLM_BASE_URL`/`LLM_API_KEY`/`LLM_MODEL`): `pnpm --filter @damm/seed run comments`.
 - Test: no test suite yet.
 - Anonymity checks: `pnpm check:anonymity` fails if HR code or `@damm/db/hr` touches raw responses/accounts or the analytics view exposes `compte_id`; `pnpm lint` enforces the HR import rules (only `@damm/db/hr` and `@damm/shared`).
@@ -180,9 +180,11 @@ Read these before planning work. Both people's agents keep them current.
 - `docs/employee-pwa-spec.md`: the employee app's screens, flow and anonymity copy.
 - `docs/security-demo.md`: the steps for the anonymity and security demo (exclusion criteria, R-PRIV).
 - `docs/demo-script.md` and `docs/slide-notes.md`: the pitch flow and the slide content.
+- `docs/demo-video.md`: the agreed 3-minute run of show (video, live demo, close), video format and pre-recording checklist.
 - `docs/teams-integration.md`: what the Teams publish card does today and the Graph/bot/Entra roadmap (R-FLOW-4d, N-1).
 - `docs/frontend-audit.md`: employee, HR and manager frontend audit (2026-11-07) with P0/P1/P2 findings and owners.
 - `docs/hr-ui-audit.md`: HR portal and manager view audit (2026-11-07), one table per screen with severity, fix and status.
+- `docs/style-guide.md`: the "Give a Damm" style guide (logo usage, colour tokens, type scale, components, voice, motion, accessibility) with a table of what differs from the current code; logo, title and icon files in `docs/brand/`. Read it before restyling any screen.
 - `docs/visual-identity.md`: the chosen visual identity ("Paper": ink on paper, Hanken only, 2px corners, red as signal) for employee, HR and manager, with the code changes needed to apply it.
 - `docs/e2e-test-plan.md`: manual end-to-end runbook for the full loop (setup, main scenario, edge-case scenarios, results log); run it after merging `jan/dev` with `main`.
 - `docs/user-flows.md`: expected user flow paths per persona (employee, HR, manager, anonymity, jobs) with exact UI copy, branches, invariants and expected gaps; ends with a requirement-to-flow matrix and a flow-to-e2e-case map. Source for reworking the e2e plan.

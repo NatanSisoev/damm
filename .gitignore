@@ -9,3 +9,8 @@ data/
 
 # AI eval intermediates (the committed one is packages/ai/eval/results/report.md)
 packages/ai/eval/results/run-*
+
+# Tool folders and worktrees
+.claude/
+.claude-worktrees/
+worktrees/

@@ -4,4 +4,10 @@ export * from "./hr-rigour";
 export * from "./hr-signals";
 export * from "./hr-comments";
 export * from "./hr-push";
+export * from "./hr-initiatives";
 export { overlayTranslations, type TranslatableEntity } from "./hr-i18n";
+export {
+  recordDecision, listDecisions, decisionSummary, alarmInfo, questionInfo,
+  DECISION_ENTITIES, DECISION_ACTIONS, DECISION_FONTS,
+  type DecisionInput, type DecisionRow, type DecisionSummary, type DecisionEntity, type DecisionAction, type DecisionFont,
+} from "./hr-decisions";

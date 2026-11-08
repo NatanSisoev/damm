@@ -7,29 +7,32 @@ import { getLang } from "@/lib/lang";
 import { getT } from "@/lib/i18n/server";
 import { signalsDict } from "@/lib/i18n/hr-signals";
 
-// One font for the whole app (docs/visual-identity.md): Hanken Grotesk 400, 500, 700, 800.
+// One font for the whole app (docs/style-guide.md): Hanken Grotesk 400, 500, 600 (Latin Extended for Catalan).
 const hanken = Hanken_Grotesk({
   variable: "--font-hanken",
-  subsets: ["latin"],
-  weight: ["400", "500", "700", "800"],
+  subsets: ["latin", "latin-ext"],
+  weight: ["400", "500", "600"],
   display: "swap",
 });
 
-// The product name stays "Escolta activa" in every language; only the description is translated.
+// The product name stays "Give a Damm" in every language; only the description is translated.
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getT(signalsDict);
   return {
-    title: { default: "Escolta activa", template: "%s · Escolta activa" },
+    title: { default: "Give a Damm", template: "%s · Give a Damm" },
     description: t("app_description"),
-    applicationName: "Escolta activa",
+    applicationName: "Give a Damm",
     icons: { apple: "/icons/apple-touch-icon.png" },
-    appleWebApp: { capable: true, title: "Escolta", statusBarStyle: "default" },
+    appleWebApp: { capable: true, title: "Give a Damm", statusBarStyle: "default" },
   };
 }
 
-// Paper ink: same as the manifest theme_color and the icon background.
+// Paper: matches the manifest theme_color and the icon background.
 export const viewport: Viewport = {
-  themeColor: "#0a0a0a",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#fafaf8" },
+    { media: "(prefers-color-scheme: dark)", color: "#0f0f0e" },
+  ],
 };
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {

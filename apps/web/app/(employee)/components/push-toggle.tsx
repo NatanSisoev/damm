@@ -15,6 +15,13 @@ function keyBytes(base64url: string): Uint8Array<ArrayBuffer> {
   return out;
 }
 
+function sameKey(current: ArrayBuffer | null, base64url: string): boolean {
+  if (!current) return true; // browser does not expose it: assume it matches
+  const a = new Uint8Array(current);
+  const b = keyBytes(base64url);
+  return a.length === b.length && a.every((v, i) => v === b[i]);
+}
+
 const supported = () =>
   typeof window !== "undefined" && "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
 
@@ -34,8 +41,18 @@ export function PushToggle({ vapidKey, compact = false }: { vapidKey: string; co
       if (!supported()) return "unsupported";
       if (Notification.permission === "denied") return "denied";
       try {
-        const sub = await (await navigator.serviceWorker.ready).pushManager.getSubscription();
-        return sub ? "on" : "off";
+        const reg = await navigator.serviceWorker.ready;
+        let sub = await reg.pushManager.getSubscription();
+        if (!sub) return "off";
+        // Subscribed under another VAPID key (keys rotated or another deploy): pushes would be rejected, so resubscribe.
+        if (!sameKey(sub.options.applicationServerKey, vapidKey)) {
+          await sub.unsubscribe();
+          if (Notification.permission !== "granted") return "off";
+          sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: keyBytes(vapidKey) });
+        }
+        // Re-register on every open: the server may have lost it (fresh database, account switch) while the device kept it.
+        const res = await savePushSubscriptionAction(sub.toJSON());
+        return res.ok ? "on" : "off";
       } catch {
         return "off";
       }
@@ -43,7 +60,7 @@ export function PushToggle({ vapidKey, compact = false }: { vapidKey: string; co
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [vapidKey]);
 
   async function enable() {
     setState("working");
@@ -65,7 +82,7 @@ export function PushToggle({ vapidKey, compact = false }: { vapidKey: string; co
     try {
       const sub = await (await navigator.serviceWorker.ready).pushManager.getSubscription();
       await sub?.unsubscribe();
-      await deletePushSubscriptionAction();
+      await deletePushSubscriptionAction(sub?.endpoint);
       setState("off");
     } catch {
       setState("error");

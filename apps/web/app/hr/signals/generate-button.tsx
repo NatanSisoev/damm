@@ -15,7 +15,7 @@ export function GenerateButton({ variant = "inline" }: { variant?: "inline" | "p
   const t = useT(panelDict);
   const { pending } = useFormStatus();
   return (
-    <button type="submit" disabled={pending} aria-busy={pending} className={variant === "panel" ? "btn btn-primary gen-btn gen-btn-lg" : "btn gen-btn"}>
+    <button type="submit" disabled={pending} aria-busy={pending} className={variant === "panel" ? "btn btn-primary gen-btn" : "btn gen-btn"}>
       {pending ? <span className="gen-spinner" aria-hidden /> : <Sparkle />}
       {pending ? t("generate_busy") : t("generate")}
     </button>

@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { MIN_GROUP_SIZE, type Lang } from "@damm/shared";
-import { listCollectius, listDomains, listNeedCards, listNeedDrafts, type NeedCard, type NeedState } from "@damm/db/hr";
+import { listCollectius, listDecisions, listDomains, listNeedCards, listNeedDrafts, type NeedCard, type NeedState } from "@damm/db/hr";
 import { ConfirmButton } from "../confirm-button";
 import { closeNeedAction, publishAction, remindNeedAction } from "../actions";
 import { LOW_PARTICIPATION_PCT, participationOf } from "../participation";
@@ -10,6 +10,9 @@ import { needStatus, questionTypeLabel } from "../labels";
 import { getTL } from "@/lib/i18n/server";
 import { LOCALES, type TFn } from "@/lib/i18n/core";
 import { hrDict, collectiveLabel, domainLabel, type HrKey } from "@/lib/i18n/hr";
+import { trailDict } from "@/lib/i18n/hr-trail";
+import { makeT } from "@/lib/i18n/core";
+import { DecisionList } from "../trail";
 import { DraftReview } from "./draft-review";
 import { NeedForm } from "./need-form";
 import { pageTitle } from "@/lib/i18n/titles";
@@ -49,8 +52,8 @@ function StateBadge({ state, lang }: { state: NeedState; lang: Lang }) {
 
 const fmtDate = (d: string | null, lang: Lang) => (d ? new Date(d.replace(" ", "T") + "Z").toLocaleDateString(LOCALES[lang], { day: "numeric", month: "short", year: "numeric" }) : null);
 
-export default async function NeedsPage({ searchParams }: { searchParams: Promise<{ estat?: string; publicada?: string; recordatori?: string; avis?: string; nova?: string }> }) {
-  const { estat, publicada, recordatori, avis, nova } = await searchParams;
+export default async function NeedsPage({ searchParams }: { searchParams: Promise<{ estat?: string; publicada?: string; recordatori?: string; avis?: string; nova?: string; regenError?: string }> }) {
+  const { estat, publicada, recordatori, avis, nova, regenError } = await searchParams;
   const { t, lang } = await getTL(hrDict);
   const filter: Filter = isFilter(estat) ? estat : "totes";
   const all = listNeedCards(lang);
@@ -70,9 +73,11 @@ export default async function NeedsPage({ searchParams }: { searchParams: Promis
         title={t("needs_title")}
         subtitle={t("needs_subtitle")}
         actions={
-          <Link href={showForm ? "/hr/needs" : "/hr/needs?nova=1#nova"} className="btn btn-primary" aria-expanded={showForm}>
-            {showForm && all.length > 0 ? t("needs_close_form") : t("needs_new_btn")}
-          </Link>
+          all.length > 0 ? (
+            <Link href={showForm ? "/hr/needs" : "/hr/needs?nova=1#nova"} className="btn btn-primary" aria-expanded={showForm}>
+              {showForm ? t("needs_close_form") : t("needs_new_btn")}
+            </Link>
+          ) : undefined
         }
       />
       {publicada && avis && /^(off|<?\d+)$/.test(avis) && <PublishNotice avis={avis} t={t} />}
@@ -118,7 +123,7 @@ export default async function NeedsPage({ searchParams }: { searchParams: Promis
       {showList && shown.length > 0 && (
         <div className="space-y-4">
           {shown.map((n) => (
-            <NeedItem key={n.id} n={n} draft={drafts.get(n.id)} domainIdx={domainIdx} t={t} lang={lang} />
+            <NeedItem key={n.id} n={n} draft={drafts.get(n.id)} domainIdx={domainIdx} t={t} lang={lang} regenError={Number(regenError) || null} />
           ))}
         </div>
       )}
@@ -135,7 +140,7 @@ function Fact({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 
-function NeedItem({ n, draft, domainIdx, t, lang }: { n: NeedCard; draft?: ReturnType<typeof listNeedDrafts>[number]; domainIdx: Map<string, number>; t: TFn<HrKey>; lang: Lang }) {
+function NeedItem({ n, draft, domainIdx, t, lang, regenError }: { n: NeedCard; draft?: ReturnType<typeof listNeedDrafts>[number]; domainIdx: Map<string, number>; t: TFn<HrKey>; lang: Lang; regenError: number | null }) {
   const state = STATES.find((s) => s.key === n.state)!;
   const live = n.state === "publicada" || n.state === "tancada";
   const pct = n.responses != null && n.population > 0 ? Math.min(100, Math.round((n.responses / n.population) * 100)) : null;
@@ -169,7 +174,7 @@ function NeedItem({ n, draft, domainIdx, t, lang }: { n: NeedCard; draft?: Retur
           return (
             <div role="status" className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-warn px-3 py-2 text-sm">
               <div>
-                <p className="font-medium text-warn">{t("part_low_title")}</p>
+                <p className="font-semibold text-warn">{t("part_low_title")}</p>
                 <p className="mt-0.5">{part.pct == null ? t("part_low_few", { min: MIN_GROUP_SIZE }) : t("part_low_pct", { pct: part.pct, limit: LOW_PARTICIPATION_PCT })}</p>
               </div>
               <form action={remindNeedAction}>
@@ -182,11 +187,11 @@ function NeedItem({ n, draft, domainIdx, t, lang }: { n: NeedCard; draft?: Retur
         {n.titol && <p className="text-sm text-subtle">{t("need_text_prefix", { text: n.textNl })}</p>}
         <p className="text-xs text-subtle">{t(state.hint)}</p>
 
-        {draft && <DraftReview g={draft} />}
+        {draft && <DraftReview g={draft} regenError={regenError} />}
 
         {n.approved.length > 0 && (
           <div>
-            <h3 className="mb-2 text-sm font-medium">
+            <h3 className="mb-2 text-sm font-semibold">
               {t("need_approved_qs")} <span className="num text-subtle">{n.approved.length}{n.nDraft > 0 ? ` · ${t("need_to_review", { n: n.nDraft })}` : ""}</span>
             </h3>
             <ul className="hr-qlist">
@@ -214,6 +219,7 @@ function NeedItem({ n, draft, domainIdx, t, lang }: { n: NeedCard; draft?: Retur
           n.duradaMaxS != null && <p className="text-xs text-subtle">{t("need_max_duration", { n: n.duradaMaxS })}</p>
         )}
 
+        <NeedTrail needId={n.id} lang={lang} />
         <div className="hr-actions flex flex-wrap items-center justify-end gap-2 border-t border-line pt-4">
           {n.state === "esborrany" && n.approved.length === 0 && n.nDraft === 0 && <p className="mr-auto text-sm text-subtle">{t("need_no_questions")}</p>}
           {live && (
@@ -237,6 +243,23 @@ function NeedItem({ n, draft, domainIdx, t, lang }: { n: NeedCard; draft?: Retur
         </div>
       </div>
     </Card>
+  );
+}
+
+/** The need's decision trail, folded: who approved, edited, discarded or published what, and where each proposal came from. */
+function NeedTrail({ needId, lang }: { needId: number; lang: Lang }) {
+  const t = makeT(trailDict, lang);
+  const rows = listDecisions({ necessitatId: needId, limit: 30 });
+  return (
+    <details className="border-t border-line pt-3">
+      <summary className="cursor-pointer text-sm font-semibold">
+        {t("tr_trail_for_need")} <span className="num ml-1 font-normal text-subtle">{t("tr_trail_count", { n: rows.length })}</span>
+      </summary>
+      <div className="mt-2">
+        {rows.length === 0 ? <p className="py-2 text-sm text-subtle">{t("tr_trail_empty")}</p> : <DecisionList rows={rows} lang={lang} />}
+        <Link href="/hr/traceability" className="text-xs underline">{t("tr_see_all")}</Link>
+      </div>
+    </details>
   );
 }
 

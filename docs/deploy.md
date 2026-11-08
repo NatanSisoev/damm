@@ -38,7 +38,7 @@ If `--ff-only` fails, `jan/deploy` has commits that are not in `main`: get them 
 
 ## Environment variables (names only)
 
-`DB_PATH` (`/data/app.db`), `PUBLIC_BASE_URL` (the URL above, no trailing slash), `HR_ACCESS_CODE`, `SESSION_SECRET`, `LLM_BASE_URL`, `LLM_API_KEY`, `LLM_MODEL`, `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`, `NODE_ENV`. `TEAMS_WEBHOOK_URL` is not set (empty locally). The VAPID pair was generated for this deploy only. Values live in Railway; set with `railway variables --set NAME=value`. A deleted variable needs `railway redeploy -y` to take effect.
+`DB_PATH` (`/data/app.db`), `PUBLIC_BASE_URL` (the URL above, no trailing slash), `HR_ACCESS_CODE`, `SESSION_SECRET`, `LLM_BASE_URL`, `LLM_API_KEY`, `LLM_MODEL`, `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`, `NODE_ENV`. `TEAMS_WEBHOOK_URL` and `TEAMS_ALARM_WEBHOOK_URL` are not set (empty locally; the alarm one falls back to the first). The VAPID pair was generated for this deploy only. Values live in Railway; set with `railway variables --set NAME=value`. A deleted variable needs `railway redeploy -y` to take effect.
 
 Optional `TEST_ACCOUNT=username:password` (not set on Railway unless Jan asks): on server start (`apps/web/instrumentation.ts`, so also under `scripts/railway-start.sh`) the account is created in Fàbriques if missing, with the app's normal scrypt hashing. Idempotent, never overwrites an existing account, works on the demo DB and any other. Password needs 8+ characters.
 
@@ -55,6 +55,16 @@ railway redeploy -y
 
 ```bash
 railway variables --set DB_PATH=/data/app-<new-name>.db
+```
+
+## Demo reset (N-17)
+
+`DEMO_RESET_ENABLED=1` shows a "Restaura la demo" card (confirm dialog) on `/hr/settings`; without it the card is hidden and the action refuses. A reset copies every table except `compte`, `push_subscripcio` and `hr_push_subscription` back from the snapshot `<DB_PATH>.pristine` inside one transaction on the live connection (needs, approvals, publications, alarm statuses, answers and engine state go back; enrolled phones stay).
+
+The snapshot is written by `scripts/railway-start.sh` right after the demo DB is built. For a DB that already exists (no snapshot), the server writes one at its first start with the flag on, so set the flag only while the DB is clean (right after a reseed), or reseed first. `pnpm demo-db` deletes the old snapshot of the DB it rebuilds.
+
+```bash
+railway variables --set DEMO_RESET_ENABLED=1
 ```
 
 ## Health check

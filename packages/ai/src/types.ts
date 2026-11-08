@@ -17,6 +17,8 @@ export const draftQuestionSchema = z.object({
   /** Scale end labels (scale5/scale10), for example "Mai" / "Sempre". Optional so older callers and saved drafts stay valid. */
   low: z.string().trim().min(1).max(30).optional(),
   high: z.string().trim().min(1).max(30).optional(),
+  /** Optional open follow-up ("what would make it better?") shown only after a low answer (scale <= 2) or a "no". Only for scale5/scale10/yes_no; HR can remove it. */
+  followup: z.string().trim().min(8).max(200).optional(),
   /** Spanish and English wording (Catalan `text` is canonical). Added by the translation pass, never required from the drafting call. */
   i18n: draftI18nSchema.optional(),
 });
