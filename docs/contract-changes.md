@@ -19,6 +19,17 @@ What changed and why.
 
 ---
 
+## 2026-11-08: HR alarm push, `hr_push_subscription` (Jan)
+
+HR browsers can subscribe to web push on `/hr/settings`. When the analysis job (`POST /api/jobs/run`) creates new open warning or critical alarms for HR, every subscribed HR browser gets one notification in its saved language, linking to `/hr/signals`.
+
+- `schema.sql`: new table `hr_push_subscription` (`id`, `endpoint` UNIQUE, `p256dh`, `auth`, `lang` ca/es/en, `created_at`). No link to `compte`: it holds HR browsers only. Existing databases get it on first connection from `ensureHrPushTable` in `packages/db/src/connection.ts`.
+- `@damm/db/hr`: `saveHrPushSubscription`, `deleteHrPushSubscription`, `listHrPushSubscriptions`, `hasHrPushSubscription`, `maxAlarmId`, `listNewAlarms`.
+- `POST /api/jobs/run`: the JSON gains `alarmPush` (`off`, `none`, `sent` with alarm and browser counts, or `error`).
+
+Action items:
+- [x] Jan: schema, migration, repository, sender, job trigger, settings toggle, copy. (done 2026-11-08)
+
 ## 2026-11-08: query question count and delivery mode (Jan)
 
 The HR "New query" form no longer asks for a time budget. It asks for the **number of questions per person** (2 to 6, default 3) and a **delivery mode**: `daily` (the query's questions join the normal daily set, as before) or `campaign` (a one-off extra set: everyone in the target collective gets a push on publish and answers ALL the query's questions on top of the 3 daily ones).

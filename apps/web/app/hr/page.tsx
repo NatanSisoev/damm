@@ -194,7 +194,7 @@ export default async function HrDashboard({ searchParams }: { searchParams: Prom
               value={<Link href={alarmsHref()} className="hover:underline">{openAlarms}</Link>}
               hint={
                 criticalAlarms > 0 ? (
-                  <Link href={alarmsHref("critical")} className="font-medium text-accent hover:underline">{t("kpi_alarms_critical", { n: criticalAlarms })} →</Link>
+                  <Link href={alarmsHref("critical")} className="font-medium text-accent hover:underline">{t("kpi_alarms_critical", { n: criticalAlarms })}</Link>
                 ) : (
                   t("kpi_alarms_no_critical")
                 )

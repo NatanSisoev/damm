@@ -3,7 +3,9 @@ import { MIN_GROUP_SIZE } from "@damm/shared";
 import { getT } from "@/lib/i18n/server";
 import { hrDict } from "@/lib/i18n/hr";
 import { LangSwitcher } from "@/components/lang-switcher";
+import { vapidPublicKey } from "@/lib/push";
 import { Card, PageHeader } from "../ui";
+import { AlarmPushToggle } from "./alarm-push-toggle";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getT(hrDict);
@@ -21,6 +23,9 @@ export default async function SettingsPage() {
             <p className="text-[14px] text-muted">{t("set_lang_body")}</p>
             <LangSwitcher className="border border-line px-3" />
           </div>
+        </Card>
+        <Card title={t("set_push_title")}>
+          <AlarmPushToggle vapidKey={vapidPublicKey()} />
         </Card>
         <Card title={t("set_export_title")}>
           <div className="flex flex-wrap items-center justify-between gap-4">

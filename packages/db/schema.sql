@@ -66,6 +66,16 @@ CREATE TABLE push_subscripcio (
   creat      TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+-- HR browsers subscribed to alarm notifications. No account, no person: an HR browser endpoint only.
+CREATE TABLE IF NOT EXISTS hr_push_subscription (
+  id          INTEGER PRIMARY KEY,
+  endpoint    TEXT NOT NULL UNIQUE,
+  p256dh      TEXT NOT NULL,
+  auth        TEXT NOT NULL,
+  lang        TEXT NOT NULL DEFAULT 'ca' CHECK (lang IN ('ca','es','en')),
+  created_at  TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
 -- Content -----------------------------------------------------------------
 
 CREATE TABLE necessitat (
