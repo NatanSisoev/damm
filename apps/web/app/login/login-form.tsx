@@ -35,7 +35,7 @@ export function LoginForm() {
           </p>
         )}
         <button disabled={recPending} className="btn btn-primary h-14 w-full justify-center text-base disabled:opacity-50">
-          {t("login_recover_submit")}
+          {recPending ? t("sending") : t("login_recover_submit")}
         </button>
         <button type="button" onClick={() => setRecovering(false)} className="btn btn-ghost w-full justify-center underline">
           {t("login_back")}
@@ -54,14 +54,14 @@ export function LoginForm() {
         </p>
       )}
       <button disabled={loginPending} className="btn btn-primary h-14 w-full justify-center text-base disabled:opacity-50">
-        {t("enter")}
+        {loginPending ? t("sending") : t("enter")}
       </button>
       <button type="button" onClick={() => setRecovering(true)} className="btn btn-ghost w-full justify-center underline">
         {t("login_lost")}
       </button>
       <p className="text-center text-sm text-muted">{t("login_first_time")}</p>
       <p className="text-center text-sm">
-        <Link href="/privacitat" className="underline">
+        <Link href="/privacitat" className="inline-flex min-h-11 items-center underline">
           {t("privacy_link")}
         </Link>
       </p>

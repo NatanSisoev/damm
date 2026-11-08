@@ -317,7 +317,7 @@ export function AnswerFlow({ compteId }: { compteId: string }) {
 
       {q.tipus !== "open" && (
         <details className="mt-6" open={draft.comentari !== ""}>
-          <summary className="cursor-pointer text-sm text-muted">{t("comment_add")}</summary>
+          <summary className="flex min-h-11 cursor-pointer items-center text-sm text-muted">{t("comment_add")}</summary>
           <textarea
             className="input mt-2 w-full text-base"
             rows={3}
