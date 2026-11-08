@@ -27,6 +27,8 @@ If a merge did not trigger a deploy, run `railway redeploy --from-source -y` (a 
 
 ## Build and start
 
+The service builds from the root [`Dockerfile`](../Dockerfile) (`"builder": "DOCKERFILE"` in `railway.json`), not Railpack. Railpack downloads mise from GitHub at build time, and that download failed with a 504 on 2026-11-08. The Dockerfile pulls the `node:22-bookworm` image and npm packages instead. It runs the same commands as below (`pnpm install --frozen-lockfile`, `pnpm build`, then `bash scripts/railway-start.sh` as the start command), with Node 22 and pnpm 10.16.1 pinned in the file. `.dockerignore` keeps `data/`, `.env*` and `node_modules` out of the image; `docs/i18n` must stay in, because `pnpm demo-db` reads it.
+
 - Build: `pnpm install --frozen-lockfile && pnpm build` (Node 22 from `.nvmrc`, pnpm 10 from `packageManager`).
 - Start: `bash scripts/railway-start.sh`. If `$DB_PATH` is missing or empty it builds the trilingual demo database (`pnpm demo-db -- --out ...`, the same DB as local `pnpm demo-db`, about 90 s; needs Node 22.6+ for `--experimental-strip-types`, pinned by `.nvmrc` 22 and `engines`) into a temp file on the volume and renames it, then starts Next on `$PORT`. An existing database is never touched. The health check allows 600 s so the first boot can finish seeding.
 
