@@ -232,7 +232,25 @@ function NeedItem({ n, draft, domainIdx, t, lang, regenError }: { n: NeedCard; d
           {(n.state === "esborrany" && n.approved.length > 0 || n.state === "llesta") && (
             <form action={publishAction}>
               <input type="hidden" name="id" value={n.id} />
-              <SubmitButton className="btn btn-primary">{t("need_publish")}</SubmitButton>
+              <ConfirmButton
+                className="btn btn-primary"
+                title={t("pubm_title")}
+                busyLabel={t("pubm_busy")}
+                message={
+                  <>
+                    <p className="text-muted">{n.titol ?? n.textNl}</p>
+                    <dl className="mt-4 grid gap-4 sm:grid-cols-2">
+                      <Fact label={t("pubm_who")}>{n.collectiu ? collectiveLabel(n.collectiu, lang) : t("all_collectives")} · {t("pubm_people", { n: n.population })}</Fact>
+                      <Fact label={t("pubm_questions")}>{t("pubm_approved", { n: n.approved.length })}{n.questionCount != null && <> · {t("need_question_count", { n: n.questionCount })}</>}</Fact>
+                      <Fact label={t("pubm_how")}>{t(n.delivery === "campaign" ? "need_delivery_campaign" : "need_delivery_daily")}</Fact>
+                    </dl>
+                    {n.nDraft > 0 && <p className="mt-4 text-[13px] font-medium">{t("pubm_drafts", { n: n.nDraft })}</p>}
+                    <p className="mt-4 border-t border-line pt-3 text-[13px] text-muted">{t("pubm_note", { min: MIN_GROUP_SIZE })}</p>
+                  </>
+                }
+              >
+                {t("need_publish")}
+              </ConfirmButton>
             </form>
           )}
           {n.state !== "tancada" && (
