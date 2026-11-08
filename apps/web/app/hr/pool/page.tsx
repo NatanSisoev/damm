@@ -45,7 +45,6 @@ type SortKey = (typeof SORTS)[number]["key"];
 type Params = { page?: string; per?: string; q?: string; estat?: string; tipus?: string; domini?: string; col?: string; origen?: string; group?: string; sort?: string; dir?: string };
 
 const pct = (x: number | null) => (x === null ? "—" : `${Math.round(x * 100)}%`);
-const day = (s: string | null) => (s ? s.slice(0, 10) : "—");
 
 type T = TFn<PoolKey>;
 
@@ -185,20 +184,14 @@ export default async function PoolPage({ searchParams }: { searchParams: Promise
         <Empty>{t("none_match")}</Empty>
       ) : (
         <div className="card overflow-x-auto">
-          <table className="table min-w-[70rem]">
+          <table className="table min-w-[44rem]">
             <thead>
               <tr>
                 <th>{t("th_question")}</th>
                 <th>{t("th_state")}</th>
-                <th>{t("th_domain_col")}</th>
-                <SortTh p={p} k="asked" cur={sort} dir={dir}>{t("th_asked")}</SortTh>
                 <SortTh p={p} k="responses" cur={sort} dir={dir}>{t("th_responses")}</SortTh>
-                <SortTh p={p} k="rate" cur={sort} dir={dir}>{t("th_rate")}</SortTh>
                 <SortTh p={p} k="confidence" cur={sort} dir={dir}>{t("th_confidence")}</SortTh>
-                <SortTh p={p} k="consensus" cur={sort} dir={dir}>{t("th_consensus")}</SortTh>
-                <th className="text-right">{t("th_7d")}</th>
                 <SortTh p={p} k="last" cur={sort} dir={dir} left>{t("th_last")}</SortTh>
-                <th>{t("th_next")}</th>
               </tr>
             </thead>
             {[...groups.entries()].filter(([, list]) => list.some((q) => shown.has(q.id))).map(([name, list]) => (
@@ -211,18 +204,10 @@ export default async function PoolPage({ searchParams }: { searchParams: Promise
               ) : (
                 <GroupBody
                   key={name}
-                  count={list.filter((q) => shown.has(q.id)).length}
                   header={
                     <span className="pool-group-head">
                       <span className="font-semibold">{name}</span>
-                      <span className="num text-subtle font-normal">
-                        {t("group_summary", {
-                          questions: t(list.length === 1 ? "question_one" : "question_other", { n: list.length }),
-                          asked: num(list.reduce((n, q) => n + q.asked, 0)),
-                          responses: num(list.reduce((n, q) => n + q.responses, 0)),
-                          rate: pct(list.reduce((n, q) => n + q.asked, 0) > 0 ? list.reduce((n, q) => n + q.answeredAssigned, 0) / list.reduce((n, q) => n + q.asked, 0) : null),
-                        })}
-                      </span>
+                      <span className="num text-subtle font-normal">{list.length}</span>
                     </span>
                   }
                 >
@@ -283,49 +268,28 @@ function SortTh({ p, k, cur, dir, children, left }: { p: Params; k: SortKey; cur
 
 function QuestionRows({ q, today, t, lang, num }: { q: PoolQuestion; today: string; t: T; lang: Lang; num: (x: number) => string }) {
   const st = STATE[q.state];
+  // Lean row: everything else (type, facet, asked, consensus, 7-day counts, next batch) lives on the question page.
   return (
-    <>
-      <tr className="pool-row">
-        <td className="max-w-[26rem]">
-          <div className="text-[13px] leading-snug">
-            <Link href={`/hr/pool/${q.id}`} className="pool-link">{q.text}</Link>
-          </div>
-          <div className="flex flex-wrap gap-1.5" style={{ marginTop: 10 }}>
-            <span className="badge">{questionTypeLabel(q.type, lang)}</span>
-            {q.facet && <span className="badge" title={t("badge_facet_title")}>{q.facet}</span>}
-            {q.needId !== null && <span className="badge badge-accent" title={q.needTitle ?? undefined}>{t("need_n", { n: q.needId })}</span>}
-            {q.isFollowup && <span className="badge">{t("badge_followup")}</span>}
-            {q.polarity === -1 && <span className="badge" title={t("badge_negative_title")}>{t("badge_negative")}</span>}
-            {q.aiGenerated && <span className="badge" title={t("badge_ai_title")}>{t("badge_ai")}</span>}
-          </div>
-        </td>
-        <td>
-          <span className={`badge ${st.cls}`}>{t(st.key)}</span>
-          <div className="mt-1 max-w-[12rem] text-xs text-subtle">{t(REASON[q.reason])}</div>
-        </td>
-        <td className="text-[13px]">
-          {domainLabel(q.domain, lang)}
-          <div className="text-xs text-subtle">{collectiveLabel(q.collective, lang)}</div>
-        </td>
-        <td className="num text-right">{num(q.asked)}</td>
-        <td className="num text-right">{num(q.responses)}</td>
-        <td className="num text-right">{pct(q.answerRate)}</td>
-        <td className="num text-right" title={t("confidence_title")}>{q.confidence === null ? "—" : Math.round(q.confidence)}</td>
-        <td className="num text-right" title={t("consensus_title")}>{q.consensus === null ? "—" : Math.round(q.consensus)}</td>
-        <td className="num text-right">
-          {q.asked7d}
-          <div className="text-xs text-subtle">{t("resp_short", { n: q.responses7d })}</div>
-        </td>
-        <td className="whitespace-nowrap text-[13px]">
-          {day(q.lastAskedDay)}
-          <div className="text-xs text-subtle">{ago(t, today, q.lastAskedDay)}</div>
-        </td>
-        <td className="whitespace-nowrap text-[13px]">
-          {q.nextBatchDay ?? "—"}
-          {q.state === "live" && q.askedPerDay14 > 0 && <div className="text-xs text-subtle">{t("per_day", { n: q.askedPerDay14 })}</div>}
-          {q.pendingAccounts !== null && q.state !== "inactive" && <div className="text-xs text-subtle">{t("pending_n", { n: num(q.pendingAccounts) })}</div>}
-        </td>
-      </tr>
-    </>
+    <tr className="pool-row">
+      <td className="max-w-[34rem]">
+        <div className="text-[13px] leading-snug">
+          <Link href={`/hr/pool/${q.id}`} className="pool-link">{q.text}</Link>
+        </div>
+        <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-subtle">
+          <span>{domainLabel(q.domain, lang)} · {collectiveLabel(q.collective, lang)}</span>
+          {q.needId !== null && <span className="badge badge-accent" title={q.needTitle ?? undefined}>{t("need_n", { n: q.needId })}</span>}
+          {q.isFollowup && <span className="badge">{t("badge_followup")}</span>}
+        </div>
+      </td>
+      <td>
+        <span className={`badge ${st.cls}`} title={t(REASON[q.reason])}>{t(st.key)}</span>
+      </td>
+      <td className="num text-right">
+        {num(q.responses)}
+        <div className="text-xs text-subtle">{pct(q.answerRate)}</div>
+      </td>
+      <td className="num text-right" title={t("confidence_title")}>{q.confidence === null ? "—" : Math.round(q.confidence)}</td>
+      <td className="whitespace-nowrap text-[13px] text-subtle">{ago(t, today, q.lastAskedDay)}</td>
+    </tr>
   );
 }
