@@ -1121,6 +1121,10 @@ export function getParticipation(w: { from: string; to: string }, collectiuId: n
   return { respondents, population, pct };
 }
 
+const DAY_MS = 86_400_000;
+const dayNum = (iso: string) => Math.floor(Date.parse(`${iso.slice(0, 10)}T00:00:00Z`) / DAY_MS);
+const isoOf = (n: number) => new Date(n * DAY_MS).toISOString().slice(0, 10);
+
 export interface AnswersPerDay {
   /** Total answers in the (clamped) window; null under the minimum group size. */
   total: number | null;
