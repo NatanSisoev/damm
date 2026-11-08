@@ -216,7 +216,7 @@ export const hrDict = defineDict({
     teams_err_unreachable: "No s'ha pogut contactar amb Teams.",
 
     // Needs page
-    needs_title: "Necessitats",
+    needs_title: "Consultes",
     needs_subtitle: "Descriu què vols escoltar; la IA proposa preguntes i una persona les aprova abans de publicar.",
     needs_close_form: "Tanca el formulari",
     needs_new_btn: "+ Nova necessitat",
@@ -551,7 +551,7 @@ export const hrDict = defineDict({
     teams_sent: "Tarjeta enviada al canal.",
     teams_err_unreachable: "No se ha podido contactar con Teams.",
 
-    needs_title: "Necesidades",
+    needs_title: "Consultas",
     needs_subtitle: "Describe qué quieres escuchar; la IA propone preguntas y una persona las aprueba antes de publicar.",
     needs_close_form: "Cierra el formulario",
     needs_new_btn: "+ Nueva necesidad",
@@ -883,7 +883,7 @@ export const hrDict = defineDict({
     teams_sent: "Card sent to the channel.",
     teams_err_unreachable: "Could not reach Teams.",
 
-    needs_title: "Needs",
+    needs_title: "Requests",
     needs_subtitle: "Describe what you want to hear about; the AI proposes questions and a person approves them before publishing.",
     needs_close_form: "Close the form",
     needs_new_btn: "+ New need",

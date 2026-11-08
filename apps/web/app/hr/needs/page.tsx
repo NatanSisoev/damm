@@ -89,22 +89,16 @@ export default async function NeedsPage({ searchParams }: { searchParams: Promis
 
       {all.length > 0 && (
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <nav aria-label={t("needs_filter_aria")} className="hr-seg">
-            {([{ key: "totes", label: t("needs_filter_all"), n: all.length }, ...STATES.map((s) => ({ key: s.key, label: needStatus(s.key, lang).label, n: counts[s.key] }))] as { key: Filter; label: string; n: number }[]).map((f) => {
-              const disabled = f.key !== "totes" && f.n === 0 && filter !== f.key;
-              return (
-                <Link
-                  key={f.key}
-                  href={f.key === "totes" ? "/hr/needs" : `/hr/needs?estat=${f.key}`}
-                  aria-current={filter === f.key ? "page" : undefined}
-                  aria-disabled={disabled || undefined}
-                  tabIndex={disabled ? -1 : undefined}
-                >
-                  {f.label}
-                  {f.n > 0 && <span className="num">{f.n}</span>}
-                </Link>
-              );
-            })}
+          <nav aria-label={t("needs_filter_aria")} className="segmented">
+            {([{ key: "totes", label: t("needs_filter_all"), n: all.length }, ...STATES.map((s) => ({ key: s.key, label: needStatus(s.key, lang).label, n: counts[s.key] }))] as { key: Filter; label: string; n: number }[]).map((f) => (
+              <Link
+                key={f.key}
+                href={f.key === "totes" ? "/hr/needs" : `/hr/needs?estat=${f.key}`}
+                aria-current={filter === f.key ? "true" : undefined}
+              >
+                {f.label} <span className="num ml-1.5 text-xs opacity-70">{f.n}</span>
+              </Link>
+            ))}
           </nav>
           <p className="text-xs text-subtle">{t("needs_flow")}</p>
         </div>
@@ -197,10 +191,10 @@ function NeedItem({ n, draft, domainIdx, t, lang }: { n: NeedCard; draft?: Retur
               {n.approved.map((q) => (
                 <li key={q.id}>
                   <span className="hr-chip-dot mt-1.5" style={{ background: `var(--dom-${domainIdx.get(q.domini) ?? "muted"})` }} title={domainLabel(q.domini, lang)} aria-hidden />
-                  <span>
+                  <Link href={`/hr/pool/${q.id}`} className="hover:underline">
                     {q.text}
                     <span className="block text-xs text-subtle">{domainLabel(q.domini, lang)}</span>
-                  </span>
+                  </Link>
                   <span className="hr-qmeta">
                     {questionTypeLabel(q.tipus, lang)}
                     {live && <span className="num block">{q.answers != null ? t("need_answers", { n: q.answers }) : t("need_answers_few", { min: MIN_GROUP_SIZE })}</span>}
