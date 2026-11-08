@@ -12,6 +12,7 @@
 
 <p align="center">
   <a href="https://web-production-6e775.up.railway.app" target="_blank" rel="noopener">Live demo</a> ·
+  <a href="https://drive.google.com/file/d/1dvM0iJOE_eefpB-k283onN9srp1rrFv8/view?usp=sharing" target="_blank" rel="noopener">Demo video</a> ·
   <a href="#the-loop">How it works</a> ·
   <a href="#anonymity-you-can-check">Anonymity</a> ·
   <a href="#the-engine">The engine</a> ·
