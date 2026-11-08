@@ -263,8 +263,14 @@ main:focus { outline: none; }
 .rec-hint { margin-bottom: 8px; font-size: 13px; color: var(--muted, inherit); }
 
 /* Modals: native dialog, Paper identity. */
-.hr-modal { width: min(30rem, calc(100vw - 2rem)); max-height: min(85dvh, 46rem); margin: auto; padding: 0; border: 1px solid var(--line-strong); border-radius: 2px; background: var(--surface); color: var(--text); }
-.hr-modal-wide { width: min(40rem, calc(100vw - 2rem)); }
+.hr-modal { width: min(30rem, calc(100vw - 2rem)); max-height: min(85dvh, 46rem); margin: auto; padding: 0; border: 1px solid var(--line-strong); border-radius: 8px; overflow: hidden; background: var(--surface); color: var(--text); }
+.hr-modal-wide { width: min(60rem, calc(100vw - 2rem)); }
+.hr-modal-wide .proposal-main { max-width: 75ch; }
+@media (min-width: 48rem) {
+  .hr-modal-wide .proposal-facts { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .hr-modal-wide .proposal-notes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 32px; }
+}
+.hr-modal:focus, .hr-modal:focus-visible { outline: none; }
 .hr-modal[open] { display: flex; flex-direction: column; animation: hr-modal-in var(--t-base) var(--ease); }
 .hr-modal::backdrop { background: rgb(20 18 16 / 0.45); }
 .hr-modal-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 16px 12px 0 20px; }
