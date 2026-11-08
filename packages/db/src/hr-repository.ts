@@ -1122,56 +1122,28 @@ export function getParticipation(w: { from: string; to: string }, collectiuId: n
 }
 
 export interface AnswersPerDay {
-  /** Average answers per calendar day of the window (clamped to the data bounds); null when the window holds fewer than the minimum group size. */
+  /** Total answers in the (clamped) window; null under the minimum group size. */
+  total: number | null;
+  /** Average answers per calendar day of the clamped window; null under the minimum group size. */
   perDay: number | null;
-  /** Points of the sparkline: one per day, or one per week (value = answers per day) when single days are mostly under the minimum group size. */
-  points: { from: string; to: string; value: number }[];
-  bucket: "day" | "week";
 }
 
-const DAY_MS = 86_400_000;
-const dayNum = (iso: string) => Math.floor(Date.parse(`${iso.slice(0, 10)}T00:00:00Z`) / DAY_MS);
-const isoOf = (n: number) => new Date(n * DAY_MS).toISOString().slice(0, 10);
-
-/**
- * Answers per day in a window, from the analytics view (no account ids): a count by day only. A day (or week, when days are too thin)
- * with fewer than the minimum group size answers is never drawn as its own point; the average over the whole window is kept as long as
- * the window total reaches the minimum.
- */
+/** Answers in a window and their daily average, from the analytics view only (no account ids). A total under the minimum group size is hidden. */
 export function getAnswersPerDay(w: { from: string; to: string }, collectiuId: number | null): AnswersPerDay {
+  const none = { total: null, perDay: null };
   const bounds = getDataBounds();
-  if (!bounds.min || !bounds.max) return { perDay: null, points: [], bucket: "day" };
+  if (!bounds.min || !bounds.max) return none;
   const lo = dayNum(w.from < bounds.min ? bounds.min : w.from);
   const hi = dayNum(w.to > bounds.max ? bounds.max : w.to);
-  if (hi < lo) return { perDay: null, points: [], bucket: "day" };
-  const rows = getDb()
+  if (hi < lo) return none;
+  const row = getDb()
     .prepare(
-      `SELECT substr(v.data,1,10) AS d, COUNT(*) AS n FROM v_resposta_analitica v
-       WHERE substr(v.data,1,10) BETWEEN ? AND ? ${collectiuId === null ? "" : "AND v.collectiu_id = ?"}
-       GROUP BY d`,
+      `SELECT COUNT(*) AS n FROM v_resposta_analitica v
+       WHERE substr(v.data,1,10) BETWEEN ? AND ? ${collectiuId === null ? "" : "AND v.collectiu_id = ?"}`,
     )
-    .all(...(collectiuId === null ? [isoOf(lo), isoOf(hi)] : [isoOf(lo), isoOf(hi), collectiuId])) as { d: string; n: number }[];
-  const total = rows.reduce((a, r) => a + r.n, 0);
-  if (total < MIN_GROUP_SIZE) return { perDay: null, points: [], bucket: "day" };
-  const perDay = total / (hi - lo + 1);
-
-  const daily = rows.filter((r) => r.n >= MIN_GROUP_SIZE).map((r) => ({ from: r.d, to: r.d, value: r.n })).sort((a, b) => a.from.localeCompare(b.from));
-  if (daily.length >= 3) return { perDay, points: daily, bucket: "day" };
-
-  // Too thin day by day: weekly buckets (Monday start), each shown as answers per day of that week inside the window.
-  const weeks = new Map<number, number>();
-  for (const r of rows) {
-    const wk = dayNum(r.d) - ((dayNum(r.d) + 3) % 7);
-    weeks.set(wk, (weeks.get(wk) ?? 0) + r.n);
-  }
-  const weekly = [...weeks.entries()]
-    .filter(([, n]) => n >= MIN_GROUP_SIZE)
-    .sort((a, b) => a[0] - b[0])
-    .map(([wk, n]) => {
-      const a = Math.max(wk, lo), b = Math.min(wk + 6, hi);
-      return { from: isoOf(a), to: isoOf(b), value: n / (b - a + 1) };
-    });
-  return { perDay, points: weekly.length >= 2 ? weekly : [], bucket: "week" };
+    .get(...(collectiuId === null ? [isoOf(lo), isoOf(hi)] : [isoOf(lo), isoOf(hi), collectiuId])) as { n: number };
+  if (row.n < MIN_GROUP_SIZE) return none;
+  return { total: row.n, perDay: row.n / (hi - lo + 1) };
 }
 
 const BUCKET_SQL: Record<WindowBucket, string> = {

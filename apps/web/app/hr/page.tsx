@@ -5,7 +5,6 @@ import {
   getRepresentativeness,
   getWindowTrends,
   listCollectius,
-  listNeedCards,
   getParticipation,
   getAnswersPerDay,
   CHANGE_MIN_DELTA,
@@ -29,7 +28,6 @@ import { getHeadlines, getHeatmap, getNarrative, getProposals, getReachGaps, get
 import { HeadlineStrip, HeatmapCard, NarrativeCard, ProposalsCard, ReachCard, SegmentTrendCard } from "./analytics-ui";
 import { PRESETS, bucketFor, fmtDay, previousWindow, resolveRange } from "./range";
 import { refreshDashboardAction } from "./actions";
-import { AnswersSpark } from "./answers-spark";
 import { RefreshButton } from "./refresh-button";
 import { RangeSelect } from "./range-select";
 import { NavSelect } from "./nav-select";
@@ -71,9 +69,6 @@ export default async function HrDashboard({ searchParams }: { searchParams: Prom
   const seriesVisible = visible(series);
   const everyone = col ? getWindowTrends({ ...win, bucket: "all" }, null) : whole;
 
-  const needs = listNeedCards(lang);
-  const drafts = needs.filter((n) => n.state === "esborrany" || n.state === "llesta").length;
-  const live = needs.filter((n) => n.state === "publicada").length;
   const rep = getRepresentativeness();
   const heatmap = { ...getHeatmap(everyone), periode: `${fmtDay(range.from)} – ${fmtDay(range.to)}` };
 
@@ -105,12 +100,8 @@ export default async function HrDashboard({ searchParams }: { searchParams: Prom
 
   // People, not answers: read from the job-written aggregates for the period(s) the window overlaps (never above the population).
   const { respondents, population, pct } = getParticipation(win, col?.id ?? null);
-  // Answers per day: counts by day from the analytics view; thin days are dropped from the sparkline, the average stays.
+  // Answers: total in the range and the daily average, from the analytics view.
   const apd = getAnswersPerDay(win, col?.id ?? null);
-  const fmtTip = (p: { from: string; to: string; value: number }) =>
-    apd.bucket === "day"
-      ? t("kpi_apd_tip_day", { date: fmtDay(p.from), n: numD(p.value, lang, 0) })
-      : t("kpi_apd_tip_week", { from: fmtDay(p.from), to: fmtDay(p.to), n: numD(p.value, lang, 1) });
   // Open alarms for the scope, same source and minimum group size as the alarms page's "open" tab.
   const openAlarms = hrAlarms({ role: "hr" }, { status: ["open"], ...(col ? { collectiuId: col.id } : {}) }).filter((a) => a.n >= MIN_GROUP_SIZE).length;
 
@@ -186,15 +177,26 @@ export default async function HrDashboard({ searchParams }: { searchParams: Prom
 
       <div className="space-y-6">
         {/* KPIs */}
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 min-[420px]:grid-cols-2 md:grid-cols-2 xl:grid-cols-3">
+          <Stat
+            label={t("kpi_apd")}
+            value={apd.total === null ? "—" : numD(apd.total, lang, 0)}
+            hint={
+              apd.perDay === null ? (
+                t("kpi_apd_none", { min: MIN_GROUP_SIZE })
+              ) : (
+                t("kpi_apd_hint", { n: numD(apd.perDay, lang, apd.perDay < 10 ? 1 : 0) })
+              )
+            }
+          />
           <div className="card h-full px-5 py-4">
             <div className="text-xs font-medium text-subtle">{t("kpi_part")}</div>
             <div className="num mt-1 text-2xl font-semibold tracking-tight">{pct === null ? "—" : `${pct}%`}</div>
             <div className="hr-meter mt-2"><span style={{ width: `${pct ?? 0}%` }} /></div>
             <div className="mt-2 text-xs text-subtle"><People n={respondents} scoped={!!col} /> {t("kpi_of", { n: numD(population, lang, 0) })}</div>
           </div>
-          <Link href="/hr/needs" className="block h-full">
-            <Stat label={t("kpi_needs")} value={live} hint={t(live === 1 ? "kpi_needs_one" : "kpi_needs_many", { n: live, d: drafts })} />
+          <Link href={col ? `/hr/signals?collectiu=${col.id}` : "/hr/signals"} className="block h-full">
+            <Stat label={t("kpi_alarms")} value={openAlarms} hint={col ? collectiveLabel(col.nom, lang) : t("kpi_alarms_hint")} />
           </Link>
           <Stat
             label={t("kpi_score")}
@@ -203,23 +205,6 @@ export default async function HrDashboard({ searchParams }: { searchParams: Prom
           />
           <Stat label={t("kpi_best")} value={best ? <>{f1(best.now)}<span className="text-base font-normal text-subtle"> / 5</span></> : "—"} hint={best ? domainLabel(best.d, lang) : "—"} />
           <Stat label={t("kpi_worst")} value={worst ? <>{f1(worst.now)}<span className="text-base font-normal text-subtle"> / 5</span></> : "—"} hint={worst ? domainLabel(worst.d, lang) : "—"} />
-          <Stat
-            label={t("kpi_apd")}
-            value={apd.perDay === null ? "—" : numD(apd.perDay, lang, apd.perDay < 10 ? 1 : 0)}
-            hint={
-              apd.perDay === null ? (
-                t("kpi_apd_none", { min: MIN_GROUP_SIZE })
-              ) : (
-                <>
-                  {t("kpi_apd_hint")}
-                  <AnswersSpark points={apd.points.map((p) => ({ tip: fmtTip(p), value: p.value }))} aria={t("kpi_apd_aria")} />
-                </>
-              )
-            }
-          />
-          <Link href={col ? `/hr/signals?collectiu=${col.id}` : "/hr/signals"} className="block h-full">
-            <Stat label={t("kpi_alarms")} value={openAlarms} hint={col ? collectiveLabel(col.nom, lang) : t("kpi_alarms_hint")} />
-          </Link>
         </div>
 
         {/* 1. Profile by domain */}
