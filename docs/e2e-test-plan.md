@@ -221,7 +221,7 @@ IDs are `S-n`. Each row has the flow, requirements, mode, steps and the expected
 
 | ID | Flow | Req | Steps | Expected | Result |
 |---|---|---|---|---|---|
-| S-40 | F-EMP-5, F-JOB-2 | R-FLOW-5c, R-TENSION-1 | [B] Fresh account, `/api/pool/next` (via `javascript_tool` fetch) and the UI | At most 3 questions in the batch (`questionsPerDay`). "Pregunta 1 de N" with N up to 3 | ☐ |
+| S-40 | F-EMP-5, F-JOB-2 | R-FLOW-5c, R-TENSION-1 | [B] Fresh account, `/api/pool/next` (via `javascript_tool` fetch) and the UI | Exactly 3 questions (`questionsPerDay`), all of one answer type, none free text, all in one language. "Pregunta 1 de N" with N = 3 | ☐ |
 | S-41 | F-EMP-5 B6, F-JOB-2 | R-FLOW-5f | [T] `pnpm --filter @damm/db run madrid-check` | A new batch starts at 00:00 Europe/Madrid, not UTC, including both DST changes | ☐ |
 | S-42 | F-JOB-2, F-HR-3 | R-FLOW-5c | [B] With an approved HR need for the collective, new account, read the batch | Order: any due follow-up, then the HR need (highest `prioritat`, one per day), then monitoring questions | ☐ |
 | S-43 | F-EMP-5 B2 | R-FLOW-5a | [B] Answer one question, then replay the same `POST /api/responses` from `javascript_tool` | 409 `{ error: "already_answered", preguntaId }`; no second `resposta` row; the UI treats 409 as done | ☐ |

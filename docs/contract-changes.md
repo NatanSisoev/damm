@@ -19,6 +19,15 @@ What changed and why.
 
 ---
 
+## C23 · 2026-11-08 · Jan · Daily batch: exactly the cap, one answer type, no free text (supersedes C15 and C18)
+
+`getDailyBatch` (`@damm/engine`) no longer appends published-need questions past the cap. A day is exactly `questionsPerDay` (3) items, all of one answer type. The type is decided first: the top published need's type, else a due follow-up's type, else Thompson sampling over the types that can fill the day; the rest is filled with same-type monitoring items by domain priority. A day is shorter than 3 only when no more items of that type exist; types are never mixed. Needs keep top priority, inside the 3 slots (`maxNeedsPerDay` still 1). `open` questions are never batch items (`BATCH_EXCLUDED_TYPES`): open HR need questions are skipped in the batch (not converted). Commenting is an optional extra on any answered question: `POST /api/responses` already accepts `comentari` with `valorNum`, stored redacted in `resposta.comentari`, and the answer UI now offers it under non-text questions. `missing_comment` still applies to a legacy `open` row. `store.publishedNeedsMissing` is removed. `GET /api/pool/next` text falls back to the user's language, then Catalan, then the stored text. No schema or API shape change.
+
+- [x] Jan: pool route comment, optional comment field in the answer UI, docs. (done 2026-11-08)
+- [ ] Natan: nothing to apply; C15 and C18 top-up behaviour is withdrawn. Keep the health check "daily batches within limits" strict.
+
+---
+
 ## C22 · 2026-11-08 · Jan · Data retention constants and purge (R-PRIV-8)
 
 `packages/shared` gains `RETENTION` (`rawResponseMonths: 24`, `inactiveAccountMonths: 24`, `pushSubscriptionMonths: 12`). `@damm/db` gains `purgeExpired(db, { dryRun })` (`packages/db/src/retention.ts`): deletes `resposta` rows with `periode` older than the window plus their `comentari_tema` and `resposta_seed` rows, accounts with no recent answer (their `assignment` and `person_domain_state` rows cascade), and old push subscriptions. Aggregate tables (`agregat`, `tema`, `senyal`, `insight`, `recomanacio`, `domain_importance`) are never touched. `POST /api/jobs/run` calls it as its last step (`?dryRun=1` only counts); also `pnpm --filter @damm/db run purge [-- --dry-run]`. No schema change.

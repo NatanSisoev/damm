@@ -134,6 +134,8 @@ export function AnswerFlow({ compteId }: { compteId: string }) {
               preguntaId: q.id,
               valorNum: draft.valorNum,
               valueJson: draft.valueJson,
+              // Optional free comment on any non-text answer; never required.
+              ...(draft.comentari.trim() ? { comentari: draft.comentari.trim() } : {}),
               answerMs: Math.max(0, Math.round(performance.now() - shownAt.current)),
             },
       ],
@@ -237,6 +239,22 @@ export function AnswerFlow({ compteId }: { compteId: string }) {
       </div>
 
       <QuestionRenderer question={q} draft={draft} onChange={changeDraft} />
+
+      {q.tipus !== "open" && (
+        <details className="mt-6" open={draft.comentari !== ""}>
+          <summary className="cursor-pointer text-sm text-muted">{t("comment_add")}</summary>
+          <textarea
+            className="input mt-2 w-full text-base"
+            rows={3}
+            maxLength={500}
+            value={draft.comentari}
+            onChange={(e) => changeDraft({ ...draft, comentari: e.target.value })}
+            placeholder={t("comment_placeholder")}
+            aria-label={t("comment_add")}
+          />
+          <p className="mt-1 text-sm text-muted">{t("open_note")}</p>
+        </details>
+      )}
 
       <div className="mt-auto pt-8">
         {message && (

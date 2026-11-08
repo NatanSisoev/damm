@@ -30,7 +30,7 @@ Scope: the employee side only (onboarding, answering, push). Anything the HR sid
 `GET /api/pool/next` (session required) returns `PoolNextResponse` from `@damm/shared`: up to 2 questions for today. Selection comes from the engine package (`packages/engine`); until it exists, use a stub that returns approved questions for the account's collective, excluding ones answered in the last 4 days, approved HR needs first (`prioritat` descending).
 
 `POST /api/responses` (session required) takes `PostResponsesRequest`:
-- Validate with zod: each `preguntaId` is an approved question visible to the account's collective, `valorNum` within the question's scale, `obert` has a `comentari`.
+- Validate with zod: each `preguntaId` is an approved question visible to the account's collective, `valorNum` within the question's scale, `obert` has a `comentari`. Any other question may also carry an optional `comentari` (a collapsed "Afegeix un comentari (opcional)" field under the answer; never required; open questions are never batch items, C23).
 - Reject a repeat answer to the same question the same day.
 - Pass `comentari` through the PII redactor (`packages/ai`) before insert; if the redactor is unavailable, store nothing rather than raw text.
 - Set `periode` from the server date (`YYYY-MM`), `canal` from the request (`app` or `mobil_qr`).
