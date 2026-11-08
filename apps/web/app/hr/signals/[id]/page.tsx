@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Comments, People } from "../../glyphs";
 import { notFound } from "next/navigation";
-import { MIN_GROUP_SIZE, type Lang } from "@damm/shared";
+import { MIN_GROUP_SIZE } from "@damm/shared";
 import { getSignalDetail, type SignalTimelineStep } from "@damm/db/hr";
 
 import { hrListProbes, type ProbeView } from "@/lib/hr-engine";
@@ -52,12 +52,14 @@ function timelineText(s: SignalTimelineStep, t: HrResultsT): { label: string; de
   return { label, detail };
 }
 
-function Timeline({ steps, t }: { steps: SignalTimelineStep[]; t: HrResultsT }) {
+function Timeline({ steps, t, hasFollowUps }: { steps: SignalTimelineStep[]; t: HrResultsT; hasFollowUps: boolean }) {
   return (
     <ol className="grid gap-4 sm:grid-cols-4">
       {steps.map((s, i) => {
         const tx = timelineText(s, t);
-        const next = s.state !== "done" ? NEXT[s.key] : undefined;
+        const step = s.state !== "done" ? NEXT[s.key] : undefined;
+        // No follow-up card without follow-ups: those steps point at the recommendations, where a follow-up starts.
+        const next = step && !hasFollowUps && step.href === "#seguiment" ? { ...step, href: "#recomanacions" } : step;
         const body = (
           <>
             <span
@@ -106,25 +108,30 @@ function recTitle(r: { titol?: string | null; text: string }): string {
 
 const pct = (v: number) => `${Math.round(v <= 1 ? v * 100 : v)}%`;
 
-function ProbeCard({ t, lang, probes, signal, error }: { t: HrResultsT; lang: Lang; probes: ProbeView[]; signal: { id: number; collectiuId: number | null; tornId: number | null; dominiId: number | null; collectiu: string | null; domini: string | null }; error?: string }) {
+function ProbeCard({ t, probes, signal, error }: { t: HrResultsT; probes: ProbeView[]; signal: { id: number; collectiuId: number | null; tornId: number | null; dominiId: number | null; collectiu: string | null; domini: string | null }; error?: string }) {
   const active = probes.filter((p) => p.status === "active");
   const canProbe = signal.collectiuId !== null && signal.dominiId !== null;
   return (
     <Card id="indagar" title={t("sd_probe")} meta={t("sd_probe_meta")}>
-      <p className="mb-3 text-[13px] text-muted">
-        {t("sd_probe_p", { domain: signal.domini ? domainLabel(signal.domini, lang) : t("sd_probe_this") })}
-      </p>
       {error && <p role="alert" className="mb-3 rounded-lg border border-line-strong px-3 py-2 text-[13px]">{error}</p>}
       {active.length === 0 && (
-        <form action={startProbeAction}>
+        <form action={startProbeAction} className="flex items-end gap-3">
           <input type="hidden" name="signal" value={signal.id} />
           <input type="hidden" name="collectiu" value={signal.collectiuId ?? ""} />
           <input type="hidden" name="torn" value={signal.tornId ?? ""} />
           <input type="hidden" name="domini" value={signal.dominiId ?? ""} />
+          <label className="text-xs text-muted">
+            {t("sd_probe_mult")}
+            <input type="number" name="boost" defaultValue={2} min={1.5} max={10} step={0.5} required disabled={!canProbe} className="input num mt-1 block w-24" />
+          </label>
+          <label className="text-xs text-muted">
+            {t("sd_probe_days")}
+            <input type="number" name="days" defaultValue={14} min={1} max={90} step={1} required disabled={!canProbe} className="input num mt-1 block w-24" />
+          </label>
           <button className="btn btn-primary" disabled={!canProbe}>{t("sd_probe_btn")}</button>
-          {!canProbe && <span className="ml-3 text-xs text-subtle">{t("sd_probe_need")}</span>}
         </form>
       )}
+      {active.length === 0 && !canProbe && <p className="mt-2 text-xs text-subtle">{t("sd_probe_need")}</p>}
       {probes.length > 0 && (
         <ul className={`${active.length === 0 ? "mt-4" : ""} space-y-3`}>
           {probes.map((p) => (
@@ -167,6 +174,9 @@ export default async function SignalPage({ params, searchParams }: { params: Pro
   const detail = Number.isInteger(Number(id)) ? getSignalDetail(Number(id), lang) : null;
   if (!detail) notFound();
   const { signal, periodes, trend, trendScope, themes, hiddenThemes, recommendations, followUps, timeline } = detail;
+  // A signal about one domain shows only that domain's line; the other domains are noise here.
+  const related = trend.filter((r) => r.related);
+  const shownTrend = related.length > 0 ? related : trend;
   const probes = hrListProbes(signal.id);
 
   return (
@@ -199,13 +209,16 @@ export default async function SignalPage({ params, searchParams }: { params: Pro
       </div>
 
       <Card title={t("sd_flow")} className="mb-6">
-        <Timeline steps={timeline} t={t} />
+        <Timeline steps={timeline} t={t} hasFollowUps={followUps.length > 0} />
       </Card>
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
         <div className="space-y-6">
           <Card
-            title={t("sd_evo", { scope: trendScope.split(" · ").map((x) => (x === "Tots" ? t("sd_all") : collectiveLabel(x, lang) !== x ? collectiveLabel(x, lang) : shiftLabel(x, lang))).join(" · ") })}
+            title={(() => {
+              const scope = trendScope.split(" · ").map((x) => (x === "Tots" ? t("sd_all") : collectiveLabel(x, lang) !== x ? collectiveLabel(x, lang) : shiftLabel(x, lang))).join(" · ");
+              return shownTrend.length === 1 && shownTrend !== trend ? t("sd_evo_one", { domain: domainLabel(shownTrend[0].domini, lang), scope }) : t("sd_evo", { scope });
+            })()}
             meta={t("sd_score010")}
             flush
           >
@@ -213,7 +226,7 @@ export default async function SignalPage({ params, searchParams }: { params: Pro
               <div className="px-5 pb-5"><Empty>{t("sd_trend_empty")}</Empty></div>
             ) : (
               <>
-                <TrendChart periodes={periodes} rows={trend} highlight={trend.filter((r) => r.related).map((r) => r.domini)} scale="0-10" />
+                <TrendChart periodes={periodes} rows={shownTrend} highlight={shownTrend.filter((r) => r.related).map((r) => r.domini)} scale="0-10" />
                 <details className="border-t border-line">
                   <summary className="cursor-pointer px-5 py-3 text-xs font-medium text-subtle">{t("rs_show_table")}</summary>
                   <div className="overflow-x-auto">
@@ -227,7 +240,7 @@ export default async function SignalPage({ params, searchParams }: { params: Pro
                       </tr>
                     </thead>
                     <tbody>
-                      {trend.map((r) => (
+                      {shownTrend.map((r) => (
                         <tr key={r.domini} className={r.related ? "bg-accent-soft" : ""}>
                           <td className="font-medium">
                             {domainLabel(r.domini, lang)}
@@ -265,37 +278,6 @@ export default async function SignalPage({ params, searchParams }: { params: Pro
         </div>
 
         <div className="space-y-6">
-          <Card fold title={<>{t("sd_themes")} <span className="num text-xs font-normal text-subtle">{themes.length}</span></>}>
-            {themes.length === 0 ? (
-              <Empty>{t("sd_themes_empty", { min: MIN_GROUP_SIZE })}</Empty>
-            ) : (
-              <ul className="space-y-3">
-                {themes.map((th) => (
-                  <li key={th.id} className="rounded-lg border border-line p-3">
-                    <div className="mb-1.5 flex flex-wrap items-center gap-2">
-                      <h3 className="font-medium">{th.etiqueta}</h3>
-                      {th.emergent && <span className="badge badge-warn">{t("rs_emergent")}</span>}
-                      <span className="num ml-auto text-xs text-subtle"><Comments n={th.n} /></span>
-
-                    </div>
-                    {th.resum && <p className="text-[13px] text-muted">{th.resum} <span className="text-xs text-subtle">{t("sd_ai_summary")}</span></p>}
-                    {th.snippets.length > 0 && (
-                      <ul className="mt-3 space-y-2">
-                        {th.snippets.map((s, i) => (
-                          <li key={i} className="border-l-2 border-line-strong pl-3 text-[13px] italic text-muted">«{s}»</li>
-                        ))}
-                      </ul>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            )}
-            <p className="mt-3 text-xs text-subtle">
-              {t("sd_themes_note", { min: MIN_GROUP_SIZE })}
-              {hiddenThemes > 0 && ` ${t(hiddenThemes > 1 ? "sd_hidden_many" : "sd_hidden_one", { n: hiddenThemes, min: MIN_GROUP_SIZE })}`}
-            </p>
-          </Card>
-
           <Card id="recomanacions" title={t("sd_recs")} meta={<span className="num">{recommendations.length}</span>}>
             {recommendations.length === 0 ? (
               signal.dominiId != null ? (
@@ -329,12 +311,41 @@ export default async function SignalPage({ params, searchParams }: { params: Pro
             )}
           </Card>
 
-          <ProbeCard t={t} lang={lang} probes={probes} signal={signal} error={probeError} />
-
-          <Card id="seguiment" title={t("sd_follow")}>
-            {followUps.length === 0 ? (
-              <Empty>{t("sd_follow_empty")}</Empty>
+          <Card fold title={<>{t("sd_themes")} <span className="num text-xs font-normal text-subtle">{themes.length}</span></>}>
+            {themes.length === 0 ? (
+              <Empty>{t("sd_themes_empty", { min: MIN_GROUP_SIZE })}</Empty>
             ) : (
+              <ul className="space-y-3">
+                {themes.map((th) => (
+                  <li key={th.id} className="rounded-lg border border-line p-3">
+                    <div className="mb-1.5 flex flex-wrap items-center gap-2">
+                      <h3 className="font-medium">{th.etiqueta}</h3>
+                      {th.emergent && <span className="badge badge-warn">{t("rs_emergent")}</span>}
+                      <span className="num ml-auto text-xs text-subtle"><Comments n={th.n} /></span>
+
+                    </div>
+                    {th.resum && <p className="text-[13px] text-muted">{th.resum} <span className="text-xs text-subtle">{t("sd_ai_summary")}</span></p>}
+                    {th.snippets.length > 0 && (
+                      <ul className="mt-3 space-y-2">
+                        {th.snippets.map((s, i) => (
+                          <li key={i} className="border-l-2 border-line-strong pl-3 text-[13px] italic text-muted">«{s}»</li>
+                        ))}
+                      </ul>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+            <p className="mt-3 text-xs text-subtle">
+              {t("sd_themes_note", { min: MIN_GROUP_SIZE })}
+              {hiddenThemes > 0 && ` ${t(hiddenThemes > 1 ? "sd_hidden_many" : "sd_hidden_one", { n: hiddenThemes, min: MIN_GROUP_SIZE })}`}
+            </p>
+          </Card>
+
+          <ProbeCard t={t} probes={probes} signal={signal} error={probeError} />
+
+          {followUps.length > 0 && (
+          <Card id="seguiment" title={t("sd_follow")}>
               <ul className="space-y-4">
                 {followUps.map((f) => (
                   <li key={f.necessitatId} className="rounded-lg border border-line p-4">
@@ -361,8 +372,8 @@ export default async function SignalPage({ params, searchParams }: { params: Pro
                   </li>
                 ))}
               </ul>
-            )}
           </Card>
+          )}
         </div>
       </div>
     </>
