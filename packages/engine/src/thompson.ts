@@ -10,22 +10,30 @@ export interface FormatArm {
   pref: number;
 }
 
+/** Share every allowed format keeps, so a low weight leans the mix instead of silencing a format. */
+export const MIN_FORMAT_SHARE = 0.1;
+
 /**
- * Draws θ ~ Beta(α, β) for every allowed format and returns the format maximising θ · pref.
- * Formats with little data have wide Betas, so they still get tried.
+ * Draws θ ~ Beta(α, β) for every allowed format, then picks one at random with probability
+ * proportional to θ · pref, mixed with a floor of MIN_FORMAT_SHARE per format (lower when there
+ * are more than 1 / MIN_FORMAT_SHARE formats). pref is a lean, not a ranking: weight 3 vs 1 shows
+ * the first format about three times as often, it does not show it every time. pref 0 = banned.
  */
 export function chooseFormat(rng: Rng, arms: FormatArm[]): QuestionType | undefined {
-  let best: QuestionType | undefined;
-  let bestValue = -Infinity;
-  for (const arm of arms) {
-    if (arm.pref <= 0) continue;
-    const v = sampleBeta(rng, arm.alpha, arm.beta) * arm.pref;
-    if (v > bestValue) {
-      bestValue = v;
-      best = arm.type;
-    }
+  const allowed = arms.filter((a) => a.pref > 0);
+  if (allowed.length === 0) return undefined;
+  if (allowed.length === 1) return allowed[0]!.type;
+  const scores = allowed.map((a) => sampleBeta(rng, a.alpha, a.beta) * a.pref);
+  const total = scores.reduce((s, v) => s + v, 0);
+  const floor = Math.min(MIN_FORMAT_SHARE, 1 / allowed.length);
+  const rest = 1 - floor * allowed.length;
+  let u = rng();
+  for (let i = 0; i < allowed.length; i++) {
+    const p = floor + rest * (total > 0 ? scores[i]! / total : 1 / allowed.length);
+    if (u < p) return allowed[i]!.type;
+    u -= p;
   }
-  return best;
+  return allowed[allowed.length - 1]!.type;
 }
 
 /** Bayesian update: success = a careful answer. */
