@@ -1005,6 +1005,20 @@ const s4ca = {
   an_hl_mgr_below: "{where}: els responsables puntuen {gap} punts per sota de la resta. Pot ser un biaix de positivitat.",
   an_a_shift: "un torn",
   an_other_shift: "un altre torn",
+  rb_title: "Pocs participants",
+  rb_shift: "{label} · torn de {shift} respon poc ({rate} % vs {refRate} % {refShift}). Llegeix-ne els resultats amb prudència.",
+  rb_shift_plain: "{label} · torn de {shift} respon poc ({rate} % vs {refRate} % de referència). Llegeix-ne els resultats amb prudència.",
+  rb_col: "{label} respon poc ({rate} % vs {refRate} % a tota l'empresa). Llegeix-ne els resultats amb prudència.",
+  rb_vs_shift: "al torn de {shift}",
+  rb_remind: "Recorda-ho a la gent",
+  rb_need: "Nova necessitat per a aquest grup",
+  rb_how: "Com es calcula?",
+  lim_how: "Com es calcula?",
+  lim_results: "Es mostra la n i la fiabilitat de cada xifra; els grups de menys de {min} persones s'amaguen. És una enquesta voluntària: qui respon pot no representar tothom.",
+  lim_trend: "Dues coses que es mouen alhora no vol dir que una causi l'altra: és correlació, no causa. Un canvi petit o amb poca gent pot ser soroll.",
+  lim_signal: "Un senyal és una pista, no un veredicte: depèn de la n i de la confiança indicades, i l'efecte d'una acció és correlació, no causa.",
+  lim_themes: "Els comentaris es classifiquen automàticament: pot haver-hi errors i no es detecta la ironia. Els temes amb menys de {min} comentaris s'amaguen.",
+  lim_manager: "Les persones responsables d'equip tendeixen a respondre amb més positivitat, i els grups de menys de {min} persones no es mostren.",
 } as const;
 
 const s4es: Record<keyof typeof s4ca, string> = {
@@ -1093,6 +1107,20 @@ const s4es: Record<keyof typeof s4ca, string> = {
   an_hl_mgr_below: "{where}: los responsables puntúan {gap} puntos por debajo del resto. Puede ser un sesgo de positividad.",
   an_a_shift: "un turno",
   an_other_shift: "otro turno",
+  rb_title: "Poca participación",
+  rb_shift: "{label} · el turno de {shift} responde poco ({rate} % frente a {refRate} % {refShift}). Lee sus resultados con cautela.",
+  rb_shift_plain: "{label} · el turno de {shift} responde poco ({rate} % frente a {refRate} % de referencia). Lee sus resultados con cautela.",
+  rb_col: "{label} responde poco ({rate} % frente a {refRate} % en toda la empresa). Lee sus resultados con cautela.",
+  rb_vs_shift: "en el turno de {shift}",
+  rb_remind: "Recuérdalo a la gente",
+  rb_need: "Nueva necesidad para este grupo",
+  rb_how: "¿Cómo se calcula?",
+  lim_how: "¿Cómo se calcula?",
+  lim_results: "Se muestra la n y la fiabilidad de cada cifra; los grupos de menos de {min} personas se ocultan. Es una encuesta voluntaria: quien responde puede no representar a todos.",
+  lim_trend: "Que dos cosas se muevan a la vez no significa que una cause la otra: es correlación, no causa. Un cambio pequeño o con poca gente puede ser ruido.",
+  lim_signal: "Una señal es una pista, no un veredicto: depende de la n y la confianza indicadas, y el efecto de una acción es correlación, no causa.",
+  lim_themes: "Los comentarios se clasifican automáticamente: puede haber errores y no se detecta la ironía. Los temas con menos de {min} comentarios se ocultan.",
+  lim_manager: "Los responsables de equipo tienden a responder con más positividad, y los grupos de menos de {min} personas no se muestran.",
 };
 
 const s4en: Record<keyof typeof s4ca, string> = {
@@ -1181,6 +1209,20 @@ const s4en: Record<keyof typeof s4ca, string> = {
   an_hl_mgr_below: "{where}: managers score {gap} points below the rest. It may be a positivity bias.",
   an_a_shift: "one shift",
   an_other_shift: "another shift",
+  rb_title: "Low participation",
+  rb_shift: "{label} · {shift} shift answers little ({rate}% vs {refRate}% {refShift}). Read its results with caution.",
+  rb_shift_plain: "{label} · {shift} shift answers little ({rate}% vs {refRate}% reference). Read its results with caution.",
+  rb_col: "{label} answers little ({rate}% vs {refRate}% company-wide). Read its results with caution.",
+  rb_vs_shift: "on the {shift} shift",
+  rb_remind: "Remind people",
+  rb_need: "New need for this group",
+  rb_how: "How is it calculated?",
+  lim_how: "How is it calculated?",
+  lim_results: "The n and reliability of every figure are shown; groups under {min} people are hidden. This is a voluntary survey: those who answer may not represent everyone.",
+  lim_trend: "Two things moving together does not mean one causes the other: this is correlation, not cause. A small change, or one with few people, may be noise.",
+  lim_signal: "A signal is a hint, not a verdict: it depends on the n and confidence shown, and the effect of an action is correlation, not cause.",
+  lim_themes: "Comments are classified automatically: errors are possible and irony is not detected. Themes with fewer than {min} comments are hidden.",
+  lim_manager: "Managers tend to answer more positively, and groups under {min} people are not shown.",
 };
 
 export const hrResultsDict = defineDict({

@@ -695,6 +695,7 @@ export interface RepRow {
   suprimit: boolean;
   motiu: HideReason;
   respondents: number | null; // null when suppressed
+  population: number | null; // synthetic headcount of the segment; null when suppressed
   respShare: number | null; // 0..1, among visible segments of the same group
   popShare: number | null;
   gap: number | null; // respShare - popShare
@@ -750,6 +751,52 @@ export interface Representativeness {
   torns: RepRow[];
 }
 
+/** A segment is flagged when its response rate is under this share of the reference rate (R-FLOW-5e, A5, B3). */
+export const UNDER_REPRESENTED_RATIO = 0.8;
+
+export interface UnderRepresented {
+  collectiu: string;
+  torn: string | null; // null = the whole collective
+  rate: number; // 0..1, respondents / population of the segment
+  refRate: number; // 0..1, the comparison rate
+  refTorn: string | null; // best-answering shift of the collective (shift rows only)
+}
+
+/**
+ * Visible segments that answer clearly less than their share of the population: response rate (respondents / population)
+ * under UNDER_REPRESENTED_RATIO of the reference. Shift rows are compared with their collective's rate (the best-answering
+ * shift is returned for the message); collective rows with the company-wide rate. Suppressed rows (n < minimum group size)
+ * are never returned. Aggregates only. Worst first.
+ */
+export function underRepresented(rep: Representativeness): UnderRepresented[] {
+  const rate = (r: RepRow) => (r.respondents !== null && r.population ? r.respondents / r.population : null);
+  const rateOf = (rows: RepRow[]) => {
+    const v = rows.filter((r) => !r.suprimit && r.respondents !== null && r.population);
+    const pop = v.reduce((s, r) => s + (r.population ?? 0), 0);
+    return pop > 0 ? v.reduce((s, r) => s + (r.respondents ?? 0), 0) / pop : null;
+  };
+  const out: UnderRepresented[] = [];
+  const companyRate = rateOf(rep.collectius);
+  for (const r of rep.collectius) {
+    const x = rate(r);
+    if (x !== null && companyRate !== null && x < UNDER_REPRESENTED_RATIO * companyRate)
+      out.push({ collectiu: r.collectiu, torn: null, rate: x, refRate: companyRate, refTorn: null });
+  }
+  const byCol = new Map<string, RepRow[]>();
+  for (const r of rep.torns) byCol.set(r.collectiu, [...(byCol.get(r.collectiu) ?? []), r]);
+  for (const [collectiu, rows] of byCol) {
+    const colRate = rateOf(rows);
+    const visible = rows.filter((r) => !r.suprimit && rate(r) !== null);
+    if (colRate === null || visible.length < 2) continue;
+    const best = visible.reduce((a, b) => (rate(b)! > rate(a)! ? b : a));
+    for (const r of visible) {
+      const x = rate(r)!;
+      if (x < UNDER_REPRESENTED_RATIO * colRate) out.push({ collectiu, torn: r.torn, rate: x, refRate: rate(best)!, refTorn: best.torn });
+    }
+  }
+  return out.sort((a, b) => a.rate / a.refRate - b.rate / b.refRate);
+}
+
 interface RepItem { collectiu: string; torn: string | null; resp: number; pop: number; hidden: boolean }
 
 /** Primary hiding (small, flagged, no row or tiny population), then complementary suppression among the siblings. */
@@ -763,11 +810,11 @@ function buildRep(items: RepItem[]): RepRow[] {
   const popTotal = visible.reduce((s, i) => s + i.pop, 0);
   return items.map((i, k) => {
     if (reasons[k] !== null) {
-      return { collectiu: i.collectiu, torn: i.torn, suprimit: true, motiu: reasons[k], respondents: null, respShare: null, popShare: null, gap: null };
+      return { collectiu: i.collectiu, torn: i.torn, suprimit: true, motiu: reasons[k], respondents: null, population: null, respShare: null, popShare: null, gap: null };
     }
     const respShare = i.resp / respTotal;
     const popShare = i.pop / popTotal;
-    return { collectiu: i.collectiu, torn: i.torn, suprimit: false, motiu: null, respondents: i.resp, respShare, popShare, gap: respShare - popShare };
+    return { collectiu: i.collectiu, torn: i.torn, suprimit: false, motiu: null, respondents: i.resp, population: i.pop, respShare, popShare, gap: respShare - popShare };
   });
 }
 
