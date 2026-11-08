@@ -23,13 +23,18 @@ export function Modal({ open, onClose, title, footer, wide, children }: ModalPro
   useEffect(() => {
     const dialog = ref.current;
     if (!dialog) return;
-    if (open && !dialog.open) dialog.showModal();
+    if (open && !dialog.open) {
+      dialog.showModal();
+      // showModal() focuses the first control (the × button): give the dialog itself initial focus instead.
+      dialog.focus({ preventScroll: true });
+    }
     if (!open && dialog.open) dialog.close();
   }, [open]);
 
   return (
     <dialog
       ref={ref}
+      tabIndex={-1}
       className={`hr-modal${wide ? " hr-modal-wide" : ""}`}
       aria-labelledby={title ? titleId : bodyId}
       onCancel={(e) => {
