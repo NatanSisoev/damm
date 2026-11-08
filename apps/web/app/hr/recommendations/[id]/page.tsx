@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { SubmitButton } from "@/app/hr/submit-button";
+import { ConfirmButton } from "../../confirm-button";
+import { ProposalBody } from "../proposal-body";
 import { Comments, People } from "../../glyphs";
-import type { ReactNode } from "react";
 import { notFound } from "next/navigation";
 import { MIN_GROUP_SIZE } from "@damm/shared";
 import { getRecommendationDetail } from "@damm/db/hr";
@@ -21,15 +22,6 @@ import { pageTitle } from "@/lib/i18n/titles";
 export const generateMetadata = pageTitle("hr_rec");
 
 const day = (s: string) => s.slice(0, 10);
-
-function Fact({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <div>
-      <dt className="text-xs font-semibold text-subtle">{label}</dt>
-      <dd className="mt-0.5 text-[13px]">{children}</dd>
-    </div>
-  );
-}
 
 export default async function RecommendationPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -88,36 +80,17 @@ export default async function RecommendationPage({ params }: { params: Promise<{
       <div className="grid gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
         <div className="space-y-6">
           <Card title={t("rd_proposal")}>
-            <p className="text-[15px]">{r.text}</p>
-            <dl className="mt-4 grid gap-4 sm:grid-cols-2">
-              {r.iniciativa && <Fact label={t("rd_f_initiative")}>{r.iniciativa}</Fact>}
-              {r.responsableSuggerit && <Fact label={t("rd_f_owner")}>{r.responsableSuggerit}</Fact>}
-              {r.terminiSuggerit && <Fact label={t("rd_f_deadline")}>{r.terminiSuggerit}</Fact>}
-              <Fact label={t("rd_f_origin")}>{r.font === "llm" ? t("rd_origin_llm") : r.font === "template" ? t("rd_origin_template") : t("rd_origin_none")}</Fact>
-            </dl>
-            {r.justificacio && (
-              <div className="mt-4 border-t border-line pt-4">
-                <h3 className="text-xs font-semibold text-subtle">{t("rd_why")}</h3>
-                <p className="mt-1 text-[13px] text-muted">{r.justificacio}</p>
-              </div>
-            )}
-            {r.limits && (
-              <div className="mt-4 border-t border-line pt-4">
-                <h3 className="text-xs font-semibold text-subtle">{t("rd_limits")}</h3>
-                <p className="mt-1 text-[13px] text-muted">{r.limits}</p>
-              </div>
-            )}
-            <p className="mt-4 text-xs text-subtle">{t("rd_ai_note")}</p>
+            <ProposalBody r={r} />
             {(r.estat === "proposada" || (r.estat === "aprovada" && !r.seguimentNecessitatId)) && (
               <div className="mt-4 flex flex-wrap justify-end gap-2 border-t border-line pt-4">
                 {r.estat === "proposada" && (
                   <>
-                    <form action={discardFromDetailAction}><input type="hidden" name="id" value={r.id} /><SubmitButton className="btn">{t("rd_discard")}</SubmitButton></form>
+                    <form action={discardFromDetailAction}><input type="hidden" name="id" value={r.id} /><ConfirmButton className="btn" message={t("rd_discard_confirm")}>{t("rd_discard")}</ConfirmButton></form>
                     <form action={approveFromDetailAction}><input type="hidden" name="id" value={r.id} /><SubmitButton className="btn btn-primary">{t("rd_approve")}</SubmitButton></form>
                   </>
                 )}
                 {r.estat === "aprovada" && (
-                  <form action={followUpFromDetailAction}><input type="hidden" name="id" value={r.id} /><SubmitButton className="btn btn-primary">{t("rd_create_followup")}</SubmitButton></form>
+                  <form action={followUpFromDetailAction}><input type="hidden" name="id" value={r.id} /><SubmitButton className="btn btn-primary" busyLabel={t("rd_followup_busy")}>{t("rd_create_followup")}</SubmitButton></form>
                 )}
               </div>
             )}

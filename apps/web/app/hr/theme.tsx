@@ -4,6 +4,7 @@ import { MIN_GROUP_SIZE } from "@damm/shared";
 import { getT } from "@/lib/i18n/server";
 import { hrDict } from "@/lib/i18n/hr";
 import { Wordmark } from "../wordmark";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { HrSidebar } from "./nav";
 import type { ViewRole } from "@/lib/view-role";
 import "./hr.css";
@@ -41,6 +42,7 @@ export async function HrShell({ children, subtitle, manager = false, role = "hr"
             </Link>
             <nav aria-label={t("sections")} className="ml-auto flex items-center gap-4">
               <Link href="/hr" className="hr-tab">{t("manager_to_portal")}</Link>
+              <ThemeToggle />
             </nav>
           </div>
         </header>

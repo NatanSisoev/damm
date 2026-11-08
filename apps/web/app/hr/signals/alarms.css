@@ -9,8 +9,6 @@
 .gen-btn { display: inline-flex; align-items: center; gap: 7px; }
 .gen-btn[disabled] { opacity: .7; cursor: progress; }
 .gen-icon { width: 14px; height: 14px; flex: none; }
-.gen-spinner { width: 13px; height: 13px; flex: none; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: gen-spin .7s linear infinite; }
-@keyframes gen-spin { to { transform: rotate(360deg); } }
 
 /* Signal loop: the active step and the card where it is done (red as signal), later steps locked */
 .loop-num-active { border-color: var(--red); color: var(--red); background: transparent; }

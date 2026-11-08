@@ -7,6 +7,7 @@ import { ChangeBadge, Sparkline } from "./trend";
 import { Card, Empty } from "./ui";
 import { FoldList } from "./ui-server";
 import { RecommendationBody } from "./recommendation-card";
+import { ConfirmButton } from "./confirm-button";
 import { approveRecommendationAction, discardRecommendationAction, followUpAction, setAlarmStatusAction } from "./actions";
 import type { DomainInitiative, DomainInitiatives, ManagerGap } from "@damm/db/hr";
 import type { Headline, HeadlineWhere, Heatmap, HeatCell, NarrativeView, ReachGap, SegmentTrend, ThemesByDomain } from "./analytics";
@@ -138,7 +139,7 @@ export async function ProposalsCard({ proposals, fold }: { proposals: (Parameter
               <div className="mt-2 flex flex-wrap gap-2">
                 <form action={discardRecommendationAction}>
                   <input type="hidden" name="id" value={r.id} />
-                  <button className="btn" type="submit">{t("sd_discard")}</button>
+                  <ConfirmButton className="btn" message={t("sd_rec_discard_confirm")}>{t("sd_discard")}</ConfirmButton>
                 </form>
                 <form action={approveRecommendationAction} className="flex gap-2">
                   <input type="hidden" name="id" value={r.id} />

@@ -1,13 +1,13 @@
 // Brand title: the supplied "Give a Damm" SVGs, never live text (docs/style-guide.md, Logo and title usage).
-// One-line title for headers; light/dark variants follow the colour scheme. `light` forces the paper-background variant (print poster).
+// One-line title for headers; both variants are rendered and CSS (globals.css) shows the one for the active theme. `light` forces the paper-background variant (print poster).
 export function Wordmark({ className = "", light = false }: { className?: string; light?: boolean }) {
   // Height comes from className (h-*); width follows the SVG's aspect ratio.
   const cls = `block h-6 w-auto ${className}`;
   return (
-    <picture>
-      {!light && <source media="(prefers-color-scheme: dark)" srcSet="/brand/title-oneline-dark.svg" />}
-      <img src="/brand/title-oneline-light.svg" alt="Give a Damm" className={cls} />
-    </picture>
+    <>
+      <img src="/brand/title-oneline-light.svg" alt="Give a Damm" className={`${light ? "" : "wm-light "}${cls}`} />
+      {!light && <img src="/brand/title-oneline-dark.svg" alt="Give a Damm" className={`wm-dark ${cls}`} />}
+    </>
   );
 }
 
