@@ -454,3 +454,14 @@ Action items:
 - [ ] Natan: review the two engine hooks (`sim/world.ts`, `demo/build-demo.ts`); keep them or move them where you prefer.
 - [ ] Natan (optional): when the engine writes themes, recommendations or signal text, also write es/en rows to `traduccio` (or store keys instead of sentences).
 - [x] Jan: schema, overlay, HR/manager pages, build script. (done 2026-11-08)
+
+## 2026-11-08: Archive resolved and dismissed alarms, reopen dismissed ones (Jan)
+
+Additive and backward compatible.
+
+- `senyal.archived_at TEXT` (new nullable column, added on boot by `ensureAlarmArchiveColumn`): set when HR archives a resolved or dismissed alarm. Archived alarms leave the Resolved and Dismissed tabs and show under Archived on `/hr/signals`. Status is unchanged.
+- `reopenDismissedAlarm(id)` in `@damm/db/hr` sets a dismissed alarm back to `open` and clears `archived_at`. It writes the DB directly; the engine's `ALARM_TRANSITIONS` still has no move out of `dismissed`.
+
+Action items:
+- [ ] Natan (optional): if the engine should own reopening, add `dismissed -> open` to `ALARM_TRANSITIONS` and we switch the action to `setAlarmStatus`.
+- [x] Jan: column, repository functions, alarms page tabs and buttons. (done 2026-11-08)

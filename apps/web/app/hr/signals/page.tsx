@@ -4,7 +4,7 @@ import { GenerateButton } from "./generate-button";
 import { AutoSubmitForm } from "./auto-submit-form";
 import Link from "next/link";
 import { MIN_GROUP_SIZE } from "@damm/shared";
-import { listCollectius, listDomains, listRecommendations, listTorns } from "@damm/db/hr";
+import { archivedAlarmIds, listCollectius, listDomains, listRecommendations, listTorns } from "@damm/db/hr";
 import { hrAlarms, type AlarmView } from "@/lib/hr-engine";
 import { Card, Empty, PageHeader } from "../ui";
 import { FoldList } from "../ui-server";
@@ -16,7 +16,7 @@ import { signalsDict } from "@/lib/i18n/hr-signals";
 import { collectiveLabel, domainLabel, shiftLabel } from "@/lib/i18n/names";
 import type { Lang } from "@damm/shared";
 
-import { setAlarmStatusAction } from "../actions";
+import { archiveAlarmAction, reopenAlarmAction, setAlarmStatusAction } from "../actions";
 import { ALARM_NEXT } from "./transitions";
 import { NON_ACTIONABLE } from "./alarm-text";
 import { signalDetail, signalDrop, signalSegment } from "@/lib/signal-text";
@@ -30,6 +30,7 @@ const TABS = [
   { key: "revisades", label: "sg_tab_reviewed", statuses: ["acknowledged", "action_linked"] },
   { key: "resoltes", label: "sg_tab_resolved", statuses: ["resolved"] },
   { key: "descartades", label: "sg_tab_dismissed", statuses: ["dismissed"] },
+  { key: "arxivades", label: "sg_tab_archived", statuses: ["resolved", "dismissed"] },
 ] as const;
 
 const SEV_RANK: Record<string, number> = { critical: 0, warning: 1, info: 2 };
@@ -62,8 +63,11 @@ export default async function AlarmsPage({ searchParams }: { searchParams: Promi
 
   // Minimum group size is re-checked here even though the engine already suppresses small alarms.
   const all = hrAlarms({ role: "hr" }, { status: ["open", "acknowledged", "action_linked", "resolved", "dismissed"] }).filter((a) => a.n >= MIN_GROUP_SIZE);
-  const counts = Object.fromEntries(TABS.map((x) => [x.key, all.filter((a) => (x.statuses as readonly string[]).includes(a.status)).length]));
-  const inTab = all.filter((a) => (tab.statuses as readonly string[]).includes(a.status));
+  // Archived resolved alarms live only in their own tab.
+  const archived = archivedAlarmIds();
+  const inTabOf = (x: (typeof TABS)[number], a: AlarmView) => (x.statuses as readonly string[]).includes(a.status) && archived.has(a.id) === (x.key === "arxivades");
+  const counts = Object.fromEntries(TABS.map((x) => [x.key, all.filter((a) => inTabOf(x, a)).length]));
+  const inTab = all.filter((a) => inTabOf(tab, a));
 
   const toRow = (a: AlarmView): Row => {
     const col = a.collectiuId ? colNames.get(a.collectiuId) ?? null : null;
@@ -220,7 +224,7 @@ export default async function AlarmsPage({ searchParams }: { searchParams: Promi
                 <FoldList
                   className="divide-y divide-line"
                   items={items.map((r) => (
-                    <AlarmItem key={r.id} t={t} lang={lang} r={r} rec={recs.find((x) => x.senyalId === r.id && x.estat === "aprovada")} drafted={recs.some((x) => x.senyalId === r.id)} />
+                    <AlarmItem key={r.id} t={t} lang={lang} r={r} rec={recs.find((x) => x.senyalId === r.id && x.estat === "aprovada")} drafted={recs.some((x) => x.senyalId === r.id)} archived={archived.has(r.id)} />
                   ))}
                 />
               </div>
@@ -279,7 +283,7 @@ function Select({ all, name, label, value, options }: { all: string; name: strin
   );
 }
 
-function AlarmItem({ t, lang, r, rec, drafted }: { t: HrResultsT; lang: Lang; r: Row; rec?: { id: number; seguimentNecessitatId: number | null }; drafted: boolean }) {
+function AlarmItem({ t, lang, r, rec, drafted, archived }: { t: HrResultsT; lang: Lang; r: Row; rec?: { id: number; seguimentNecessitatId: number | null }; drafted: boolean; archived: boolean }) {
 
   const next = ALARM_NEXT[r.status];
   return (
@@ -298,6 +302,21 @@ function AlarmItem({ t, lang, r, rec, drafted }: { t: HrResultsT; lang: Lang; r:
           </p>
           <p className="text-[13px] text-muted">{r.detail}</p>
         </div>
+      {r.status === "resolved" || r.status === "dismissed" ? (
+      <div className="ml-auto flex shrink-0 items-center gap-2">
+        {r.status === "dismissed" && (
+          <form action={reopenAlarmAction}>
+            <input type="hidden" name="id" value={r.id} />
+            <button className="btn" type="submit">{t("sg_reopen")}</button>
+          </form>
+        )}
+        <form action={archiveAlarmAction}>
+          <input type="hidden" name="id" value={r.id} />
+          <input type="hidden" name="archive" value={archived ? "0" : "1"} />
+          <button className="btn" type="submit">{t(archived ? "sg_unarchive" : "sg_archive")}</button>
+        </form>
+      </div>
+      ) : (
       <div className="ml-auto flex shrink-0 flex-wrap items-center justify-end gap-2">
         {!drafted && r.domainId != null && !NON_ACTIONABLE.has(r.type) && (
           <form action={generateRecommendationsAction}>
@@ -348,6 +367,7 @@ function AlarmItem({ t, lang, r, rec, drafted }: { t: HrResultsT; lang: Lang; r:
           )}
         </div>
       </div>
+      )}
       </div>
     </li>
   );

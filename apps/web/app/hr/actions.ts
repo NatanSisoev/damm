@@ -6,7 +6,7 @@ import { draftSurvey, redraftQuestion } from "@damm/ai";
 import { DEFAULT_QUESTION_COUNT, QUESTION_COUNT_OPTIONS, type QueryDelivery } from "@damm/shared";
 import {
   approveQuestion, getRedraftContext, listCollectius, listNeedCards, moveDraft, replaceDraft, saveDraftSurvey, updateNeedHeader, approveRecommendation, createNecessitat, discardQuestion,
-  discardRecommendation, publishNecessitat, updateDraftText, closeNecessitat, setSignalStatus,
+  discardRecommendation, publishNecessitat, updateDraftText, closeNecessitat, setSignalStatus, setAlarmArchived, reopenDismissedAlarm,
 } from "@damm/db/hr";
 import { createDraftedFollowUp } from "./follow-up";
 import { changeAlarmStatus, hrSetQuestionActive, type AlarmStatus } from "@/lib/hr-engine";
@@ -148,6 +148,18 @@ export async function setAlarmStatusAction(formData: FormData) {
   } catch {
     // invalid transition (stale page): just refresh
   }
+  revalidatePath("/hr", "layout");
+}
+
+/** Archive a resolved or dismissed alarm (archive=1) or bring it back to its tab (archive=0). */
+export async function archiveAlarmAction(formData: FormData) {
+  setAlarmArchived(Number(formData.get("id")), formData.get("archive") === "1");
+  revalidatePath("/hr", "layout");
+}
+
+/** A dismissed alarm turned out to matter: reopen it. */
+export async function reopenAlarmAction(formData: FormData) {
+  reopenDismissedAlarm(Number(formData.get("id")));
   revalidatePath("/hr", "layout");
 }
 

@@ -241,3 +241,21 @@ export function getRecommendationDetail(id: number, lang?: Lang): Recommendation
     followUp: signal?.followUps.find((f) => f.necessitatId === row.seguimentNecessitatId) ?? null,
   };
 }
+
+/** Ids of alarms HR has archived (only resolved alarms can be archived). */
+export function archivedAlarmIds(): Set<number> {
+  const rows = getDb().prepare("SELECT id FROM senyal WHERE archived_at IS NOT NULL").all() as { id: number }[];
+  return new Set(rows.map((r) => r.id));
+}
+
+/** Archive a resolved alarm, or bring an archived one back. No-op for any other status. */
+export function setAlarmArchived(id: number, archived: boolean): void {
+  getDb()
+    .prepare(`UPDATE senyal SET archived_at = ${archived ? "datetime('now')" : "NULL"} WHERE id = ? AND status IN ('resolved', 'dismissed')`)
+    .run(id);
+}
+
+/** Reopen a dismissed alarm: back to open, out of the archive. */
+export function reopenDismissedAlarm(id: number): void {
+  getDb().prepare("UPDATE senyal SET status = 'open', archived_at = NULL WHERE id = ? AND status = 'dismissed'").run(id);
+}

@@ -18,6 +18,7 @@ export function getDb(): Db {
     ensureApprovalColumn(cached);
     ensureQueryDeliveryColumns(cached);
     ensureHrPushTable(cached);
+    ensureAlarmArchiveColumn(cached);
   }
   return cached;
 }
@@ -69,4 +70,10 @@ function ensureHrPushTable(db: Db): void {
     lang        TEXT NOT NULL DEFAULT 'ca' CHECK (lang IN ('ca','es','en')),
     created_at  TEXT NOT NULL DEFAULT (datetime('now'))
   )`);
+}
+
+/** Databases built before alarm archiving lack `senyal.archived_at`. Idempotent. */
+function ensureAlarmArchiveColumn(db: Db): void {
+  const cols = db.prepare("PRAGMA table_info(senyal)").all() as { name: string }[];
+  if (cols.length && !cols.some((c) => c.name === "archived_at")) db.exec("ALTER TABLE senyal ADD COLUMN archived_at TEXT");
 }

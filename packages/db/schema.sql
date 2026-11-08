@@ -218,7 +218,8 @@ CREATE TABLE senyal (
   status       TEXT NOT NULL DEFAULT 'open' CHECK (status IN ('open','acknowledged','action_linked','resolved','dismissed')),
   audience     TEXT NOT NULL DEFAULT 'hr' CHECK (audience IN ('hr','hr_manager')), -- Lideratge alarms are always 'hr'
   created_at   TEXT NOT NULL DEFAULT (datetime('now')),
-  suprimit     INTEGER NOT NULL DEFAULT 0 CHECK (suprimit IN (0,1))
+  suprimit     INTEGER NOT NULL DEFAULT 0 CHECK (suprimit IN (0,1)),
+  archived_at  TEXT -- HR archived a resolved or dismissed alarm: hidden from its tab, kept for history
 );
 
 -- AI proposes, a human decides: estat changes only through an HR action.
