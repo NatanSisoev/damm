@@ -34,6 +34,23 @@ const supported = () =>
 export function PushToggle({ vapidKey, compact = false }: { vapidKey: string; compact?: boolean }) {
   const t = useT(employeeDict);
   const [state, setState] = useState<State>("loading");
+  // Compact mode (home screen after login / demo join) asks in a popup, once per browser session unless dismissed.
+  const [dismissed, setDismissed] = useState(true);
+
+  useEffect(() => {
+    try {
+      setDismissed(sessionStorage.getItem("push-popup-dismissed") === "1");
+    } catch {
+      setDismissed(false);
+    }
+  }, []);
+
+  function later() {
+    setDismissed(true);
+    try {
+      sessionStorage.setItem("push-popup-dismissed", "1");
+    } catch {}
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -90,6 +107,33 @@ export function PushToggle({ vapidKey, compact = false }: { vapidKey: string; co
   }
 
   if (compact && (state === "loading" || state === "on" || state === "unsupported" || state === "denied")) return null;
+
+  if (compact) {
+    if (dismissed && state !== "working") return null;
+    return (
+      <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-4 sm:items-center" role="presentation">
+        <div role="dialog" aria-modal="true" aria-labelledby="push-popup-title" className="card w-full max-w-sm">
+          <div className="card-body space-y-3">
+            <h2 id="push-popup-title" className="section-title">
+              {t("push_title")}
+            </h2>
+            <p className="text-muted">{t("push_off")}</p>
+            {state === "error" && (
+              <p role="alert" className="font-semibold text-warn">
+                {t("push_error")}
+              </p>
+            )}
+            <button type="button" onClick={enable} disabled={state === "working"} className="btn btn-primary h-12 w-full justify-center text-base disabled:opacity-50">
+              {t("push_enable")}
+            </button>
+            <button type="button" onClick={later} disabled={state === "working"} className="btn h-12 w-full justify-center text-base">
+              {t("campaign_later")}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const body = (
     <>
