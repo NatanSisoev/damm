@@ -1,7 +1,7 @@
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/brand/svg/title-stacked-dark.svg">
-    <img src="docs/brand/svg/title-stacked-light.svg" alt="Give a Damm" width="360">
+    <source media="(prefers-color-scheme: dark)" srcset="docs/brand/svg/title-oneline-dark.svg">
+    <img src="docs/brand/svg/title-oneline-light.svg" alt="Give a Damm" width="420">
   </picture>
 </p>
 
