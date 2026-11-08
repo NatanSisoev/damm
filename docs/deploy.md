@@ -57,6 +57,16 @@ railway redeploy -y
 railway variables --set DB_PATH=/data/app-<new-name>.db
 ```
 
+## Demo reset (N-17)
+
+`DEMO_RESET_ENABLED=1` shows a "Restaura la demo" card (confirm dialog) on `/hr/settings`; without it the card is hidden and the action refuses. A reset copies every table except `compte`, `push_subscripcio` and `hr_push_subscription` back from the snapshot `<DB_PATH>.pristine` inside one transaction on the live connection (needs, approvals, publications, alarm statuses, answers and engine state go back; enrolled phones stay).
+
+The snapshot is written by `scripts/railway-start.sh` right after the demo DB is built. For a DB that already exists (no snapshot), the server writes one at its first start with the flag on, so set the flag only while the DB is clean (right after a reseed), or reseed first. `pnpm demo-db` deletes the old snapshot of the DB it rebuilds.
+
+```bash
+railway variables --set DEMO_RESET_ENABLED=1
+```
+
 ## Health check
 
 ```bash

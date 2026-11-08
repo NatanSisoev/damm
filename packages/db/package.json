@@ -23,6 +23,7 @@
     ".": "./src/index.ts",
     "./hr": "./src/hr.ts",
     "./join": "./src/join.ts",
-    "./employee": "./src/employee.ts"
+    "./employee": "./src/employee.ts",
+    "./demo": "./src/demo-reset.ts"
   }
 }

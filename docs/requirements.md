@@ -309,7 +309,7 @@ Bonus items named by the guide (G-§4 "Bonus") and the deck (D-S18), then our ow
 | N-14 | Initiative ↔ domain mapping | D-S3 | Turns results into "is our policy working?" | done | R-DOM-5 |
 | N-15 | Retention and purge job | G-§8 | Closes R-PRIV-8 | done | See R-PRIV-8. |
 | N-16 | Accuracy of the theme classifier against `resposta_seed` | G-§6.2 | A number that proves analysis quality | done | `pnpm --filter @damm/engine run comments:eval`: 91.2 % top-1, 97.4 % recall, 84.8 % precision (engine.md section 12, with the template-data caveat). |
-| N-17 | Demo reset and presenter mode | ours | Demo reliability | deferred | Task 15, after 8 Nov 09:00 |
+| N-17 | Demo reset and presenter mode | ours | Demo reliability | done: reset button on `/hr/settings` (confirm dialog) restores every table except accounts and push subscriptions from the pristine snapshot `<DB_PATH>.pristine`, on the live connection (`packages/db/src/demo-reset.ts`); off unless `DEMO_RESET_ENABLED=1`; presenter mode not built | `docs/deploy.md` |
 | N-18 | Question reordering and conditional logic in review | G-§4 | Closes R-FLOW-3c and R-FLOW-2e | done | Reordering via the `ordre` up/down buttons in the review; conditional follow-up (R-FLOW-2e) visible in the draft review with a remove button and served by the engine. |
 
 ## Gaps that need a contract change

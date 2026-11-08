@@ -10,7 +10,7 @@
 // The old seed pipeline (packages/seed) is legacy; this is the one database for dev, e2e and Railway.
 // Run: node --experimental-strip-types --experimental-sqlite --no-warnings scripts/build-demo-db.mts
 import { DatabaseSync } from "node:sqlite";
-import { readFileSync } from "node:fs";
+import { readFileSync, rmSync } from "node:fs";
 import { resolve } from "node:path";
 import { parseArgs } from "node:util";
 import { buildDemo } from "../packages/engine/demo/build-demo.ts";
@@ -23,6 +23,7 @@ import {
 const REPO = resolve(import.meta.dirname, "..");
 const { values } = parseArgs({ args: process.argv.slice(2).filter((a) => a !== "--"), options: { out: { type: "string" }, seed: { type: "string" } }, allowPositionals: true });
 const out = values.out ?? "data/app.db";
+rmSync(`${out}.pristine`, { force: true }); // a rebuilt DB invalidates the demo-reset snapshot (N-17)
 const LANGS: Lang[] = ["ca", "es", "en"];
 
 /** Participation override per "collectiuId:tornId": more night-shift accounts so every segment reaches n >= 10. */

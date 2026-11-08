@@ -16,4 +16,10 @@ export async function register() {
   } catch (e) {
     console.warn("[auth] test account skipped:", e);
   }
+  try {
+    const { demoResetEnabled, ensureSnapshot } = await import("@damm/db/demo");
+    if (demoResetEnabled() && ensureSnapshot()) console.log("[demo] pristine snapshot written");
+  } catch (e) {
+    console.warn("[demo] snapshot skipped:", e);
+  }
 }
