@@ -2,6 +2,7 @@ import { z } from "zod";
 import { getCompteId } from "@/lib/session";
 import { getEngine } from "@/lib/engine";
 import { EngineError } from "@damm/engine";
+import { maybeFireDemoAlarm } from "@/lib/demo-tripwire";
 import type { PostResponsesRequest } from "@damm/shared";
 
 export const dynamic = "force-dynamic";
@@ -54,5 +55,6 @@ export async function POST(request: Request) {
   }
   const bad = result.rejected[0];
   if (bad) return Response.json({ error: bad.reason, preguntaId: bad.questionId }, { status: STATUS[bad.reason] });
+  maybeFireDemoAlarm(parsed.data.respostes); // demo only, off unless DEMO_TRIPWIRE=1
   return new Response(null, { status: 204 });
 }

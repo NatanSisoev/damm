@@ -150,3 +150,7 @@ Say, with the repo open if there is a screen:
 - ⏳ Jan: `jan/pwa-answer` merged to `jan/dev`, then step 5 can run fully.
 - Tunnel or LAN setup for the phone (`jan/tunnel`, blocked at the time of writing).
 - Record the backup screen capture and take screenshots once everything is in.
+
+## Live trigger: phone answer to laptop alarm (staged)
+
+Set `DEMO_TRIPWIRE=1` (plus the VAPID keys, and HTTPS) on the server. On the laptop, open `/hr/settings` and turn on alarm push; the laptop must stay open or the browser running. On the phone, answer a scale question with a low value (1 or 2 of 5, up to 4 of 10, "no" on yes/no). Within a second or two the laptop gets a critical "Condicions i organització · Logística" push opening the signal. It is a **staged** demo alarm, not an engine result: its description starts with "Demo:", it uses the aggregate of a fixed segment (`DEMO_TRIPWIRE_COLLECTIVE` / `DEMO_TRIPWIRE_DOMAIN`, default Logística · Condicions i organització) only when that segment already has n >= 10, never reads or stores who answered, fires at most once every 20 s, and closes the previous demo alarm. Say so if asked. Leave the variable unset outside demos.
