@@ -242,7 +242,7 @@ Branches:
 - **B1** every gated path redirects with its own `next`: `/hr/results`, `/hr/publish`, `/hr/needs`, `/hr/signals`, `/hr/recommendations`, `/hr/methodology`, `/hr/signals/<id>`, `/manager`, `/manager/<collective>`, and `/hr/results/export` (no CSV without the cookie).
 - **B2** an employee login does not unlock HR.
 - **B3** GATE-OFF: `/hr` opens directly. The demo `.env` must set a code.
-- **B4** `/hr/need` and `/hr/review` redirect to `/hr/needs`.
+- **B4** `/hr/need` and `/hr/review` redirect to `/hr/needs`; the old `/hr/needs?nova=1` redirects to `/hr/needs/new`.
 
 Expected gap: no named HR users and no per-person audit (one shared code). The approver is stored as the constant `hr-demo` in `pregunta.aprovada_per` (the requirements file says "not recorded"; it is recorded, but not as a real person: R-PRIV-10, R-X-3).
 
@@ -253,7 +253,7 @@ Preconditions: GATE-ON and logged in, LLM-ON (LLM-OFF is branch B1).
 
 | # | Route and action | Expected result |
 |---|---|---|
-| 1 | `/hr/needs` → open "Nova necessitat". Optionally press an example (for instance "B · Logística des del mòbil"). | Fields "Objectiu", "Context", "Què no s'ha de preguntar", "Col·lectiu" (all or one), "Preguntes per persona" (2 to 6, default 3) and "Com es lliura" (Diària or Campanya puntual). |
+| 1 | `/hr/needs` → press "+ Nova consulta" (header button; with no needs the empty state has "Crea la primera consulta"), which opens `/hr/needs/new` ("Nova consulta", with "Torna a les consultes" back to the list). Optionally press an example (for instance "B · Logística des del mòbil"). | Fields "Objectiu", "Context", "Què no s'ha de preguntar", "Col·lectiu" (all or one), "Preguntes per persona" (2 to 6, default 3) and "Com es lliura" (Diària or Campanya puntual). |
 | 2 | Fill an objective of 15+ characters, a number of questions (default 3) and a delivery mode, press "Genera els esborranys". | Button "Generant…" and text "La IA està redactant les preguntes…". |
 | 3 | Wait | Redirect to `/hr/needs`. A card in state "Esborrany" with badge "Proposta de la IA" appears. |
 

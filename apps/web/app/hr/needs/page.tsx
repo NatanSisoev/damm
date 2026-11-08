@@ -1,8 +1,9 @@
 import type { ReactNode } from "react";
+import { redirect } from "next/navigation";
 import { SubmitButton } from "@/app/hr/submit-button";
 import Link from "next/link";
 import { MIN_GROUP_SIZE, type Lang } from "@damm/shared";
-import { listCollectius, listDecisions, listDomains, listNeedCards, listNeedDrafts, type NeedCard, type NeedState } from "@damm/db/hr";
+import { listDecisions, listDomains, listNeedCards, listNeedDrafts, type NeedCard, type NeedState } from "@damm/db/hr";
 import { ConfirmButton } from "../confirm-button";
 import { closeNeedAction, publishAction, remindNeedAction } from "../actions";
 import { LOW_PARTICIPATION_PCT, participationOf } from "../participation";
@@ -15,7 +16,6 @@ import { trailDict } from "@/lib/i18n/hr-trail";
 import { makeT } from "@/lib/i18n/core";
 import { DecisionList } from "../trail";
 import { DraftReview } from "./draft-review";
-import { NeedForm } from "./need-form";
 import { pageTitle } from "@/lib/i18n/titles";
 
 export const generateMetadata = pageTitle("hr_needs");
@@ -64,38 +64,28 @@ export default async function NeedsPage({ searchParams }: { searchParams: Promis
   const shown = filter === "totes" ? all : all.filter((n) => n.state === filter);
   const rank = (n: NeedCard) => STATES.findIndex((s) => s.key === n.state);
   shown.sort((a, b) => rank(a) - rank(b) || b.id - a.id);
-  const showForm = all.length === 0 || nova === "1";
-  // While creating a query, show only the form, not the list of earlier queries.
-  const showList = !showForm && all.length > 0;
+  // Old links to the inline form (?nova=1) now go to the dedicated page.
+  if (nova === "1") redirect("/hr/needs/new");
 
   return (
     <>
       <PageHeader
         title={t("needs_title")}
         subtitle={t("needs_subtitle")}
-        actions={
-          all.length > 0 ? (
-            <Link href={showForm ? "/hr/needs" : "/hr/needs?nova=1#nova"} className="btn btn-primary" aria-expanded={showForm}>
-              {showForm ? t("needs_close_form") : t("needs_new_btn")}
-            </Link>
-          ) : undefined
-        }
+        actions={<Link href="/hr/needs/new" className="btn btn-primary">{t("needs_new_btn")}</Link>}
       />
       {publicada && avis && /^(off|<?\d+)$/.test(avis) && <PublishNotice avis={avis} t={t} />}
       {recordatori && avis && /^(off|<?\d+)$/.test(avis) && <PublishNotice avis={avis} t={t} reminder />}
-      {showForm && (
-        <section id="nova" className="card mb-6">
-          <div className="card-header">
-            <h2 className="section-title">{t("needs_new_title")}</h2>
-            <span className="text-xs text-subtle">{t("needs_new_note")}</span>
+      {all.length === 0 && (
+        <Empty>
+          <p>{t("needs_empty")}</p>
+          <div className="mt-3 flex justify-center">
+            <Link href="/hr/needs/new" className="btn btn-primary">{t("needs_empty_btn")}</Link>
           </div>
-          <div className="card-body">
-            <NeedForm collectius={listCollectius()} />
-          </div>
-        </section>
+        </Empty>
       )}
 
-      {showList && (
+      {all.length > 0 && (
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <nav aria-label={t("needs_filter_aria")} className="segmented">
             {([{ key: "totes", label: t("needs_filter_all"), n: all.length }, ...STATES.map((s) => ({ key: s.key, label: needStatus(s.key, lang).label, n: counts[s.key] }))] as { key: Filter; label: string; n: number }[]).map((f) => (
@@ -112,16 +102,16 @@ export default async function NeedsPage({ searchParams }: { searchParams: Promis
         </div>
       )}
 
-      {showList && shown.length === 0 && filter !== "totes" && (
+      {all.length > 0 && shown.length === 0 && filter !== "totes" && (
         <Empty>
           <p>{t(STATES.find((s) => s.key === filter)!.empty)}</p>
           <div className="mt-3 flex justify-center gap-2">
-            <Link href="/hr/needs?nova=1#nova" className="btn btn-primary">{t("needs_new_btn")}</Link>
+            <Link href="/hr/needs/new" className="btn btn-primary">{t("needs_new_btn")}</Link>
             <Link href="/hr/needs" className="btn btn-ghost">{t("needs_show_all")}</Link>
           </div>
         </Empty>
       )}
-      {showList && shown.length > 0 && (
+      {all.length > 0 && shown.length > 0 && (
         <div className="space-y-4">
           {shown.map((n) => (
             <NeedItem key={n.id} n={n} draft={drafts.get(n.id)} domainIdx={domainIdx} t={t} lang={lang} regenError={Number(regenError) || null} />
