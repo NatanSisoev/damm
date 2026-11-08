@@ -4,7 +4,7 @@ import { hrPool, type PoolQuestion } from "@/lib/hr-engine";
 import { FoldAll, GroupBody } from "./group-body";
 import { Empty, PageHeader, Stat } from "../ui";
 import { questionTypeLabel } from "../labels";
-import { REASON, STATE } from "./labels";
+import { STATE } from "./labels";
 import { getTL } from "@/lib/i18n/server";
 import { poolDict, type PoolKey } from "@/lib/i18n/hr-pool";
 import { collectiveLabel, domainLabel } from "@/lib/i18n/names";
@@ -209,9 +209,8 @@ export default async function PoolPage({ searchParams }: { searchParams: Promise
             <thead>
               <tr>
                 <th>{t("th_question")}</th>
-                <th>{t("th_state")}</th>
                 <SortTh p={p} k="responses" cur={sort} dir={dir}>{t("th_responses")}</SortTh>
-                <SortTh p={p} k="confidence" cur={sort} dir={dir}>{t("th_confidence")}</SortTh>
+                <th>{t("f_type")}</th>
                 <SortTh p={p} k="last" cur={sort} dir={dir} left>{t("th_last")}</SortTh>
               </tr>
             </thead>
@@ -327,8 +326,7 @@ function SortTh({ p, k, cur, dir, children, left }: { p: Params; k: SortKey; cur
 }
 
 function QuestionRows({ q, today, t, lang, num }: { q: PoolQuestion; today: string; t: T; lang: Lang; num: (x: number) => string }) {
-  const st = STATE[q.state];
-  // Lean row: everything else (type, facet, asked, consensus, 7-day counts, next batch) lives on the question page.
+  // Lean row: everything else (state, facet, asked, confidence, consensus, 7-day counts, next batch) lives on the question page.
   return (
     <tr className="pool-row">
       <td className="max-w-[34rem]">
@@ -341,14 +339,13 @@ function QuestionRows({ q, today, t, lang, num }: { q: PoolQuestion; today: stri
           {q.isFollowup && <span className="badge">{t("badge_followup")}</span>}
         </div>
       </td>
-      <td>
-        <span className={`badge ${st.cls}`} title={t(REASON[q.reason])}>{t(st.key)}</span>
-      </td>
       <td className="num text-right">
         {num(q.responses)}
         <div className="text-xs text-subtle">{pct(q.answerRate)}</div>
       </td>
-      <td className="num text-right" title={t("confidence_title")}>{q.confidence === null ? "—" : Math.round(q.confidence)}</td>
+      <td className="whitespace-nowrap">
+        <span className="badge">{questionTypeLabel(q.type, lang)}</span>
+      </td>
       <td className="whitespace-nowrap text-[13px] text-subtle">{ago(t, today, q.lastAskedDay)}</td>
     </tr>
   );
