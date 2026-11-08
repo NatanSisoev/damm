@@ -1,4 +1,6 @@
 "use client";
+import { useT } from "@/lib/i18n/client";
+import { panelDict } from "@/lib/i18n/hr-panel";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -11,6 +13,7 @@ type Opt = { key: string; label: string; href: string };
  */
 export function RangeSelect({ options, value, custom, base, from, to, min, max }: { options: Opt[]; value: string; custom: boolean; base: string; from: string; to: string; min?: string; max: string }) {
   const router = useRouter();
+  const t = useT(panelDict);
   const [showCustom, setShowCustom] = useState(custom);
   const [a, setA] = useState(from);
   const [b, setB] = useState(to);
@@ -25,7 +28,7 @@ export function RangeSelect({ options, value, custom, base, from, to, min, max }
   return (
     <div className="flex flex-wrap items-center gap-2 text-[13px]">
       <label className="flex items-center gap-2 text-subtle">
-        Interval
+        {t("range_interval")}
         <select
           className="input h-9 min-w-44"
           value={selected}
@@ -39,18 +42,18 @@ export function RangeSelect({ options, value, custom, base, from, to, min, max }
           {options.map((o) => (
             <option key={o.key} value={o.key}>{o.label}</option>
           ))}
-          <option value="custom">Personalitzat…</option>
+          <option value="custom">{t("range_custom")}</option>
         </select>
       </label>
       {showCustom && (
         <>
           <label className="flex items-center gap-1.5 text-subtle">
-            Del <input type="date" value={a} min={min} max={max} onChange={(e) => setA(e.target.value)} className="input h-9" />
+            {t("range_from")} <input type="date" value={a} min={min} max={max} onChange={(e) => setA(e.target.value)} className="input h-9" />
           </label>
           <label className="flex items-center gap-1.5 text-subtle">
-            al <input type="date" value={b} min={min} max={max} onChange={(e) => setB(e.target.value)} className="input h-9" />
+            {t("range_to")} <input type="date" value={b} min={min} max={max} onChange={(e) => setB(e.target.value)} className="input h-9" />
           </label>
-          <button type="button" className="btn" onClick={apply} disabled={!a || !b}>Aplica</button>
+          <button type="button" className="btn" onClick={apply} disabled={!a || !b}>{t("range_apply")}</button>
         </>
       )}
     </div>

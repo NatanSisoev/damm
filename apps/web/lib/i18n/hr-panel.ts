@@ -15,6 +15,18 @@ export const panelDict = defineDict({
     g_need_min: "Cal un mínim de {min} persones",
     g_range: "{a} persones abans, {b} després",
 
+    // Buttons and range select
+    refresh_title: "Torna a llegir la base de dades i actualitza el resum",
+    refresh_busy: "Actualitzant…",
+    refresh: "Actualitza",
+    generate_busy: "Generant…",
+    generate: "Genera recomanacions",
+    range_interval: "Interval",
+    range_custom: "Personalitzat…",
+    range_from: "Del",
+    range_to: "al",
+    range_apply: "Aplica",
+
     // Recommendation detail
     rd_title_fallback: "Recomanació {id}",
     rd_back: "← Recomanacions",
@@ -82,6 +94,17 @@ export const panelDict = defineDict({
     g_need_min: "Hace falta un mínimo de {min} personas",
     g_range: "{a} personas antes, {b} después",
 
+    refresh_title: "Vuelve a leer la base de datos y actualiza el resumen",
+    refresh_busy: "Actualizando…",
+    refresh: "Actualiza",
+    generate_busy: "Generando…",
+    generate: "Genera recomendaciones",
+    range_interval: "Intervalo",
+    range_custom: "Personalizado…",
+    range_from: "Del",
+    range_to: "al",
+    range_apply: "Aplica",
+
     rd_title_fallback: "Recomendación {id}",
     rd_back: "← Recomendaciones",
     rd_followup_created: "Seguimiento creado",
@@ -147,6 +170,17 @@ export const panelDict = defineDict({
     g_comments: "{n} comments",
     g_need_min: "A minimum of {min} people is needed",
     g_range: "{a} people before, {b} after",
+
+    refresh_title: "Re-reads the database and updates the summary",
+    refresh_busy: "Updating…",
+    refresh: "Refresh",
+    generate_busy: "Generating…",
+    generate: "Generate recommendations",
+    range_interval: "Interval",
+    range_custom: "Custom…",
+    range_from: "From",
+    range_to: "to",
+    range_apply: "Apply",
 
     rd_title_fallback: "Recommendation {id}",
     rd_back: "← Recommendations",
