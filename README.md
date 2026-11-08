@@ -1,7 +1,7 @@
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/brand/svg/title-oneline-dark.svg">
-    <img src="docs/brand/svg/title-oneline-light.svg" alt="Give a Damm" width="420">
+    <img src="docs/brand/svg/title-oneline-light.svg" alt="Give a Damm" width="640">
   </picture>
 </p>
 
@@ -11,7 +11,7 @@
 </p>
 
 <p align="center">
-  <a href="https://web-production-6e775.up.railway.app">Live demo</a> ·
+  <a href="https://web-production-6e775.up.railway.app" target="_blank" rel="noopener">Live demo</a> ·
   <a href="#the-loop">How it works</a> ·
   <a href="#anonymity-you-can-check">Anonymity</a> ·
   <a href="#the-engine">The engine</a> ·
