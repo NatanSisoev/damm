@@ -28,6 +28,41 @@ export function resolveDemoTarget(compteId: string | number, preguntaIds: number
   return { collectiuId: c.c, dominiId: q?.d ?? 6 };
 }
 
+/** Lowers one aggregate row clearly below the previous period (mitjana is the 1..5 mean, score = (mitjana - 1) * 2.5). Idempotent. Returns the new score, or null when it was already low enough. */
+function applyDrop(aggregateId: number, prevScore: number | undefined): number | null {
+  if (prevScore == null) return null;
+  const db = getDb();
+  const row = db.prepare("SELECT score FROM agregat WHERE id = ?").get(aggregateId) as { score: number | null } | undefined;
+  if (!row || row.score == null || row.score <= prevScore - FAKE_DROP / 2) return null;
+  const score = Math.max(0, +(prevScore - FAKE_DROP).toFixed(2));
+  db.prepare("UPDATE agregat SET score = ?, mitjana = ? WHERE id = ?").run(score, +(score / 2.5 + 1).toFixed(3), aggregateId);
+  return score;
+}
+
+/**
+ * Every engine job run recomputes the aggregates from the real answers, which would erase the staged drop of every
+ * earlier "Demo:" alarm (the graph of an alarm HR is still working on would snap back to normal). Call this right after
+ * each job run: it re-applies the drop for each segment that has a "Demo:" alarm, in the period that alarm was opened for.
+ * The segments come from the alarms themselves, so nothing extra is stored and a restart loses nothing.
+ */
+export function reapplyDemoDrops(): number {
+  const db = getDb();
+  const segs = db
+    .prepare("SELECT DISTINCT collectiu_id AS c, domini_id AS d, periode AS p FROM senyal WHERE descripcio LIKE ? AND collectiu_id IS NOT NULL AND domini_id IS NOT NULL")
+    .all(`${DEMO_PREFIX}%`) as { c: number; d: number; p: string }[];
+  let changed = 0;
+  for (const s of segs) {
+    const seg = db
+      .prepare("SELECT id FROM agregat WHERE collectiu_id = ? AND domini_id = ? AND torn_id IS NULL AND suprimit = 0 AND score IS NOT NULL AND periode = ?")
+      .get(s.c, s.d, s.p) as { id: number } | undefined;
+    const prev = db
+      .prepare("SELECT score FROM agregat WHERE collectiu_id = ? AND domini_id = ? AND torn_id IS NULL AND suprimit = 0 AND score IS NOT NULL AND periode < ? ORDER BY periode DESC LIMIT 1")
+      .get(s.c, s.d, s.p) as { score: number } | undefined;
+    if (seg && applyDrop(seg.id, prev?.score) != null) changed++;
+  }
+  return changed;
+}
+
 export async function fireDemoAlarm(target: DemoTarget | null): Promise<string> {
   if (!target) return "skipped: unknown collective";
   if (Date.now() - lastFired < COOLDOWN_MS) return "skipped: fired less than 5 s ago";
@@ -53,13 +88,9 @@ async function fire(target: DemoTarget): Promise<string> {
   if (!seg || seg.n < MIN_GROUP_SIZE) return `skipped: no aggregate with n >= ${MIN_GROUP_SIZE} for collective ${target.collectiuId} / domain ${target.dominiId}`;
   lastFired = Date.now();
 
-  // Fake drop: make the latest period clearly lower than the one before it (mitjana is the 1..5 mean, score = (mitjana - 1) * 2.5).
-  const prev = rows[1];
-  if (prev && seg.score > prev.score - FAKE_DROP / 2) {
-    const score = Math.max(0, +(prev.score - FAKE_DROP).toFixed(2));
-    db.prepare("UPDATE agregat SET score = ?, mitjana = ? WHERE id = ?").run(score, +(score / 2.5 + 1).toFixed(3), seg.id);
-    seg.score = score;
-  }
+  // Fake drop: make the latest period clearly lower than the one before it.
+  const dropped = applyDrop(seg.id, rows[1]?.score);
+  if (dropped != null) seg.score = dropped;
   const scores = rows.map((r) => r.score.toFixed(1)).reverse();
   const trend = scores.length >= 2 ? ` Puntuació per període (${scores.join(" → ")}).` : "";
 

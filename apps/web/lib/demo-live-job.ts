@@ -9,7 +9,7 @@ import { runEngineJob, runRecommendations } from "@damm/engine/job";
 import { templateRecommendations } from "@damm/ai";
 import { alarmPayload, notifyNewAlarms } from "@/lib/hr-push";
 import { invalidateHrMemo } from "@/lib/hr-memo";
-import { fireDemoAlarm, resolveDemoTarget, type DemoTarget } from "@/lib/demo-alarm";
+import { fireDemoAlarm, reapplyDemoDrops, resolveDemoTarget, type DemoTarget } from "@/lib/demo-alarm";
 
 const DEBOUNCE_MS = Number(process.env.DEMO_LIVE_JOB_DEBOUNCE_MS ?? 1500);
 
@@ -59,6 +59,9 @@ async function run(): Promise<void> {
       const now = Date.now();
       const before = maxAlarmId();
       runEngineJob(db, { now });
+      // The job just rewrote the aggregates from the real answers: put back the staged drops of the "Demo:" alarms.
+      const redropped = reapplyDemoDrops();
+      if (redropped) console.log(`[demo-live-job] re-applied ${redropped} staged drop(s)`);
       reinstateAlarmsForReadingPeriod();
       // Template proposals only: no LLM call, so the run stays a couple of seconds.
       await runRecommendations(db, { now, draft: async (ctx) => templateRecommendations(ctx) });
