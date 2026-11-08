@@ -77,7 +77,7 @@ G-§4 is the authoritative list ("Tots els equips han de cobrir aquest recorregu
 | R-FLOW-2b | Proposes an **introduction** | done | `draftSurvey`; editable in review |
 | R-FLOW-2c | **3 to 6 questions** | done | LLM drafts from the need, context and exclusions; template fallback flagged "Plantilla de reserva". Quality eval in progress (`need-ai-quality` branch). |
 | R-FLOW-2d | **Answer type** per question | done | The AI picks among `scale5`, `scale10`, `yes_no`, `ranking`, `open` (C2 English types); scale questions carry their own end labels. |
-| R-FLOW-2e | **Conditional logic** | done (minimal) | `pregunta.followup_of/followup_when`; engine `submitAnswers` returns the linked open follow-up when a scale answer is ≤ 2 or a yes/no is "no"; AI drafts may carry one and HR can remove it in `/hr/review`. | No general rule builder; pending follow-up is not recovered after a reload. |
+| R-FLOW-2e | **Conditional logic** | done (minimal) | `pregunta.followup_of/followup_when`; engine `submitAnswers` returns the linked open follow-up when a scale answer is ≤ 2 or a yes/no is "no"; AI drafts may carry one and HR can remove it in the draft review on `/hr/needs`. | No general rule builder; pending follow-up is not recovered after a reload. |
 | R-FLOW-2f | **Estimated time** | done | `estimateSeconds` per question and per draft; review warns when it exceeds the optional per-person time limit (`durada_max_s`). |
 | R-FLOW-2g | Adapted to the collective in **tone, length and channel** | partial | The prompt takes the collective and a warm tone; channel adaptation not done. |
 
