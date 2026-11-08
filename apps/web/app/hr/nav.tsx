@@ -149,8 +149,6 @@ export function HrSidebar({ badges, subtitle, logo, role = "hr" }: { badges?: Na
   }, [open, close]);
 
   const badgeFor = (href: string) => {
-    if (href === "/hr/signals" && badges?.alarms && badges.alarms.total > 0)
-      return { n: badges.alarms.total, warn: badges.alarms.critical > 0, title: t("nav_critical", { n: badges.alarms.critical }), sr: t("nav_open_alarms") };
     if (href === "/hr/recommendations" && badges?.recommendations)
       return { n: badges.recommendations, warn: false, title: t("nav_pending_decision"), sr: t("nav_pending") };
     return null;
