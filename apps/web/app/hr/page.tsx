@@ -304,6 +304,7 @@ export default async function HrDashboard({ searchParams }: { searchParams: Prom
           <InsightCards insights={insights} empty={tr("rs_engine_empty", { min: MIN_GROUP_SIZE })} />
         </Card>
         {role === "hr" && <ProposalsCard fold proposals={getProposals()} />}
+        <p className="text-xs text-subtle">{t("dash_limit")}</p>
       </div>
     </>
   );

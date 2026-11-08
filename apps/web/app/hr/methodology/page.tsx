@@ -104,6 +104,10 @@ export default async function MethodologyPage() {
             <li>{bold(t("meth_s6_li2"))}</li>
             <li>{bold(t("meth_s6_li3", { n: PERIODES_SEED.length, periods: PERIODES_SEED.join(", ") }))}</li>
             <li>{bold(t("meth_s6_li4", { domains: DOMINIS.length, collectives: COLLECTIUS.length }))}</li>
+            <li>{bold(t("meth_s6_li5"))}</li>
+            <li>{bold(t("meth_s6_li6"))}</li>
+            <li>{bold(t("meth_s6_li7"))}</li>
+            <li>{bold(t("meth_s6_li8"))}</li>
           </ul>
         </Section>
 

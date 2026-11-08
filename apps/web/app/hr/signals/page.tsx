@@ -263,7 +263,7 @@ export default async function AlarmsPage({ searchParams }: { searchParams: Promi
           )}
 
           <p className="text-xs text-subtle">
-            {t("sg_foot", { label: t("sg_vis") })}
+            {t("sg_foot", { label: t("sg_vis") })} {t("sg_limit")}
           </p>
         </div>
       )}
