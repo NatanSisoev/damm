@@ -1121,6 +1121,35 @@ export function getParticipation(w: { from: string; to: string }, collectiuId: n
   return { respondents, population, pct };
 }
 
+const DAY_MS = 86_400_000;
+const dayNum = (iso: string) => Math.floor(Date.parse(`${iso.slice(0, 10)}T00:00:00Z`) / DAY_MS);
+const isoOf = (n: number) => new Date(n * DAY_MS).toISOString().slice(0, 10);
+
+export interface AnswersPerDay {
+  /** Total answers in the (clamped) window; null under the minimum group size. */
+  total: number | null;
+  /** Average answers per calendar day of the clamped window; null under the minimum group size. */
+  perDay: number | null;
+}
+
+/** Answers in a window and their daily average, from the analytics view only (no account ids). A total under the minimum group size is hidden. */
+export function getAnswersPerDay(w: { from: string; to: string }, collectiuId: number | null): AnswersPerDay {
+  const none = { total: null, perDay: null };
+  const bounds = getDataBounds();
+  if (!bounds.min || !bounds.max) return none;
+  const lo = dayNum(w.from < bounds.min ? bounds.min : w.from);
+  const hi = dayNum(w.to > bounds.max ? bounds.max : w.to);
+  if (hi < lo) return none;
+  const row = getDb()
+    .prepare(
+      `SELECT COUNT(*) AS n FROM v_resposta_analitica v
+       WHERE substr(v.data,1,10) BETWEEN ? AND ? ${collectiuId === null ? "" : "AND v.collectiu_id = ?"}`,
+    )
+    .get(...(collectiuId === null ? [isoOf(lo), isoOf(hi)] : [isoOf(lo), isoOf(hi), collectiuId])) as { n: number };
+  if (row.n < MIN_GROUP_SIZE) return none;
+  return { total: row.n, perDay: row.n / (hi - lo + 1) };
+}
+
 const BUCKET_SQL: Record<WindowBucket, string> = {
   day: "substr(v.data,1,10)",
   week: "date(substr(v.data,1,10),'weekday 0','-6 days')",

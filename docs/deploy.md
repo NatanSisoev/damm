@@ -51,10 +51,16 @@ railway ssh -- rm -f /data/app.db /data/app.db-wal /data/app.db-shm
 railway redeploy -y
 ```
 
+`railway ssh` can fail when SSH port 22 times out. Alternative (used on 2026-11-08): set the `DB_PATH` variable to a new file name on the volume. Setting a variable redeploys, and the start step builds the demo DB at the new path on first start. Live is now `DB_PATH=/data/app-tri.db`; for the next reseed pick another name (the old file stays on the volume until removed). The build takes about 9 minutes on Railway, and the site returns 502 until it finishes.
+
+```bash
+railway variables --set DB_PATH=/data/app-<new-name>.db
+```
+
 ## Health check
 
 ```bash
-railway ssh -- sh -c 'cd /app && DB_PATH=/data/app.db pnpm --filter @damm/engine run health'
+railway ssh -- sh -c 'cd /app && DB_PATH=/data/app-tri.db pnpm --filter @damm/engine run health'
 ```
 
 Exit code 1 means a check failed.

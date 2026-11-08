@@ -1,20 +1,18 @@
 import Link from "next/link";
 import { MIN_GROUP_SIZE } from "@damm/shared";
 import {
-  accountCounts,
   getDataBounds,
   getRepresentativeness,
   getWindowTrends,
   listCollectius,
-  listNeedCards,
-  listThemes,
   getParticipation,
+  getAnswersPerDay,
   CHANGE_MIN_DELTA,
   CHANGE_MIN_N,
   PRECISION_MODERADA_MIN_N,
   PRECISION_SOLIDA_MIN_N,
 } from "@damm/db/hr";
-import { hrInsights } from "@/lib/hr-engine";
+import { hrAlarms, hrInsights } from "@/lib/hr-engine";
 import { getTL } from "@/lib/i18n/server";
 import { hrResultsDict } from "@/lib/i18n/hr-results";
 import { hrDashboardDict } from "@/lib/i18n/hr-dashboard";
@@ -26,8 +24,8 @@ import { TrendChart } from "./trend-chart";
 import { Radar, type RadarSeries } from "./radar";
 import { RepTable, TrendTable } from "./tables";
 import { InsightCards } from "./insight-cards";
-import { getHeadlines, getHeatmap, getNarrative, getProposals, getReachGaps, getSegmentTrend, getThemesByDomain } from "./analytics";
-import { HeadlineStrip, HeatmapCard, NarrativeCard, ProposalsCard, ReachCard, SegmentTrendCard, ThemesCard } from "./analytics-ui";
+import { getHeadlines, getHeatmap, getNarrative, getProposals, getReachGaps, getSegmentTrend } from "./analytics";
+import { HeadlineStrip, HeatmapCard, NarrativeCard, ProposalsCard, ReachCard, SegmentTrendCard } from "./analytics-ui";
 import { PRESETS, bucketFor, fmtDay, previousWindow, resolveRange } from "./range";
 import { refreshDashboardAction } from "./actions";
 import { RefreshButton } from "./refresh-button";
@@ -39,7 +37,9 @@ export const generateMetadata = pageTitle("hr_home");
 
 export const dynamic = "force-dynamic";
 
-type Params = { r?: string; from?: string; to?: string; c?: string; dom?: string; actualitzat?: string };
+const MAX_CMP = 3;
+
+type Params = { r?: string; from?: string; to?: string; c?: string; dom?: string; cmp?: string; actualitzat?: string };
 
 const NOTICE_KEY = { ok: "notice_ok", "sense-llm": "notice_no_llm", ocupat: "notice_busy", fallada: "notice_failed" } as const;
 
@@ -71,11 +71,7 @@ export default async function HrDashboard({ searchParams }: { searchParams: Prom
   const seriesVisible = visible(series);
   const everyone = col ? getWindowTrends({ ...win, bucket: "all" }, null) : whole;
 
-  const needs = listNeedCards(lang);
-  const drafts = needs.filter((n) => n.state === "esborrany" || n.state === "llesta").length;
-  const live = needs.filter((n) => n.state === "publicada").length;
   const rep = getRepresentativeness();
-  const themes = listThemes({ lang }).filter((th) => !th.suprimit);
   const heatmap = { ...getHeatmap(everyone), periode: `${fmtDay(range.from)} – ${fmtDay(range.to)}` };
 
   const overall = whole.series[0];
@@ -83,10 +79,28 @@ export default async function HrDashboard({ searchParams }: { searchParams: Prom
   const axes = overall ? overall.rows.map((r) => r.domini) : [];
   const vals = (sc: typeof overall) => (sc ? sc.rows.map((r) => r.cells[0]?.mitjana ?? null) : []);
   const label = col ? collectiveLabel(col.nom, lang) : tr("rs_all");
+  // Comparison: the company and the collectives other than the one shown, up to MAX_CMP. Each entity keeps its own colour token.
+  const COMPANY = "Tots";
+  const shownKey = col?.nom ?? COMPANY;
+  const entities = [{ key: COMPANY, id: null as number | null, color: "var(--co-1)", label: tr("rs_all") }, ...collectius.map((c, i) => ({ key: c.nom, id: c.id as number | null, color: `var(--co-${i + 2})`, label: collectiveLabel(c.nom, lang) }))];
+  const options = entities.filter((e) => e.key !== shownKey);
+  const selected = [...new Set((q.cmp ?? "").split(",").filter(Boolean))].filter((k) => options.some((o) => o.key === k)).slice(0, MAX_CMP);
+  const comparing = selected.length > 0;
+  const shownColor = entities.find((e) => e.key === shownKey)?.color ?? "var(--co-1)";
+  const cmpSeries: RadarSeries[] = selected.flatMap((k) => {
+    const e = options.find((o) => o.key === k)!;
+    const sc = (e.id === null ? everyone : getWindowTrends({ ...win, bucket: "all" }, e.id)).series[0];
+    return sc ? [{ label: e.label, values: vals(sc), color: e.color }] : [];
+  });
+  const cmpHref = (key: string) => {
+    const next = selected.includes(key) ? selected.filter((k) => k !== key) : [...selected, key];
+    return href({ cmp: next.length ? next.join(",") : undefined });
+  };
   const radarSeries: RadarSeries[] = overall
     ? [
-        { label: `${label} · ${t("dash_now")}`, values: vals(overall), color: "var(--co-1)" },
-        ...(overallPrev ? [{ label: `${label} · ${t("dash_before")}`, values: vals(overallPrev), color: "var(--co-1)", dashed: true } as RadarSeries] : []),
+        { label: comparing ? label : `${label} · ${t("dash_now")}`, values: vals(overall), color: shownColor },
+        ...cmpSeries,
+        ...(!comparing && overallPrev ? [{ label: `${label} · ${t("dash_before")}`, values: vals(overallPrev), color: shownColor, dashed: true } as RadarSeries] : []),
       ]
     : [];
   const hasData = !!overall && overall.rows.some((r) => r.cells[0]?.mitjana != null);
@@ -106,9 +120,10 @@ export default async function HrDashboard({ searchParams }: { searchParams: Prom
 
   // People, not answers: read from the job-written aggregates for the period(s) the window overlaps (never above the population).
   const { respondents, population, pct } = getParticipation(win, col?.id ?? null);
-  const counts = accountCounts();
-  const accountsRaw = col ? (counts.find((c) => c.collectiu === col.nom)?.comptes ?? null) : counts.every((c) => c.comptes !== null) ? counts.reduce((a, c) => a + (c.comptes ?? 0), 0) : null;
-  const suppressed = heatmap.cells.flat().filter((c) => c.suppressed).length;
+  // Answers: total in the range and the daily average, from the analytics view.
+  const apd = getAnswersPerDay(win, col?.id ?? null);
+  // Open alarms for the scope, same source and minimum group size as the alarms page's "open" tab.
+  const openAlarms = hrAlarms({ role: "hr" }, { status: ["open"], ...(col ? { collectiuId: col.id } : {}) }).filter((a) => a.n >= MIN_GROUP_SIZE).length;
 
   const domValid = q.dom && heatmap.domains.includes(q.dom) ? q.dom : undefined;
   const segmentTrend = getSegmentTrend(col?.nom, domValid);
@@ -119,7 +134,7 @@ export default async function HrDashboard({ searchParams }: { searchParams: Prom
 
   const href = (over: Partial<Params>) => {
     const p = new URLSearchParams();
-    const merged: Params = { dom: q.dom, r: q.from && q.to ? undefined : range.key === "custom" ? undefined : range.key, from: q.from, to: q.to, c: col?.nom, ...over };
+    const merged: Params = { dom: q.dom, r: q.from && q.to ? undefined : range.key === "custom" ? undefined : range.key, from: q.from, to: q.to, c: col?.nom, cmp: q.cmp, ...over };
     for (const [k, v] of Object.entries(merged)) if (v && k !== "actualitzat") p.set(k, v);
     const s = p.toString();
     return s ? `/hr?${s}` : "/hr";
@@ -182,39 +197,62 @@ export default async function HrDashboard({ searchParams }: { searchParams: Prom
 
       <div className="space-y-6">
         {/* KPIs */}
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 min-[420px]:grid-cols-2 md:grid-cols-2 xl:grid-cols-3">
+          <Stat
+            label={t("kpi_apd")}
+            value={apd.total === null ? "—" : numD(apd.total, lang, 0)}
+            hint={
+              apd.perDay === null ? (
+                t("kpi_apd_none", { min: MIN_GROUP_SIZE })
+              ) : (
+                t("kpi_apd_hint", { n: numD(apd.perDay, lang, apd.perDay < 10 ? 1 : 0) })
+              )
+            }
+          />
           <div className="card h-full px-5 py-4">
             <div className="text-xs font-medium text-subtle">{t("kpi_part")}</div>
             <div className="num mt-1 text-2xl font-semibold tracking-tight">{pct === null ? "—" : `${pct}%`}</div>
             <div className="hr-meter mt-2"><span style={{ width: `${pct ?? 0}%` }} /></div>
             <div className="mt-2 text-xs text-subtle"><People n={respondents} scoped={!!col} /> {t("kpi_of", { n: numD(population, lang, 0) })}</div>
           </div>
-          <Link href="/hr/needs" className="block h-full">
-            <Stat label={t("kpi_needs")} value={live} hint={t(live === 1 ? "kpi_needs_one" : "kpi_needs_many", { n: live, d: drafts })} />
+          <Link href={col ? `/hr/signals?collectiu=${col.id}` : "/hr/signals"} className="block h-full">
+            <Stat label={t("kpi_alarms")} value={openAlarms} hint={col ? collectiveLabel(col.nom, lang) : t("kpi_alarms_hint")} />
           </Link>
           <Stat
             label={t("kpi_score")}
             value={score === null ? "—" : <>{f1(score)}<span className="text-base font-normal text-subtle"> / 5</span></>}
             hint={delta === null ? (enough ? t("kpi_score_avg") : t("kpi_score_need3")) : <span className={delta < -0.05 ? "text-warn" : delta > 0.05 ? "text-good" : ""}>{t("kpi_vs", { arrow: delta > 0.05 ? "↑" : delta < -0.05 ? "↓" : "→", d: f1(Math.abs(delta)) })}</span>}
           />
-          <Stat label={t("kpi_best")} value={best ? f1(best.now) : "—"} hint={best ? domainLabel(best.d, lang) : "—"} />
-          <Stat label={t("kpi_worst")} value={worst ? f1(worst.now) : "—"} hint={worst ? domainLabel(worst.d, lang) : "—"} />
-          <Stat label={tr("rs_stat_accounts")} value={accountsRaw === null ? "—" : numD(accountsRaw, lang, 0)} hint={col ? collectiveLabel(col.nom, lang) : tr("rs_stat_collectives", { n: counts.length })} />
-          <Stat label={t("kpi_themes")} value={themes.length} hint={t("kpi_themes_hint", { n: themes.filter((th) => th.emergent).length })} />
-          <Stat label={tr("rs_stat_supp")} value={suppressed} hint={tr("hint_small", { min: MIN_GROUP_SIZE })} />
+          <Stat label={t("kpi_best")} value={best ? <>{f1(best.now)}<span className="text-base font-normal text-subtle"> / 5</span></> : "—"} hint={best ? domainLabel(best.d, lang) : "—"} />
+          <Stat label={t("kpi_worst")} value={worst ? <>{f1(worst.now)}<span className="text-base font-normal text-subtle"> / 5</span></> : "—"} hint={worst ? domainLabel(worst.d, lang) : "—"} />
         </div>
 
-        {/* Story + profile */}
-        <div className="grid gap-6 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
-          <div className="space-y-6">
-            <NarrativeCard narrative={getNarrative(col?.nom ?? "All", lang)} title={t("dash_narr", { scope: col ? collectiveLabel(col.nom, lang) : t("dash_scope_all") })} />
-            <HeadlineStrip headlines={getHeadlines()} />
-          </div>
-          <Card title={tr("rs_profile")} meta={<span className="num">{prevWin ? t("dash_prof_vs") : t("dash_prof_full")}</span>}>
-            {radarSeries.length && hasData ? <Radar axes={axes} series={radarSeries} /> : <Empty>{tr("rs_nodata")}</Empty>}
-          </Card>
-        </div>
+        {/* 1. Profile by domain */}
+        <Card title={tr("rs_profile")} meta={<span className="num">{prevWin ? t("dash_prof_vs") : t("dash_prof_full")}</span>}>
+          {hasData && options.length > 0 && (
+            <div role="group" aria-label={t("cmp_label")} className="mb-4 flex flex-wrap items-center gap-2">
+              <span className="text-[13px] text-subtle">{t("cmp_label")}</span>
+              {options.map((o) => {
+                const on = selected.includes(o.key);
+                const full = !on && selected.length >= MAX_CMP;
+                const inner = (
+                  <>
+                    <span className="hr-chip-dot" style={{ background: o.color }} aria-hidden />
+                    {o.label}
+                  </>
+                );
+                return full ? (
+                  <span key={o.key} className="hr-chip" aria-disabled="true" title={t("cmp_max", { n: MAX_CMP })}>{inner}</span>
+                ) : (
+                  <Link key={o.key} href={cmpHref(o.key)} scroll={false} className="hr-chip" aria-pressed={on}>{inner}</Link>
+                );
+              })}
+            </div>
+          )}
+          {radarSeries.length && hasData ? <Radar axes={axes} series={radarSeries} /> : <Empty>{tr("rs_nodata")}</Empty>}
+        </Card>
 
+        {/* 2. Collectives x domains map */}
         <HeatmapCard
           map={heatmap}
           selected={{ seg: col?.nom, dom: domValid }}
@@ -255,35 +293,31 @@ export default async function HrDashboard({ searchParams }: { searchParams: Prom
           )}
         </Card>
 
-        <div className="grid gap-6 xl:grid-cols-2">
-          <Card title={t("dash_rep")} meta={<Link href="/hr/methodology" className="underline">{tr("rs_rep_how")}</Link>} flush={rep.collectius.length > 0}>
-            {rep.collectius.length === 0 ? (
-              <Empty>{tr("rs_nodata")}</Empty>
-            ) : (
-              <>
-                <RepTable rows={rep.collectius} byShift={false} />
-                <details className="group border-t border-line">
-                  <summary className="flex cursor-pointer list-none items-center gap-2 px-5 py-3 font-medium hover:bg-surface-muted">
-                    <span aria-hidden className="text-subtle transition-transform group-open:rotate-90">›</span>
-                    {tr("rs_by_shift")}
-                  </summary>
-                  <RepTable rows={rep.torns} byShift />
-                </details>
-              </>
-            )}
-          </Card>
-          <ReachCard gaps={getReachGaps(4)} />
-        </div>
-
-        {/* Engine insights, comment themes and proposed actions */}
-        <Card title={tr("rs_engine")} meta={<span className="num">{insights.length}</span>}>
-          <InsightCards insights={insights} empty={tr("rs_engine_empty", { min: MIN_GROUP_SIZE })} />
+        <Card title={t("dash_rep")} meta={<Link href="/hr/methodology" className="underline">{tr("rs_rep_how")}</Link>} flush={rep.collectius.length > 0}>
+          {rep.collectius.length === 0 ? (
+            <Empty>{tr("rs_nodata")}</Empty>
+          ) : (
+            <>
+              <RepTable rows={rep.collectius} byShift={false} />
+              <details className="group border-t border-line">
+                <summary className="flex cursor-pointer list-none items-center gap-2 px-5 py-3 font-medium hover:bg-surface-muted">
+                  <span aria-hidden className="text-subtle transition-transform group-open:rotate-90">›</span>
+                  {tr("rs_by_shift")}
+                </summary>
+                <RepTable rows={rep.torns} byShift />
+              </details>
+            </>
+          )}
         </Card>
 
-        <div className="grid gap-6 xl:grid-cols-2">
-          <ThemesCard groups={getThemesByDomain(heatmap.domains)} />
-          <ProposalsCard proposals={getProposals()} />
-        </div>
+        {/* Everything else: collapsed by default */}
+        <NarrativeCard fold narrative={getNarrative(col?.nom ?? "All", lang)} title={t("dash_narr", { scope: col ? collectiveLabel(col.nom, lang) : t("dash_scope_all") })} />
+        <HeadlineStrip fold headlines={getHeadlines()} />
+        <ReachCard fold gaps={getReachGaps(4)} />
+        <Card fold title={tr("rs_engine")} meta={<span className="num">{insights.length}</span>}>
+          <InsightCards insights={insights} empty={tr("rs_engine_empty", { min: MIN_GROUP_SIZE })} />
+        </Card>
+        <ProposalsCard fold proposals={getProposals()} />
       </div>
     </>
   );
