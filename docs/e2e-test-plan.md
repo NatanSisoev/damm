@@ -11,7 +11,7 @@ A manual runbook for the full loop plus a catalogue of smaller scenarios. Rework
   - **[P]** needs a real phone. **Jan does these**; a browser agent marks them `SKIP-P` in the log.
 - Result codes in the log: `P` pass, `F` fail, `KG` known gap observed exactly as described (not a failure), `ABS` feature is not built and its absence was confirmed (pass), `SKIP-P` phone only, `N/A` could not run (say why).
 - **Expected gaps are tested as absent.** A case marked ABS passes when the feature is missing as described. A case marked KG passes when the documented gap behaviour is seen. If the feature turns out to be built, mark `F` with a note: the plan and `user-flows.md` are then stale.
-- Read DB values with `sqlite3 data/demo.db "..."` ([T]). Never print secrets.
+- Read DB values with `sqlite3 data/app.db "..."` ([T]). Never print secrets.
 
 ## Not built (tested as absent)
 
@@ -53,22 +53,22 @@ The runs of this plan use the **demo DB** (three months of synthetic answers, pl
 
 ```bash
 source ~/.claude/bin/heavy-gate.sh
-pnpm --filter @damm/engine run demo        # about 4 minutes, writes data/demo.db
-DB_PATH=data/demo.db pnpm dev
+pnpm demo-db        # about 90 s, trilingual, writes data/app.db
+pnpm dev
 ```
 
 Join codes in the demo DB are `DEMO-<first three letters of the collective>` (the deployed DB has `DEMO-FAB`: accents are stripped at startup). Read the real values before testing and write them in the log:
 
 ```bash
-sqlite3 data/demo.db "select * from joincode"
+sqlite3 data/app.db "select * from joincode"
 ```
 
-Alternative for the seed DB (`DB-seed`): `pnpm --filter @damm/db run init` then `pnpm --filter @damm/seed run seed`, codes `DAMM-FAB`, `DAMM-LOG`, `DAMM-COM`, `DAMM-OFI`, summary line `Sub-threshold segments (collective x shift, n<10): 1 -> Logística/nit (n=6)`. A case that names a code writes `<LOG>` for "the Logística join code of the DB in use" (`DEMO-LOG` on the demo DB). Optional: `pnpm --filter @damm/seed run comments` (template comments) or `-- --llm`.
+Legacy alternative, the old seed DB (`DB-seed`, not recommended): `pnpm --filter @damm/db run init` then `pnpm --filter @damm/seed run seed`, codes `DAMM-FAB`, `DAMM-LOG`, `DAMM-COM`, `DAMM-OFI`, summary line `Sub-threshold segments (collective x shift, n<10): 1 -> Logística/nit (n=6)`. A case that names a code writes `<LOG>` for "the Logística join code of the DB in use" (`DEMO-LOG` on the demo DB). Optional: `pnpm --filter @damm/seed run comments` (template comments) or `-- --llm`.
 
 ### 1.3 Start the app and checks
 
 ```bash
-DB_PATH=data/demo.db pnpm dev
+pnpm dev
 ```
 
 In Claude Code the preview config is `web` in `.claude/launch.json`. Stop the server when the run ends.
@@ -119,7 +119,7 @@ Covers R-FLOW-1 to R-FLOW-8, R-CH-1, N-7. Preconditions: 1.1 to 1.3 done on the 
 | M-2 | F-HR-1 | [B] Enter a wrong code, press "Entra" | Stays on the page with the alert "Codi incorrecte." No `hr_access` cookie | R-PRIV-3 | ☐ |
 | M-3 | F-HR-1 | [B] Enter the right code (from `.env`), press "Entra" | Cookie `hr_access` set, lands on `/hr`. Nav: "Inici", "Necessitats", "Enllaços i QR", "Resultats", "Alarmes" (with a count badge), "Recomanacions", "Com es calcula?", "Vista de responsables" | R-X-3, R-PRIV-9 | ☐ |
 | M-4 | F-HR-2 | [B] "Necessitats", open "Nova necessitat", press the example "B · Logística des del mòbil" | Fields "Objectiu", "Context", "Què no s'ha de preguntar", "Col·lectiu" (Logística) and "Durada màxima per persona (segons)" (60) are filled | R-FLOW-1a to 1e | ☐ |
-| M-5 | F-HR-2 | [B] Press "Genera els esborranys" | Button "Generant…" and text "La IA està redactant les preguntes…". Redirect to `/hr/needs`. A card in state "Esborrany" with badge "Proposta de la IA" (or "Plantilla de reserva" if LLM-OFF), 3 to 6 questions, estimated time "~N s de 60 s". [T] `sqlite3 data/demo.db "select estat, generada_per_ia from pregunta where necessitat_id=(select max(id) from necessitat)"` shows only `draft`, none `aprovada` | R-FLOW-2a to 2g, R-X-3 | ☐ |
+| M-5 | F-HR-2 | [B] Press "Genera els esborranys" | Button "Generant…" and text "La IA està redactant les preguntes…". Redirect to `/hr/needs`. A card in state "Esborrany" with badge "Proposta de la IA" (or "Plantilla de reserva" if LLM-OFF), 3 to 6 questions, estimated time "~N s de 60 s". [T] `sqlite3 data/app.db "select estat, generada_per_ia from pregunta where necessitat_id=(select max(id) from necessitat)"` shows only `draft`, none `aprovada` | R-FLOW-2a to 2g, R-X-3 | ☐ |
 | M-6 | F-HR-3 | [B] In the draft: edit one text and press "Desa el text"; move one with the up or down control; press "Torna a generar" on one; press "Descarta" on one; edit title and introduction and press "Desa el títol i la introducció" | Each change survives a reload. A discarded question leaves the draft list (`estat = 'retirada'` in the DB). Order follows the move. An over-long set shows "Atenció: el temps estimat … supera la durada màxima" (see S-65) | R-FLOW-3a to 3c | ☐ |
 | M-7 | F-HR-3 | [B] Press "Aprova" on every remaining question | Each moves to "Preguntes aprovades"; when none is left to review the need shows "Llesta per publicar". [T] `select estat, prioritat, aprovada_per, aprovada_el from pregunta where necessitat_id=(select max(id) from necessitat)`: `aprovada`, `100`, `hr-demo`, a timestamp | R-FLOW-3d, R-X-3, R-PRIV-7, R-PRIV-10 | ☐ |
 | M-8 | F-HR-4 | [B] Press "Publica i envia la notificació" | State "Publicada"; a notice "S'han enviat notificacions a … dispositius del col·lectiu." ("menys de 10" under 10; "notificacions desactivades" without VAPID keys). No new `joincode` or `publicacio` row. With M-12 done on a Logística account, that browser shows "Escolta activa" | R-FLOW-4a, R-FLOW-5d | ☐ |
@@ -143,7 +143,7 @@ Use the mobile preset. Create the account with the join code of the need's colle
 | # | Flow | Action | Expected | Req | Result |
 |---|---|---|---|---|---|
 | M-16 | F-HR-5 | [B] In `/hr/results` look for the new need's question after the single answer from M-14 | One respondent is below the minimum group size 10, so nothing about the new need is shown with a value ("Suprimit" or absent). Segments of the demo data with n of 10 or more show values. Optional route to reach n of 10: ten extra accounts by hand (fresh cookie window each) then answer; no helper script exists | R-PRIV-2, R-DATA-1 | ☐ |
-| M-17 | F-JOB-1, F-JOB-2 | [T] `source ~/.claude/bin/heavy-gate.sh` then `DB_PATH=data/demo.db pnpm --filter @damm/engine run job`. [B] reload `/hr/results` | A JSON report with counts for aggregates, insights and alarms, no error. The scheduler also runs it every 10 minutes (server log line). Segments under 10 stay suppressed. The LLM is not called by any dashboard request. Idempotence is S-86 | R-FLOW-6b to 6e, N-2 | ☐ |
+| M-17 | F-JOB-1, F-JOB-2 | [T] `source ~/.claude/bin/heavy-gate.sh` then `pnpm --filter @damm/engine run job`. [B] reload `/hr/results` | A JSON report with counts for aggregates, insights and alarms, no error. The scheduler also runs it every 10 minutes (server log line). Segments under 10 stay suppressed. The LLM is not called by any dashboard request. Idempotence is S-86 | R-FLOW-6b to 6e, N-2 | ☐ |
 | M-18 | F-HR-5 | [B] Open `/hr/results` and scroll | Header "Resultats", subtitle "Sempre en agregat. Els segments amb menys de 10 persones que han respost es mostren com a Suprimit", KPIs "Comptes actius", "Temes detectats", "Temes emergents", "Segments suprimits". Sections "Perfil per domini" (radar), "Temes dels comentaris", "Representativitat", "Tendències per domini" (mean 1 to 5 with n and precision indicativa, moderada, sòlida), "Comptes per col·lectiu" ("Només recomptes, mai identitats"). Choose a period in "Compara amanb" is `?vs=`: the select reads "Compara amb" and switches the comparison | R-FLOW-7a to 7f, R-CH-2 | ☐ |
 | M-19 | F-HR-5 | [B] Read "Representativitat" per collective and per shift | Columns respostes, població, diferència; differences of 5 pp or more are marked; the night shift shows low response; night rows with n under 10 read "Suprimit" with the hint "Menys de 10 persones han respost" | R-DIFF-1, R-BIAS-1, N-2 | ☐ |
 | M-20 | F-HR-7 | [B] Open `/hr` (home), then "Alarmes" (`/hr/signals`), then "Veure detall →" on one alarm | Home shows counts, radar, pending items and recent signals. `/hr/signals`: title "Alarmes", subtitle "Senyals que detecta el motor a partir dels agregats. Cap és individual; cada una és revisada per una persona.", button "Recalcula ara", each item with type and severity badges, "Només l'equip de persones" on HR-only alarms, "{periode} · n={n}", status buttons. Detail `/hr/signals/<id>`: "Estat del senyal:" buttons, card "Del senyal a l'acció" with four steps "Fet" or "Pendent", button "← Recomanacions". Changing the status survives a reload (see S-85 for transitions) | R-FLOW-7e, R-FLOW-6e, R-DIFF-3 | ☐ |
@@ -173,7 +173,7 @@ IDs are `S-n`. Each row has the flow, requirements, mode, steps and the expected
 | S-3 | F-HR-5 | R-PRIV-2 | [B] Complementary suppression: where one segment of a total is hidden, check its sibling | A second segment is also hidden, or the total is not shown, so the hidden value cannot be got by subtraction | ☐ |
 | S-4 | F-HR-6, F-HR-1 B1 | R-PRIV-3 | [T] `curl -i http://localhost:3000/hr/results/export` with no cookie (GATE-ON) | Redirect to `/hr-login`, no CSV body | ☐ |
 | S-5 | F-PRIV-1 | R-PRIV-3, R-PRIV-9, R-X-2 | [T] `bash scripts/security-demo.sh` | Plants a forbidden import in HR code; `pnpm lint` and `pnpm check:anonymity` fail; the script cleans up; both pass again; `git status` is clean | ☐ |
-| S-6 | F-PRIV-1, F-PRIV-5 | R-PRIV-4, R-PRIV-9 | [T] Walk `docs/security-demo.md` steps (c), (d), (e). Also `sqlite3 data/demo.db "pragma table_info(v_resposta_analitica)"` | (c) suppression plus CSV, (d) the view has no `compte_id` column, (e) `scripts/security-demo-account.mts` on a copy of the DB shows scrypt hashes and the recovery hash, never plain text | ☐ |
+| S-6 | F-PRIV-1, F-PRIV-5 | R-PRIV-4, R-PRIV-9 | [T] Walk `docs/security-demo.md` steps (c), (d), (e). Also `sqlite3 data/app.db "pragma table_info(v_resposta_analitica)"` | (c) suppression plus CSV, (d) the view has no `compte_id` column, (e) `scripts/security-demo-account.mts` on a copy of the DB shows scrypt hashes and the recovery hash, never plain text | ☐ |
 | S-7 | F-PRIV-2 | R-PRIV-1, R-PRIV-9 | [B] Walk every HR page (`/hr`, `/hr/needs`, `/hr/publish`, `/hr/results`, `/hr/signals`, `/hr/signals/<id>`, `/hr/recommendations`, `/hr/methodology`) and every manager page, with `get_page_text` | No username, no account id, no raw comment tied to one person, no value for a group under 10 | ☐ |
 | S-8 | F-PRIV-3, F-HR-4 | R-PRIV-3, R-PRIV-9 | [B] Look at "Comptes per col·lectiu" in `/hr/results` and "comptes al col·lectiu" in `/hr/publish` | Counts only; a count under 10 reads "<10"; no list of accounts exists anywhere in HR | ☐ |
 | S-9 | F-PRIV-6 | R-X-1, R-DATA-1 | [T] `git ls-files` contains no `.env`; `git grep -n -i "api_key\|secret" -- . ':!docs' ':!*.example'` shows only variable names, no values; `.env.example` values are empty; the seed and comments JSON contain no real names | No secret and no real person or Damm data in the repo or the DB | ☐ |
@@ -273,7 +273,7 @@ IDs are `S-n`. Each row has the flow, requirements, mode, steps and the expected
 | ID | Flow | Req | Steps | Expected | Result |
 |---|---|---|---|---|---|
 | S-85 | F-HR-7 | R-FLOW-7, N-2 | [B] On `/hr/signals` move one alarm through the status buttons: open, acknowledged, action_linked, resolved. Press "Recalcula ara" | The state survives a reload and shows in the 4-step timeline "Del senyal a l'acció". "Recalcula ara" does not overwrite an acknowledged or action-linked alarm (7-day cooldown stops the same alarm being re-raised). Empty list text is "Cap alarma activa." | ☐ |
-| S-86 | F-JOB-1 | R-FLOW-7, N-2, N-4 | [T] Run `DB_PATH=data/demo.db pnpm --filter @damm/engine run job` twice (heavy gate) | Same counts for the same data; no error; nothing per person is written. An alarm acknowledged in S-85 stays acknowledged | ☐ |
+| S-86 | F-JOB-1 | R-FLOW-7, N-2, N-4 | [T] Run `pnpm --filter @damm/engine run job` twice (heavy gate) | Same counts for the same data; no error; nothing per person is written. An alarm acknowledged in S-85 stays acknowledged | ☐ |
 | S-87 | F-EMP-8 | R-FLOW-8, R-U-3 | [B] As an employee of a collective without approved actions open `/`; then of one with approved actions | Without: the card "Has dit, hem fet" is always shown with "Encara no hi ha accions aprovades per al teu col·lectiu. Quan Recursos Humans en aprovi, les veuràs aquí, amb el període i quantes persones hi havia al darrere." With: only actions of the account's collective (or all-company ones), at most 20, never another collective's | ☐ |
 | S-88 | F-HR-6 | R-FLOW-6, R-PRIV-1, R-PRIV-2, R-DATA-9 | [B] `javascript_tool`: `const r=await fetch('/hr/results/export'); [r.headers.get('content-disposition'), r.headers.get('cache-control'), (await r.text())]` | Filename `resultats-agregats-YYYY-MM-DD.csv`, `Cache-Control: no-store`, UTF-8 BOM (first character code 65279), header `tipus,periode,collectiu,torn,domini,respondents,resp_pct,pop_pct,diferencia_pp,mitjana,suprimit`, `#` comment lines that state the minimum group size 10. Verify the header and filename text in the browser; differences are findings | ☐ |
 | S-89 | F-HR-1, F-JOB-1, F-EMP-2, F-PRIV-5 | R-PRIV-8, R-PRIV-10, N-8 | [T]+[B] Confirm absence: `curl -i -X POST http://localhost:3000/api/jobs/run`; the onboarding screen has no centre, shift or manager question; `/hr-login` has one code field and no username; no retention setting exists in `/settings` | 404 for the jobs endpoint; no extra onboarding question; one shared HR code; only delete-account exists. All ABS | ☐ ABS |
@@ -287,9 +287,9 @@ IDs are `S-n`. Each row has the flow, requirements, mode, steps and the expected
 | S-82 | F-EMP-1 to F-EMP-5 | R-U-1 | [B] Keyboard only through `/join`, `/onboarding`, `/login` and one answer | Visible focus, a label for every field, Enter submits, errors are `role="alert"` | ☐ |
 | S-83 | F-EMP-5 | R-U-1 | [B] Page at 200 percent zoom (or a narrow viewport) and `read_page` on the answer screen | Content reflows; each question and option has a readable name | ☐ |
 | S-84 | all | all Musts | [T]+[B] Demo-day smoke test, 10 minutes, stop at the first failure: (1) note the commit, rebuild the DB, `pnpm dev`; (2) HR gate M-1 to M-3; (3) `/hr/results` shows the suppressed rows (M-18, M-19); (4) create a need, approve, publish (M-4 to M-8); (5) mobile preset: join, account, recovery code, one answer (M-10 to M-14); (6) `/hr/recommendations`, approve one, press "Crea l'enquesta de seguiment" (M-21, M-22); (7) `bash scripts/security-demo.sh` ends clean (S-5); (8) stop the dev server | Every step passes and the whole run takes about 10 minutes | ☐ |
-| S-90 | F-JOB-3, F-HR-5, F-HR-7 | R-DATA-1 to R-DATA-9, R-BIAS, R-DIFF | [T]+[B] Planted stories on the demo DB. First `sqlite3 data/demo.db "select tipus, severity, status, audience, collectiu_id, domini_id from senyal order by id desc limit 20"`, then the pages as listed below | See the table below | ☐ |
+| S-90 | F-JOB-3, F-HR-5, F-HR-7 | R-DATA-1 to R-DATA-9, R-BIAS, R-DIFF | [T]+[B] Planted stories on the demo DB. First `sqlite3 data/app.db "select tipus, severity, status, audience, collectiu_id, domini_id from senyal order by id desc limit 20"`, then the pages as listed below | See the table below | ☐ |
 
-Planted demo stories (S-90), `data/demo.db` is deterministic:
+Planted demo stories (S-90), `data/app.db` (from `pnpm demo-db`) is deterministic:
 
 | Story | Where | Expected on screen |
 |---|---|---|
@@ -392,7 +392,7 @@ Run date:           2026-11-07 ~19:00-20:30 (Europe/Madrid)
 Commit:             b39c355   branch: jan/e2e-run
 Tester:             Claude (agent session)
 Devices:            built-in browser pane, mobile 375x812 and desktop / no phone
-DB:                 demo (data/demo.db)   Join codes: DEMO-FAB, DEMO-LOG, DEMO-COM, DEMO-OFI, E2AC187B (new Logística need)
+DB:                 demo (data/app.db)   Join codes: DEMO-FAB, DEMO-LOG, DEMO-COM, DEMO-OFI, E2AC187B (new Logística need)
 LLM:                fallback (no key; badge "Plantilla de reserva")   HR gate: on for M-1..M-3 and S-4, then OFF (HR_ACCESS_CODE emptied) for the rest of the HR browser cases, because the 12 h cookie expired and the code cannot be typed without echoing it
 Build checks:       check:anonymity P (also via S-5)  lint not run  build not run
 Server:             port 3001 (3000 was taken), so join links and QR show 3000; substitute 3001
@@ -433,8 +433,8 @@ Minor copy: M-11 heading "Crea el teu compte" stays above "Compte creat"; M-12 d
 the need's join-code card shows no account count; `/join` says "Dues preguntes" (known S-48).
 
 Notes:
-- Plan bug 1: the M-17 command `DB_PATH=data/demo.db pnpm --filter @damm/engine run job` fails with "unable to open database file", because the relative path is resolved from
-  packages/engine. Use `DB_PATH=$PWD/data/demo.db`.
+- Plan bug 1: the M-17 command `pnpm --filter @damm/engine run job` fails with "unable to open database file", because the relative path is resolved from
+  packages/engine. Use ``.
 - Plan bug 2: the plan says "Copia" where the app says "Còpia".
 - Plan note: `.env` does not exist in a fresh worktree; generate it from .env.example (HR_ACCESS_CODE and the session secret). session.ts has a dev-only fallback secret string.
 - Login throttle (5 per 15 min per username and IP) is in memory and is cleared by a restart.

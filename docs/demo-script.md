@@ -16,7 +16,7 @@ Re-check every flag against `jan/dev` the day of the demo and update this table.
 
 ## Before you go on stage
 
-Two databases exist and they are not interchangeable: both write `data/app.db`.
+**Use the trilingual demo DB: `pnpm demo-db` (writes `data/app.db`, about 90 s, join codes `DEMO-FAB`, `DEMO-LOG`, `DEMO-COM`, `DEMO-OFI`).** The two databases below are legacy and not interchangeable: both write `data/app.db`.
 
 | DB | Command | Gives you | Lacks |
 | --- | --- | --- | --- |

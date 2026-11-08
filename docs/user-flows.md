@@ -14,7 +14,7 @@ How to read this:
 | Tag | Meaning |
 |---|---|
 | **DB-seed** | Dev DB from `pnpm --filter @damm/seed run seed` (`data/app.db`). About 1,200 synthetic employees, about 700 responses, about 500 comments. Join codes `DAMM-FAB`, `DAMM-LOG`, `DAMM-COM`, `DAMM-OFI`. Logística/nit has 6 accounts by design (below 10). |
-| **DB-demo** | `DB_PATH=data/demo.db`, built by `pnpm --filter @damm/engine run demo` (about 4 min). Three months of synthetic answers, planted alarms and insights (stories S-90). Join codes are `DEMO-<first three letters of the collective>` (the deployed DB has `DEMO-FAB`: accents are stripped at startup); read the real values from the `joincode` table before testing. |
+| **DB-demo** | `data/app.db` (default `DB_PATH`), built by `pnpm demo-db` (trilingual, about 90 s). Three months of synthetic answers, planted alarms and insights (stories S-90). Join codes are `DEMO-<first three letters of the collective>` (the deployed DB has `DEMO-FAB`: accents are stripped at startup); read the real values from the `joincode` table before testing. |
 | **GATE-ON** | `HR_ACCESS_CODE` is set in `.env`. `/hr`, `/manager` and their subpaths redirect to `/hr-login?next=<path>` without the cookie `hr_access`. |
 | **GATE-OFF** | `HR_ACCESS_CODE` is empty. The gate is off and `/hr` opens directly. |
 | **LLM-ON** | `LLM_API_KEY` and `LLM_BASE_URL` set. Model `ornith`. |
@@ -467,7 +467,7 @@ Covers: R-FLOW-5c, R-FLOW-5f, R-TENSION-1.
 
 Covers: R-DATA-1 to R-DATA-9.
 - Seed: `pnpm --filter @damm/seed run seed` is fresh and deterministic; about 1,200 synthetic employees, about 700 responses over Aug, Sep, Oct 2026, about 500 comments; planted bias: low night-shift response, October emerging theme (shift system communication and breaks), Logística weak signal (safety equipment, heat), manager positivity, one sub-threshold group (Logística/nit, 6).
-- Demo: `pnpm --filter @damm/engine run demo` builds `data/demo.db` with three months and planted stories (S-90). About 4 minutes.
+- Demo: `pnpm demo-db` builds `data/app.db` with three months and planted stories (S-90). About 90 s.
 - Comments: `pnpm --filter @damm/seed run comments` (template mode) or `-- --llm`. Committed JSON so nobody needs the key to seed.
 
 ### F-JOB-4 Daily push send (expected gap)

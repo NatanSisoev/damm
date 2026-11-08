@@ -7,11 +7,11 @@ DB_PATH="${DB_PATH:-/data/app.db}"
 export DB_PATH
 
 if [ ! -s "$DB_PATH" ]; then
-  echo "[start] no database at $DB_PATH, building the demo database (1.5 to 4 min)"
+  echo "[start] no database at $DB_PATH, building the trilingual demo database (about 90 s)"
   mkdir -p "$(dirname "$DB_PATH")"
   TMP="$DB_PATH.building"
   rm -f "$TMP" "$TMP-wal" "$TMP-shm"
-  pnpm --filter @damm/engine run demo --out "$TMP"
+  pnpm demo-db -- --out "$TMP"
   mv "$TMP" "$DB_PATH"
   rm -f "$TMP-wal" "$TMP-shm"
   echo "[start] database ready"

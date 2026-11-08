@@ -34,17 +34,17 @@ If `--ff-only` fails, `jan/deploy` has commits that are not in `main`: get them 
 ## Build and start
 
 - Build: `pnpm install --frozen-lockfile && pnpm build` (Node 22 from `.nvmrc`, pnpm 10 from `packageManager`).
-- Start: `bash scripts/railway-start.sh`. If `$DB_PATH` is missing or empty it builds the engine demo database (`pnpm --filter @damm/engine run demo --out ...`, about 1.5 to 4 min) into a temp file on the volume and renames it, then starts Next on `$PORT`. An existing database is never touched. The health check allows 600 s so the first boot can finish seeding.
+- Start: `bash scripts/railway-start.sh`. If `$DB_PATH` is missing or empty it builds the trilingual demo database (`pnpm demo-db -- --out ...`, the same DB as local `pnpm demo-db`, about 90 s; needs Node 22.6+ for `--experimental-strip-types`, pinned by `.nvmrc` 22 and `engines`) into a temp file on the volume and renames it, then starts Next on `$PORT`. An existing database is never touched. The health check allows 600 s so the first boot can finish seeding.
 
 ## Environment variables (names only)
 
 `DB_PATH` (`/data/app.db`), `PUBLIC_BASE_URL` (the URL above, no trailing slash), `HR_ACCESS_CODE`, `SESSION_SECRET`, `LLM_BASE_URL`, `LLM_API_KEY`, `LLM_MODEL`, `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`, `NODE_ENV`. `TEAMS_WEBHOOK_URL` is not set (empty locally). The VAPID pair was generated for this deploy only. Values live in Railway; set with `railway variables --set NAME=value`. A deleted variable needs `railway redeploy -y` to take effect.
 
-Optional `TEST_ACCOUNT=username:password` (not set on Railway unless Jan asks): on server start (`apps/web/instrumentation.ts`, so also under `scripts/railway-start.sh`) the account is created in Fàbriques if missing, with the app's normal scrypt hashing. Idempotent, never overwrites an existing account, works on any DB (app.db, demo.db, large.db). Password needs 8+ characters.
+Optional `TEST_ACCOUNT=username:password` (not set on Railway unless Jan asks): on server start (`apps/web/instrumentation.ts`, so also under `scripts/railway-start.sh`) the account is created in Fàbriques if missing, with the app's normal scrypt hashing. Idempotent, never overwrites an existing account, works on the demo DB and any other. Password needs 8+ characters.
 
 ## Reseed
 
-Delete the database and redeploy, the start step rebuilds it:
+Delete the database and redeploy, the start step rebuilds it with `pnpm demo-db` (trilingual ca/es/en):
 
 ```bash
 railway ssh -- rm -f /data/app.db /data/app.db-wal /data/app.db-shm
@@ -71,7 +71,7 @@ The VAPID pair is set as Railway variables, so `pushEnabled()` is true on the de
 - iPhone: iOS 16.4 or later. Safari, Share, Add to Home Screen, open the app from the icon, then tap "Activa les notificacions".
 - Trigger: publishing an approved need in `/hr` notifies that need's collective, or everyone if it has none.
 - HR only ever sees a device count, shown as "<10" under the minimum group size.
-- HR login uses `HR_ACCESS_CODE`, the same value as in Jan's local `.env`.
+- HR login uses `HR_ACCESS_CODE`, a Railway variable (set with `railway variables --set`); it is not in the repo, and the local `.env` has its own value.
 
 ## Join codes
 

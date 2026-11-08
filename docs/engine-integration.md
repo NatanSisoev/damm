@@ -364,7 +364,7 @@ The engine works with the seed as it is:
 
 ## Demo data
 
-`pnpm --filter @damm/engine run demo` builds `data/demo.db` from scratch, in about 4 minutes. It is separate from the seed's `data/app.db`, so nothing of Jan's is overwritten. Run the app on it with `DB_PATH=data/demo.db pnpm dev`.
+`pnpm demo-db` (scripts/build-demo-db.mts) is the one database: it wraps the engine demo pipeline and adds ca/es/en. It writes `data/app.db` in about 90 s, and `pnpm dev` runs on it. The bare `pnpm --filter @damm/engine run demo` (English only, `data/demo.db`) is legacy.
 
 What it contains (all synthetic):
 - **Population:** 1,200 invented employees across the 4 collectives and 3 shifts, of whom 344 have accounts. Night shifts are deliberately thin.

@@ -1,4 +1,4 @@
-// One command, one demo database: `pnpm demo-db` (writes data/demo.db; `-- --out path` to change).
+// One command, one demo database: `pnpm demo-db` (writes data/app.db, the default DB_PATH; `-- --out path` to change).
 //
 // Single source: the engine demo pipeline (packages/engine/demo/build-demo.ts: simulated world, answers, comments,
 // engine job, comment analysis, recommendations). This script wraps it with
@@ -7,7 +7,7 @@
 //   - comment pools in ca / es / en (an account's comments are in its own language),
 //   - a trilingual post-pass: question bank (text_i18n), the HR need, the adopted recommendation, themes, recommendations
 //     and the signal text get Catalan as the canonical column and es/en rows in `traduccio`.
-// The seed pipeline (packages/seed -> data/app.db) stays for the lighter dev DB; it is not merged in here.
+// The old seed pipeline (packages/seed) is legacy; this is the one database for dev, e2e and Railway.
 // Run: node --experimental-strip-types --experimental-sqlite --no-warnings scripts/build-demo-db.mts
 import { DatabaseSync } from "node:sqlite";
 import { readFileSync } from "node:fs";
@@ -22,7 +22,7 @@ import {
 
 const REPO = resolve(import.meta.dirname, "..");
 const { values } = parseArgs({ args: process.argv.slice(2).filter((a) => a !== "--"), options: { out: { type: "string" }, seed: { type: "string" } }, allowPositionals: true });
-const out = values.out ?? "data/demo.db";
+const out = values.out ?? "data/app.db";
 const LANGS: Lang[] = ["ca", "es", "en"];
 
 /** Participation override per "collectiuId:tornId": more night-shift accounts so every segment reaches n >= 10. */
