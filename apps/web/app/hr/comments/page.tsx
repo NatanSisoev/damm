@@ -53,7 +53,6 @@ export default async function CommentsPage({ searchParams }: { searchParams: Pro
               <tr>
                 <th>{t("th_theme")}</th>
                 <th className="num">{t("th_total")}</th>
-                <th>{t("th_collectives")}</th>
                 <th>{t("th_domains")}</th>
               </tr>
             </thead>
@@ -67,11 +66,6 @@ export default async function CommentsPage({ searchParams }: { searchParams: Pro
                     {th.emergent && <span className="badge">{t("emergent")}</span>}
                   </td>
                   <td className="num">{n0(th.n)}</td>
-                  <td>
-                    {th.collectives.map((c) => (
-                      <span key={c.label} className="badge mr-1">{collectiveLabel(c.label, lang)} {cell(c.n)}</span>
-                    ))}
-                  </td>
                   <td>
                     {th.domains.map((d) => (
                       <span key={d.label} className="badge mr-1">{domainLabel(d.label, lang)} {cell(d.n)}</span>
