@@ -215,7 +215,8 @@ function cellTitle(t: HrResultsT, lang: Lang, c: HeatCell): string {
   });
 }
 
-export async function HeatmapCard({ map, selected }: { map: Heatmap; selected?: { seg?: string; dom?: string } }) {
+/** `cellHref` lets the page keep its own filters (interval) on the drill-down links; default is the bare drill-down. */
+export async function HeatmapCard({ map, selected, cellHref = segHref }: { map: Heatmap; selected?: { seg?: string; dom?: string }; cellHref?: (collective: string, domain: string) => string }) {
   const { t, lang } = await getTL(hrResultsDict);
   return (
     <Card
@@ -246,7 +247,7 @@ export async function HeatmapCard({ map, selected }: { map: Heatmap; selected?: 
                       return (
                         <td key={c.domain} className="p-0">
                           <Link
-                            href={segHref(c.collective, c.domain)}
+                            href={cellHref(c.collective, c.domain)}
                             scroll={false}
                             title={cellTitle(t, lang, c)}
                             aria-label={cellTitle(t, lang, c)}
@@ -285,7 +286,7 @@ export async function HeatmapCard({ map, selected }: { map: Heatmap; selected?: 
   );
 }
 
-export async function SegmentTrendCard({ trend }: { trend: SegmentTrend }) {
+export async function SegmentTrendCard({ trend, closeHref = "/hr" }: { trend: SegmentTrend; closeHref?: string }) {
   if (!trend) return null;
   const { t, lang } = await getTL(hrResultsDict);
   const means = trend.cells.map((c) => c.mitjana);
@@ -295,7 +296,7 @@ export async function SegmentTrendCard({ trend }: { trend: SegmentTrend }) {
         <h2 className="section-title">
           {domainLabel(trend.domain, lang)} · {trend.scope === "Tots" ? t("an_all_company") : collectiveLabel(trend.scope, lang)}
         </h2>
-        <Link href="/hr/results" scroll={false} className="text-xs text-accent-ink hover:underline">{t("an_close")}</Link>
+        <Link href={closeHref} scroll={false} className="text-xs text-accent-ink hover:underline">{t("an_close")}</Link>
       </div>
       <div className="card-body flex flex-wrap items-center gap-x-8 gap-y-3">
         <Sparkline values={means} />
