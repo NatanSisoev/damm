@@ -1,7 +1,7 @@
 /*
  * HR / manager layout only (sidebar, drawer, top bar, meter, heatmap, chips).
- * Colour tokens, type and component shapes live in globals.css ("Paper" identity).
- * Red (--brand-red) is only for the active nav tab, the participation bar and critical alarms.
+ * Colour tokens, type and component shapes live in globals.css ("Give a Damm" identity, docs/style-guide.md).
+ * Red (--red) is only for the active nav tab, the participation bar and critical alarms.
  */
 .hr-shell {
   background: var(--bg);
@@ -20,7 +20,7 @@
   height: 44px;
   padding: 0 2px;
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 600;
   white-space: nowrap;
   color: var(--text-muted);
   transition: color 120ms ease;
@@ -68,7 +68,7 @@
 .hr-side-foot { padding: 8px; border-top: 1px solid var(--border); }
 .hr-side-item {
   position: relative; display: flex; align-items: center; gap: 10px;
-  min-height: 44px; padding: 0 10px; font-size: 13px; font-weight: 500;
+  min-height: 44px; padding: 0 10px; font-size: 13px; font-weight: 600;
   color: var(--text-muted); white-space: nowrap; transition: color 120ms ease, background 120ms ease;
 }
 .hr-side-item:hover { color: var(--text); background: var(--accent-soft); }

@@ -1,47 +1,58 @@
 @import "tailwindcss";
 
 /*
- * Design tokens: "Paper" identity, strictly white, black and red (docs/visual-identity.md). Ink on paper, thin rules,
- * red as a signal only (active nav tab, participation bar, critical alarms). One token set
- * for the employee app, the HR portal and the manager view.
+ * Design tokens: "Give a Damm" identity (docs/style-guide.md). Ink on warm paper, 1px rules, 2px corners, and red only
+ * where someone is heard (primary button, new markers, critical alarms, nav marker). Guide names (--paper, --ink, --muted,
+ * --rule, --red, --on-red, --focus) are the source; the older names below alias them so existing components follow.
+ * One token set for the employee app, the HR portal and the manager view.
  */
 :root {
-  --brand-red: #c8201a;
+  /* style guide */
+  --paper: #eef0ea;
+  --ink: #17211a;
+  --muted: #5b6359;
+  --rule: #cfd4c9;
+  --red: #c8201a;
+  --on-red: #fbfcf9;
+  --red-hover: #b01c17;
+  --focus: var(--ink);
 
-  --bg: #ffffff;
-  --surface: #ffffff;
-  --surface-muted: #f2f2f2;
-  --border: #dcdcdc;
-  --border-strong: #b3b3b3;
+  /* older names, mapped */
+  --brand-red: var(--red);
+  --bg: var(--paper);
+  --surface: #fbfcf9;
+  --surface-muted: #e6e9e0;
+  --border: var(--rule);
+  --border-strong: #b3baae;
   --line: var(--border);
   --line-strong: var(--border-strong);
   /* Border of form controls on touch screens: 3:1 against the surface. */
-  --control-border: #767676;
-  --text: #0a0a0a;
-  --text-muted: #4d4d4d;
-  --text-subtle: #595959;
+  --control-border: #788274;
+  --text: var(--ink);
+  --text-muted: var(--muted);
+  --text-subtle: var(--muted);
 
-  /* Ink, not red: primary buttons, focus, selected state. */
-  --accent: #0a0a0a;
-  --accent-hover: #2e2e2e;
-  --accent-soft: rgb(0 0 0 / 0.06);
-  --accent-text: #0a0a0a;
-  --on-accent: #ffffff;
+  /* Ink: selected state, focus, scale tiles. The primary button is red (--red / --on-red). */
+  --accent: var(--ink);
+  --accent-hover: #2f3b32;
+  --accent-soft: rgb(23 33 26 / 0.06);
+  --accent-text: var(--ink);
+  --on-accent: var(--paper);
 
-  --warn: #c8201a;
-  --warn-soft: #fbe9e8;
-  --good: #0a0a0a;
-  --good-soft: #f2f2f2;
+  /* Red never marks an error (style guide): warnings are ink on a muted fill. */
+  --warn: var(--ink);
+  --warn-soft: var(--surface-muted);
+  --good: var(--ink);
+  --good-soft: var(--surface-muted);
 
-  --chart-1: #0a0a0a;
-  --chart-2: #767676;
+  --chart-1: var(--ink);
+  --chart-2: #8a9286;
 
   /* Diverging scale for the heatmap: warm = below company average, cool = above, grey midpoint. */
   --div-neg: #b8431f;
   --div-pos: #2a6f97;
-  --div-mid: #e6e6e6;
+  --div-mid: #dfe3d9;
 
-  /* Fixed cohort colours (colour follows the entity). Validated with the dataviz script. */
   --co-1: #2a78d6;
   --co-2: #eb6834;
   --co-3: #1baf7a;
@@ -57,7 +68,10 @@
   --dom-6: #008300;
   --dom-muted: #a6a6a6;
 
-  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+  --ease-out: cubic-bezier(0.4, 0, 1, 1);
+  --t-fast: 120ms;
+  --t-base: 200ms;
 
   /* kept for older components */
   --background: var(--bg);
@@ -66,35 +80,28 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --brand-red: #e0302a;
+    --paper: #121512;
+    --ink: #eef1ea;
+    --muted: #9aa196;
+    --rule: #2b302b;
+    --red: #ff7a6e;
+    --on-red: #121512;
+    --red-hover: #ff9288;
+    --focus: var(--red);
 
-    --bg: #000000;
-    --surface: #0a0a0a;
-    --surface-muted: #1a1a1a;
-    --border: #2e2e2e;
-    --border-strong: #4a4a4a;
-    --control-border: #8a8a8a;
-    --text: #ffffff;
-    --text-muted: #b8b8b8;
-    --text-subtle: #a3a3a3;
+    --surface: #1a1e1a;
+    --surface-muted: #222722;
+    --border-strong: #454c45;
+    --control-border: #7d857a;
 
-    --accent: #ffffff;
-    --accent-hover: #d9d9d9;
-    --accent-soft: rgb(255 255 255 / 0.1);
-    --accent-text: #ffffff;
-    --on-accent: #000000;
+    --accent-hover: #d2d6cc;
+    --accent-soft: rgb(238 241 234 / 0.1);
 
-    --warn: #ff6b60;
-    --warn-soft: rgb(255 90 79 / 0.14);
-    --good: #ffffff;
-    --good-soft: rgb(255 255 255 / 0.1);
-
-    --chart-1: #ffffff;
-    --chart-2: #8a8a8a;
+    --chart-2: #7d857a;
 
     --div-neg: #e0745a;
     --div-pos: #5fa3cf;
-    --div-mid: #2e2e2e;
+    --div-mid: #2b302b;
 
     --co-1: #3987e5;
     --co-2: #d95926;
@@ -108,7 +115,7 @@
     --dom-4: #c98500;
     --dom-5: #d55181;
     --dom-6: #008300;
-    --dom-muted: #666666;
+    --dom-muted: #666d63;
   }
 }
 
@@ -125,6 +132,8 @@
   --color-accent-hover: var(--accent-hover);
   --color-accent-soft: var(--accent-soft);
   --color-accent-ink: var(--accent-text);
+  --color-red: var(--red);
+  --color-on-red: var(--on-red);
   --color-warn: var(--warn);
   --color-warn-soft: var(--warn-soft);
   --color-good: var(--good);
@@ -149,34 +158,77 @@ body {
   background: var(--bg);
   color: var(--text);
   font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 24px;
+}
+
+/* HR portal and manager view are dense data screens: 14px body inside the shell (documented deviation). */
+.hr-shell {
   font-size: 14px;
   line-height: 20px;
 }
 
 :focus-visible {
-  outline: 2px solid var(--text);
+  outline: 2px solid var(--focus);
   outline-offset: 2px;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition-duration: 120ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 @layer components {
+  /* H1 */
   .page-title {
-    font-size: 24px;
-    line-height: 32px;
+    font-size: clamp(24px, 3vw, 32px);
+    line-height: 1.15;
     font-weight: 800;
     letter-spacing: -0.01em;
   }
+  /* H2 */
   .section-title {
-    font-size: 16px;
-    line-height: 24px;
+    font-size: clamp(18px, 2vw, 22px);
+    line-height: 1.3;
     font-weight: 700;
+    letter-spacing: -0.005em;
   }
+  /* Overline: 12px, +8% tracking, the one allowed all-caps. */
   .eyebrow {
-    font-size: 11px;
+    font-size: 12px;
     line-height: 16px;
-    font-weight: 700;
-    letter-spacing: 0.06em;
+    font-weight: 600;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--text-muted);
+  }
+  /* Display, question and number styles (style guide, Typography). */
+  .display {
+    font-size: clamp(40px, 6vw, 64px);
+    line-height: 1.05;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+  .question {
+    font-size: clamp(28px, 4vw, 36px);
+    line-height: 1.15;
+    font-weight: 800;
+    letter-spacing: -0.015em;
+  }
+  .question .end {
+    color: var(--red);
+  }
+  .figure {
+    font-size: clamp(32px, 4vw, 48px);
+    line-height: 1;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
   }
 
   .card {
@@ -199,29 +251,35 @@ body {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    height: 32px;
-    padding: 0 12px;
+    height: 40px;
+    padding: 0 16px;
     border-radius: 2px;
-    border: 1px solid var(--border-strong);
+    border: 1.5px solid var(--text);
     background: var(--surface);
     color: var(--text);
-    font-size: 13px;
-    font-weight: 500;
-    transition: background-color 120ms var(--ease), border-color 120ms var(--ease);
+    font-size: 14px;
+    font-weight: 600;
+    transition: background-color var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease);
     cursor: pointer;
     white-space: nowrap;
   }
   .btn:hover {
     background: var(--surface-muted);
   }
+  /* The only filled block of colour in normal UI: red, one per screen. */
   .btn-primary {
-    background: var(--accent);
-    border-color: var(--accent);
-    color: var(--on-accent);
+    background: var(--red);
+    border-color: var(--red);
+    color: var(--on-red);
   }
   .btn-primary:hover {
-    background: var(--accent-hover);
-    border-color: var(--accent-hover);
+    background: var(--red-hover);
+    border-color: var(--red-hover);
+  }
+  .btn:disabled,
+  .btn[aria-disabled="true"] {
+    opacity: 0.4;
+    cursor: not-allowed;
   }
   .btn-ghost {
     border-color: transparent;
@@ -235,10 +293,10 @@ body {
   }
 
   .input {
-    height: 32px;
-    padding: 0 10px;
+    height: 44px;
+    padding: 0 12px;
     border-radius: 2px;
-    border: 1px solid var(--border-strong);
+    border: 1px solid var(--control-border);
     background: var(--surface);
     color: var(--text);
     font-size: 14px;
@@ -251,29 +309,30 @@ body {
   }
   .input:focus {
     border-color: var(--text);
-    outline: 2px solid var(--text);
-    outline-offset: 1px;
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
     box-shadow: none;
   }
   .label {
     display: block;
-    margin-bottom: 4px;
-    font-size: 12px;
-    line-height: 16px;
-    font-weight: 500;
-    color: var(--text-muted);
+    margin-bottom: 6px;
+    font-size: 14px;
+    line-height: 20px;
+    font-weight: 600;
+    color: var(--text);
   }
 
   .badge {
     display: inline-flex;
     align-items: center;
     gap: 4px;
-    height: 20px;
-    padding: 0 8px;
-    border-radius: 2px;
+    height: 22px;
+    padding: 0 10px;
+    border-radius: 999px;
+    border: 1px solid var(--border-strong);
     font-size: 12px;
     line-height: 16px;
-    font-weight: 500;
+    font-weight: 600;
     white-space: nowrap;
     background: var(--surface-muted);
     color: var(--text-muted);
@@ -281,10 +340,12 @@ body {
   .badge-accent {
     background: var(--accent-soft);
     color: var(--accent-text);
+    border-color: var(--accent-text);
   }
   .badge-warn {
     background: var(--warn-soft);
     color: var(--warn);
+    border-color: var(--warn);
   }
   .badge-good {
     background: var(--good-soft);
@@ -300,13 +361,13 @@ body {
     border: 1px solid var(--border);
   }
   .segmented > a {
-    height: 26px;
+    height: 32px;
     display: inline-flex;
     align-items: center;
-    padding: 0 10px;
+    padding: 0 12px;
     border-radius: 2px;
-    font-size: 13px;
-    font-weight: 500;
+    font-size: 14px;
+    font-weight: 600;
     color: var(--text-muted);
     transition: background-color 120ms var(--ease), color 120ms var(--ease);
   }
@@ -326,8 +387,8 @@ body {
   }
   .table th {
     text-align: left;
-    font-size: 12px;
-    font-weight: 500;
+    font-size: 13px;
+    font-weight: 600;
     color: var(--text-subtle);
     background: var(--surface-muted);
     padding: 8px 12px;
@@ -351,9 +412,10 @@ body {
 
   /* Critical alarms read stronger than warnings. */
   .badge-crit {
-    background: var(--brand-red);
-    color: #fff;
-    font-weight: 600;
+    background: var(--red);
+    border-color: var(--red);
+    color: var(--on-red);
+    font-weight: 700;
   }
 }
 
@@ -366,24 +428,24 @@ body {
   min-height: 100dvh;
 }
 .emp :focus-visible {
-  outline: 3px solid var(--text);
+  outline: 2px solid var(--focus);
   outline-offset: 2px;
 }
 .emp .btn {
-  min-height: 44px;
-  font-size: 15px;
-  font-weight: 700;
-  border-color: var(--control-border);
+  min-height: 48px;
+  font-size: 16px;
+  font-weight: 600;
+  border-color: var(--text);
   justify-content: center;
 }
 .emp .btn-primary {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: var(--on-accent);
+  background: var(--red);
+  border-color: var(--red);
+  color: var(--on-red);
 }
 .emp .btn-primary:hover {
-  background: var(--accent-hover);
-  border-color: var(--accent-hover);
+  background: var(--red-hover);
+  border-color: var(--red-hover);
 }
 .emp .btn-ghost {
   border-color: transparent;
@@ -391,7 +453,7 @@ body {
   color: var(--text-muted);
 }
 .emp .btn[disabled] {
-  opacity: 0.45;
+  opacity: 0.4;
   cursor: not-allowed;
 }
 .emp .input {
@@ -401,16 +463,16 @@ body {
   border-color: var(--control-border);
 }
 .emp textarea.input {
-  min-height: 96px;
+  min-height: 120px;
 }
 .emp .input:focus {
-  outline: 3px solid var(--text);
+  outline: 2px solid var(--focus);
   outline-offset: 2px;
   border-color: var(--text);
 }
 .emp .label {
-  font-size: 13px;
-  font-weight: 700;
+  font-size: 14px;
+  font-weight: 600;
   line-height: 18px;
   margin-bottom: 6px;
   color: var(--text);
@@ -423,6 +485,7 @@ body {
   font-size: 28px;
   line-height: 1.15;
 }
+/* Employee app max 480px column, 20px margins are set by the page shells. */
 .emp .section-title {
   font-size: 17px;
   font-weight: 700;
@@ -462,4 +525,15 @@ body {
 .emp .tiles button:focus-visible {
   position: relative;
   z-index: 1;
+}
+
+/* Signature moment: the ear's red dot pulses once on "Envia" (style guide, Motion). Reduced motion turns it off. */
+@keyframes dot-pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.4); }
+  100% { transform: scale(1); }
+}
+.pulse-once {
+  animation: dot-pulse 400ms var(--ease) 1;
+  transform-origin: center;
 }

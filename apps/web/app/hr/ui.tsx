@@ -72,7 +72,7 @@ export function SuppressedBadge({ title, label }: { title?: string; label: strin
 export function Stat({ label, value, hint, icon }: { label: ReactNode; value: ReactNode; hint?: ReactNode; icon?: string }) {
   return (
     <div className="card h-full px-5 py-4">
-      <div className="flex items-center gap-1.5 text-xs font-medium text-subtle">{icon && <span aria-hidden className="text-[15px] leading-none">{icon}</span>}{label}</div>
+      <div className="flex items-center gap-1.5 text-xs font-semibold text-subtle">{icon && <span aria-hidden className="text-[15px] leading-none">{icon}</span>}{label}</div>
       <div className="num mt-1 text-2xl font-semibold tracking-tight">{value}</div>
       {hint && <div className="mt-2 text-xs text-subtle">{hint}</div>}
     </div>

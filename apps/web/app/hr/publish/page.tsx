@@ -51,11 +51,11 @@ export default async function PublishPage() {
                 />
                 <div className="min-w-0 flex-1 space-y-3">
                   <div>
-                    <div className="text-xs font-medium text-subtle">{c.actiu ? t("pub_code") : t("pub_code_inactive")}</div>
+                    <div className="text-xs font-semibold text-subtle">{c.actiu ? t("pub_code") : t("pub_code_inactive")}</div>
                     <div className="num font-semibold tracking-wide">{c.codi}</div>
                   </div>
                   <div>
-                    <div className="text-xs font-medium text-subtle">{t("pub_invite_link")}</div>
+                    <div className="text-xs font-semibold text-subtle">{t("pub_invite_link")}</div>
                     <code className="block break-all text-[13px]">{c.url}</code>
                   </div>
                   <div className="flex flex-wrap gap-2">

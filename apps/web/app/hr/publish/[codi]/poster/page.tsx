@@ -49,8 +49,8 @@ export default async function PosterPage({ params }: PageProps<"/hr/publish/[cod
           className="poster-page mx-auto my-6 flex flex-col items-center bg-white px-[16mm] py-[14mm] text-center shadow-lg"
           style={{ width: "210mm", height: "297mm", boxSizing: "border-box", overflow: "hidden", breakInside: "avoid" }}
         >
-          <Wordmark className="text-[11mm] leading-none" />
-          <p className="mt-[6mm] text-[5mm] font-medium uppercase tracking-[0.2em] text-neutral-500">
+          <Wordmark light className="h-[16mm]" />
+          <p className="mt-[6mm] text-[5mm] font-semibold uppercase tracking-[0.2em] text-neutral-500">
             {t("poster_kicker", { name: name(row.collectiu) })}
           </p>
           <h1 className="mt-[8mm] text-[12mm] font-bold leading-[1.1] text-balance">{t("poster_h1", { minutes: minutes(1, lang) })}</h1>
@@ -63,7 +63,7 @@ export default async function PosterPage({ params }: PageProps<"/hr/publish/[cod
           <p className="mt-[5mm] break-all text-[4.5mm] text-neutral-600">{url}</p>
           <ul className="mt-auto w-full space-y-[3mm] text-left">
             {promises.map((p) => (
-              <li key={p} className="flex items-center gap-[4mm] rounded-[3mm] bg-neutral-100 px-[6mm] py-[4mm] text-[5mm] font-medium">
+              <li key={p} className="flex items-center gap-[4mm] rounded-[3mm] bg-neutral-100 px-[6mm] py-[4mm] text-[5mm] font-semibold">
                 <span aria-hidden className="grid size-[8mm] shrink-0 place-items-center rounded-full bg-[var(--brand-red)] text-[5mm] text-white">✓</span>
                 {p}
               </li>

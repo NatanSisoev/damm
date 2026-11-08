@@ -20,7 +20,7 @@ export default async function ManagerIndexPage() {
         <ul className="grid gap-3 sm:grid-cols-2">
           {collectius.map((c) => (
             <li key={c.id}>
-              <Link href={`/manager/${encodeURIComponent(c.nom)}`} className="card block px-5 py-4 font-medium hover:bg-surface-muted">
+              <Link href={`/manager/${encodeURIComponent(c.nom)}`} className="card block px-5 py-4 font-semibold hover:bg-surface-muted">
                 {collectiveLabel(c.nom, lang)} <span aria-hidden className="text-subtle">→</span>
               </Link>
             </li>

@@ -34,7 +34,7 @@ export function SwipeInput({
   return (
     <div>
       <div
-        className={`card touch-pan-y select-none px-5 py-10 text-center text-lg font-medium ${tint}`}
+        className={`card touch-pan-y select-none px-5 py-10 text-center text-lg font-semibold ${tint}`}
         style={{
           transform: `translateX(${dx}px) rotate(${dx / 20}deg)`,
           transition: start === null ? "transform 200ms var(--ease)" : "none",
