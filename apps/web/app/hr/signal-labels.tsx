@@ -12,12 +12,13 @@ export const STATUS_LABELS: Record<string, string> = {
   acknowledged: hrDict.ca.sst_acknowledged,
   action_linked: hrDict.ca.sst_action_linked,
   resolved: hrDict.ca.sst_resolved,
+  dismissed: hrDict.ca.sst_dismissed,
 };
 
 export const statusLabel = (status: string, lang: Lang = "ca") => hrLookup("sst_", status, lang);
 
 /** Statuses a person can move a signal to, in order. */
-export const STATUS_ORDER = ["open", "acknowledged", "action_linked", "resolved"] as const;
+export const STATUS_ORDER = ["open", "acknowledged", "action_linked", "resolved", "dismissed"] as const;
 
 export const signalTypeLabel = (tipus: string, lang: Lang = "ca") => hrLookup("sig_", tipus, lang);
 

@@ -19,6 +19,17 @@ What changed and why.
 
 ---
 
+## 2026-11-08: `dismissed` alarm status (Jan)
+
+`senyal.status` accepts `dismissed`: HR judged the alarm not worth acting on. It is final, like `resolved`, and is not an active status, so the engine can open a new alarm for the same type, segment and domain after the 7-day cooldown. Allowed moves: `open`, `acknowledged` and `action_linked` can go to `dismissed`; nothing leaves it.
+
+- `schema.sql`: the status CHECK includes `dismissed`. Existing databases are migrated on first connection by `ensureDismissedStatus` in `packages/db/src/connection.ts` (table rebuild, idempotent).
+- `@damm/shared` and `@damm/engine`: `AlarmStatus` includes `"dismissed"`; `ALARM_TRANSITIONS` as above. `DEFAULT_ALARM_STATUSES` is unchanged, so dismissed alarms are not listed or counted unless asked for.
+- HR: new "Dismissed" tab on `/hr/signals`; the row menu has "Mark as reviewed", "Resolve" and "Dismiss" (before, "Dismiss" set `acknowledged`).
+
+Action items:
+- [x] Jan: schema, migration, types, transitions, HR tab and actions. (done 2026-11-08)
+
 ## C23 · 2026-11-08 · Jan · Daily batch: exactly the cap, one answer type, no free text (supersedes C15 and C18)
 
 `getDailyBatch` (`@damm/engine`) no longer appends published-need questions past the cap. A day is exactly `questionsPerDay` (3) items, all of one answer type. The type is decided first: the top published need's type, else a due follow-up's type, else Thompson sampling over the types that can fill the day; the rest is filled with same-type monitoring items by domain priority. A day is shorter than 3 only when no more items of that type exist; types are never mixed. Needs keep top priority, inside the 3 slots (`maxNeedsPerDay` still 1). `open` questions are never batch items (`BATCH_EXCLUDED_TYPES`): open HR need questions are skipped in the batch (not converted). Commenting is an optional extra on any answered question: `POST /api/responses` already accepts `comentari` with `valorNum`, stored redacted in `resposta.comentari`, and the answer UI now offers it under non-text questions. `missing_comment` still applies to a legacy `open` row. `store.publishedNeedsMissing` is removed. `GET /api/pool/next` text falls back to the user's language, then Catalan, then the stored text. No schema or API shape change.

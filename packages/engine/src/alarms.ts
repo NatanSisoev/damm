@@ -143,7 +143,7 @@ interface SenyalRow {
   domini_id: number | null;
   periode: string;
   severity: Severity;
-  status: "open" | "acknowledged" | "action_linked" | "resolved";
+  status: "open" | "acknowledged" | "action_linked" | "resolved" | "dismissed";
   created_at: string;
   suprimit: number;
 }

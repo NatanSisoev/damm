@@ -131,7 +131,7 @@ For each anchor the row has the segment × domain **score, confidence and n in t
 
 ## 7. Alarms (`senyal`)
 
-Each alarm has `severity`, `status` (`open` → `acknowledged` → `action_linked` → `resolved`), `audience`, a trigger level and a separate clear level (hysteresis), and a cooldown of 7 days per (type, segment, domain). Warnings go in a weekly digest; critical alarms are pushed immediately. The AI may attach a proposed `recomanacio`; a human decides.
+Each alarm has `severity`, `status` (`open` → `acknowledged` → `action_linked` → `resolved`, or `dismissed` from any non-final status), `audience`, a trigger level and a separate clear level (hysteresis), and a cooldown of 7 days per (type, segment, domain). Warnings go in a weekly digest; critical alarms are pushed immediately. The AI may attach a proposed `recomanacio`; a human decides.
 
 | `tipus` | Trigger (defaults) | Severity | Audience |
 |---|---|---|---|

@@ -41,7 +41,7 @@ export type SenyalTipus =
   | "low_confidence"
   | "improvement";
 export type Severity = "info" | "warning" | "critical";
-export type AlarmStatus = "open" | "acknowledged" | "action_linked" | "resolved";
+export type AlarmStatus = "open" | "acknowledged" | "action_linked" | "resolved" | "dismissed";
 export type Audience = "hr" | "hr_manager";
 export type AssignmentReason = "monitor" | "need" | "followup";
 export type InsightKind =
