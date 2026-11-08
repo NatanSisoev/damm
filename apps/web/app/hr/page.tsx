@@ -29,7 +29,6 @@ import { PRESETS, bucketFor, fmtDay, previousWindow, resolveRange } from "./rang
 import { refreshDashboardAction } from "./actions";
 import { RefreshButton } from "./refresh-button";
 import { RangeSelect } from "./range-select";
-import { NavSelect } from "./nav-select";
 import { pageTitle } from "@/lib/i18n/titles";
 
 export const generateMetadata = pageTitle("hr_home");
@@ -37,7 +36,7 @@ export const generateMetadata = pageTitle("hr_home");
 export const dynamic = "force-dynamic";
 
 
-type Params = { r?: string; from?: string; to?: string; c?: string; dom?: string; cmp?: string; actualitzat?: string };
+type Params = { r?: string; from?: string; to?: string; c?: string; dom?: string; hide?: string; actualitzat?: string };
 
 const NOTICE_KEY = { ok: "notice_ok", "sense-llm": "notice_no_llm", ocupat: "notice_busy", fallada: "notice_failed" } as const;
 
@@ -46,7 +45,9 @@ export default async function HrDashboard({ searchParams }: { searchParams: Prom
   const { t: tr, lang } = await getTL(hrResultsDict);
   const { t } = await getTL(hrDashboardDict);
   const collectius = listCollectius();
-  const col = collectius.find((c) => c.nom === q.c) ?? null;
+  // Company-wide: only the interval filters the dashboard. `c` is just the heatmap drill-down selection.
+  const col = null as (typeof collectius)[number] | null;
+  const seg = collectius.find((c) => c.nom === q.c) ?? null;
 
   const bounds = getDataBounds();
   const range = resolveRange(q, bounds, new Date().toISOString().slice(0, 10));
@@ -55,7 +56,6 @@ export default async function HrDashboard({ searchParams }: { searchParams: Prom
   const prevWin = range.key === "all" ? null : previousWindow(range.from, range.to, bounds.min);
 
   const whole = getWindowTrends({ ...win, bucket: "all" }, col?.id ?? null);
-  const wholePrev = prevWin ? getWindowTrends({ ...prevWin, bucket: "all" }, col?.id ?? null) : null;
   // Thin data: weekly or daily points are often all under the minimum group size, so coarsen until something is visible.
   const visible = (t: ReturnType<typeof getWindowTrends>) => !!t.series[0]?.rows.some((r) => r.cells.some((c) => c.mitjana !== null));
   const order = ["day", "week", "month"] as const;
@@ -73,29 +73,23 @@ export default async function HrDashboard({ searchParams }: { searchParams: Prom
   const heatmap = { ...getHeatmap(everyone), periode: `${fmtDay(range.from)} – ${fmtDay(range.to)}` };
 
   const overall = whole.series[0];
-  const overallPrev = wholePrev?.series[0];
   const axes = overall ? overall.rows.map((r) => r.domini) : [];
   const vals = (sc: typeof overall) => (sc ? sc.rows.map((r) => r.cells[0]?.mitjana ?? null) : []);
-  const label = col ? collectiveLabel(col.nom, lang) : tr("rs_all");
-  // Comparison: the company and the collectives other than the one shown, one at a time. Each entity keeps its own colour token.
+  // Radar: the company and every collective, each with its own colour token. Any can be hidden; at least one stays.
   const COMPANY = "Tots";
-  const shownKey = col?.nom ?? COMPANY;
   const entities = [{ key: COMPANY, id: null as number | null, color: "var(--co-1)", label: tr("rs_all") }, ...collectius.map((c, i) => ({ key: c.nom, id: c.id as number | null, color: `var(--co-${i + 2})`, label: collectiveLabel(c.nom, lang) }))];
-  const options = entities.filter((e) => e.key !== shownKey);
-  const selected = [...new Set((q.cmp ?? "").split(",").filter(Boolean))].filter((k) => options.some((o) => o.key === k)).slice(0, 1);
-  const comparing = selected.length > 0;
-  const shownColor = entities.find((e) => e.key === shownKey)?.color ?? "var(--co-1)";
-  const cmpSeries: RadarSeries[] = selected.flatMap((k) => {
-    const e = options.find((o) => o.key === k)!;
-    const sc = (e.id === null ? everyone : getWindowTrends({ ...win, bucket: "all" }, e.id)).series[0];
-    return sc ? [{ label: e.label, values: vals(sc), color: e.color }] : [];
-  });
+  const hidden = new Set((q.hide ?? "").split(",").filter((k) => entities.some((e) => e.key === k)));
+  if (hidden.size >= entities.length) hidden.clear();
+  const shown = entities.filter((e) => !hidden.has(e.key));
+  const toggleHref = (key: string) => {
+    const next = hidden.has(key) ? [...hidden].filter((k) => k !== key) : [...hidden, key];
+    return href({ hide: next.length ? next.join(",") : undefined });
+  };
   const radarSeries: RadarSeries[] = overall
-    ? [
-        { label: comparing ? label : `${label} · ${t("dash_now")}`, values: vals(overall), color: shownColor },
-        ...cmpSeries,
-        ...(!comparing && overallPrev ? [{ label: `${label} · ${t("dash_before")}`, values: vals(overallPrev), color: shownColor, dashed: true } as RadarSeries] : []),
-      ]
+    ? shown.flatMap((e) => {
+        const sc = (e.id === null ? whole : getWindowTrends({ ...win, bucket: "all" }, e.id)).series[0];
+        return sc ? [{ label: e.label, values: vals(sc), color: e.color }] : [];
+      })
     : [];
   const hasData = !!overall && overall.rows.some((r) => r.cells[0]?.mitjana != null);
 
@@ -117,7 +111,7 @@ export default async function HrDashboard({ searchParams }: { searchParams: Prom
   const openAlarms = hrAlarms({ role: "hr" }, { status: ["open"], ...(col ? { collectiuId: col.id } : {}) }).filter((a) => a.n >= MIN_GROUP_SIZE).length;
 
   const domValid = q.dom && heatmap.domains.includes(q.dom) ? q.dom : undefined;
-  const segmentTrend = getSegmentTrend(col?.nom, domValid);
+  const segmentTrend = getSegmentTrend(seg?.nom, domValid);
   const insights = hrInsights({ role: "hr" }, { kind: ["top_mover", "polarisation", "importance_gap", "trajectory_mix", "followup_confirmation", "segment_gap"] }).slice(0, 12);
   const trends = series.series;
   const perCollective = trends.slice(1);
@@ -125,7 +119,7 @@ export default async function HrDashboard({ searchParams }: { searchParams: Prom
 
   const href = (over: Partial<Params>) => {
     const p = new URLSearchParams();
-    const merged: Params = { dom: q.dom, r: q.from && q.to ? undefined : range.key === "custom" ? undefined : range.key, from: q.from, to: q.to, c: col?.nom, cmp: q.cmp, ...over };
+    const merged: Params = { dom: q.dom, r: q.from && q.to ? undefined : range.key === "custom" ? undefined : range.key, from: q.from, to: q.to, c: seg?.nom, hide: q.hide, ...over };
     for (const [k, v] of Object.entries(merged)) if (v && k !== "actualitzat") p.set(k, v);
     const s = p.toString();
     return s ? `/hr?${s}` : "/hr";
@@ -139,7 +133,7 @@ export default async function HrDashboard({ searchParams }: { searchParams: Prom
         actions={
           <div className="flex flex-wrap items-center gap-2">
             <form action={refreshDashboardAction}>
-              {(["r", "from", "to", "c", "dom"] as const).map((k) => (q[k] ? <input key={k} type="hidden" name={k} value={q[k]} /> : null))}
+              {(["r", "from", "to", "c", "dom", "hide"] as const).map((k) => (q[k] ? <input key={k} type="hidden" name={k} value={q[k]} /> : null))}
               <RefreshButton />
             </form>
             <a href="/hr/results/export" className="btn" download>{tr("rs_export")}</a>
@@ -164,11 +158,6 @@ export default async function HrDashboard({ searchParams }: { searchParams: Prom
               to={range.to}
               min={bounds.min ?? undefined}
               max={range.anchor}
-            />
-            <NavSelect
-              label={t("dash_collective")}
-              value={col?.nom ?? "all"}
-              options={[{ key: "all", label: tr("rs_all"), href: href({ c: undefined }) }, ...collectius.map((c) => ({ key: c.nom, label: collectiveLabel(c.nom, lang), href: href({ c: c.nom }) }))]}
             />
           </div>
           <p className="text-xs text-subtle">
@@ -206,14 +195,23 @@ export default async function HrDashboard({ searchParams }: { searchParams: Prom
         </div>
 
         {/* 1. Profile by domain */}
-        <Card title={tr("rs_profile")} meta={<span className="num">{prevWin ? t("dash_prof_vs") : t("dash_prof_full")}</span>}>
-          {hasData && options.length > 0 && (
-            <div className="mb-4">
-              <NavSelect
-                label={t("cmp_label")}
-                value={selected[0] ?? "none"}
-                options={[{ key: "none", label: t("cmp_none"), href: href({ cmp: undefined }) }, ...options.map((o) => ({ key: o.key, label: o.label, href: href({ cmp: o.key }) }))]}
-              />
+        <Card title={tr("rs_profile")} meta={<span className="num">{t("dash_prof_full")}</span>}>
+          {hasData && (
+            <div role="group" aria-label={t("cmp_label")} className="mb-4 flex flex-wrap items-center gap-2">
+              {entities.map((e) => {
+                const on = !hidden.has(e.key);
+                const inner = (
+                  <>
+                    <span className="hr-chip-dot" style={{ background: on ? e.color : "transparent", boxShadow: `inset 0 0 0 2px ${e.color}` }} aria-hidden />
+                    {e.label}
+                  </>
+                );
+                return on && shown.length === 1 ? (
+                  <span key={e.key} className="hr-chip" aria-pressed="true" aria-disabled="true">{inner}</span>
+                ) : (
+                  <Link key={e.key} href={toggleHref(e.key)} scroll={false} className="hr-chip" aria-pressed={on}>{inner}</Link>
+                );
+              })}
             </div>
           )}
           {radarSeries.length && hasData ? <Radar axes={axes} series={radarSeries} /> : <Empty>{tr("rs_nodata")}</Empty>}
@@ -222,7 +220,7 @@ export default async function HrDashboard({ searchParams }: { searchParams: Prom
         {/* 2. Collectives x domains map */}
         <HeatmapCard
           map={heatmap}
-          selected={{ seg: col?.nom, dom: domValid }}
+          selected={{ seg: seg?.nom, dom: domValid }}
           cellHref={(collective, domain) => `${href({ c: collective, dom: domain })}#tendencia`}
         />
         <SegmentTrendCard trend={segmentTrend} closeHref={href({ dom: undefined })} />

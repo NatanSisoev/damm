@@ -4,7 +4,7 @@ import { defineDict, type TFn } from "./core";
 
 const ca = {
   dash_title: "Panell",
-  dash_sub: "Què diuen les dades per a l'interval i el col·lectiu triats.",
+  dash_sub: "Què diuen les dades per a l'interval triat, per a tota l'empresa.",
   dash_refresh: "Actualitza",
   dash_refreshing: "Actualitzant…",
   dash_refresh_title: "Torna a llegir la base de dades i actualitza el resum",
@@ -70,7 +70,7 @@ const ca = {
 
 const es: Record<keyof typeof ca, string> = {
   dash_title: "Panel",
-  dash_sub: "Qué dicen los datos para el intervalo y el colectivo elegidos.",
+  dash_sub: "Qué dicen los datos para el intervalo elegido, para toda la empresa.",
   dash_refresh: "Actualizar",
   dash_refreshing: "Actualizando…",
   dash_refresh_title: "Vuelve a leer la base de datos y actualiza el resumen",
@@ -136,7 +136,7 @@ const es: Record<keyof typeof ca, string> = {
 
 const en: Record<keyof typeof ca, string> = {
   dash_title: "Dashboard",
-  dash_sub: "What the data says for the chosen interval and collective.",
+  dash_sub: "What the data says for the chosen interval, across the company.",
   dash_refresh: "Refresh",
   dash_refreshing: "Refreshing…",
   dash_refresh_title: "Re-read the database and update the summary",
