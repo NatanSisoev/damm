@@ -1,32 +1,37 @@
 "use client";
-// Three-way language switcher (ca / es / en). Works on every surface; sets the cookie via a server action.
+// Language dropdown (EN / ES / CAT). Works on every surface; sets the cookie via a server action.
 import { useTransition } from "react";
-import { LANGS, LANG_LABELS } from "@damm/shared";
+import { LANG_LABELS, type Lang } from "@damm/shared";
 import { setLanguageAction } from "@/app/lang-actions";
 import { useLang, useT } from "@/lib/i18n/client";
 import { commonDict } from "@/lib/i18n/common";
+
+const OPTIONS: { value: Lang; short: string }[] = [
+  { value: "en", short: "EN" },
+  { value: "es", short: "ES" },
+  { value: "ca", short: "CAT" },
+];
 
 export function LangSwitcher({ className = "" }: { className?: string }) {
   const lang = useLang();
   const t = useT(commonDict);
   const [pending, start] = useTransition();
   return (
-    <div role="group" aria-label={t("language")} className={`inline-flex gap-1 ${className}`}>
-      {LANGS.map((l) => (
-        <button
-          key={l}
-          type="button"
-          lang={l}
-          aria-pressed={l === lang}
-          disabled={pending}
-          onClick={() => start(() => setLanguageAction(l))}
-          className={`min-h-9 min-w-9 rounded-sm border px-2 text-sm font-medium ${
-            l === lang ? "border-current font-bold underline underline-offset-4" : "border-transparent opacity-70"
-          }`}
-        >
-          {LANG_LABELS[l]}
-        </button>
+    <select
+      aria-label={t("language")}
+      value={lang}
+      disabled={pending}
+      onChange={(e) => {
+        const next = e.target.value as Lang;
+        start(() => setLanguageAction(next));
+      }}
+      className={`min-h-9 rounded-sm border border-current bg-transparent px-2 text-sm font-medium ${className}`}
+    >
+      {OPTIONS.map((o) => (
+        <option key={o.value} value={o.value} lang={o.value} title={LANG_LABELS[o.value]}>
+          {o.short}
+        </option>
       ))}
-    </div>
+    </select>
   );
 }
