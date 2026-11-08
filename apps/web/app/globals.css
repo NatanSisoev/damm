@@ -284,6 +284,10 @@ body {
     background: var(--accent-hover);
     border-color: var(--accent-hover);
   }
+  .btn[aria-busy="true"] {
+    opacity: 0.6;
+    cursor: progress;
+  }
   .btn:disabled,
   .btn[aria-disabled="true"] {
     opacity: 0.4;

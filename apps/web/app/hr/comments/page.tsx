@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { MIN_GROUP_SIZE } from "@damm/shared";
+import { memo } from "@/lib/hr-memo";
 import { getCommentThemes, listCollectius, listDomains, searchComments } from "@damm/db/hr";
 import { getTL } from "@/lib/i18n/server";
 import { collectiveLabel, domainLabel } from "@/lib/i18n/names";
@@ -20,7 +21,7 @@ export default async function CommentsPage({ searchParams }: { searchParams: Pro
   const { t, lang } = await getTL(hrCommentsDict);
   const n0 = (v: number) => numD(v, lang, 0);
 
-  const themes = getCommentThemes(lang);
+  const themes = memo("commentThemes", lang, () => getCommentThemes(lang));
   const collectius = listCollectius();
   const dominis = listDomains();
 

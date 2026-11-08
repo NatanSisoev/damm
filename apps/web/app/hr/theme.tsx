@@ -32,6 +32,7 @@ export async function HrShell({ children, subtitle, manager = false, role = "hr"
   if (manager) {
     return (
       <div className={`hr-shell flex min-h-screen flex-col`}>
+        <a href="#main" className="hr-skip">{t("skip_to_content")}</a>
         <header className="hr-bar">
           <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-8 px-4 md:px-8">
             <Link href="/manager" className="flex h-12 items-center gap-3">
@@ -43,7 +44,7 @@ export async function HrShell({ children, subtitle, manager = false, role = "hr"
             </nav>
           </div>
         </header>
-        <main className="min-w-0 flex-1 px-4 py-6 md:px-8 md:py-8">
+        <main id="main" tabIndex={-1} className="min-w-0 flex-1 px-4 py-6 md:px-8 md:py-8">
           <div className="mx-auto max-w-6xl">{children}</div>
         </main>
         <Footer />
@@ -52,6 +53,7 @@ export async function HrShell({ children, subtitle, manager = false, role = "hr"
   }
   return (
     <div className={`hr-shell hr-layout`} data-role={role}>
+      <a href="#main" className="hr-skip">{t("skip_to_content")}</a>
       <HrSidebar
         role={role}
         subtitle={subtitle}
@@ -62,7 +64,7 @@ export async function HrShell({ children, subtitle, manager = false, role = "hr"
         }
       />
       <div className="hr-content flex min-w-0 flex-col">
-        <main className="min-w-0 flex-1 px-4 py-6 md:px-8 md:py-8">
+        <main id="main" tabIndex={-1} className="min-w-0 flex-1 px-4 py-6 md:px-8 md:py-8">
           <div className="mx-auto max-w-6xl">{children}</div>
         </main>
         <Footer />

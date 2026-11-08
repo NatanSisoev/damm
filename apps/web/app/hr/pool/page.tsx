@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { SubmitButton } from "@/app/hr/submit-button";
 import { QUESTION_TYPES } from "@damm/shared";
 import { hrPool, type PoolQuestion } from "@/lib/hr-engine";
 import { FoldAll, GroupBody } from "./group-body";
@@ -174,7 +175,7 @@ export default async function PoolPage({ searchParams }: { searchParams: Promise
           <label htmlFor="q" className="label">{t("f_search")}</label>
           <div className="flex gap-2">
             <input id="q" name="q" defaultValue={p.q ?? ""} placeholder={t("f_search_ph")} className="input min-w-0 flex-1" />
-            <button type="submit" className="btn btn-primary">{t("apply")}</button>
+            <SubmitButton type="submit" className="btn btn-primary">{t("apply")}</SubmitButton>
             <Link href="/hr/pool" className="btn btn-ghost">{t("clear")}</Link>
           </div>
         <div className="mt-3 grid grid-cols-2 items-end gap-3 md:grid-cols-4 xl:grid-cols-8">

@@ -1,4 +1,5 @@
 import { Fragment } from "react";
+import { SubmitButton } from "@/app/hr/submit-button";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { hrPoolQuestion } from "@/lib/hr-engine";
@@ -167,7 +168,7 @@ export default async function QuestionPage({ params, searchParams }: { params: P
                   {t("d_retire")}
                 </ConfirmButton>
               ) : (
-                <button type="submit" className="btn btn-ghost border border-line-strong px-3 py-1.5">{t("d_restore")}</button>
+                <SubmitButton type="submit" className="btn btn-ghost border border-line-strong px-3 py-1.5">{t("d_restore")}</SubmitButton>
               )}
             </form>
           )}
