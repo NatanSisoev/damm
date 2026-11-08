@@ -17,13 +17,14 @@ export async function ProposalBody({ r }: { r: Pick<SignalRecommendation, "text"
   const { t } = await getTL(panelDict);
   return (
     <>
-      <p className="text-[15px]">{r.text}</p>
-      <dl className="mt-4 grid gap-4 sm:grid-cols-2">
+      <p className="proposal-main text-[15px]">{r.text}</p>
+      <dl className="proposal-facts mt-4 grid gap-4 sm:grid-cols-2">
         {r.iniciativa && <Fact label={t("rd_f_initiative")}>{r.iniciativa}</Fact>}
         {r.responsableSuggerit && <Fact label={t("rd_f_owner")}>{r.responsableSuggerit}</Fact>}
         {r.terminiSuggerit && <Fact label={t("rd_f_deadline")}>{r.terminiSuggerit}</Fact>}
         <Fact label={t("rd_f_origin")}>{r.font === "llm" ? t("rd_origin_llm") : r.font === "template" ? t("rd_origin_template") : t("rd_origin_none")}</Fact>
       </dl>
+      <div className="proposal-notes">
       {r.justificacio && (
         <div className="mt-4 border-t border-line pt-4">
           <h3 className="text-xs font-semibold text-subtle">{t("rd_why")}</h3>
@@ -36,6 +37,7 @@ export async function ProposalBody({ r }: { r: Pick<SignalRecommendation, "text"
           <p className="mt-1 text-[13px] text-muted">{r.limits}</p>
         </div>
       )}
+      </div>
       <p className="mt-4 text-xs text-subtle">{t("rd_ai_note")}</p>
     </>
   );
