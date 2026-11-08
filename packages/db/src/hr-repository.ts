@@ -654,9 +654,10 @@ export interface FollowUpNeed {
 
 /**
  * Follow-up survey: a new open need linked to an approved recommendation, scoped to the signal's collective.
+ * `delivery` is the daily / one-time choice made by HR (default daily, as for a new query).
  * Returns the need only when it was created now, so the caller drafts its questions once (the AI layer drafts them).
  */
-export function createFollowUp(recId: number): FollowUpNeed | null {
+export function createFollowUp(recId: number, delivery: QueryDelivery = "daily"): FollowUpNeed | null {
   const db = getDb();
   const r = db
     .prepare(
@@ -672,7 +673,7 @@ export function createFollowUp(recId: number): FollowUpNeed | null {
   const context = r.descripcio ? `Senyal d'origen: ${r.descripcio}` : "";
   const maxSeconds = 60;
   const id = db.transaction(() => {
-    const nid = createNecessitat({ textNl: `Seguiment: ${r.text}`, collectiuId: r.c, duradaMaxS: maxSeconds, context });
+    const nid = createNecessitat({ textNl: `Seguiment: ${r.text}`, collectiuId: r.c, duradaMaxS: maxSeconds, delivery, context });
     db.prepare("UPDATE recomanacio SET seguiment_necessitat_id = ? WHERE id = ?").run(nid, recId);
     return nid;
   })();

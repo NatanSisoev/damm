@@ -8,6 +8,7 @@ import { Card, Empty } from "./ui";
 import { FoldList } from "./ui-server";
 import { RecommendationBody } from "./recommendation-card";
 import { ConfirmButton } from "./confirm-button";
+import { DeliveryPicker } from "./delivery-picker";
 import { approveRecommendationAction, discardRecommendationAction, followUpAction, setAlarmStatusAction } from "./actions";
 import type { DomainInitiative, DomainInitiatives, ManagerGap } from "@damm/db/hr";
 import type { Headline, HeadlineWhere, Heatmap, HeatCell, NarrativeView, ReachGap, SegmentTrend, ThemesByDomain } from "./analytics";
@@ -91,8 +92,9 @@ export async function NarrativeCard({ narrative, title, fold }: { narrative: Nar
                     <p className="mt-0.5 text-[13px] text-muted">{a.why}</p>
                     <div className="mt-2 flex flex-wrap items-center gap-2">
                       {a.recommendationId !== null ? (
-                        <form action={followUpAction}>
+                        <form action={followUpAction} className="flex flex-wrap items-center gap-2">
                           <input type="hidden" name="id" value={a.recommendationId} />
+                          <DeliveryPicker compact />
                           <button className="btn btn-primary" type="submit">{t("an_follow")}</button>
                         </form>
                       ) : (

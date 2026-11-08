@@ -1,6 +1,7 @@
 import "./alarms.css";
 import { SubmitButton } from "@/app/hr/submit-button";
 import { People } from "../glyphs";
+import { DeliveryPicker } from "../delivery-picker";
 import { AutoSubmitForm } from "./auto-submit-form";
 import Link from "next/link";
 import { MIN_GROUP_SIZE } from "@damm/shared";
@@ -325,6 +326,7 @@ function AlarmItem({ t, lang, r, rec, archived }: { t: HrResultsT; lang: Lang; r
           {rec && !rec.seguimentNecessitatId ? (
             <form action={proposeFollowUpAction}>
               <input type="hidden" name="rec" value={rec.id} />
+              <DeliveryPicker compact />
               <SubmitButton className="btn btn-primary" busyLabel={t("sd_rec_followup_busy")}>{t("sg_propose")}</SubmitButton>
             </form>
           ) : rec ? (
