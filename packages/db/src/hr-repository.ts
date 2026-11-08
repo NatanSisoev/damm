@@ -428,7 +428,7 @@ export function discardRecommendation(id: number): void {
   getDb().prepare("UPDATE recomanacio SET estat = 'descartada' WHERE id = ? AND estat = 'proposada'").run(id);
 }
 
-export const SIGNAL_STATUSES = ["open", "acknowledged", "action_linked", "resolved"] as const;
+export const SIGNAL_STATUSES = ["open", "acknowledged", "action_linked", "resolved", "dismissed"] as const;
 export type SignalStatus = (typeof SIGNAL_STATUSES)[number];
 
 /** Human action: move a signal through open → acknowledged → action_linked → resolved (any order, schema enum only). */

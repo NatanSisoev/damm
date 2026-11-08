@@ -188,7 +188,7 @@ export function listInsights(db: SqlDatabase, viewer: Viewer, q: InsightQuery = 
 
 // --- alarms ---------------------------------------------------------------------------------
 
-export type AlarmStatus = "open" | "acknowledged" | "action_linked" | "resolved";
+export type AlarmStatus = "open" | "acknowledged" | "action_linked" | "resolved" | "dismissed";
 
 export interface AlarmView {
   id: number;
@@ -296,10 +296,11 @@ export function alarmCounts(db: SqlDatabase, viewer: Viewer): Record<Severity, n
 
 /** Allowed human transitions. The engine itself only opens alarms and auto-resolves `open` ones. */
 export const ALARM_TRANSITIONS: Record<AlarmStatus, AlarmStatus[]> = {
-  open: ["acknowledged", "action_linked", "resolved"],
-  acknowledged: ["action_linked", "resolved"],
-  action_linked: ["resolved"],
+  open: ["acknowledged", "action_linked", "resolved", "dismissed"],
+  acknowledged: ["action_linked", "resolved", "dismissed"],
+  action_linked: ["resolved", "dismissed"],
   resolved: [],
+  dismissed: [],
 };
 
 export class AlarmTransitionError extends Error {}

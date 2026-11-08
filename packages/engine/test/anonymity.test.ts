@@ -8,7 +8,7 @@ import { DEFAULT_CONFIG } from "../src/config.ts";
 import { alarmCounts, getConfig, listAlarms, listInsights, setConfig, type AlarmStatus, type Viewer } from "../src/hr.ts";
 import { generateWorld, type World } from "./world-gen.ts";
 
-const STATUSES: AlarmStatus[] = ["open", "acknowledged", "action_linked", "resolved"];
+const STATUSES: AlarmStatus[] = ["open", "acknowledged", "action_linked", "resolved", "dismissed"];
 let world: World;
 let ids: string[];
 let names: string[];

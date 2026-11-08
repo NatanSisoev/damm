@@ -86,6 +86,7 @@ export const hrDict = defineDict({
     sst_acknowledged: "Revisada",
     sst_action_linked: "Amb acció",
     sst_resolved: "Resolta",
+    sst_dismissed: "Descartada",
 
     // Insight cards
     ins_domain_state: "Estat del domini",
@@ -425,6 +426,7 @@ export const hrDict = defineDict({
     sst_acknowledged: "Revisada",
     sst_action_linked: "Con acción",
     sst_resolved: "Resuelta",
+    sst_dismissed: "Descartada",
 
     ins_domain_state: "Estado del dominio",
     ins_top_mover: "Cambio destacado",
@@ -753,6 +755,7 @@ export const hrDict = defineDict({
     sst_acknowledged: "Reviewed",
     sst_action_linked: "With action",
     sst_resolved: "Resolved",
+    sst_dismissed: "Dismissed",
 
     ins_domain_state: "Domain status",
     ins_top_mover: "Top change",

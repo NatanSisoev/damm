@@ -28,6 +28,7 @@ const TABS = [
   { key: "obertes", label: "sg_tab_open", statuses: ["open"] },
   { key: "revisades", label: "sg_tab_reviewed", statuses: ["acknowledged", "action_linked"] },
   { key: "resoltes", label: "sg_tab_resolved", statuses: ["resolved"] },
+  { key: "descartades", label: "sg_tab_dismissed", statuses: ["dismissed"] },
 ] as const;
 
 const SEV_RANK: Record<string, number> = { critical: 0, warning: 1, info: 2 };
@@ -59,7 +60,7 @@ export default async function AlarmsPage({ searchParams }: { searchParams: Promi
   const colNames = new Map(listCollectius().map((c) => [c.id, c.nom]));
 
   // Minimum group size is re-checked here even though the engine already suppresses small alarms.
-  const all = hrAlarms({ role: "hr" }, { status: ["open", "acknowledged", "action_linked", "resolved"] }).filter((a) => a.n >= MIN_GROUP_SIZE);
+  const all = hrAlarms({ role: "hr" }, { status: ["open", "acknowledged", "action_linked", "resolved", "dismissed"] }).filter((a) => a.n >= MIN_GROUP_SIZE);
   const counts = Object.fromEntries(TABS.map((x) => [x.key, all.filter((a) => (x.statuses as readonly string[]).includes(a.status)).length]));
   const inTab = all.filter((a) => (tab.statuses as readonly string[]).includes(a.status));
 
@@ -319,7 +320,7 @@ function AlarmItem({ t, lang, r, rec, drafted }: { t: HrResultsT; lang: Lang; r:
           ) : (
             <Link href={`/hr/signals/${r.id}`} className="btn btn-primary">{t("sg_review")}</Link>
           )}
-          {(r.status === "open" || next.includes("resolved")) && (
+          {next.length > 0 && (
             <details className="alarm-split-menu">
               <summary className={`btn ${rec ? (rec.seguimentNecessitatId ? "" : "btn-primary") : "btn-primary"}`} aria-label={t("sg_more")} title={t("sg_more")}>
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg>
@@ -329,7 +330,7 @@ function AlarmItem({ t, lang, r, rec, drafted }: { t: HrResultsT; lang: Lang; r:
                   <form action={setAlarmStatusAction}>
                     <input type="hidden" name="id" value={r.id} />
                     <input type="hidden" name="status" value="acknowledged" />
-                    <button type="submit" role="menuitem">{t("sg_dismiss")}</button>
+                    <button type="submit" role="menuitem">{t("sg_mark_reviewed")}</button>
                   </form>
                 )}
                 {next.includes("resolved") && (
@@ -337,6 +338,13 @@ function AlarmItem({ t, lang, r, rec, drafted }: { t: HrResultsT; lang: Lang; r:
                     <input type="hidden" name="id" value={r.id} />
                     <input type="hidden" name="status" value="resolved" />
                     <button type="submit" role="menuitem">{t("sg_resolve")}</button>
+                  </form>
+                )}
+                {next.includes("dismissed") && (
+                  <form action={setAlarmStatusAction}>
+                    <input type="hidden" name="id" value={r.id} />
+                    <input type="hidden" name="status" value="dismissed" />
+                    <button type="submit" role="menuitem">{t("sg_dismiss")}</button>
                   </form>
                 )}
               </div>

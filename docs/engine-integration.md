@@ -271,10 +271,11 @@ Status changes:
 
 | From | Allowed to |
 |---|---|
-| `open` | `acknowledged`, `action_linked`, `resolved` |
-| `acknowledged` | `action_linked`, `resolved` |
-| `action_linked` | `resolved` |
+| `open` | `acknowledged`, `action_linked`, `resolved`, `dismissed` |
+| `acknowledged` | `action_linked`, `resolved`, `dismissed` |
+| `action_linked` | `resolved`, `dismissed` |
 | `resolved` | none (if the problem returns, the engine opens a new alarm after its 7-day cooldown) |
+| `dismissed` | none (HR judged it not worth acting on; like `resolved`, the engine can open a new alarm after the cooldown) |
 
 - **HR** makes these changes. `setAlarmStatus` throws `AlarmTransitionError` on any other move.
 - **The engine** only opens alarms and auto-resolves alarms that are still `open`. It never changes one a human has moved.

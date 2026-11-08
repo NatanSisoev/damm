@@ -140,7 +140,7 @@ export async function setSignalStatusAction(formData: FormData) {
 
 export async function setAlarmStatusAction(formData: FormData) {
   const status = String(formData.get("status") ?? "");
-  if (!["acknowledged", "action_linked", "resolved"].includes(status)) return;
+  if (!["acknowledged", "action_linked", "resolved", "dismissed"].includes(status)) return;
   try {
     changeAlarmStatus(Number(formData.get("id")), status as AlarmStatus);
   } catch {
