@@ -281,15 +281,13 @@ export default async function SignalPage({ params, searchParams }: { params: Pro
           <Card id="recomanacions" title={t("sd_recs")} meta={<span className="num">{recommendations.length}</span>}>
             {recommendations.length === 0 ? (
               signal.dominiId != null ? (
-                <div>
-                  <p className="text-[13px] font-medium">{ts("no_recs_title")}</p>
-                  <p className="mt-1 text-[13px] text-muted">{ts("no_recs_text")}</p>
-                  <form action={generateRecommendationsAction} className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2">
-                    <input type="hidden" name="signal" value={signal.id} />
+                <form action={generateRecommendationsAction}>
+                  <input type="hidden" name="signal" value={signal.id} />
+                  <p className="text-[13px] text-muted">{ts("no_recs_text")} {ts("no_recs_note")}</p>
+                  <div className="mt-3 flex justify-end">
                     <GenerateButton variant="panel" />
-                    <span className="text-xs text-subtle">{ts("no_recs_note")}</span>
-                  </form>
-                </div>
+                  </div>
+                </form>
               ) : (
                 <Empty>{ts("no_recs_domain")}</Empty>
               )
