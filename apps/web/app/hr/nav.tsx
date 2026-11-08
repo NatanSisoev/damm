@@ -154,7 +154,6 @@ export function HrSidebar({ badges, subtitle, logo }: { badges?: NavBadges; subt
       </div>
       <div className="hr-side-foot">
         {footer.map((l) => renderItem(l, compact))}
-        {!compact && <LangSwitcher className="mt-2 px-2" />}
       </div>
     </>
   );
@@ -176,6 +175,7 @@ export function HrSidebar({ badges, subtitle, logo }: { badges?: NavBadges; subt
         </button>
         <span className="flex items-center gap-3">{logo}</span>
         <span className="text-[12px] text-subtle">{subtitle}</span>
+        <LangSwitcher className="ml-auto" />
       </div>
       {open && (
         <div className="hr-drawer-wrap">
