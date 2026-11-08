@@ -47,8 +47,19 @@ One example runs through both parts: **shift communication and breaks in Fàbriq
 3. Phone push needs public HTTPS, the PWA on the home screen on iOS, and the venue network tested.
 4. No secrets and no real data in any frame (R-X-1, R-X-4).
 
+## Live need text (paste into `/hr/needs`, collective Fàbriques)
+
+The objective is the platform's own suggested example (`nf_objective_ph`), so the audience sees the product's guidance used as is. Context and exclusions are short and tie to the story thread.
+
+- Objectiu: `Volem saber com viuen els equips de planta el nou sistema de torns.`
+- Context: `A l'octubre han augmentat els comentaris sobre la comunicació dels canvis de torn i les pauses. Afecta Fàbriques.`
+- Exclusions: `Salaris. Preguntes sobre persones concretes.`
+
+## Decided
+
+- Narration is in Catalan, live.
+- Presenter roles (P1 laptop, P2 phone) are left undefined for now.
+
 ## Open
 
-- Who is P1 and who is P2.
-- Narration language (assumed Catalan).
-- Exact need text to paste live.
+- Who is P1 and who is P2 (decide before the first rehearsal).
