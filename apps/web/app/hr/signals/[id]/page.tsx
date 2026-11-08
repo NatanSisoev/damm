@@ -1,17 +1,17 @@
 import Link from "next/link";
-import { Comments, People, PeopleRange } from "../../glyphs";
+import { Comments, People } from "../../glyphs";
 import { notFound } from "next/navigation";
 import { MIN_GROUP_SIZE, type Lang } from "@damm/shared";
-import { getSignalDetail, listCollectius, listContextEvents, listDomains, listTorns, type SignalTimelineStep } from "@damm/db/hr";
+import { getSignalDetail, type SignalTimelineStep } from "@damm/db/hr";
 
-import { hrInsights, hrListProbes, type ProbeView } from "@/lib/hr-engine";
+import { hrListProbes, type ProbeView } from "@/lib/hr-engine";
 import { Card, Empty, PageHeader } from "../../ui";
 import { SuppressedBadge } from "../../ui-server";
 import { setSignalStatusAction } from "../../actions";
 import "../alarms.css";
 import { generateRecommendationsAction } from "../actions";
 import { GenerateButton } from "../generate-button";
-import { addContextEventAction, approveFromSignalAction, discardFromSignalAction, followUpFromSignalAction, startProbeAction, stopProbeAction } from "./actions";
+import { approveFromSignalAction, discardFromSignalAction, followUpFromSignalAction, startProbeAction, stopProbeAction } from "./actions";
 
 import { recommendationStatus } from "../../labels";
 import { RecommendationBody } from "../../recommendation-card";
@@ -21,7 +21,7 @@ import { STATUS_ORDER, SignalBadges, statusLabel } from "../../signal-labels";
 import { signalDetail, signalHeadline } from "@/lib/signal-text";
 import { getTL } from "@/lib/i18n/server";
 import { hrResultsDict, type HrResultsKey, type HrResultsT } from "@/lib/i18n/hr-results";
-import { collectiveLabel, domainLabel, shiftLabel } from "@/lib/i18n/names";
+import { collectiveLabel, domainLabel } from "@/lib/i18n/names";
 import { numD } from "@/lib/i18n/num";
 import { rich } from "@/lib/i18n/rich";
 
@@ -115,24 +115,14 @@ function ProbeCard({ t, lang, probes, signal, error }: { t: HrResultsT; lang: La
   );
 }
 
-export default async function SignalPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ probeError?: string; eventError?: string }> }) {
+export default async function SignalPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ probeError?: string }> }) {
   const { id } = await params;
   const { t, lang } = await getTL(hrResultsDict);
-  const f1 = (v: number) => numD(v, lang, 1);
-  const { probeError, eventError } = await searchParams;
+  const { probeError } = await searchParams;
   const detail = Number.isInteger(Number(id)) ? getSignalDetail(Number(id)) : null;
   if (!detail) notFound();
   const { signal, periodes, trend, trendScope, themes, hiddenThemes, recommendations, followUps, timeline } = detail;
   const probes = hrListProbes(signal.id);
-  const sameSegment = (c: number | null, tn: number | null, d: number | null) =>
-    (c === null || c === signal.collectiuId) && (tn === null || signal.tornId === null || tn === signal.tornId) && (d === null || d === signal.dominiId);
-  // "Since" comparisons for this signal's segment. Correlation, never proof: the engine's own wording and limits go together.
-  const effects = hrInsights({ role: "hr" }, { periode: "all", kind: "action_effect", collectiuId: signal.collectiuId ?? undefined })
-    .filter((i): i is Extract<typeof i, { kind: "action_effect" }> => i.kind === "action_effect" && !i.suppressed && !!i.detail && sameSegment(i.collectiuId, i.tornId, i.domainId));
-  const events = listContextEvents().filter((e) => sameSegment(e.collectiuId, e.tornId, e.dominiId));
-  const collectius = listCollectius();
-  const domains = listDomains();
-  const torns = listTorns();
 
   return (
     <>
@@ -309,65 +299,6 @@ export default async function SignalPage({ params, searchParams }: { params: Pro
           </Card>
 
           <ProbeCard t={t} lang={lang} probes={probes} signal={signal} error={probeError} />
-
-          <Card id="context" title={t("sd_ctx")} meta={t("sd_ctx_meta")}>
-            {effects.length === 0 ? (
-              <Empty>{t("sd_ctx_empty")}</Empty>
-            ) : (
-              <ul className="space-y-3">
-                {effects.map((i) => {
-                  const d = i.detail!;
-                  return (
-                    <li key={i.id} className="rounded-lg border border-line p-4">
-                      <div className="mb-1 text-xs font-medium text-subtle">{t("sd_since", { since: d.since, label: d.anchor.label })}</div>
-                      <p className="text-[13px]">{d.wording}</p>
-                      <p className="mt-1 text-xs text-subtle">
-                        <span className="num">{f1(d.before.score)} → {f1(d.after.score)}</span> · <PeopleRange from={d.before.n} to={d.after.n} />
-                      </p>
-                      <p className="mt-1 text-xs text-subtle">{d.limits}</p>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-            <h3 className="mt-5 mb-2 text-[13px] font-medium">{t("sd_events")}</h3>
-            {events.length === 0 ? (
-              <p className="text-xs text-subtle">{t("sd_events_empty")}</p>
-            ) : (
-              <ul className="mb-3 space-y-1 text-[13px]">
-                {events.map((e) => (
-                  <li key={e.id}><span className="num text-subtle">{e.date}</span> · {e.label}</li>
-                ))}
-              </ul>
-            )}
-            {eventError && <p role="alert" className="mb-2 text-[13px]">{eventError}</p>}
-            <form action={addContextEventAction} className="space-y-2 border-t border-line pt-3">
-              <input type="hidden" name="signal" value={signal.id} />
-              <div className="grid gap-2 sm:grid-cols-2">
-                <label className="text-xs text-subtle">{t("sd_date")}<input type="date" name="date" required className="input mt-1 w-full" /></label>
-                <label className="text-xs text-subtle">{t("sd_what")}<input type="text" name="label" required maxLength={120} placeholder={t("sd_what_ph")} className="input mt-1 w-full" /></label>
-                <label className="text-xs text-subtle">{t("sd_collective")}
-                  <select name="collectiu" defaultValue={signal.collectiuId ?? ""} className="input mt-1 w-full">
-                    <option value="">{t("sd_all")}</option>
-                    {collectius.map((c) => <option key={c.id} value={c.id}>{collectiveLabel(c.nom, lang)}</option>)}
-                  </select>
-                </label>
-                <label className="text-xs text-subtle">{t("sd_shift")}
-                  <select name="torn" defaultValue={signal.tornId ?? ""} className="input mt-1 w-full">
-                    <option value="">{t("sd_all")}</option>
-                    {torns.map((tn) => <option key={tn.id} value={tn.id}>{shiftLabel(tn.nom, lang)}</option>)}
-                  </select>
-                </label>
-                <label className="text-xs text-subtle sm:col-span-2">{t("tb_domain")}
-                  <select name="domini" defaultValue={signal.dominiId ?? ""} className="input mt-1 w-full">
-                    <option value="">{t("sd_all")}</option>
-                    {domains.map((d) => <option key={d.id} value={d.id}>{domainLabel(d.nom, lang)}</option>)}
-                  </select>
-                </label>
-              </div>
-              <div className="flex justify-end"><button className="btn btn-primary">{t("sd_add_event")}</button></div>
-            </form>
-          </Card>
 
           <Card id="seguiment" title={t("sd_follow")}>
             {followUps.length === 0 ? (
