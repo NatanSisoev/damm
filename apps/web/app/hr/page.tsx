@@ -19,7 +19,6 @@ import { hrDashboardDict } from "@/lib/i18n/hr-dashboard";
 import { collectiveLabel, domainLabel } from "@/lib/i18n/names";
 import { numD } from "@/lib/i18n/num";
 import { Card, Empty, PageHeader, Stat } from "./ui";
-import { People } from "./glyphs";
 import { TrendChart } from "./trend-chart";
 import { Radar, type RadarSeries } from "./radar";
 import { RepTable, TrendTable } from "./tables";
@@ -107,19 +106,16 @@ export default async function HrDashboard({ searchParams }: { searchParams: Prom
 
   const f1 = (x: number) => numD(x, lang, 1);
   const means = overall ? overall.rows.flatMap((r) => (r.cells[0]?.mitjana == null ? [] : [{ d: r.domini, now: r.cells[0].mitjana, n: r.cells[0].n ?? 0 }])) : [];
-  const prevMeans = overallPrev ? overallPrev.rows.flatMap((r) => (r.cells[0]?.mitjana == null ? [] : [r.cells[0].mitjana])) : [];
   const avg = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : null);
   // A global mark needs most domains visible; with one or two it would be misleading.
   const enough = means.length >= 3;
   const score = enough ? avg(means.map((m) => m.now)) : null;
-  const prevScore = enough && prevMeans.length >= 3 ? avg(prevMeans) : null;
-  const delta = score !== null && prevScore !== null ? score - prevScore : null;
   const sorted = [...means].sort((a, b) => b.now - a.now);
   const best = enough ? sorted[0] : undefined;
   const worst = enough ? sorted[sorted.length - 1] : undefined;
 
   // People, not answers: read from the job-written aggregates for the period(s) the window overlaps (never above the population).
-  const { respondents, population, pct } = getParticipation(win, col?.id ?? null);
+  const { pct } = getParticipation(win, col?.id ?? null);
   // Answers: total in the range and the daily average, from the analytics view.
   const apd = getAnswersPerDay(win, col?.id ?? null);
   // Open alarms for the scope, same source and minimum group size as the alarms page's "open" tab.
@@ -201,30 +197,21 @@ export default async function HrDashboard({ searchParams }: { searchParams: Prom
           <Stat
             label={t("kpi_apd")}
             value={apd.total === null ? "—" : numD(apd.total, lang, 0)}
-            hint={
-              apd.perDay === null ? (
-                t("kpi_apd_none", { min: MIN_GROUP_SIZE })
-              ) : (
-                t("kpi_apd_hint", { n: numD(apd.perDay, lang, apd.perDay < 10 ? 1 : 0) })
-              )
-            }
           />
           <div className="card h-full px-5 py-4">
             <div className="text-xs font-medium text-subtle">{t("kpi_part")}</div>
             <div className="num mt-1 text-2xl font-semibold tracking-tight">{pct === null ? "—" : `${pct}%`}</div>
             <div className="hr-meter mt-2"><span style={{ width: `${pct ?? 0}%` }} /></div>
-            <div className="mt-2 text-xs text-subtle"><People n={respondents} scoped={!!col} /> {t("kpi_of", { n: numD(population, lang, 0) })}</div>
           </div>
           <Link href={col ? `/hr/signals?collectiu=${col.id}` : "/hr/signals"} className="block h-full">
-            <Stat label={t("kpi_alarms")} value={openAlarms} hint={col ? collectiveLabel(col.nom, lang) : t("kpi_alarms_hint")} />
+            <Stat label={t("kpi_alarms")} value={openAlarms} />
           </Link>
           <Stat
             label={t("kpi_score")}
             value={score === null ? "—" : <>{f1(score)}<span className="text-base font-normal text-subtle"> / 5</span></>}
-            hint={delta === null ? (enough ? t("kpi_score_avg") : t("kpi_score_need3")) : <span className={delta < -0.05 ? "text-warn" : delta > 0.05 ? "text-good" : ""}>{t("kpi_vs", { arrow: delta > 0.05 ? "↑" : delta < -0.05 ? "↓" : "→", d: f1(Math.abs(delta)) })}</span>}
           />
-          <Stat label={t("kpi_best")} value={best ? <>{f1(best.now)}<span className="text-base font-normal text-subtle"> / 5</span></> : "—"} hint={best ? domainLabel(best.d, lang) : "—"} />
-          <Stat label={t("kpi_worst")} value={worst ? <>{f1(worst.now)}<span className="text-base font-normal text-subtle"> / 5</span></> : "—"} hint={worst ? domainLabel(worst.d, lang) : "—"} />
+          <Stat label={best ? `${t("kpi_best")}: ${domainLabel(best.d, lang)}` : t("kpi_best")} value={best ? <>{f1(best.now)}<span className="text-base font-normal text-subtle"> / 5</span></> : "—"} />
+          <Stat label={worst ? `${t("kpi_worst")}: ${domainLabel(worst.d, lang)}` : t("kpi_worst")} value={worst ? <>{f1(worst.now)}<span className="text-base font-normal text-subtle"> / 5</span></> : "—"} />
         </div>
 
         {/* 1. Profile by domain */}
