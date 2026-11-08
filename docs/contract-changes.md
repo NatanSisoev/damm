@@ -232,7 +232,7 @@ Action items:
 ## C6 · 2026-11-07 · Natan · Demo database, question bank, simulator
 
 No schema or API change.
-- **Demo database:** `pnpm --filter @damm/engine run demo` builds `data/demo.db` with three months of synthetic answers and planted stories, so every insight card and most alarm types have real data. See [engine-integration.md](engine-integration.md), "Demo data".
+- **Demo database:** `pnpm --filter @damm/engine run demo` builds `data/demo.db` with synthetic answers (now 1 Aug to 7 Nov 2026) and planted stories, so every insight card and most alarm types have real data. See [engine-integration.md](engine-integration.md), "Demo data".
 - **Question bank:** `packages/engine/fixtures/question-bank.json` holds 163 English sample questions in every type, loadable with `loadQuestionBank(db)`.
 - **Simulator:** `packages/engine/sim/` checks the engine against known ground truth.
 - **Engine speed:** segment statistics are now cached per collective per day, so batch requests no longer scan every person.
@@ -441,7 +441,7 @@ Additive and backward compatible. Catalan stays canonical in the source column; 
 - Narrative insights may carry `detail.i18n.{es,en}.{summary,highlights[]}`; `getNarrative(collective, lang)` in `apps/web/app/hr/analytics.ts` applies it.
 - Engine hooks, no behaviour change when unused: `buildDemo` options `participation` (per `collectiuId:tornId` account share) and `commentPools` (comment language per account); `sim/world.ts` takes the participation override.
 - Engine health check: the "daily batches" check stays strict (at most the daily cap per person per day, needs included, C23). The looser variant from the demo-db branch was dropped.
-- `pnpm demo-db` builds the one demo DB (`data/demo.db`): 3 months (Aug-Oct 2026), 638 accounts in 4 collectives, 6 domains, every segment n >= 10, nothing suppressed, ca/es/en content. See `AGENTS.md`.
+- `pnpm demo-db` builds the one demo DB (`data/demo.db`): 99 days (1 Aug to 7 Nov 2026), 638 accounts in 4 collectives, 6 domains, every segment n >= 10, nothing suppressed, ca/es/en content. See `AGENTS.md`.
 
 Action items:
 - [ ] Natan: review the two engine hooks (`sim/world.ts`, `demo/build-demo.ts`); keep them or move them where you prefer.

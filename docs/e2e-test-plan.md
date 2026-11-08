@@ -49,7 +49,7 @@ Fill `.env` by hand. Never paste values into this document, a ticket or a chat. 
 
 ### 1.2 Database
 
-The runs of this plan use the **demo DB** (three months of synthetic answers, planted stories):
+The runs of this plan use the **demo DB** (synthetic answers 1 Aug to 7 Nov 2026, planted stories):
 
 ```bash
 source ~/.claude/bin/heavy-gate.sh

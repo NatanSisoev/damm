@@ -1,6 +1,6 @@
 # HR portal and manager view audit
 
-Audit of `apps/web/app/hr/*` and `apps/web/app/manager/*` (2026-11-07) for consistency, usefulness and anonymity. Walked on the engine-built demo DB (3 periods Aug, Sep, Oct 2026) at 1440px and 390px.
+Audit of `apps/web/app/hr/*` and `apps/web/app/manager/*` (2026-11-07) for consistency, usefulness and anonymity. Walked on the engine-built demo DB (4 periods Aug-Nov 2026, November partial) at 1440px and 390px.
 
 Severity: **P0** breaks a rule or the demo, **P1** confusing or inactionable, **P2** polish.
 Lenses: 1 usefulness, 2 consistency, 3 hierarchy, 4 charts, 5 anonymity and rules, 6 copy, 7 accessibility, 8 navigation.

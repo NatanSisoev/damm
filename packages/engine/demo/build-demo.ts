@@ -1,4 +1,4 @@
-// Builds a demo database with three months of synthetic answers, so the dashboard shows real scores,
+// Builds a demo database with 99 days (1 Aug to 7 Nov 2026) of synthetic answers, so the dashboard shows real scores,
 // insights and alarms. Synthetic data only: invented people, invented answers, template comments.
 //
 // Usage: pnpm --filter @damm/engine run demo [-- --out data/demo.db --seed damm-demo]
@@ -209,7 +209,7 @@ export async function buildDemo(opts: DemoOptions = {}): Promise<DemoSummary> {
     }
   };
 
-  // --- three months of daily batches through the real engine --------------------------------
+  // --- daily batches through the real engine --------------------------------
   let now = Date.parse(`${world.start}T06:00:00Z`);
   const engine = createEngine({ db, redact, now: () => now });
   let answers = 0;
@@ -231,6 +231,13 @@ export async function buildDemo(opts: DemoOptions = {}): Promise<DemoSummary> {
       });
       const res = engine.submitAnswers(acct, answered.map((it) => answerFor(r, p, it, t)));
       answers += res.accepted.length;
+    }
+    // The real job runs on a schedule, so it also ran at the end of each month: alarms and emergent themes opened then
+    // (October's stories) stay open when the final run only sees a short November.
+    if (world.dates[t] === "2026-10-31" && t < world.days - 1) {
+      const monthEnd = Date.parse(`${world.dates[t]}T22:00:00Z`);
+      runEngineJob(db, { now: monthEnd });
+      runCommentAnalysisSync(db, { now: monthEnd });
     }
     if (t % 15 === 0) log(`day ${t + 1}/${world.days} (${world.dates[t]}): ${answers} answers so far`);
   }
