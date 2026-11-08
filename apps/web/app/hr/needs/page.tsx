@@ -61,6 +61,8 @@ export default async function NeedsPage({ searchParams }: { searchParams: Promis
   const rank = (n: NeedCard) => STATES.findIndex((s) => s.key === n.state);
   shown.sort((a, b) => rank(a) - rank(b) || b.id - a.id);
   const showForm = all.length === 0 || nova === "1";
+  // While creating a query, show only the form, not the list of earlier queries.
+  const showList = !showForm && all.length > 0;
 
   return (
     <>
@@ -87,7 +89,7 @@ export default async function NeedsPage({ searchParams }: { searchParams: Promis
         </section>
       )}
 
-      {all.length > 0 && (
+      {showList && (
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <nav aria-label={t("needs_filter_aria")} className="segmented">
             {([{ key: "totes", label: t("needs_filter_all"), n: all.length }, ...STATES.map((s) => ({ key: s.key, label: needStatus(s.key, lang).label, n: counts[s.key] }))] as { key: Filter; label: string; n: number }[]).map((f) => (
@@ -104,7 +106,7 @@ export default async function NeedsPage({ searchParams }: { searchParams: Promis
         </div>
       )}
 
-      {all.length > 0 && shown.length === 0 && filter !== "totes" && (
+      {showList && shown.length === 0 && filter !== "totes" && (
         <Empty>
           <p>{t(STATES.find((s) => s.key === filter)!.empty)}</p>
           <div className="mt-3 flex justify-center gap-2">
@@ -113,7 +115,7 @@ export default async function NeedsPage({ searchParams }: { searchParams: Promis
           </div>
         </Empty>
       )}
-      {shown.length > 0 && (
+      {showList && shown.length > 0 && (
         <div className="space-y-4">
           {shown.map((n) => (
             <NeedItem key={n.id} n={n} draft={drafts.get(n.id)} domainIdx={domainIdx} t={t} lang={lang} />
