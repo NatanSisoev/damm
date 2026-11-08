@@ -6,7 +6,6 @@
 // only for the series being hovered/focused, so six overlapping bands do not turn the chart into a smear.
 import { useEffect, useRef, useState } from "react";
 import type { TrendRow } from "@damm/db/hr";
-import { MIN_GROUP_SIZE } from "@damm/shared";
 import { useLang, useT } from "@/lib/i18n/client";
 import { LOCALES } from "@/lib/i18n/core";
 import { hrResultsDict, type HrResultsKey } from "@/lib/i18n/hr-results";
@@ -116,7 +115,6 @@ export function TrendChart({ periodes, rows, highlight, scale = "1-5" }: { perio
     return out;
   };
 
-  const hasChange = series.some((s) => s.changed);
 
   return (
     <div className="px-5 py-4">
@@ -224,11 +222,6 @@ export function TrendChart({ periodes, rows, highlight, scale = "1-5" }: { perio
           </li>
         ))}
       </ul>
-      <p className="mt-2 text-xs text-subtle">
-        {highlight ? tr("ch_foot_hl") : hasChange ? tr("ch_foot_change") : tr("ch_foot_none")}{" "}
-        {scale === "0-10" ? tr("ch_scale010") : tr("ch_scale15")} {tr("ch_foot_sup", { min: MIN_GROUP_SIZE })} {tr("ch_foot_band", { scale })} {tr("ch_foot_cons")}
-        {!highlight && ` ${tr("ch_foot_hover")}`}
-      </p>
     </div>
   );
 }
