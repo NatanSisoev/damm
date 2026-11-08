@@ -7,6 +7,7 @@ import { MIN_GROUP_SIZE } from "@damm/shared";
 import { archivedAlarmIds, listCollectius, listDomains, listRecommendations, listTorns } from "@damm/db/hr";
 import { hrAlarms, type AlarmView } from "@/lib/hr-engine";
 import { Card, Empty, PageHeader } from "../ui";
+import { LimitsNote } from "../limits-note";
 import { FoldList } from "../ui-server";
 import { statusLabel, signalTypeLabel } from "../signal-labels";
 import { getT, getTL } from "@/lib/i18n/server";
@@ -267,6 +268,7 @@ export default async function AlarmsPage({ searchParams }: { searchParams: Promi
           <p className="text-xs text-subtle">
             {t("sg_foot", { label: t("sg_vis") })} {t("sg_limit")}
           </p>
+          <LimitsNote view="signal" />
         </div>
       )}
     </>
