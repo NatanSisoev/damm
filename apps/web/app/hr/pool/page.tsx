@@ -172,11 +172,14 @@ export default async function PoolPage({ searchParams }: { searchParams: Promise
 
       <form method="get" action="/hr/pool" className="card mb-4">
         {p.per && <input type="hidden" name="per" value={p.per} />}
-        <div className="card-body grid grid-cols-2 items-end gap-3 md:grid-cols-4 xl:grid-cols-8">
-          <div className="col-span-2">
-            <label htmlFor="q" className="label">{t("f_search")}</label>
-            <input id="q" name="q" defaultValue={p.q ?? ""} placeholder={t("f_search_ph")} className="input w-full" />
+        <div className="card-body">
+          <label htmlFor="q" className="label">{t("f_search")}</label>
+          <div className="flex gap-2">
+            <input id="q" name="q" defaultValue={p.q ?? ""} placeholder={t("f_search_ph")} className="input min-w-0 flex-1" />
+            <button type="submit" className="btn btn-primary">{t("apply")}</button>
+            <Link href="/hr/pool" className="btn btn-ghost">{t("clear")}</Link>
           </div>
+        <div className="mt-3 grid grid-cols-2 items-end gap-3 md:grid-cols-4 xl:grid-cols-8">
           <Select id="estat" label={t("f_state")} allLabel={t("f_all")} value={p.estat} options={[["live", t("st_live")], ["waiting", t("st_waiting")], ["inactive", t("st_inactive")]]} />
           <Select id="tipus" label={t("f_type")} allLabel={t("f_all")} value={p.tipus} options={QUESTION_TYPES.map((qt) => [qt, questionTypeLabel(qt, lang)])} />
           <Select id="domini" label={t("f_domain")} allLabel={t("f_all")} value={p.domini} options={domains.map(([id, nom]) => [String(id), domainLabel(nom, lang)])} />
@@ -185,10 +188,7 @@ export default async function PoolPage({ searchParams }: { searchParams: Promise
           <Select id="group" label={t("f_group")} allLabel="—" value={group} options={GROUPS.map((g) => [g.key, t(g.label)])} blank={false} />
           <Select id="sort" label={t("f_sort")} allLabel="—" value={sort === "id" ? undefined : sort} options={SORTS.filter((x) => x.key !== "id").map((x) => [x.key, t(x.label)])} />
           <Select id="dir" label={t("f_dir")} allLabel="—" value={p.dir} options={[["asc", t("f_asc")], ["desc", t("f_desc")]]} />
-          <div className="flex gap-2">
-            <button type="submit" className="btn btn-primary">{t("apply")}</button>
-            <Link href="/hr/pool" className="btn btn-ghost">{t("clear")}</Link>
-          </div>
+        </div>
         </div>
       </form>
 
