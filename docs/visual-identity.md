@@ -1,8 +1,8 @@
 # Visual identity: "Give a Damm"
 
-Source of truth: [`style-guide.md`](style-guide.md) and the logo files in [`brand/`](brand/). This file records how the code applies them (implemented 2026-11-08 on `jan/redesign`). It replaces the "Paper" identity of 2026-11-07 (ink buttons, text wordmark, white "E" icon).
+Source of truth: [`style-guide.md`](style-guide.md) and the logo files in [`brand/`](brand/). This file records how the code applies them (refined 2026-11-08 on `jan/refine-design`, after the first "Give a Damm" pass on `jan/redesign` read as too loud). Red is now a small signal, not a fill.
 
-One look for the employee PWA, the HR dashboard and the manager view. Idea: a warm paper page, green-black ink, thin rules, and red used as the voice of the product (the one action per screen, the full stop, the ear dot), never as an error colour.
+One look for the employee PWA, the HR dashboard and the manager view. Idea: a quiet off-white page, near-black ink, 1px hairlines, small radii, no shadows, and red used only as a small signal (the ear dot, the active nav marker, critical badges, meters).
 
 ## Name and mark
 
@@ -15,25 +15,25 @@ One look for the employee PWA, the HR dashboard and the manager view. Idea: a wa
 
 | Token | Light | Dark | Use |
 |---|---|---|---|
-| `--paper` | `#eef0ea` | `#121512` | page |
-| `--surface` | `#fbfcf9` | `#1a1e1a` | cards, inputs, bars |
-| `--ink` | `#17211a` | `#eef1ea` | text, icons, strokes, selected state |
-| `--muted` | `#5b6359` | `#9aa196` | secondary text |
-| `--rule` | `#cfd4c9` | `#2b302b` | 1px dividers |
-| `--red` / `--on-red` | `#c8201a` / `#fbfcf9` | `#ff7a6e` / `#121512` | primary button, ear dot, final punctuation, new markers |
-| `--focus` | ink | `--red` | 2px outline, 2px offset |
+| `--paper` | `#fafaf8` | `#0f0f0e` | page |
+| `--surface` | `#ffffff` | `#161615` | cards, inputs, bars |
+| `--ink` | `#141414` | `#ececea` | text, icons, strokes, primary button |
+| `--muted` | `#6a6a66` | `#9b9b96` | secondary text |
+| `--rule` | `#e6e6e2` | `#262625` | 1px dividers |
+| `--red` / `--on-red` | `#c8201a` / `#ffffff` | `#ff7a6e` / `#0f0f0e` | signal only: nav marker, critical badge, meters, ear dot |
+| `--focus` | ink | ink | 2px outline, 2px offset |
 
-The old names (`--bg`, `--text`, `--text-muted`, `--border`, `--accent`, `--brand-red`, `--line`, `--control-border`, `--on-accent`) are aliases of the new ones, so existing components keep working. `--accent` stays ink (selected tiles, scale input); only `.btn-primary` is red. `--warn` and `--good` are ink: status is carried by a label or outline, never by red. Chart tokens (`--co-*`, `--dom-*`, heatmap) are unchanged.
+The old names (`--bg`, `--text`, `--text-muted`, `--border`, `--accent`, `--brand-red`, `--line`, `--control-border`, `--on-accent`) are aliases of the new ones, so existing components keep working. `--accent` is ink (selected tiles, scale input) and `.btn-primary` is an ink fill with paper text: no red fills. `--warn` and `--good` are ink: status is carried by a label or outline, never by red. Chart tokens (`--co-*`, `--dom-*`, heatmap) are unchanged.
 
-`themeColor` and the manifest use `#eef0ea` (dark: `#121512`). `public/offline.html` inlines the palette and caches the two title SVGs in the service worker.
+`themeColor` and the manifest use `#fafaf8` (dark: `#0f0f0e`). `public/offline.html` inlines the palette and caches the two title SVGs in the service worker.
 
 ## Type
 
-Hanken Grotesk only, weights 400, 600, 700, 800 (500 is not loaded; use 600). Utility classes `.display`, `.question`, `.figure` follow the guide's scale. Employee body is 16px, buttons and tap targets 48px. The HR shell keeps a 14px body for table density (documented deviation).
+Hanken Grotesk only, weights 400, 500, 600 (600 only where the weight remap in `globals.css` maps `font-bold`; `font-semibold` renders as 500). Tighter scale: page title 22-28px weight 500, section title 16px weight 500, eyebrow 11px weight 500 uppercase with 0.1em tracking, figures and tables use tabular numbers. Employee body is 16px, buttons and tap targets 48px. The HR shell keeps a 14px body for table density (documented deviation).
 
 ## Shape and motion
 
-2px corners, 1px rules, no shadows or gradients. Primary button: red fill, one per screen. Secondary: 1.5px ink outline. Focus: 2px ring. `prefers-reduced-motion` disables the one-shot pulse and transitions.
+Radii 2-6px (controls 4px, cards 6px), 1px hairlines, no shadows or gradients, a 4/8px grid. Primary button: ink fill, one per screen. Secondary: 1px outline. Badges are transparent with a hairline border; critical is red text on a red hairline. Chart marks, meters and bars are 3px. Focus: 2px ring. `prefers-reduced-motion` disables the one-shot pulse and transitions.
 
 ## Voice
 

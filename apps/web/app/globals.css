@@ -8,34 +8,34 @@
  */
 :root {
   /* style guide */
-  --paper: #eef0ea;
-  --ink: #17211a;
-  --muted: #5b6359;
-  --rule: #cfd4c9;
+  --paper: #fafaf8;
+  --ink: #141414;
+  --muted: #6a6a66;
+  --rule: #e6e6e2;
   --red: #c8201a;
-  --on-red: #fbfcf9;
+  --on-red: #ffffff;
   --red-hover: #b01c17;
   --focus: var(--ink);
 
   /* older names, mapped */
   --brand-red: var(--red);
   --bg: var(--paper);
-  --surface: #fbfcf9;
-  --surface-muted: #e6e9e0;
+  --surface: #ffffff;
+  --surface-muted: #f3f3f0;
   --border: var(--rule);
-  --border-strong: #b3baae;
+  --border-strong: #d6d6d1;
   --line: var(--border);
   --line-strong: var(--border-strong);
   /* Border of form controls on touch screens: 3:1 against the surface. */
-  --control-border: #788274;
+  --control-border: #8c8c87;
   --text: var(--ink);
   --text-muted: var(--muted);
   --text-subtle: var(--muted);
 
   /* Ink: selected state, focus, scale tiles. The primary button is red (--red / --on-red). */
   --accent: var(--ink);
-  --accent-hover: #2f3b32;
-  --accent-soft: rgb(23 33 26 / 0.06);
+  --accent-hover: #333333;
+  --accent-soft: rgb(20 20 20 / 0.045);
   --accent-text: var(--ink);
   --on-accent: var(--paper);
 
@@ -46,12 +46,12 @@
   --good-soft: var(--surface-muted);
 
   --chart-1: var(--ink);
-  --chart-2: #8a9286;
+  --chart-2: #9a9a95;
 
   /* Diverging scale for the heatmap: warm = below company average, cool = above, grey midpoint. */
   --div-neg: #b8431f;
   --div-pos: #2a6f97;
-  --div-mid: #dfe3d9;
+  --div-mid: #ecece8;
 
   --co-1: #2a78d6;
   --co-2: #eb6834;
@@ -80,28 +80,28 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --paper: #121512;
-    --ink: #eef1ea;
-    --muted: #9aa196;
-    --rule: #2b302b;
+    --paper: #0f0f0e;
+    --ink: #ececea;
+    --muted: #9b9b96;
+    --rule: #262625;
     --red: #ff7a6e;
-    --on-red: #121512;
+    --on-red: #0f0f0e;
     --red-hover: #ff9288;
-    --focus: var(--red);
+    --focus: var(--ink);
 
-    --surface: #1a1e1a;
-    --surface-muted: #222722;
-    --border-strong: #454c45;
-    --control-border: #7d857a;
+    --surface: #161615;
+    --surface-muted: #1d1d1c;
+    --border-strong: #333332;
+    --control-border: #7f7f7a;
 
-    --accent-hover: #d2d6cc;
-    --accent-soft: rgb(238 241 234 / 0.1);
+    --accent-hover: #cfcfcc;
+    --accent-soft: rgb(236 236 234 / 0.07);
 
-    --chart-2: #7d857a;
+    --chart-2: #7f7f7a;
 
     --div-neg: #e0745a;
     --div-pos: #5fa3cf;
-    --div-mid: #2b302b;
+    --div-mid: #262625;
 
     --co-1: #3987e5;
     --co-2: #d95926;
@@ -115,7 +115,7 @@
     --dom-4: #c98500;
     --dom-5: #d55181;
     --dom-6: #008300;
-    --dom-muted: #666d63;
+    --dom-muted: #666662;
   }
 }
 
@@ -144,14 +144,14 @@
   --color-foreground: var(--text);
   --font-sans: var(--font-hanken), ui-sans-serif, system-ui, sans-serif;
   --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  /* Paper: 2px corners everywhere. */
+  /* Small radii only (2-4px). */
   --radius-xs: 2px;
-  --radius-sm: 2px;
-  --radius-md: 2px;
-  --radius-lg: 2px;
-  --radius-xl: 2px;
-  --radius-2xl: 2px;
-  --radius-3xl: 2px;
+  --radius-sm: 3px;
+  --radius-md: 4px;
+  --radius-lg: 4px;
+  --radius-xl: 6px;
+  --radius-2xl: 6px;
+  --radius-3xl: 6px;
 }
 
 body {
@@ -159,13 +159,20 @@ body {
   color: var(--text);
   font-family: var(--font-sans);
   font-size: 16px;
-  line-height: 24px;
+  line-height: 1.6;
+  font-weight: 400;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
+
+/* One quiet weight scale: Tailwind's semibold and bold map to medium and semibold. */
+.font-semibold { font-weight: 500; }
+.font-bold, .font-extrabold { font-weight: 600; }
 
 /* HR portal and manager view are dense data screens: 14px body inside the shell (documented deviation). */
 .hr-shell {
   font-size: 14px;
-  line-height: 20px;
+  line-height: 22px;
 }
 
 :focus-visible {
@@ -186,95 +193,96 @@ body {
 @layer components {
   /* H1 */
   .page-title {
-    font-size: clamp(24px, 3vw, 32px);
-    line-height: 1.15;
-    font-weight: 800;
-    letter-spacing: -0.01em;
+    font-size: clamp(22px, 2.4vw, 28px);
+    line-height: 1.2;
+    font-weight: 500;
+    letter-spacing: -0.015em;
   }
   /* H2 */
   .section-title {
-    font-size: clamp(18px, 2vw, 22px);
-    line-height: 1.3;
-    font-weight: 700;
+    font-size: 16px;
+    line-height: 1.4;
+    font-weight: 500;
     letter-spacing: -0.005em;
   }
   /* Overline: 12px, +8% tracking, the one allowed all-caps. */
   .eyebrow {
-    font-size: 12px;
+    font-size: 11px;
     line-height: 16px;
-    font-weight: 600;
-    letter-spacing: 0.08em;
+    font-weight: 500;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
     color: var(--text-muted);
   }
   /* Display, question and number styles (style guide, Typography). */
   .display {
-    font-size: clamp(40px, 6vw, 64px);
-    line-height: 1.05;
-    font-weight: 800;
-    letter-spacing: -0.02em;
+    font-size: clamp(36px, 5vw, 52px);
+    line-height: 1.08;
+    font-weight: 400;
+    letter-spacing: -0.03em;
   }
   .question {
-    font-size: clamp(28px, 4vw, 36px);
-    line-height: 1.15;
-    font-weight: 800;
-    letter-spacing: -0.015em;
+    font-size: clamp(22px, 3.4vw, 28px);
+    line-height: 1.3;
+    font-weight: 500;
+    letter-spacing: -0.02em;
   }
   .question .end {
     color: var(--red);
   }
   .figure {
-    font-size: clamp(32px, 4vw, 48px);
+    font-size: clamp(28px, 3.4vw, 40px);
     line-height: 1;
-    font-weight: 800;
-    letter-spacing: -0.02em;
+    font-weight: 400;
+    letter-spacing: -0.03em;
     font-variant-numeric: tabular-nums;
   }
 
   .card {
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 2px;
+    border-radius: 6px;
   }
   .card-header {
     display: flex;
     align-items: baseline;
     justify-content: space-between;
     gap: 12px;
-    padding: 16px 20px 0;
+    padding: 20px 24px 0;
   }
   .card-body {
-    padding: 16px 20px 20px;
+    padding: 16px 24px 24px;
   }
 
   .btn {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    height: 40px;
+    height: 36px;
     padding: 0 16px;
-    border-radius: 2px;
-    border: 1.5px solid var(--text);
+    border-radius: 4px;
+    border: 1px solid var(--border-strong);
     background: var(--surface);
     color: var(--text);
     font-size: 14px;
-    font-weight: 600;
+    font-weight: 500;
     transition: background-color var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease);
     cursor: pointer;
     white-space: nowrap;
   }
   .btn:hover {
     background: var(--surface-muted);
+    border-color: var(--control-border);
   }
-  /* The only filled block of colour in normal UI: red, one per screen. */
+  /* Primary: solid ink. Red is reserved for small signals, never a button fill. */
   .btn-primary {
-    background: var(--red);
-    border-color: var(--red);
-    color: var(--on-red);
+    background: var(--ink);
+    border-color: var(--ink);
+    color: var(--paper);
   }
   .btn-primary:hover {
-    background: var(--red-hover);
-    border-color: var(--red-hover);
+    background: var(--accent-hover);
+    border-color: var(--accent-hover);
   }
   .btn:disabled,
   .btn[aria-disabled="true"] {
@@ -293,9 +301,9 @@ body {
   }
 
   .input {
-    height: 44px;
+    height: 40px;
     padding: 0 12px;
-    border-radius: 2px;
+    border-radius: 4px;
     border: 1px solid var(--control-border);
     background: var(--surface);
     color: var(--text);
@@ -316,9 +324,9 @@ body {
   .label {
     display: block;
     margin-bottom: 6px;
-    font-size: 14px;
+    font-size: 13px;
     line-height: 20px;
-    font-weight: 600;
+    font-weight: 500;
     color: var(--text);
   }
 
@@ -326,29 +334,29 @@ body {
     display: inline-flex;
     align-items: center;
     gap: 4px;
-    height: 22px;
-    padding: 0 10px;
-    border-radius: 999px;
-    border: 1px solid var(--border-strong);
+    height: 20px;
+    padding: 0 8px;
+    border-radius: 3px;
+    border: 1px solid var(--border);
     font-size: 12px;
     line-height: 16px;
-    font-weight: 600;
+    font-weight: 500;
     white-space: nowrap;
-    background: var(--surface-muted);
+    background: transparent;
     color: var(--text-muted);
   }
   .badge-accent {
     background: var(--accent-soft);
     color: var(--accent-text);
-    border-color: var(--accent-text);
+    border-color: var(--border-strong);
   }
   .badge-warn {
-    background: var(--warn-soft);
+    background: var(--surface-muted);
     color: var(--warn);
-    border-color: var(--warn);
+    border-color: var(--border-strong);
   }
   .badge-good {
-    background: var(--good-soft);
+    background: transparent;
     color: var(--good);
   }
 
@@ -356,7 +364,7 @@ body {
     display: inline-flex;
     padding: 2px;
     gap: 2px;
-    border-radius: 2px;
+    border-radius: 4px;
     background: var(--surface-muted);
     border: 1px solid var(--border);
   }
@@ -365,9 +373,9 @@ body {
     display: inline-flex;
     align-items: center;
     padding: 0 12px;
-    border-radius: 2px;
-    font-size: 14px;
-    font-weight: 600;
+    border-radius: 3px;
+    font-size: 13px;
+    font-weight: 500;
     color: var(--text-muted);
     transition: background-color 120ms var(--ease), color 120ms var(--ease);
   }
@@ -387,16 +395,18 @@ body {
   }
   .table th {
     text-align: left;
-    font-size: 13px;
-    font-weight: 600;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
     color: var(--text-subtle);
-    background: var(--surface-muted);
-    padding: 8px 12px;
-    border-bottom: 1px solid var(--border);
+    background: transparent;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border-strong);
   }
   .table td {
     padding: 0 12px;
-    height: 48px;
+    height: 52px;
     border-bottom: 1px solid var(--border);
     vertical-align: middle;
   }
@@ -404,7 +414,7 @@ body {
     border-bottom: 0;
   }
   .table tbody tr:hover td {
-    background: var(--surface-muted);
+    background: var(--accent-soft);
   }
   .num {
     font-variant-numeric: tabular-nums;
@@ -412,10 +422,10 @@ body {
 
   /* Critical alarms read stronger than warnings. */
   .badge-crit {
-    background: var(--red);
+    background: transparent;
     border-color: var(--red);
-    color: var(--on-red);
-    font-weight: 700;
+    color: var(--red);
+    font-weight: 500;
   }
 }
 
@@ -433,23 +443,23 @@ body {
 }
 .emp .btn {
   min-height: 48px;
-  font-size: 16px;
-  font-weight: 600;
-  border-color: var(--text);
+  font-size: 15px;
+  font-weight: 500;
+  border-color: var(--border-strong);
   justify-content: center;
 }
 .emp .btn-primary {
-  background: var(--red);
-  border-color: var(--red);
-  color: var(--on-red);
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--paper);
 }
 .emp .btn-primary:hover {
-  background: var(--red-hover);
-  border-color: var(--red-hover);
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
 }
 .emp .btn-ghost {
   border-color: transparent;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--text-muted);
 }
 .emp .btn[disabled] {
@@ -471,24 +481,24 @@ body {
   border-color: var(--text);
 }
 .emp .label {
-  font-size: 14px;
-  font-weight: 600;
+  font-size: 13px;
+  font-weight: 500;
   line-height: 18px;
   margin-bottom: 6px;
   color: var(--text);
 }
 .emp .badge {
-  height: 24px;
-  font-weight: 700;
+  height: 22px;
+  font-weight: 500;
 }
 .emp .page-title {
-  font-size: 28px;
-  line-height: 1.15;
+  font-size: 24px;
+  line-height: 1.2;
 }
 /* Employee app max 480px column, 20px margins are set by the page shells. */
 .emp .section-title {
-  font-size: 17px;
-  font-weight: 700;
+  font-size: 16px;
+  font-weight: 500;
 }
 
 /* Scale input: joined segmented row, 1px borders, selected item filled with ink. */
@@ -496,7 +506,7 @@ body {
   display: grid;
   gap: 0;
   border: 1px solid var(--control-border);
-  border-radius: 2px;
+  border-radius: 4px;
   overflow: hidden;
 }
 .emp .tiles button {
@@ -505,9 +515,10 @@ body {
   border: 1px solid var(--control-border);
   background: var(--surface);
   color: var(--text);
-  font-weight: 800;
-  font-size: 22px;
+  font-weight: 400;
+  font-size: 20px;
   line-height: 1;
+  font-variant-numeric: tabular-nums;
   display: flex;
   align-items: center;
   justify-content: center;

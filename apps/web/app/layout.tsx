@@ -7,11 +7,11 @@ import { getLang } from "@/lib/lang";
 import { getT } from "@/lib/i18n/server";
 import { signalsDict } from "@/lib/i18n/hr-signals";
 
-// One font for the whole app (docs/style-guide.md): Hanken Grotesk 400, 600, 700, 800 (Latin Extended for Catalan).
+// One font for the whole app (docs/style-guide.md): Hanken Grotesk 400, 500, 600 (Latin Extended for Catalan).
 const hanken = Hanken_Grotesk({
   variable: "--font-hanken",
   subsets: ["latin", "latin-ext"],
-  weight: ["400", "600", "700", "800"],
+  weight: ["400", "500", "600"],
   display: "swap",
 });
 
@@ -30,8 +30,8 @@ export async function generateMetadata(): Promise<Metadata> {
 // Paper: matches the manifest theme_color and the icon background.
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#eef0ea" },
-    { media: "(prefers-color-scheme: dark)", color: "#121512" },
+    { media: "(prefers-color-scheme: light)", color: "#fafaf8" },
+    { media: "(prefers-color-scheme: dark)", color: "#0f0f0e" },
   ],
 };
 
