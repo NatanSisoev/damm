@@ -73,7 +73,7 @@ function Timeline({ steps, t }: { steps: SignalTimelineStep[]; t: HrResultsT }) 
               {s.state === "done" ? "✓" : i + 1}
             </span>
             <div>
-              <div className={`text-[13px] font-medium ${next ? "group-hover:underline" : ""}`}>
+              <div className={`text-[13px] font-semibold ${next ? "group-hover:underline" : ""}`}>
                 {tx.label}
                 {next && <span aria-hidden className="ml-1 text-subtle">›</span>}
               </div>
@@ -186,7 +186,7 @@ export default async function SignalPage({ params, searchParams }: { params: Pro
       </div>
 
       <div className="mb-6 flex flex-wrap items-center gap-2">
-        <span className="text-xs font-medium text-subtle">{t("sd_status_lbl")}</span>
+        <span className="text-xs font-semibold text-subtle">{t("sd_status_lbl")}</span>
         {STATUS_ORDER.map((st) => (
           <form key={st} action={setSignalStatusAction}>
             <input type="hidden" name="id" value={signal.id} />
@@ -215,7 +215,7 @@ export default async function SignalPage({ params, searchParams }: { params: Pro
               <>
                 <TrendChart periodes={periodes} rows={trend} highlight={trend.filter((r) => r.related).map((r) => r.domini)} scale="0-10" />
                 <details className="border-t border-line">
-                  <summary className="cursor-pointer px-5 py-3 text-xs font-medium text-subtle">{t("rs_show_table")}</summary>
+                  <summary className="cursor-pointer px-5 py-3 text-xs font-semibold text-subtle">{t("rs_show_table")}</summary>
                   <div className="overflow-x-auto">
                 <table className="table min-w-[32rem]">
                     <thead>
@@ -229,7 +229,7 @@ export default async function SignalPage({ params, searchParams }: { params: Pro
                     <tbody>
                       {trend.map((r) => (
                         <tr key={r.domini} className={r.related ? "bg-accent-soft" : ""}>
-                          <td className="font-medium">
+                          <td className="font-semibold">
                             {domainLabel(r.domini, lang)}
                             {r.related && <span className="badge badge-accent ml-2">{t("sd_related")}</span>}
                           </td>
@@ -273,7 +273,7 @@ export default async function SignalPage({ params, searchParams }: { params: Pro
                 {themes.map((th) => (
                   <li key={th.id} className="rounded-lg border border-line p-3">
                     <div className="mb-1.5 flex flex-wrap items-center gap-2">
-                      <h3 className="font-medium">{th.etiqueta}</h3>
+                      <h3 className="font-semibold">{th.etiqueta}</h3>
                       {th.emergent && <span className="badge badge-warn">{t("rs_emergent")}</span>}
                       <span className="num ml-auto text-xs text-subtle"><Comments n={th.n} /></span>
 
@@ -319,7 +319,7 @@ export default async function SignalPage({ params, searchParams }: { params: Pro
                 {recommendations.map((r) => (
                   <li key={r.id} className={r.estat === "descartada" ? "opacity-60" : ""}>
                     <Link href={`/hr/recommendations/${r.id}`} className="group flex items-center gap-3 py-2.5">
-                      <span className="min-w-0 flex-1 truncate text-[13px] font-medium group-hover:underline">{recTitle(r)}</span>
+                      <span className="min-w-0 flex-1 truncate text-[13px] font-semibold group-hover:underline">{recTitle(r)}</span>
                       <span className={`badge shrink-0 ${recommendationStatus(r.estat, lang).cls}`}>{recommendationStatus(r.estat, lang).label}</span>
                       <span aria-hidden className="text-subtle">›</span>
                     </Link>
@@ -342,7 +342,7 @@ export default async function SignalPage({ params, searchParams }: { params: Pro
                       <span className={`badge ${f.published ? "badge-good" : "badge-warn"}`}>{f.published ? t("sd_published") : t("sd_unpublished")}</span>
                       <Link href="/hr/needs" className="ml-auto text-xs text-accent-ink hover:underline">{t("sd_review_pub")}</Link>
                     </div>
-                    <p className="text-[13px] font-medium">{f.textNl}</p>
+                    <p className="text-[13px] font-semibold">{f.textNl}</p>
                     {f.questions.length > 0 ? (
                       <ul className="mt-2 list-disc space-y-1 pl-5 text-[13px] text-muted">
                         {f.questions.map((q) => (

@@ -117,9 +117,9 @@ export default async function ManagerCollectivePage({ params }: { params: Promis
           {series ? (
             <>
               <p className="border-b border-line px-5 py-3 text-xs text-subtle">
-                {t("prec_a")}<span className="font-medium">{t("prec_indicative")}</span>{t("prec_b", { a: PRECISION_MODERADA_MIN_N })}
-                <span className="font-medium">{t("prec_moderate")}</span>{t("prec_c", { a: PRECISION_MODERADA_MIN_N, b: PRECISION_SOLIDA_MIN_N - 1 })}
-                <span className="font-medium">{t("prec_solid")}</span>{t("prec_d", { c: PRECISION_SOLIDA_MIN_N, delta: num1L(CHANGE_MIN_DELTA, lang), n: CHANGE_MIN_N })}
+                {t("prec_a")}<span className="font-semibold">{t("prec_indicative")}</span>{t("prec_b", { a: PRECISION_MODERADA_MIN_N })}
+                <span className="font-semibold">{t("prec_moderate")}</span>{t("prec_c", { a: PRECISION_MODERADA_MIN_N, b: PRECISION_SOLIDA_MIN_N - 1 })}
+                <span className="font-semibold">{t("prec_solid")}</span>{t("prec_d", { c: PRECISION_SOLIDA_MIN_N, delta: num1L(CHANGE_MIN_DELTA, lang), n: CHANGE_MIN_N })}
               </p>
               <TrendTable periodes={trends.periodes} rows={series.rows} />
             </>
@@ -157,7 +157,7 @@ export default async function ManagerCollectivePage({ params }: { params: Promis
                 {themes.map((th) => (
                   <li key={th.id} className="py-3">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-medium">{th.etiqueta}</span>
+                      <span className="font-semibold">{th.etiqueta}</span>
                       {th.emergent && <span className="badge badge-accent">{t("emergent")}</span>}
                       <span className="num ml-auto text-xs text-subtle">{th.periode}</span>
                     </div>

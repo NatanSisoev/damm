@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { useT } from "@/lib/i18n/client";
 import { hrDict, type HrKey } from "@/lib/i18n/hr";
+import { Wordmark } from "@/app/wordmark";
 import { LangSwitcher } from "@/components/lang-switcher";
 import type { ViewRole } from "@/lib/view-role";
 import { setViewRoleAction } from "./view-role-action";
@@ -223,7 +224,7 @@ export function HrSidebar({ badges, subtitle, logo, role = "hr" }: { badges?: Na
           <div className="hr-scrim" onClick={close} aria-hidden="true" />
           <nav id="hr-drawer" ref={drawerRef} aria-label={t("sections")} role="dialog" aria-modal="true" className="hr-drawer">
             <div className="hr-drawer-head">
-              <span className="text-[13px] font-bold">Escolta activa</span>
+              <Wordmark className="h-5 w-auto" />
               <button type="button" className="hr-icon-btn" aria-label={t("nav_close_menu")} onClick={close}>
                 {svg(<path d="M6 6l12 12M18 6L6 18" />)}
               </button>

@@ -23,7 +23,7 @@ const day = (s: string) => s.slice(0, 10);
 function Fact({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div>
-      <dt className="text-xs font-medium text-subtle">{label}</dt>
+      <dt className="text-xs font-semibold text-subtle">{label}</dt>
       <dd className="mt-0.5 text-[13px]">{children}</dd>
     </div>
   );
@@ -75,7 +75,7 @@ export default async function RecommendationPage({ params }: { params: Promise<{
                 {s.done ? "✓" : i + 1}
               </span>
               <div>
-                <div className="text-[13px] font-medium">{s.label}</div>
+                <div className="text-[13px] font-semibold">{s.label}</div>
                 <div className="text-xs text-subtle">{s.detail}</div>
               </div>
             </li>
@@ -95,13 +95,13 @@ export default async function RecommendationPage({ params }: { params: Promise<{
             </dl>
             {r.justificacio && (
               <div className="mt-4 border-t border-line pt-4">
-                <h3 className="text-xs font-medium text-subtle">{t("rd_why")}</h3>
+                <h3 className="text-xs font-semibold text-subtle">{t("rd_why")}</h3>
                 <p className="mt-1 text-[13px] text-muted">{r.justificacio}</p>
               </div>
             )}
             {r.limits && (
               <div className="mt-4 border-t border-line pt-4">
-                <h3 className="text-xs font-medium text-subtle">{t("rd_limits")}</h3>
+                <h3 className="text-xs font-semibold text-subtle">{t("rd_limits")}</h3>
                 <p className="mt-1 text-[13px] text-muted">{r.limits}</p>
               </div>
             )}
@@ -140,7 +140,7 @@ export default async function RecommendationPage({ params }: { params: Promise<{
                   {sd.themes.map((th) => (
                     <li key={th.id} className="rounded-lg border border-line p-4">
                       <div className="mb-1.5 flex flex-wrap items-center gap-2">
-                        <h3 className="font-medium">{th.etiqueta}</h3>
+                        <h3 className="font-semibold">{th.etiqueta}</h3>
                         {th.emergent && <span className="badge badge-warn">{t("rd_emerging")}</span>}
                         <span className="num ml-auto text-xs text-subtle"><Comments n={th.n} /></span>
                       </div>
@@ -160,7 +160,7 @@ export default async function RecommendationPage({ params }: { params: Promise<{
           <Card title={t("rd_source_alarm")}>
             {signal ? (
               <>
-                <h3 className="font-medium">{signalHeadline(signal, lang)}</h3>
+                <h3 className="font-semibold">{signalHeadline(signal, lang)}</h3>
                 <p className="mt-1 text-[13px] text-muted">{signalDetail(signal, lang)}</p>
                 <div className="mt-3 flex flex-wrap items-center gap-2">
                   <SignalBadges tipus={signal.tipus} severity={signal.severity} status={signal.status} />
@@ -184,7 +184,7 @@ export default async function RecommendationPage({ params }: { params: Promise<{
                   <span className={`badge ${followUp.published ? "badge-good" : "badge-warn"}`}>{followUp.published ? t("rd_published") : t("rd_unpublished")}</span>
                   <Link href="/hr/needs" className="ml-auto text-xs text-accent-ink hover:underline">{t("rd_review_publish")}</Link>
                 </div>
-                <p className="text-[13px] font-medium">{followUp.textNl}</p>
+                <p className="text-[13px] font-semibold">{followUp.textNl}</p>
                 {followUp.questions.length > 0 && (
                   <ul className="mt-2 list-disc space-y-1 pl-5 text-[13px] text-muted">
                     {followUp.questions.map((q) => (

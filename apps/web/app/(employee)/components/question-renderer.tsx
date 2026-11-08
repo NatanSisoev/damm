@@ -127,7 +127,7 @@ function ChoiceInput({
             onClick={() => onChange(i)}
             className={`card min-h-14 px-4 py-3 text-left text-base transition ${
               on ? "!border-accent border-2 bg-accent-soft font-semibold" : "hover:border-line-strong"
-            } ${twoUp ? "flex items-center justify-center text-center font-medium" : ""}`}
+            } ${twoUp ? "flex items-center justify-center text-center font-semibold" : ""}`}
           >
             {label}
           </button>
@@ -140,7 +140,16 @@ function ChoiceInput({
 function Block({ text, children }: { text: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-6">
-      <h2 className="text-2xl font-extrabold leading-8 tracking-tight">{text}</h2>
+      <h2 className="question">
+        {/[.?]$/.test(text) ? (
+          <>
+            {text.slice(0, -1)}
+            <span className="end">{text.slice(-1)}</span>
+          </>
+        ) : (
+          text
+        )}
+      </h2>
       {children}
     </div>
   );

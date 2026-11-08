@@ -85,7 +85,7 @@ export async function NarrativeCard({ narrative, title, fold }: { narrative: Nar
               <ul className="space-y-3">
                 {d.suggestedActions.map((a, i) => (
                   <li key={i} className="rounded-lg border border-line p-3">
-                    <div className="font-medium">{a.title}</div>
+                    <div className="font-semibold">{a.title}</div>
                     <p className="mt-0.5 text-[13px] text-muted">{a.why}</p>
                     <div className="mt-2 flex flex-wrap items-center gap-2">
                       {a.recommendationId !== null ? (
@@ -132,7 +132,7 @@ export async function ProposalsCard({ proposals, fold }: { proposals: (Parameter
       ) : (
         <FoldList visible={3} className="-my-1 divide-y divide-line" items={proposals.map((r) => (
             <li key={r.id} className="py-3">
-              <div className="mb-1 text-xs font-medium text-subtle">{t("an_ai_short")}</div>
+              <div className="mb-1 text-xs font-semibold text-subtle">{t("an_ai_short")}</div>
               <RecommendationBody r={r} />
               <div className="mt-2 flex flex-wrap gap-2">
                 <form action={discardRecommendationAction}>
@@ -232,16 +232,16 @@ export async function HeatmapCard({ map, selected, cellHref = segHref }: { map: 
               <caption className="sr-only">{t("an_heat_cap")}</caption>
               <thead>
                 <tr>
-                  <th scope="col" className="w-24 text-left text-xs font-medium text-subtle">{t("an_th_coll")}</th>
+                  <th scope="col" className="w-24 text-left text-xs font-semibold text-subtle">{t("an_th_coll")}</th>
                   {map.domains.map((d) => (
-                    <th key={d} scope="col" className="px-1 text-center text-[11px] leading-tight font-medium text-subtle">{domainLabel(d, lang)}</th>
+                    <th key={d} scope="col" className="px-1 text-center text-[11px] leading-tight font-semibold text-subtle">{domainLabel(d, lang)}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {map.collectives.map((col, ci) => (
                   <tr key={col}>
-                    <th scope="row" className="pr-2 text-left text-[13px] font-medium">{collectiveLabel(col, lang)}</th>
+                    <th scope="row" className="pr-2 text-left text-[13px] font-semibold">{collectiveLabel(col, lang)}</th>
                     {map.cells[ci].map((c) => {
                       const on = selected?.seg === c.collective && selected?.dom === c.domain;
                       return (
@@ -263,7 +263,7 @@ export async function HeatmapCard({ map, selected, cellHref = segHref }: { map: 
                   </tr>
                 ))}
                 <tr>
-                  <th scope="row" className="pr-2 pt-1 text-left text-xs font-medium text-subtle">{t("an_company")}</th>
+                  <th scope="row" className="pr-2 pt-1 text-left text-xs font-semibold text-subtle">{t("an_company")}</th>
                   {map.company.map((v, i) => (
                     <td key={i} className="num pt-1 text-center text-xs text-subtle">{v === null ? "—" : numD(v, lang, 1)}</td>
                   ))}
@@ -351,7 +351,7 @@ export async function ThemesCard({ groups }: { groups: ThemesByDomain }) {
                   <li key={th.label} className="flex flex-wrap items-start gap-x-3 gap-y-1 py-2.5">
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="font-medium">{th.label}</span>
+                        <span className="font-semibold">{th.label}</span>
                         {th.isNew && <span className="badge badge-accent">{t("an_new")}</span>}
                         {th.weak && <span className="badge badge-warn">{t("an_weak")}</span>}
                       </div>

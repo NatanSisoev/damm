@@ -169,7 +169,7 @@ function NeedItem({ n, draft, domainIdx, t, lang }: { n: NeedCard; draft?: Retur
           return (
             <div role="status" className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-warn px-3 py-2 text-sm">
               <div>
-                <p className="font-medium text-warn">{t("part_low_title")}</p>
+                <p className="font-semibold text-warn">{t("part_low_title")}</p>
                 <p className="mt-0.5">{part.pct == null ? t("part_low_few", { min: MIN_GROUP_SIZE }) : t("part_low_pct", { pct: part.pct, limit: LOW_PARTICIPATION_PCT })}</p>
               </div>
               <form action={remindNeedAction}>
@@ -186,7 +186,7 @@ function NeedItem({ n, draft, domainIdx, t, lang }: { n: NeedCard; draft?: Retur
 
         {n.approved.length > 0 && (
           <div>
-            <h3 className="mb-2 text-sm font-medium">
+            <h3 className="mb-2 text-sm font-semibold">
               {t("need_approved_qs")} <span className="num text-subtle">{n.approved.length}{n.nDraft > 0 ? ` · ${t("need_to_review", { n: n.nDraft })}` : ""}</span>
             </h3>
             <ul className="hr-qlist">

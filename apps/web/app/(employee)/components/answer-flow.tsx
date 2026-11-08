@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { EarSymbol } from "../../wordmark";
 import { useEffect, useRef, useState } from "react";
 import { MIN_GROUP_SIZE, type PoolCampaign, type PoolNextResponse, type PostResponsesRequest } from "@damm/shared";
 import { useT } from "@/lib/i18n/client";
@@ -251,7 +252,8 @@ export function AnswerFlow({ compteId }: { compteId: string }) {
     return (
       <div>
         <section className="border-b border-line pb-6 pt-4">
-          <h2 className="page-title">{t("thanks")}</h2>
+          <EarSymbol pulse className="mb-4" />
+          <h2 className="display">{t("thanks")}</h2>
           <p className="mt-3 max-w-sm text-muted">
             {dailyCount > 0 || (answeredAny && !campaignDone)
               ? dailyCount === 1

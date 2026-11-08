@@ -31,7 +31,7 @@ export async function EmployeeShell({
             </Link>
           ) : (
             <Link href="/" className="flex h-11 items-center">
-              <Wordmark className="text-lg" />
+              <Wordmark className="h-6" />
             </Link>
           )}
           {title ? (

@@ -38,7 +38,7 @@ export async function HrShell({ children, subtitle, manager = false, badges, rol
         <header className="hr-bar">
           <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-8 px-4 md:px-8">
             <Link href="/manager" className="flex h-12 items-center gap-3">
-              <Wordmark className="text-[15px]" />
+              <Wordmark className="h-5" />
               <span className="border-l border-line pl-3 text-[11px] text-subtle">{subtitle}</span>
             </Link>
             <nav aria-label={t("sections")} className="ml-auto flex items-center gap-4">
@@ -62,7 +62,7 @@ export async function HrShell({ children, subtitle, manager = false, badges, rol
         subtitle={subtitle}
         logo={
           <Link href="/hr" aria-label={t("logo_aria")} className="flex items-center">
-            <Wordmark className="text-[15px]" />
+            <Wordmark className="h-5" />
           </Link>
         }
       />

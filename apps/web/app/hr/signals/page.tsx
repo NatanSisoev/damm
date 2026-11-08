@@ -165,7 +165,7 @@ export default async function AlarmsPage({ searchParams }: { searchParams: Promi
             <span className="text-subtle">{t("sg_none_view")}</span>
           ) : (
             critical > 0 ? (
-              <Link href={criticalHref} className="font-medium text-accent hover:underline">
+              <Link href={criticalHref} className="font-semibold text-accent hover:underline">
                 {t("sg_critical", { n: critical })} →
               </Link>
             ) : (
