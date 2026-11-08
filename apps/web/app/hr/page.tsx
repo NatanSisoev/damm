@@ -37,7 +37,9 @@ export const generateMetadata = pageTitle("hr_home");
 
 export const dynamic = "force-dynamic";
 
-type Params = { r?: string; from?: string; to?: string; c?: string; dom?: string; actualitzat?: string };
+const MAX_CMP = 3;
+
+type Params = { r?: string; from?: string; to?: string; c?: string; dom?: string; cmp?: string; actualitzat?: string };
 
 const NOTICE_KEY = { ok: "notice_ok", "sense-llm": "notice_no_llm", ocupat: "notice_busy", fallada: "notice_failed" } as const;
 
@@ -77,10 +79,28 @@ export default async function HrDashboard({ searchParams }: { searchParams: Prom
   const axes = overall ? overall.rows.map((r) => r.domini) : [];
   const vals = (sc: typeof overall) => (sc ? sc.rows.map((r) => r.cells[0]?.mitjana ?? null) : []);
   const label = col ? collectiveLabel(col.nom, lang) : tr("rs_all");
+  // Comparison: the company and the collectives other than the one shown, up to MAX_CMP. Each entity keeps its own colour token.
+  const COMPANY = "Tots";
+  const shownKey = col?.nom ?? COMPANY;
+  const entities = [{ key: COMPANY, id: null as number | null, color: "var(--co-1)", label: tr("rs_all") }, ...collectius.map((c, i) => ({ key: c.nom, id: c.id as number | null, color: `var(--co-${i + 2})`, label: collectiveLabel(c.nom, lang) }))];
+  const options = entities.filter((e) => e.key !== shownKey);
+  const selected = [...new Set((q.cmp ?? "").split(",").filter(Boolean))].filter((k) => options.some((o) => o.key === k)).slice(0, MAX_CMP);
+  const comparing = selected.length > 0;
+  const shownColor = entities.find((e) => e.key === shownKey)?.color ?? "var(--co-1)";
+  const cmpSeries: RadarSeries[] = selected.flatMap((k) => {
+    const e = options.find((o) => o.key === k)!;
+    const sc = (e.id === null ? everyone : getWindowTrends({ ...win, bucket: "all" }, e.id)).series[0];
+    return sc ? [{ label: e.label, values: vals(sc), color: e.color }] : [];
+  });
+  const cmpHref = (key: string) => {
+    const next = selected.includes(key) ? selected.filter((k) => k !== key) : [...selected, key];
+    return href({ cmp: next.length ? next.join(",") : undefined });
+  };
   const radarSeries: RadarSeries[] = overall
     ? [
-        { label: `${label} · ${t("dash_now")}`, values: vals(overall), color: "var(--co-1)" },
-        ...(overallPrev ? [{ label: `${label} · ${t("dash_before")}`, values: vals(overallPrev), color: "var(--co-1)", dashed: true } as RadarSeries] : []),
+        { label: comparing ? label : `${label} · ${t("dash_now")}`, values: vals(overall), color: shownColor },
+        ...cmpSeries,
+        ...(!comparing && overallPrev ? [{ label: `${label} · ${t("dash_before")}`, values: vals(overallPrev), color: shownColor, dashed: true } as RadarSeries] : []),
       ]
     : [];
   const hasData = !!overall && overall.rows.some((r) => r.cells[0]?.mitjana != null);
@@ -114,7 +134,7 @@ export default async function HrDashboard({ searchParams }: { searchParams: Prom
 
   const href = (over: Partial<Params>) => {
     const p = new URLSearchParams();
-    const merged: Params = { dom: q.dom, r: q.from && q.to ? undefined : range.key === "custom" ? undefined : range.key, from: q.from, to: q.to, c: col?.nom, ...over };
+    const merged: Params = { dom: q.dom, r: q.from && q.to ? undefined : range.key === "custom" ? undefined : range.key, from: q.from, to: q.to, c: col?.nom, cmp: q.cmp, ...over };
     for (const [k, v] of Object.entries(merged)) if (v && k !== "actualitzat") p.set(k, v);
     const s = p.toString();
     return s ? `/hr?${s}` : "/hr";
@@ -209,6 +229,26 @@ export default async function HrDashboard({ searchParams }: { searchParams: Prom
 
         {/* 1. Profile by domain */}
         <Card title={tr("rs_profile")} meta={<span className="num">{prevWin ? t("dash_prof_vs") : t("dash_prof_full")}</span>}>
+          {hasData && options.length > 0 && (
+            <div role="group" aria-label={t("cmp_label")} className="mb-4 flex flex-wrap items-center gap-2">
+              <span className="text-[13px] text-subtle">{t("cmp_label")}</span>
+              {options.map((o) => {
+                const on = selected.includes(o.key);
+                const full = !on && selected.length >= MAX_CMP;
+                const inner = (
+                  <>
+                    <span className="hr-chip-dot" style={{ background: o.color }} aria-hidden />
+                    {o.label}
+                  </>
+                );
+                return full ? (
+                  <span key={o.key} className="hr-chip" aria-disabled="true" title={t("cmp_max", { n: MAX_CMP })}>{inner}</span>
+                ) : (
+                  <Link key={o.key} href={cmpHref(o.key)} scroll={false} className="hr-chip" aria-pressed={on}>{inner}</Link>
+                );
+              })}
+            </div>
+          )}
           {radarSeries.length && hasData ? <Radar axes={axes} series={radarSeries} /> : <Empty>{tr("rs_nodata")}</Empty>}
         </Card>
 

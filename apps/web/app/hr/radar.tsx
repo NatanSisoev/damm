@@ -4,7 +4,7 @@ import { hrResultsDict } from "@/lib/i18n/hr-results";
 import { domainLabel } from "@/lib/i18n/names";
 import { numD } from "@/lib/i18n/num";
 
-// Domain radar: fixed axis order, at most 2 series. The scale adapts to the data
+// Domain radar: fixed axis order, up to 4 series (the shown selection plus up to 3 comparisons). The scale adapts to the data
 // (never narrower than 1 point, always inside 1-5) and is labelled, so small changes stay visible.
 // A suppressed value (n<10) is a gap in the shape, never drawn as 0.
 
@@ -109,7 +109,7 @@ export async function Radar({ axes, series }: { axes: string[]; series: RadarSer
   const rings = sc.rings;
   return (
     <figure className="space-y-3">
-      <div className="flex flex-wrap gap-4 text-[13px] text-muted">
+      <div className="flex flex-wrap gap-x-4 gap-y-2 text-[13px] text-ink">
         {series.map((s) => (
           <span key={s.label} className="flex items-center gap-2">
             <span
