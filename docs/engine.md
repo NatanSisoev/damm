@@ -88,7 +88,7 @@ All six domains stay active. A day is **exactly `questions_per_day` (3) items of
 
 ### Format choice by Thompson sampling
 
-For each (collective, shift, format) keep `Beta(α, β)` (`format_stats`). Reward = a *good answer*: answer time ≥ `min_answer_ms` (1500 ms). Answers without `answer_ms` do not update the arm. (Planned: also flag the same raw value across a whole batch.) Per decision, for each eligible format f draw `θ_f ~ Beta(α_f, β_f)` and pick `argmax θ_f · pref(collective, f)`, where `pref` comes from `format_preference` (HR; 0 = banned, default 1).
+For each (collective, shift, format) keep `Beta(α, β)` (`format_stats`). Reward = a *good answer*: answer time ≥ `min_answer_ms` (1500 ms). Answers without `answer_ms` do not update the arm. (Planned: also flag the same raw value across a whole batch.) Per decision, for each eligible format f draw `θ_f ~ Beta(α_f, β_f)` and pick f at random with probability `0.1 + (1 − 0.1·n) · θ_f·pref_f / Σ θ·pref` over the n allowed formats (floor lowered to 1/n when n > 10), where `pref` comes from `format_preference` (HR; 0 = banned, default 1). The weight is a lean, not a ranking: 3 vs 1 shows the first format about three times as often, and every allowed format keeps at least a 10% share.
 
 Example: HR sets Fàbriques to yes_no 3, scale5 2, pair 1, ranking 0. The engine never shows rankings in Fàbriques and leans to yes/no, but if night shift turns out to answer `scale5` carefully and rush through yes/no, the Beta for yes_no drops and `scale5` wins more often. Formats with little data have wide Betas and still get tried.
 
