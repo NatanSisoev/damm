@@ -1,5 +1,7 @@
 # Visual identity: "Paper"
 
+> **Superseded in part by [`style-guide.md`](style-guide.md) (2026-11-08):** new name "Give a Damm", ear logo and title files in `docs/brand/`, red primary buttons, and revised tokens. Read that first. This file stays as the record of what the code does today.
+
 Decided by Jan on 2026-11-07 (option C of three: Llúpol, Mediterrània, Paper). One look for the employee PWA, the HR dashboard and the manager view. Status: **implemented 2026-11-07 on `jan/paper-identity`** (see "What changed in code" at the end).
 
 Idea: ink on paper. Text first, thin rules, no decoration. Red is a signal, never a fill for decoration. It reads as a serious internal people tool, which supports the anonymity message.
