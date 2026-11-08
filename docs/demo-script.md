@@ -107,7 +107,7 @@ Setup on the server (Railway service `web`, branch `main`):
 railway variables --set DEMO_LIVE_JOB=1 DEMO_RESET_ENABLED=1
 ```
 
-Plus the VAPID keys and HTTPS (already needed for push). Both flags are off by default. Leave `DEMO_TRIPWIRE` unset for plan A.
+Plus the VAPID keys and HTTPS (already needed for push). Both flags are off by default.
 
 Before going on stage:
 
@@ -119,4 +119,4 @@ Live: answer **1** (or 2). The job starts 1.5 s after the answer, takes about 1.
 
 Check on the scratch DB without a server: `node --experimental-strip-types --experimental-sqlite --no-warnings packages/engine/demo/live-check.ts --db <copy of data/app.db>` runs a low, a neutral and a high answer on a copy and exits non-zero if the low one does not trip the segment or the others do. Run it after any change to the demo build.
 
-**Plan B, a staged alarm (`DEMO_TRIPWIRE=1`).** Use it if the live job or the data misbehave. Set `DEMO_TRIPWIRE=1` (plus the VAPID keys, and HTTPS) on the server. On the laptop, open `/hr/settings` and turn on alarm push. On the phone, answer a scale question with a low value (1 or 2 of 5, up to 4 of 10, "no" on yes/no). Within a second or two the laptop gets a critical "Condicions i organització · Logística" push opening the signal. It is a **staged** demo alarm, not an engine result: its description starts with "Demo:", it uses the aggregate of a fixed segment (`DEMO_TRIPWIRE_COLLECTIVE` / `DEMO_TRIPWIRE_DOMAIN`, default Logística · Condicions i organització) only when that segment already has n >= 10, never reads or stores who answered, fires at most once every 20 s, and closes the previous demo alarm. Say so if asked. Leave the variable unset outside demos.
+**Staged fallback (same flag, `DEMO_LIVE_JOB=1`).** When the engine job finds no new alarm for an answer (for example a phone in Fàbriques, Logística or Oficines, or a non-low answer in Comercial), a staged critical `sharp_drop` is opened on the **answerer's own collective** and the **domain of the question just answered**, then pushed to HR. Its description starts with "Demo:" and it only fires when the segment has n >= 10. To make the graph show a drop, the latest period's aggregate score of that segment is lowered to 1.2 points under the previous period in the DB (demo data only; the next job run recomputes it from the answers, and "Restaura la demo" restores the snapshot), and the real period scores are written into the alarm text. Only the collective and domain are used, no account id is stored. At most one staged alarm per 5 s, and the previous one is closed. Say so if asked.
