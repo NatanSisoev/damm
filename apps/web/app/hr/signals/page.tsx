@@ -135,12 +135,12 @@ export default async function AlarmsPage({ searchParams }: { searchParams: Promi
   const grouped = [...groups.entries()].sort((a, b) => order(a[1][0], b[1][0]));
   good.sort(order);
 
-  const severe = actionable.filter((r) => r.severity !== "info").length;
-  // The "N are warnings or critical" count links to the same view filtered to those alarms.
-  const severeHref = (() => {
+  const critical = actionable.filter((r) => r.severity === "critical").length;
+  // "N critical" links to the same view filtered to critical alarms.
+  const criticalHref = (() => {
     const qs = new URLSearchParams();
     for (const [k, v] of Object.entries(sp)) if (v && k !== "gravetat") qs.set(k, v);
-    qs.set("gravetat", "greu");
+    qs.set("gravetat", "critical");
     return `/hr/signals?${qs}`;
   })();
 
@@ -164,13 +164,12 @@ export default async function AlarmsPage({ searchParams }: { searchParams: Promi
           {actionable.length === 0 ? (
             <span className="text-subtle">{t("sg_none_view")}</span>
           ) : (
-            severe > 0 && severe < actionable.length ? (
-              <Link href={severeHref} className="group" title={ts("sev_severe")}>
-                <strong className="underline decoration-1 underline-offset-2 group-hover:decoration-2">{t(actionable.length === 1 ? "sg_need_one" : "sg_need_many", { n: actionable.length })}</strong>
-                <span className="text-subtle group-hover:text-ink"> · {t(severe === 1 ? "sg_sev_one" : "sg_sev_many", { n: severe })} →</span>
+            critical > 0 ? (
+              <Link href={criticalHref} className="font-medium text-accent hover:underline">
+                {t("sg_critical", { n: critical })} →
               </Link>
             ) : (
-              <strong>{t(actionable.length === 1 ? "sg_need_one" : "sg_need_many", { n: actionable.length })}</strong>
+              <span className="text-subtle">{t("sg_no_critical")}</span>
             )
           )}
         </p>
