@@ -6,7 +6,7 @@ import { draftSurvey, redraftQuestion } from "@damm/ai";
 import { DEFAULT_QUESTION_COUNT, QUESTION_COUNT_OPTIONS, type QueryDelivery } from "@damm/shared";
 import {
   approveQuestion, getRedraftContext, listCollectius, listNeedCards, moveDraft, replaceDraft, saveDraftSurvey, updateNeedHeader, approveRecommendation, createNecessitat, discardQuestion,
-  discardRecommendation, publishNecessitat, updateDraftText, closeNecessitat, setSignalStatus, setAlarmArchived, reopenDismissedAlarm,
+  discardRecommendation, publishNecessitat, updateDraftText, closeNecessitat, setSignalStatus, setAlarmArchived, reopenClosedAlarm,
 } from "@damm/db/hr";
 import { createDraftedFollowUp } from "./follow-up";
 import { changeAlarmStatus, hrSetQuestionActive, type AlarmStatus } from "@/lib/hr-engine";
@@ -157,9 +157,9 @@ export async function archiveAlarmAction(formData: FormData) {
   revalidatePath("/hr", "layout");
 }
 
-/** A dismissed alarm turned out to matter: reopen it. */
+/** A resolved alarm came back or a dismissed one turned out to matter: reopen it. */
 export async function reopenAlarmAction(formData: FormData) {
-  reopenDismissedAlarm(Number(formData.get("id")));
+  reopenClosedAlarm(Number(formData.get("id")));
   revalidatePath("/hr", "layout");
 }
 

@@ -304,12 +304,10 @@ function AlarmItem({ t, lang, r, rec, drafted, archived }: { t: HrResultsT; lang
         </div>
       {r.status === "resolved" || r.status === "dismissed" ? (
       <div className="ml-auto flex shrink-0 items-center gap-2">
-        {r.status === "dismissed" && (
-          <form action={reopenAlarmAction}>
-            <input type="hidden" name="id" value={r.id} />
-            <button className="btn" type="submit">{t("sg_reopen")}</button>
-          </form>
-        )}
+        <form action={reopenAlarmAction}>
+          <input type="hidden" name="id" value={r.id} />
+          <button className="btn" type="submit">{t("sg_reopen")}</button>
+        </form>
         <form action={archiveAlarmAction}>
           <input type="hidden" name="id" value={r.id} />
           <input type="hidden" name="archive" value={archived ? "0" : "1"} />

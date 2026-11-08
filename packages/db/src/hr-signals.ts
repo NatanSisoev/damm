@@ -255,7 +255,7 @@ export function setAlarmArchived(id: number, archived: boolean): void {
     .run(id);
 }
 
-/** Reopen a dismissed alarm: back to open, out of the archive. */
-export function reopenDismissedAlarm(id: number): void {
-  getDb().prepare("UPDATE senyal SET status = 'open', archived_at = NULL WHERE id = ? AND status = 'dismissed'").run(id);
+/** Reopen a resolved or dismissed alarm: back to open, out of the archive. */
+export function reopenClosedAlarm(id: number): void {
+  getDb().prepare("UPDATE senyal SET status = 'open', archived_at = NULL WHERE id = ? AND status IN ('resolved', 'dismissed')").run(id);
 }
