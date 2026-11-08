@@ -115,7 +115,7 @@
 .alarm-icon-btn:focus-visible { opacity: 1; outline: 2px solid currentColor; outline-offset: 1px; }
 
 /* Alarms: foldable group per collective */
-.alarm-group > summary { list-style: none; }
+.alarm-group > summary { list-style: none; align-items: center; padding-top: 12px; padding-bottom: 12px; height: auto; }
 .alarm-group > summary::-webkit-details-marker { display: none; }
 .alarm-group-chev { transition: transform 120ms; }
 .alarm-group[open] .alarm-group-chev { transform: rotate(90deg); }
