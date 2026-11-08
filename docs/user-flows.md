@@ -255,7 +255,7 @@ Preconditions: GATE-ON and logged in, LLM-ON (LLM-OFF is branch B1).
 |---|---|---|
 | 1 | `/hr/needs` → press "+ Nova consulta" (header button; with no needs the empty state has "Crea la primera consulta"), which opens `/hr/needs/new` ("Nova consulta", with "Torna a les consultes" back to the list). Optionally press an example (for instance "B · Logística des del mòbil"). | Fields "Objectiu", "Context", "Què no s'ha de preguntar", "Col·lectiu" (all or one), "Preguntes per persona" (2 to 6, default 3) and "Com es lliura" (Diària or Campanya puntual). |
 | 2 | Fill an objective of 15+ characters, a number of questions (default 3) and a delivery mode, press "Genera els esborranys". | Button "Generant…" and text "La IA està redactant les preguntes…". |
-| 3 | Wait | Redirect to `/hr/needs`. A card in state "Esborrany" with badge "Proposta de la IA" appears. |
+| 3 | Wait | Redirect to `/hr/needs/new?draft=<id>` ("Revisa les preguntes", back link "Torna a les consultes"). The AI-proposed questions are reviewed there (edit, regenerate, discard, approve), with badge "Proposta de la IA". When no draft is left, the page says so and offers "Ves a les consultes" and "Escriu una altra consulta". The same draft also shows as an "Esborrany" card on `/hr/needs`, where it can be reviewed too. |
 
 DB effect: one `necessitat` row (`estat = 'oberta'`, `text_nl`, `collectiu_id` or NULL, `question_count`, `delivery`, `context`, `exclusions`) and its `pregunta` rows with `estat = 'draft'`, `generada_per_ia` = 1, ordered by `ordre`. Nothing is `aprovada`. The need row is written only after drafting succeeds, so a failure leaves no orphan.
 

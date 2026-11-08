@@ -34,33 +34,39 @@ export async function createNeedAction(_prev: NeedFormState, formData: FormData)
   const context = String(formData.get("context") ?? "").trim();
   const exclusions = String(formData.get("exclusions") ?? "").trim();
   const collectiuId = c > 0 ? c : null;
+  let id: number;
   try {
     const collective = collectiuId ? listCollectius().find((x) => x.id === collectiuId)?.nom ?? null : null;
     // AI proposes: drafts only, nothing is approved here. Draft first so a failure leaves no orphan need to retry over.
     const survey = await draftSurvey({ objective: textNl, context, exclusions, collective, questionCount });
-    const id = createNecessitat({ textNl, collectiuId, questionCount, delivery, context, exclusions });
+    id = createNecessitat({ textNl, collectiuId, questionCount, delivery, context, exclusions });
     saveDraftSurvey(id, survey);
   } catch (err) {
     console.error("createNeedAction", err);
     return { error: t("need_err_failed") };
   }
-  redirect("/hr/review");
+  redirect(`/hr/needs/new?draft=${id}`);
 }
 
 export async function moveDraftAction(formData: FormData) {
   moveDraft(Number(formData.get("id")), formData.get("dir") === "up" ? "up" : "down");
   revalidatePath("/hr/review");
   revalidatePath("/hr/needs");
+  revalidatePath("/hr/needs/new");
 }
 
 export async function regenerateQuestionAction(formData: FormData) {
   const id = Number(formData.get("id"));
   const ctx = getRedraftContext(id);
   const r = ctx ? await redraftQuestion(ctx.need, ctx.current as never, ctx.others as never) : null;
-  if (!r) redirect(`/hr/needs?regenError=${id}`);
+  // The preview lives on the new-query page right after creating; the list also shows drafts. Come back to where the click happened.
+  const back = String(formData.get("back") ?? "");
+  const base = back === "/hr/needs/new" ? `/hr/needs/new?draft=${Number(formData.get("need")) || ""}&` : "/hr/needs?";
+  if (!r) redirect(`${base}regenError=${id}`);
   replaceDraft(id, r.question, r.source === "llm", HR_USER);
   revalidatePath("/hr/review");
   revalidatePath("/hr/needs");
+  revalidatePath("/hr/needs/new");
 }
 
 export async function editNeedHeaderAction(formData: FormData) {
@@ -69,6 +75,7 @@ export async function editNeedHeaderAction(formData: FormData) {
   if (titol) updateNeedHeader(Number(formData.get("id")), titol, intro);
   revalidatePath("/hr/review");
   revalidatePath("/hr/needs");
+  revalidatePath("/hr/needs/new");
 }
 
 /** Makes sure a question has es and en wording before it enters the pool. Never throws: a failed call leaves the Catalan text, which readers fall back to. */
@@ -92,12 +99,14 @@ export async function approveQuestionAction(formData: FormData) {
   invalidateHrPool();
   revalidatePath("/hr/review");
   revalidatePath("/hr/needs");
+  revalidatePath("/hr/needs/new");
 }
 
 export async function removeFollowupAction(formData: FormData) {
   removeDraftFollowup(Number(formData.get("id")), HR_USER);
   revalidatePath("/hr/review");
   revalidatePath("/hr/needs");
+  revalidatePath("/hr/needs/new");
 }
 
 export async function discardQuestionAction(formData: FormData) {
@@ -105,6 +114,7 @@ export async function discardQuestionAction(formData: FormData) {
   invalidateHrPool();
   revalidatePath("/hr/review");
   revalidatePath("/hr/needs");
+  revalidatePath("/hr/needs/new");
 }
 
 export async function editQuestionAction(formData: FormData) {
@@ -113,6 +123,7 @@ export async function editQuestionAction(formData: FormData) {
   // The review screen re-runs the wording check (questionWarnings) on the saved text, so warnings show right after saving.
   revalidatePath("/hr/review");
   revalidatePath("/hr/needs");
+  revalidatePath("/hr/needs/new");
 }
 
 /**
