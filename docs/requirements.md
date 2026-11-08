@@ -67,7 +67,7 @@ G-§4 is the authoritative list ("Tots els equips han de cobrir aquest recorregu
 | R-FLOW-1a | HR describes the objective in natural language | done | `/hr/needs`, `text_nl` |
 | R-FLOW-1b | Target collective | done | Collective select, or "Tots" |
 | R-FLOW-1c | Context | done | Separate optional field in `apps/web/app/hr/needs/need-form.tsx` (`context` textarea, with examples), stored in `necessitat.context`, passed to the AI prompt (`packages/ai/src/index.ts`). |
-| R-FLOW-1d | Maximum duration | done | `durada_max_s`, default 120 s |
+| R-FLOW-1d | Questions per person and delivery mode | done | Replaces the maximum duration. `necessitat.question_count` (2-6, default 3) and `necessitat.delivery` (`daily` or `campaign`) in `need-form.tsx`; AI drafts exactly N; campaign queries are a one-off extra set served by `GET /api/pool/next` (`campaign` field). `durada_max_s` stays optional for follow-ups. |
 | R-FLOW-1e | **What must not be asked** ("què no s'ha de preguntar") | done | Optional "exclusions" field in `need-form.tsx`, stored in `necessitat.exclusions`, sent to the AI prompt (`packages/ai/src/index.ts`), enforced on drafts (`violatesExclusions`, `packages/ai/src/exclusions.ts`) and flagged by the quality checker (`packages/ai/src/quality.ts`). |
 
 ### R-FLOW-2 Generate the survey with AI
@@ -78,7 +78,7 @@ G-§4 is the authoritative list ("Tots els equips han de cobrir aquest recorregu
 | R-FLOW-2c | **3 to 6 questions** | done | LLM drafts from the need, context and exclusions; template fallback flagged "Plantilla de reserva". Quality eval in progress (`need-ai-quality` branch). |
 | R-FLOW-2d | **Answer type** per question | done | The AI picks among `scale5`, `scale10`, `yes_no`, `ranking`, `open` (C2 English types); scale questions carry their own end labels. |
 | R-FLOW-2e | **Conditional logic** | missing | Not in the schema or the UI. Minimal version: "if score ≤ 2, ask the open follow-up". |
-| R-FLOW-2f | **Estimated time** | done | `estimateSeconds` per question and per draft; review warns when it exceeds R-FLOW-1d. |
+| R-FLOW-2f | **Estimated time** | done | `estimateSeconds` per question and per draft; review warns when it exceeds the optional per-person time limit (`durada_max_s`). |
 | R-FLOW-2g | Adapted to the collective in **tone, length and channel** | partial | The prompt takes the collective and a warm tone; channel adaptation not done. |
 
 ### R-FLOW-3 Human validation
