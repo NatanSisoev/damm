@@ -98,7 +98,7 @@ export default async function ResultsPage({ searchParams }: { searchParams: Prom
   const { t, lang } = await getTL(hrResultsDict);
   const rep = getRepresentativeness();
   const trends = getTrends();
-  const themes = listThemes();
+  const themes = listThemes({ lang });
   const counts = accountCounts();
   const insights = hrInsights({ role: "hr" }, { kind: ["top_mover", "polarisation", "importance_gap", "trajectory_mix", "followup_confirmation", "segment_gap"] }).slice(0, 12);
   const [overall, ...perCollective] = trends.series;
@@ -114,8 +114,8 @@ export default async function ResultsPage({ searchParams }: { searchParams: Prom
   const segValid = seg && heatmap.collectives.includes(seg) ? seg : undefined;
   const domValid = dom && heatmap.domains.includes(dom) ? dom : undefined;
   const segmentTrend = getSegmentTrend(segValid, domValid);
-  const companyNarrative = getNarrative("All");
-  const segNarrative = segValid ? getNarrative(segValid) : null;
+  const companyNarrative = getNarrative("All", lang);
+  const segNarrative = segValid ? getNarrative(segValid, lang) : null;
 
   return (
     <>
@@ -137,10 +137,10 @@ export default async function ResultsPage({ searchParams }: { searchParams: Prom
         <SegmentTrendCard trend={segmentTrend} />
         {segValid && <NarrativeCard narrative={segNarrative} title={t("rs_narr_seg", { seg: collectiveLabel(segValid, lang) })} />}
         <div className="grid gap-6 xl:grid-cols-2">
-          <ThemesCard groups={getThemesByDomain(heatmap.domains)} />
+          <ThemesCard groups={getThemesByDomain(heatmap.domains, lang)} />
           <div className="space-y-6">
             <ReachCard gaps={getReachGaps()} />
-            <ProposalsCard proposals={getProposals()} />
+            <ProposalsCard proposals={getProposals(lang)} />
           </div>
         </div>
       </div>

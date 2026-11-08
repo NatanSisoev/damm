@@ -155,6 +155,18 @@ CREATE TABLE tema (
   font         TEXT NOT NULL DEFAULT 'seed' CHECK (font IN ('seed','rules','llm'))
 );
 
+-- Translations of generated text (HR side, not question text: that lives in pregunta.text_i18n).
+-- Catalan stays canonical in the source column; a missing row falls back to it.
+-- entitat: 'tema' | 'recomanacio' | 'necessitat' | 'senyal'; camp: the source column name.
+CREATE TABLE IF NOT EXISTS traduccio (
+  entitat     TEXT NOT NULL,
+  entitat_id  INTEGER NOT NULL,
+  camp        TEXT NOT NULL,
+  lang        TEXT NOT NULL CHECK (lang IN ('ca','es','en')),
+  text        TEXT NOT NULL,
+  PRIMARY KEY (entitat, entitat_id, camp, lang)
+);
+
 CREATE TABLE comentari_tema (
   resposta_id  INTEGER NOT NULL REFERENCES resposta(id),
   tema_id      INTEGER NOT NULL REFERENCES tema(id),

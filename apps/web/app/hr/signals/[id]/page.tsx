@@ -119,7 +119,7 @@ export default async function SignalPage({ params, searchParams }: { params: Pro
   const { id } = await params;
   const { t, lang } = await getTL(hrResultsDict);
   const { probeError } = await searchParams;
-  const detail = Number.isInteger(Number(id)) ? getSignalDetail(Number(id)) : null;
+  const detail = Number.isInteger(Number(id)) ? getSignalDetail(Number(id), lang) : null;
   if (!detail) notFound();
   const { signal, periodes, trend, trendScope, themes, hiddenThemes, recommendations, followUps, timeline } = detail;
   const probes = hrListProbes(signal.id);

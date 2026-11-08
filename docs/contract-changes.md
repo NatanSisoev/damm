@@ -386,3 +386,19 @@ The employee app now shows scale10 questions as 1 to 10 (two rows of 5). It neve
 Action items:
 - [x] Jan: answer UI, HR type label. (done 2026-11-08)
 - [ ] Natan: in `packages/engine` set `SCALES.scale10` to `{ min: 1, max: 10 }` and score scale10 as `(v - 1) / 9` in `normalize.ts` (keep accepting 0 for old rows, clamped to 0), and generate 1..10 in the demo/sim answers.
+
+
+## 2026-11-08: Demo DB build, `traduccio` overlay for generated text (N-6, R-FLOW-5) (Jan)
+
+Additive and backward compatible. Catalan stays canonical in the source column; a missing row falls back to Catalan.
+
+- `traduccio(entitat, entitat_id, camp, lang, text)` (new table, PK on the first four): es/en overrides for generated HR text. Entities: `tema` (etiqueta, resum), `recomanacio` (text, titol, iniciativa, responsable_suggerit, termini_suggerit, justificacio, limits), `necessitat` (text_nl, titol, intro), `senyal` (descripcio). Read through `overlayTranslations` in `packages/db/src/hr-i18n.ts`; the HR repository and the HR/manager pages pass the request language. A DB without the table works (fallback).
+- Narrative insights may carry `detail.i18n.{es,en}.{summary,highlights[]}`; `getNarrative(collective, lang)` in `apps/web/app/hr/analytics.ts` applies it.
+- Engine hooks, no behaviour change when unused: `buildDemo` options `participation` (per `collectiuId:tornId` account share) and `commentPools` (comment language per account); `sim/world.ts` takes the participation override.
+- Engine health check: the "daily batches" check stays strict (at most the daily cap per person per day, needs included, C23). The looser variant from the demo-db branch was dropped.
+- `pnpm demo-db` builds the one demo DB (`data/demo.db`): 3 months (Aug-Oct 2026), 638 accounts in 4 collectives, 6 domains, every segment n >= 10, nothing suppressed, ca/es/en content. See `AGENTS.md`.
+
+Action items:
+- [ ] Natan: review the two engine hooks (`sim/world.ts`, `demo/build-demo.ts`); keep them or move them where you prefer.
+- [ ] Natan (optional): when the engine writes themes, recommendations or signal text, also write es/en rows to `traduccio` (or store keys instead of sentences).
+- [x] Jan: schema, overlay, HR/manager pages, build script. (done 2026-11-08)

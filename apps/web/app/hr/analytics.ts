@@ -1,6 +1,6 @@
 // Data assembly for the insights-first HR pages. Reads only HR-safe aggregates:
 // @damm/db/hr (trends, representativeness, themes, recommendations) and the engine's insight read API.
-import { MIN_GROUP_SIZE } from "@damm/shared";
+import { MIN_GROUP_SIZE, type Lang } from "@damm/shared";
 import { shownCount, getRepresentativeness, getTrends, listRecommendations, listThemes, type TrendCell } from "@damm/db/hr";
 import { hrInsights, type InsightView } from "@/lib/hr-engine";
 
@@ -21,18 +21,23 @@ export const segHref = (collective: string | null, domain: string | null) => {
 export type NarrativeView = Extract<InsightView, { kind: "narrative" }>;
 
 /** Latest non-suppressed engine narrative for a collective ("All" = company-wide), or null. */
-export function getNarrative(collective: string = "All"): NarrativeView | null {
+export function getNarrative(collective: string = "All", lang?: Lang): NarrativeView | null {
   const rows = hrInsights({ role: "hr" }, { kind: "narrative" }).filter(
     (i): i is NarrativeView => i.kind === "narrative" && !i.suppressed && !!i.detail && i.detail.labels.collective === collective,
   );
   rows.sort((a, b) => b.periode.localeCompare(a.periode) || b.id - a.id);
-  return rows[0] ?? null;
+  const top = rows[0];
+  if (!top?.detail || !lang || lang === "ca") return top ?? null;
+  // Demo/seeded narratives carry es/en text in detail.i18n; LLM-written ones are single-language.
+  const tr = (top.detail as { i18n?: Record<string, { summary: string; highlights: { text: string; evidence: string }[] }> }).i18n?.[lang];
+  if (!tr) return top;
+  return { ...top, detail: { ...top.detail, summary: tr.summary, highlights: top.detail.highlights.map((h, i) => ({ ...h, ...(tr.highlights[i] ?? {}) })) } };
 }
 
 // ---------- proposals ----------
 
-export function getProposals() {
-  return listRecommendations().filter((r) => r.estat === "proposada");
+export function getProposals(lang?: Lang) {
+  return listRecommendations(lang).filter((r) => r.estat === "proposada");
 }
 
 // ---------- headlines ----------
@@ -252,8 +257,8 @@ export type ThemeCard = {
 
 export type ThemesByDomain = { domain: string | null; themes: ThemeCard[] }[];
 
-export function getThemesByDomain(domains: string[]): ThemesByDomain {
-  const rows = listThemes().filter((t) => !t.suprimit && t.etiqueta);
+export function getThemesByDomain(domains: string[], lang?: Lang): ThemesByDomain {
+  const rows = listThemes({ lang }).filter((t) => !t.suprimit && t.etiqueta);
   const periodes = [...new Set(rows.map((t) => t.periode))].sort();
   const totals = new Map(periodes.map((p) => [p, rows.filter((t) => t.periode === p).reduce((a, t) => a + (t.n ?? 0), 0)]));
   const byLabel = new Map<string, typeof rows>();

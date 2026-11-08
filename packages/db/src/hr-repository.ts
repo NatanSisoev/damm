@@ -1,8 +1,9 @@
 // HR-side data access. The only repository HR routes may import.
 // Reads aggregate outputs and the analytics view; never `resposta` or `compte`.
-import type { Agregat, Recomanacio, Senyal } from "@damm/shared";
+import type { Agregat, Lang, Recomanacio, Senyal } from "@damm/shared";
 import { MIN_GROUP_SIZE } from "@damm/shared";
 import { getDb } from "./connection";
+import { overlayTranslations, RECOMMENDATION_FIELDS } from "./hr-i18n";
 import type { SignalRecommendation } from "./hr-signals";
 import { classifyChange, complementarySuppression, precisionBand, type Change, type HideReason, type PrecisionBand } from "./hr-rigour";
 
@@ -325,10 +326,12 @@ export const RECOMMENDATION_COLUMNS = `id, text, estat, seguiment_necessitat_id 
 
 type RecommendationRow = Recomanacio & Omit<SignalRecommendation, "id" | "text" | "estat" | "seguimentNecessitatId">;
 
-export function listRecommendations(): RecommendationRow[] {
-  return getDb()
+export function listRecommendations(lang?: Lang): RecommendationRow[] {
+  const db = getDb();
+  const rows = db
     .prepare(`SELECT senyal_id AS senyalId, ${RECOMMENDATION_COLUMNS} FROM recomanacio ORDER BY id`)
     .all() as RecommendationRow[];
+  return overlayTranslations(db, "recomanacio", rows, RECOMMENDATION_FIELDS, lang);
 }
 
 /** Recommendations still waiting for a human decision (badge in the HR sidebar). */
@@ -365,8 +368,9 @@ export function listManagerSignals(collectiuId: number): ManagerSignal[] {
 }
 
 /** Recommendations a human at HR approved, tied to a signal a manager may see for this collective. Never proposed or discarded ones. */
-export function listManagerRecommendations(collectiuId: number): { id: number; text: string; seguiment: boolean }[] {
-  return (getDb()
+export function listManagerRecommendations(collectiuId: number, lang?: Lang): { id: number; text: string; seguiment: boolean }[] {
+  const db = getDb();
+  const rows = (db
     .prepare(
       `SELECT r.id, r.text, r.seguiment_necessitat_id AS seg FROM recomanacio r
        JOIN senyal s ON s.id = r.senyal_id
@@ -375,6 +379,7 @@ export function listManagerRecommendations(collectiuId: number): { id: number; t
     )
     .all(collectiuId, MIN_GROUP_SIZE) as { id: number; text: string; seg: number | null }[])
     .map((r) => ({ id: r.id, text: r.text, seguiment: r.seg !== null }));
+  return overlayTranslations(db, "recomanacio", rows, { text: "text" }, lang);
 }
 
 /** Non-personal approver label: control characters and "@" stripped (no emails), max 60 chars, "HR" when empty. */
@@ -475,7 +480,7 @@ export interface NeedCard {
  * Esborrany = still has draft questions (or none yet); Llesta = open with approved questions and no drafts left;
  * Publicada / Tancada follow necessitat.estat. Reads only needs, questions and publications: no responses, no accounts.
  */
-export function listNeedCards(): NeedCard[] {
+export function listNeedCards(lang?: Lang): NeedCard[] {
   const db = getDb();
   const needs = db
     .prepare(
@@ -498,6 +503,8 @@ export function listNeedCards(): NeedCard[] {
      FROM publicacio pu JOIN joincode j ON j.codi = pu.codi_join JOIN collectiu c ON c.id = j.collectiu_id
      WHERE pu.necessitat_id = ? ORDER BY pu.id`,
   );
+  overlayTranslations(db, "necessitat", needs as unknown as { id: number; textNl: string; titol: string | null; intro: string | null }[],
+    { text_nl: "textNl", titol: "titol", intro: "intro" }, lang);
   return needs.map(({ estat, ...n }) => {
     const ap = (approved.all(n.id) as Omit<NeedCard["approved"][number], "answers">[]).map((q) => {
       const c = (answerCount.get(q.id) as { n: number }).n;
@@ -879,9 +886,10 @@ export interface ThemeRow {
  * Without `collectiuId` only the company-wide rows (collectiu_id IS NULL) are returned; pass a collective id for its rows.
  * Suppressed rows (suprimit = 1 or n below the minimum group size) carry no label, summary, n or share.
  */
-export function listThemes(opts: { collectiuId?: number | null } = {}): ThemeRow[] {
+export function listThemes(opts: { collectiuId?: number | null; lang?: Lang } = {}): ThemeRow[] {
   const col = opts.collectiuId ?? null;
-  return (getDb()
+  const db = getDb();
+  const rows = (db
     .prepare(
       `SELECT id, etiqueta, resum, periode, n, emergent, suprimit, collectiu_id, share, font FROM tema
        WHERE collectiu_id IS ? AND periode <= ? ORDER BY periode DESC, emergent DESC, n DESC`,
@@ -894,6 +902,7 @@ export function listThemes(opts: { collectiuId?: number | null } = {}): ThemeRow
       collectiuId: r.collectiu_id ?? null, share: hidden ? null : r.share ?? null, font: r.font,
     };
   });
+  return overlayTranslations(db, "tema", rows, { etiqueta: "etiqueta", resum: "resum" }, opts.lang);
 }
 
 // --- CSV export (aggregates only; same suppression as the results page) ----------------
