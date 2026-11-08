@@ -3,7 +3,7 @@
 // No email, phone or name: an account is an opaque id, a username and salted hashes.
 import { randomBytes, randomUUID, scrypt, timingSafeEqual } from "node:crypto";
 import { DEFAULT_LANG, isLang, parseTranslations, type Lang, type Translations } from "@damm/shared";
-import { getDb } from "./connection";
+import { getDb } from "./employee-db";
 import { redactPii } from "./pii";
 import { lookupJoinCode } from "./join-repository";
 
@@ -113,6 +113,36 @@ function findByUsername(username: string): CompteRow | undefined {
 const DUMMY_SALT = randomBytes(16).toString("hex");
 async function dummyWork(secret: string) {
   await hashSecret(secret, DUMMY_SALT);
+}
+
+/**
+ * Idempotent permanent test account for local and demo DBs. `spec` is "username:password" (env TEST_ACCOUNT);
+ * empty or malformed means do nothing. Creates the account in Fàbriques through the same salted scrypt hashing and
+ * recovery-code format as registerAccount (the recovery code is not shown anywhere; reset it from settings if needed).
+ * Never changes an existing account. It is one more Fàbriques respondent, so minimum-group logic is unaffected.
+ */
+export async function ensureTestAccount(spec: string | undefined): Promise<"created" | "exists" | "skipped"> {
+  const i = (spec ?? "").indexOf(":");
+  if (i < 1) return "skipped";
+  const username = normalizeUsername((spec as string).slice(0, i));
+  const password = (spec as string).slice(i + 1);
+  if (!USERNAME_RE.test(username) || password.length < MIN_PASSWORD_LENGTH) return "skipped";
+  const db = getDb();
+  if (findByUsername(username)) return "exists";
+  const col = db.prepare("SELECT id FROM collectiu WHERE nom = ?").get("Fàbriques") as { id: number } | undefined;
+  if (!col) return "skipped";
+  const salt = randomBytes(16).toString("hex");
+  const passwordHash = (await hashSecret(password, salt)).toString("hex");
+  const recoveryHash = (await hashSecret(normalizeRecoveryCode(newRecoveryCode()), salt)).toString("hex");
+  try {
+    db.prepare(
+      "INSERT INTO compte (id, collectiu_id, username, password_hash, salt, recovery_hash, lang) VALUES (?, ?, ?, ?, ?, ?, ?)",
+    ).run(randomUUID(), col.id, username, passwordHash, salt, recoveryHash, DEFAULT_LANG);
+  } catch (e) {
+    if ((e as { code?: string }).code === "SQLITE_CONSTRAINT_UNIQUE") return "exists";
+    throw e;
+  }
+  return "created";
 }
 
 export async function registerAccount(input: {
