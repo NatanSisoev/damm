@@ -249,3 +249,9 @@
 .hr-skip { position: absolute; left: 8px; top: -48px; z-index: 100; padding: 8px 14px; background: var(--ink); color: var(--paper); font-size: 14px; border-radius: 4px; }
 .hr-skip:focus { top: 8px; }
 main:focus { outline: none; }
+
+/* Rotating icon for slow actions (AI drafting). */
+.gen-spinner { width: 13px; height: 13px; flex: none; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: gen-spin .7s linear infinite; }
+@keyframes gen-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .gen-spinner { animation-duration: 2s; } }
+.rec-hint { margin-bottom: 8px; font-size: 13px; color: var(--muted, inherit); }
