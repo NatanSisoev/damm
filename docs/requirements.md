@@ -97,7 +97,7 @@ The guide says "Publicar a Typeform". AGENTS.md decides to ignore Typeform: the 
 | R-FLOW-4a | Publishing makes the approved questions live | done | `publishNecessitat` sets `publicada`; `notifyNeedPublished` (`apps/web/lib/push.ts`) sends web push to the need's collective and returns only a device count (`<10` under 10). Button "Publica i envia la notificació" on `/hr/needs`, redesigned in the HR UI audit (4bc0db3): filter tabs with counts, fact cards (collective, dates, participation n/population, per-question answers `<10` suppressed), confirm before closing. An employee in the collective who opens `/` (login or push tap) gets the published need's unanswered questions at once, inside the daily cap of 3 (one answer type per day, no free-text items, C23). |
 | R-FLOW-4b | A shareable **link** | done | `/hr/publish`, onboarding join URL per collective (not per need: a need reaches people by push) |
 | R-FLOW-4c | A **QR** | done | Server-side SVG plus a printable A4 poster |
-| R-FLOW-4d | Publish via **API** / M365 integration (D-S13) | done | `/hr/publish/[codi]/teams`: Adaptive Card preview, copyable JSON, optional send to `TEAMS_WEBHOOK_URL`. The webhook send is not yet tested against a real Teams channel. |
+| R-FLOW-4d | Publish via **API** / M365 integration (D-S13) | done | `/hr/publish/[codi]/teams`: Adaptive Card preview, copyable JSON, optional send to `TEAMS_WEBHOOK_URL`. New critical alarms are also posted as cards to `TEAMS_ALARM_WEBHOOK_URL` (fallback `TEAMS_WEBHOOK_URL`) by the analysis job (`apps/web/lib/teams-alarm.ts`). Webhook sends are tested against a local mock server only, not yet against a real Teams channel. |
 
 ### R-FLOW-5 Participation
 | ID | Requirement | Status | Evidence / gap |
@@ -293,7 +293,7 @@ Bonus items named by the guide (G-§4 "Bonus") and the deck (D-S18), then our ow
 
 | ID | Item | Source | Why it scores | Status | Notes |
 |----|------|--------|---------------|--------|-------|
-| N-1 | **Teams / M365 integration** | G bonus, D-S18, 10% criterion | Hits a weighted criterion directly | partial | Adaptive Card, optional webhook, `docs/teams-integration.md`. Roadmap: Graph for audience, Entra SSO without identity leakage. |
+| N-1 | **Teams / M365 integration** | G bonus, D-S18, 10% criterion | Hits a weighted criterion directly | partial | Adaptive Card, optional webhook, critical-alarm cards from the analysis job, `docs/teams-integration.md`. Roadmap: Graph for audience, Entra SSO without identity leakage. |
 | N-2 | **Representativeness indicator** | G bonus | Already built; name it as the bonus in the pitch | done | |
 | N-3 | **Experience for people without a computer** | G bonus, D-S18 | Plant and logistics, scenario B | partial | QR plus mobile done. Add a **kiosk mode**: shared tablet, no account, one answer per session with a rate limit, own `canal` value. |
 | N-4 | **Actionable wellbeing recommendations** | G bonus, D-S18 | Value for people | done (engine side) | Proposals name a Damm initiative, a suggested owner and timeframe, and cite n and confidence. UI done (51458d3). |
