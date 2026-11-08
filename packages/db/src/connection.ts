@@ -17,6 +17,7 @@ export function getDb(): Db {
     cached.pragma("journal_mode = WAL");
     ensureApprovalColumn(cached);
     ensureQueryDeliveryColumns(cached);
+    ensureHrPushTable(cached);
   }
   return cached;
 }
@@ -56,4 +57,16 @@ function ensureQueryDeliveryColumns(db: Db): void {
   if (!cols.length) return;
   if (!cols.some((c) => c.name === "question_count")) db.exec("ALTER TABLE necessitat ADD COLUMN question_count INTEGER");
   if (!cols.some((c) => c.name === "delivery")) db.exec("ALTER TABLE necessitat ADD COLUMN delivery TEXT NOT NULL DEFAULT 'daily' CHECK (delivery IN ('daily','campaign'))");
+}
+
+/** HR alarm-push subscriptions (schema.sql has the same statement). Idempotent. */
+function ensureHrPushTable(db: Db): void {
+  db.exec(`CREATE TABLE IF NOT EXISTS hr_push_subscription (
+    id          INTEGER PRIMARY KEY,
+    endpoint    TEXT NOT NULL UNIQUE,
+    p256dh      TEXT NOT NULL,
+    auth        TEXT NOT NULL,
+    lang        TEXT NOT NULL DEFAULT 'ca' CHECK (lang IN ('ca','es','en')),
+    created_at  TEXT NOT NULL DEFAULT (datetime('now'))
+  )`);
 }
