@@ -1,5 +1,7 @@
 "use server";
 
+import { randomBytes } from "node:crypto";
+import { redirect } from "next/navigation";
 import { registerAccount } from "@damm/db/employee";
 import { employeeDict } from "@/lib/i18n/employee";
 import { getTL } from "@/lib/i18n/server";
@@ -29,4 +31,20 @@ export async function registerAction(_prev: OnboardingState, formData: FormData)
   if (!res.ok) return { error: t(ERRORS[res.error]) };
   await createSession(res.compteId);
   return { recoveryCode: res.recoveryCode };
+}
+
+/** Demo only (DEMO_QUICK_JOIN=1): creates a throwaway account with a random username and password, signs in and goes straight to the app. */
+export async function quickJoinAction(formData: FormData): Promise<void> {
+  if (process.env.DEMO_QUICK_JOIN !== "1") return;
+  const { lang } = await getTL(employeeDict);
+  const codi = normalizeJoinCode(String(formData.get("codi") ?? ""));
+  const res = await registerAccount({
+    codi,
+    username: `demo-${randomBytes(4).toString("hex")}`,
+    password: randomBytes(18).toString("base64url"),
+    lang,
+  });
+  if (!res.ok) redirect(`/onboarding?codi=${encodeURIComponent(codi)}`);
+  await createSession(res.compteId);
+  redirect("/");
 }

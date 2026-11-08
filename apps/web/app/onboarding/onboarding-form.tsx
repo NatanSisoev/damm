@@ -7,14 +7,15 @@ import { employeeDict } from "@/lib/i18n/employee";
 import { ShiftPicker, type ShiftChoice } from "../(employee)/components/shift-picker";
 import { PasswordField } from "../(employee)/components/password-field";
 import { TextField } from "../(employee)/components/text-field";
-import { registerAction, type OnboardingState } from "./actions";
+import { quickJoinAction, registerAction, type OnboardingState } from "./actions";
 import { RecoveryCodeScreen } from "./recovery-code";
 
-export function OnboardingForm({ codi, shifts = [] }: { codi: string; shifts?: ShiftChoice[] }) {
+export function OnboardingForm({ codi, shifts = [], demoSkip = false }: { codi: string; shifts?: ShiftChoice[]; demoSkip?: boolean }) {
   const t = useT(employeeDict);
   const [state, action, pending] = useActionState<OnboardingState, FormData>(registerAction, {});
   if (state.recoveryCode) return <RecoveryCodeScreen code={state.recoveryCode} title={t("onb_created")} />;
   return (
+    <>
     <form action={action} className="space-y-5">
       <p className="text-muted">
         {t("onb_intro")}
@@ -39,5 +40,13 @@ export function OnboardingForm({ codi, shifts = [] }: { codi: string; shifts?: S
         </Link>
       </p>
     </form>
+    {demoSkip && (
+      <form action={quickJoinAction} className="mt-5 border-t-2 border-dashed border-ink pt-5">
+        <input type="hidden" name="codi" value={codi} />
+        <button className="btn h-14 w-full justify-center text-base">{t("onb_demo_skip")}</button>
+        <p className="mt-2 text-center text-sm text-muted">{t("onb_demo_skip_hint")}</p>
+      </form>
+    )}
+    </>
   );
 }

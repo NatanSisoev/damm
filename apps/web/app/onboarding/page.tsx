@@ -30,7 +30,7 @@ export default async function OnboardingPage({ searchParams }: { searchParams: P
           <>
             <PageHead eyebrow={`${info.empresa} · ${info.collectiu}`} title={t("onb_title")} />
             <div className="px-4 pb-8">
-              <OnboardingForm codi={info.codi} shifts={shiftChoices(listShiftsForJoinCode(info.codi), lang)} />
+              <OnboardingForm codi={info.codi} shifts={shiftChoices(listShiftsForJoinCode(info.codi), lang)} demoSkip={process.env.DEMO_QUICK_JOIN === "1"} />
               <p className="mt-6 text-center text-sm">
                 <Link href="/privacitat" className="underline">
                   {t("privacy_link")}
