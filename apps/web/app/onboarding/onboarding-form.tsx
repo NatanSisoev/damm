@@ -43,7 +43,8 @@ export function OnboardingForm({ codi, shifts = [], demoSkip = false }: { codi: 
     {demoSkip && (
       <form action={quickJoinAction} className="mt-5 border-t-2 border-dashed border-ink pt-5">
         <input type="hidden" name="codi" value={codi} />
-        <button className="btn h-14 w-full justify-center text-base">{t("onb_demo_skip")}</button>
+        {shifts.length > 0 && <ShiftPicker options={shifts} />}
+        <button className="btn mt-5 h-14 w-full justify-center text-base">{t("onb_demo_skip")}</button>
         <p className="mt-2 text-center text-sm text-muted">{t("onb_demo_skip_hint")}</p>
       </form>
     )}

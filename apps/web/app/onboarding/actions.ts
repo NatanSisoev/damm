@@ -43,6 +43,7 @@ export async function quickJoinAction(formData: FormData): Promise<void> {
     username: `demo-${randomBytes(4).toString("hex")}`,
     password: randomBytes(18).toString("base64url"),
     lang,
+    torn: String(formData.get("torn") ?? "") || undefined,
   });
   if (!res.ok) redirect(`/onboarding?codi=${encodeURIComponent(codi)}`);
   await createSession(res.compteId);
