@@ -39,14 +39,7 @@ Instead of one long survey a year, every employee gets three short questions a d
 
 ## The loop
 
-```
-  Ask                     Listen                      Understand                 Act
- ─────────────────────   ─────────────────────────   ────────────────────────   ──────────────────────
-  Need in plain words  →  Publish + web push       →  Scores with confidence  →  AI-proposed actions
-  AI drafts (ca/es/en) →  Answer on the phone      →  Alarms and weak signals →  Human approves
-  Human approves       →  Engine picks the next Qs →  Comment themes          →  Follow-up query
-                                                                               →  Listen again: before vs after
-```
+![The Give a Damm loop: Ask (need in plain words, AI drafts in ca/es/en, human approves), Listen (publish with web push, answer on the phone, engine picks the next questions), Understand (scores with confidence, alarms and weak signals, comment themes), Act (AI-proposed actions, human approves, follow-up query), then listen again to compare before and after.](docs/loop.svg)
 
 The whole challenge flow is covered end to end: need, AI drafts, human approval, publish, mobile answer, analysis (themes, trends, weak signals), dashboard with representativeness, recommendations and follow-up survey.
 
