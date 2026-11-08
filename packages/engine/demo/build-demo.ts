@@ -141,7 +141,7 @@ export async function buildDemo(opts: DemoOptions = {}): Promise<DemoSummary> {
   // Onset mid-October so the follow-ups confirm inside the alarm's 14-day window at the end of the month.
   const extra = (p: Person, d: number, t: number): number => {
     let x = 0;
-    if (d === 2 && clusterAccounts.has(p.accountId!) && t >= t0("2026-10-14")) x -= 0.4;
+    if (d === 2 && clusterAccounts.has(p.accountId!) && t >= t0("2026-10-14")) x -= 0.5;
     if (d === 5 && p.collectiuId === 4 && t >= t0("2026-10-01")) x += p.idx % 2 === 0 ? 0.24 : -0.24;
     // "Listen again" story: Logística is low on Condicions i organització until HR adopts a recommendation on 15 Sep, then improves.
     if (d === 6 && p.collectiuId === 2) x += t < t0("2026-09-15") ? -0.08 : t >= t0("2026-09-20") ? 0.08 : 0;

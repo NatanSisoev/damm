@@ -18,6 +18,11 @@ Catalan is canonical. Everything falls back to Catalan, then to the key.
 ## Not translated
 Text produced into the DB by jobs or HR (theme names, signal titles, recommendations, need text), drafted scale anchors, the brand "Escolta activa".
 
-## HR need form: time per person
+## HR query form: questions per person and delivery
 
-The "Durada màxima per persona" number input is now a 1/2/3/5 min choice (submits 60/120/180/300 s, default 2 min) with a live hint of how many questions fit (seconds / 8). No contract change: `actions.ts` and `packages/ai` still take seconds, and the server keeps its 30 s minimum.
+The old "Total time per person" choice (1/2/3/5 min) is gone. The form now has two fields, in ca/es/en, with the word "query" / "Consulta" (never "need" or "request"):
+
+- **Questions per person** (`question_count`): 2 to 6, default 3. The AI draft produces exactly that many questions. `maxSeconds` stays an optional follow-up setting.
+- **Delivery** (`delivery`): `daily` (questions join the daily batch, as before) or `campaign` (one-off: on publish an extra push goes out and everyone in the target collective answers all the query's questions as a separate set).
+
+Removed keys: the minutes choice and its live hint. `need_max_duration` is kept only to render legacy rows. Campaign title and intro come from the query text and are not translated.

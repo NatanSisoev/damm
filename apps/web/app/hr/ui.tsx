@@ -1,10 +1,17 @@
 import type { ReactNode } from "react";
 
-export function PageHeader({ title, subtitle, actions }: { title: string; subtitle?: ReactNode; actions?: ReactNode }) {
+export function PageHeader({ title, subtitle, actions, aside }: { title: string; subtitle?: ReactNode; actions?: ReactNode; aside?: ReactNode }) {
   return (
     <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
       <div className="space-y-1">
-        <h1 className="page-title">{title}</h1>
+        {aside ? (
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+            <h1 className="page-title">{title}</h1>
+            {aside}
+          </div>
+        ) : (
+          <h1 className="page-title">{title}</h1>
+        )}
         {subtitle && <p className="max-w-2xl text-subtle">{subtitle}</p>}
       </div>
       {actions}
@@ -13,8 +20,23 @@ export function PageHeader({ title, subtitle, actions }: { title: string; subtit
 }
 
 export function Card({
-  title, meta, children, className = "", flush = false, id,
-}: { id?: string; title?: ReactNode; meta?: ReactNode; children: ReactNode; className?: string; flush?: boolean }) {
+  title, meta, children, className = "", flush = false, id, fold = false,
+}: { id?: string; title?: ReactNode; meta?: ReactNode; children: ReactNode; className?: string; flush?: boolean; fold?: boolean }) {
+  // Folded: native details, closed by default; the summary is the heading, the meta moves into the body (links stay out of the summary).
+  if (fold && title) {
+    return (
+      <details id={id} className={`card hr-card-fold ${className}`}>
+        <summary className="card-header">
+          <span aria-hidden className="hr-card-fold-chev">›</span>
+          <h2 className="section-title">{title}</h2>
+        </summary>
+        <div className="card-body">
+          {meta && <div className="mb-3 text-xs text-subtle">{meta}</div>}
+          {children}
+        </div>
+      </details>
+    );
+  }
   return (
     <section id={id} className={`card ${className}`}>
       {(title || meta) && (
@@ -47,7 +69,7 @@ export function SuppressedBadge({ title, label }: { title?: string; label: strin
   );
 }
 
-export function Stat({ label, value, hint, icon }: { label: string; value: ReactNode; hint?: ReactNode; icon?: string }) {
+export function Stat({ label, value, hint, icon }: { label: ReactNode; value: ReactNode; hint?: ReactNode; icon?: string }) {
   return (
     <div className="card h-full px-5 py-4">
       <div className="flex items-center gap-1.5 text-xs font-medium text-subtle">{icon && <span aria-hidden className="text-[15px] leading-none">{icon}</span>}{label}</div>

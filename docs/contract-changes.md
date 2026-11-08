@@ -19,6 +19,41 @@ What changed and why.
 
 ---
 
+## 2026-11-08: HR alarm push, `hr_push_subscription` (Jan)
+
+HR browsers can subscribe to web push on `/hr/settings`. When the analysis job (`POST /api/jobs/run`) creates new open warning or critical alarms for HR, every subscribed HR browser gets one notification in its saved language, linking to `/hr/signals`.
+
+- `schema.sql`: new table `hr_push_subscription` (`id`, `endpoint` UNIQUE, `p256dh`, `auth`, `lang` ca/es/en, `created_at`). No link to `compte`: it holds HR browsers only. Existing databases get it on first connection from `ensureHrPushTable` in `packages/db/src/connection.ts`.
+- `@damm/db/hr`: `saveHrPushSubscription`, `deleteHrPushSubscription`, `listHrPushSubscriptions`, `hasHrPushSubscription`, `maxAlarmId`, `listNewAlarms`.
+- `POST /api/jobs/run`: the JSON gains `alarmPush` (`off`, `none`, `sent` with alarm and browser counts, or `error`).
+
+Action items:
+- [x] Jan: schema, migration, repository, sender, job trigger, settings toggle, copy. (done 2026-11-08)
+
+## 2026-11-08: query question count and delivery mode (Jan)
+
+The HR "New query" form no longer asks for a time budget. It asks for the **number of questions per person** (2 to 6, default 3) and a **delivery mode**: `daily` (the query's questions join the normal daily set, as before) or `campaign` (a one-off extra set: everyone in the target collective gets a push on publish and answers ALL the query's questions on top of the 3 daily ones).
+
+- `schema.sql`: `necessitat.question_count INTEGER` (NULL on old rows) and `necessitat.delivery TEXT NOT NULL DEFAULT 'daily' CHECK (delivery IN ('daily','campaign'))`. Existing databases get both columns on first connection from `ensureQueryDeliveryColumns` in `packages/db/src/connection.ts` (`ALTER TABLE ADD COLUMN`, idempotent). `durada_max_s` stays (follow-ups still set it).
+- `@damm/shared`: `QueryDelivery`, `QUESTION_COUNT_OPTIONS`, `DEFAULT_QUESTION_COUNT`; `Necessitat` gains `questionCount` and `delivery`; `PoolNextResponse` gains `campaign: PoolCampaign | null` (`needId`, `title`, `intro`, `preguntes`). `AssignmentReason` is unchanged: campaign answers have no assignment rows.
+- `GET /api/pool/next`: `preguntes` is the daily batch and never holds campaign questions; `campaign` is the pending set (null when none).
+- `POST /api/responses`: also accepts answers to the questions of a published campaign query for the person's collective, once each.
+- `@damm/ai`: `NeedInput.questionCount` (exact count); `maxSeconds` stays optional.
+
+Action items:
+- [x] Jan: schema, migration, types, repository, engine, API, HR form, employee PWA, push, copy, docs. (done 2026-11-08)
+
+## 2026-11-08: `dismissed` alarm status (Jan)
+
+`senyal.status` accepts `dismissed`: HR judged the alarm not worth acting on. It is final, like `resolved`, and is not an active status, so the engine can open a new alarm for the same type, segment and domain after the 7-day cooldown. Allowed moves: `open`, `acknowledged` and `action_linked` can go to `dismissed`; nothing leaves it.
+
+- `schema.sql`: the status CHECK includes `dismissed`. Existing databases are migrated on first connection by `ensureDismissedStatus` in `packages/db/src/connection.ts` (table rebuild, idempotent).
+- `@damm/shared` and `@damm/engine`: `AlarmStatus` includes `"dismissed"`; `ALARM_TRANSITIONS` as above. `DEFAULT_ALARM_STATUSES` is unchanged, so dismissed alarms are not listed or counted unless asked for.
+- HR: new "Dismissed" tab on `/hr/signals`; the row menu has "Mark as reviewed", "Resolve" and "Dismiss" (before, "Dismiss" set `acknowledged`).
+
+Action items:
+- [x] Jan: schema, migration, types, transitions, HR tab and actions. (done 2026-11-08)
+
 ## C23 · 2026-11-08 · Jan · Daily batch: exactly the cap, one answer type, no free text (supersedes C15 and C18)
 
 `getDailyBatch` (`@damm/engine`) no longer appends published-need questions past the cap. A day is exactly `questionsPerDay` (3) items, all of one answer type. The type is decided first: the top published need's type, else a due follow-up's type, else Thompson sampling over the types that can fill the day; the rest is filled with same-type monitoring items by domain priority. A day is shorter than 3 only when no more items of that type exist; types are never mixed. Needs keep top priority, inside the 3 slots (`maxNeedsPerDay` still 1). `open` questions are never batch items (`BATCH_EXCLUDED_TYPES`): open HR need questions are skipped in the batch (not converted). Commenting is an optional extra on any answered question: `POST /api/responses` already accepts `comentari` with `valorNum`, stored redacted in `resposta.comentari`, and the answer UI now offers it under non-text questions. `missing_comment` still applies to a legacy `open` row. `store.publishedNeedsMissing` is removed. `GET /api/pool/next` text falls back to the user's language, then Catalan, then the stored text. No schema or API shape change.

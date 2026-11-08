@@ -6,6 +6,8 @@ import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type Re
 import { useT } from "@/lib/i18n/client";
 import { hrDict, type HrKey } from "@/lib/i18n/hr";
 import { LangSwitcher } from "@/components/lang-switcher";
+import type { ViewRole } from "@/lib/view-role";
+import { setViewRoleAction } from "./view-role-action";
 
 export type NavBadges = { alarms?: { critical: number; total: number }; recommendations?: number };
 
@@ -28,23 +30,38 @@ const icons = {
   method: svg(<><circle cx="12" cy="12" r="9" /><path d="M9.5 9.5a2.5 2.5 0 114 2c-.9.6-1.5 1-1.5 2M12 17h.01" /></>),
   brain: svg(<><circle cx="12" cy="12" r="3" /><path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M18.4 5.6l-2.8 2.8M8.4 15.6l-2.8 2.8" /></>),
   comments: svg(<><path d="M4 5h16v11H9l-5 4z" /><path d="M8 9h8M8 12h5" /></>),
-  manager: svg(<><circle cx="9" cy="8" r="3.5" /><path d="M2.5 20c.5-3.5 3-5.5 6.5-5.5s6 2 6.5 5.5M16 5a3.5 3.5 0 010 6.5M18 14.5c2 .6 3.3 2.3 3.5 5.5" /></>),
+  settings: svg(<><path d="M4 7h10M18 7h2M4 17h4M12 17h8" /><circle cx="16" cy="7" r="2" /><circle cx="10" cy="17" r="2" /></>),
 };
 
-const main: Item[] = [
-  { href: "/hr", label: "nav_home", icon: icons.home },
-  { href: "/hr/pool", label: "nav_pool", icon: icons.pool },
-  { href: "/hr/signals", label: "nav_alarms", icon: icons.alarms },
-  { href: "/hr/needs", label: "nav_needs", icon: icons.needs },
+const home: Item = { href: "/hr", label: "nav_home", icon: icons.home };
+
+const groups: { title: HrKey; items: Item[] }[] = [
+  {
+    title: "nav_ask",
+    items: [
+      { href: "/hr/pool", label: "nav_pool", icon: icons.pool },
+      { href: "/hr/needs", label: "nav_needs", icon: icons.needs },
+    ],
+  },
+  {
+    title: "nav_listen",
+    items: [
+      { href: "/hr/brain", label: "nav_brain", icon: icons.brain },
+      { href: "/hr/publish", label: "nav_publish", icon: icons.publish },
+    ],
+  },
+  {
+    title: "nav_understand",
+    items: [
+      { href: "/hr/signals", label: "nav_alarms", icon: icons.alarms },
+      { href: "/hr/comments", label: "nav_comments", icon: icons.comments },
+    ],
+  },
 ];
 
 const footer: Item[] = [
-  { href: "/hr/publish", label: "nav_publish", icon: icons.publish },
-  { href: "/hr/comments", label: "nav_comments", icon: icons.comments },
-  { href: "/hr/brain", label: "nav_brain", icon: icons.brain },
   { href: "/hr/methodology", label: "nav_method", icon: icons.method },
-  { href: "/manager", label: "nav_manager", icon: icons.manager },
-
+  { href: "/hr/settings", label: "nav_settings", icon: icons.settings },
 ];
 
 /** Pages that live under a main item (results under Panell, recommendations under Alarmes). */
@@ -72,7 +89,21 @@ function readCollapsed() {
 }
 const FOCUSABLE = 'a[href],button:not([disabled])';
 
-export function HrSidebar({ badges, subtitle, logo }: { badges?: NavBadges; subtitle: string; logo: ReactNode }) {
+/** Testing toggle between the full HR portal and the dashboard-only manager view. */
+function RoleToggle({ role, compact }: { role: ViewRole; compact: boolean }) {
+  const t = useT(hrDict);
+  return (
+    <form action={setViewRoleAction} className="hr-role-toggle" data-compact={compact} aria-label={t("role_toggle")}>
+      {(["hr", "manager"] as const).map((r) => (
+        <button key={r} type="submit" name="role" value={r} aria-pressed={role === r} title={t(r === "hr" ? "role_hr" : "role_manager")}>
+          {compact ? (r === "hr" ? "HR" : "M") : t(r === "hr" ? "role_hr" : "role_manager")}
+        </button>
+      ))}
+    </form>
+  );
+}
+
+export function HrSidebar({ badges, subtitle, logo, role = "hr" }: { badges?: NavBadges; subtitle: string; logo: ReactNode; role?: ViewRole }) {
   const path = usePathname();
   const t = useT(hrDict);
   // Collapsed state lives in localStorage (per viewer); server and first render use the expanded layout.
@@ -152,10 +183,18 @@ export function HrSidebar({ badges, subtitle, logo }: { badges?: NavBadges; subt
   const body = (compact: boolean) => (
     <>
       <div className="hr-side-scroll">
-        {main.map((l) => renderItem(l, compact))}
+        <div className="hr-side-group">{renderItem(home, compact)}</div>
+        {role !== "manager" &&
+          groups.map((g) => (
+              <div key={g.title} className="hr-side-group">
+                <p className="hr-side-title">{t(g.title)}</p>
+                {g.items.map((l) => renderItem(l, compact))}
+              </div>
+            ))}
       </div>
       <div className="hr-side-foot">
         {footer.map((l) => renderItem(l, compact))}
+        <RoleToggle role={role} compact={compact} />
       </div>
     </>
   );

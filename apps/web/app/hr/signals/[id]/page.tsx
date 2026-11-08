@@ -11,10 +11,9 @@ import { setSignalStatusAction } from "../../actions";
 import "../alarms.css";
 import { generateRecommendationsAction } from "../actions";
 import { GenerateButton } from "../generate-button";
-import { approveFromSignalAction, discardFromSignalAction, followUpFromSignalAction, startProbeAction, stopProbeAction } from "./actions";
+import { startProbeAction, stopProbeAction } from "./actions";
 
 import { recommendationStatus } from "../../labels";
-import { RecommendationBody } from "../../recommendation-card";
 import { ChangeBadge, Sparkline } from "../../trend";
 import { TrendChart } from "../../trend-chart";
 import { STATUS_ORDER, SignalBadges, statusLabel } from "../../signal-labels";
@@ -58,30 +57,51 @@ function Timeline({ steps, t }: { steps: SignalTimelineStep[]; t: HrResultsT }) 
     <ol className="grid gap-4 sm:grid-cols-4">
       {steps.map((s, i) => {
         const tx = timelineText(s, t);
-        return (
-        <li key={s.key} className="flex items-start gap-3 sm:border-l sm:border-line sm:pl-4 sm:first:border-l-0 sm:first:pl-0">
-          <span
-            className={`num mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full border text-xs font-semibold ${
-              s.state === "done" ? "border-good bg-good-soft text-good" : "border-line-strong bg-surface-muted text-subtle"
-            }`}
-            aria-hidden
-          >
-            {s.state === "done" ? "✓" : i + 1}
-          </span>
-          <div>
-            <div className="text-[13px] font-medium">{tx.label}</div>
-            <div className="text-xs text-subtle">
-              {s.state === "done" ? t("sd_done") : t("sd_pending")} · {tx.detail}
+        const next = s.state !== "done" ? NEXT[s.key] : undefined;
+        const body = (
+          <>
+            <span
+              className={`num mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full border text-xs font-semibold ${
+                s.state === "done"
+                  ? "border-good bg-good-soft text-good"
+                  : next
+                    ? "border-line-strong bg-surface-muted text-subtle group-hover:border-ink group-hover:text-ink"
+                    : "border-line-strong bg-surface-muted text-subtle"
+              }`}
+              aria-hidden
+            >
+              {s.state === "done" ? "✓" : i + 1}
+            </span>
+            <div>
+              <div className={`text-[13px] font-medium ${next ? "group-hover:underline" : ""}`}>
+                {tx.label}
+                {next && <span aria-hidden className="ml-1 text-subtle">›</span>}
+              </div>
+              <div className="text-xs text-subtle">
+                {s.state === "done" ? t("sd_done") : t("sd_pending")} · {tx.detail}
+              </div>
             </div>
-            {s.state !== "done" && NEXT[s.key] && (
-              <Link href={NEXT[s.key]!.href} className="mt-1 inline-block text-xs text-accent-ink hover:underline">{t(NEXT[s.key]!.label)} →</Link>
-            )}
-          </div>
+          </>
+        );
+        return (
+        <li key={s.key} className="sm:border-l sm:border-line sm:pl-4 sm:first:border-l-0 sm:first:pl-0">
+          {next ? (
+            <Link href={next.href} title={t(next.label)} className="group flex items-start gap-3">{body}</Link>
+          ) : (
+            <div className="flex items-start gap-3">{body}</div>
+          )}
         </li>
         );
       })}
     </ol>
   );
+}
+
+/** Short label for a proposal: its title, else the first sentence of its text. */
+function recTitle(r: { titol?: string | null; text: string }): string {
+  if (r.titol) return r.titol;
+  const first = r.text.split(/(?<=[.!?])\s/)[0];
+  return first.length > 90 ? `${first.slice(0, 88)}…` : first;
 }
 
 const pct = (v: number) => `${Math.round(v <= 1 ? v * 100 : v)}%`;
@@ -242,14 +262,16 @@ export default async function SignalPage({ params, searchParams }: { params: Pro
               </>
             )}
           </Card>
+        </div>
 
-          <Card title={t("sd_themes")} meta={`n ≥ ${MIN_GROUP_SIZE}`}>
+        <div className="space-y-6">
+          <Card fold title={<>{t("sd_themes")} <span className="num text-xs font-normal text-subtle">{themes.length}</span></>}>
             {themes.length === 0 ? (
               <Empty>{t("sd_themes_empty", { min: MIN_GROUP_SIZE })}</Empty>
             ) : (
-              <ul className="space-y-4">
+              <ul className="space-y-3">
                 {themes.map((th) => (
-                  <li key={th.id} className="rounded-lg border border-line p-4">
+                  <li key={th.id} className="rounded-lg border border-line p-3">
                     <div className="mb-1.5 flex flex-wrap items-center gap-2">
                       <h3 className="font-medium">{th.etiqueta}</h3>
                       {th.emergent && <span className="badge badge-warn">{t("rs_emergent")}</span>}
@@ -273,9 +295,7 @@ export default async function SignalPage({ params, searchParams }: { params: Pro
               {hiddenThemes > 0 && ` ${t(hiddenThemes > 1 ? "sd_hidden_many" : "sd_hidden_one", { n: hiddenThemes, min: MIN_GROUP_SIZE })}`}
             </p>
           </Card>
-        </div>
 
-        <div className="space-y-6">
           <Card id="recomanacions" title={t("sd_recs")} meta={<span className="num">{recommendations.length}</span>}>
             {recommendations.length === 0 ? (
               signal.dominiId != null ? (
@@ -295,28 +315,14 @@ export default async function SignalPage({ params, searchParams }: { params: Pro
                 <Empty>{ts("no_recs_domain")}</Empty>
               )
             ) : (
-              <ul className="space-y-3">
+              <ul className="divide-y divide-line">
                 {recommendations.map((r) => (
-                  <li key={r.id} className={`rounded-lg border border-line p-4 ${r.estat === "descartada" ? "opacity-60" : ""}`}>
-                    <div className="mb-2 flex items-center gap-2">
-                      <span className={`badge ${recommendationStatus(r.estat, lang).cls}`}>{recommendationStatus(r.estat, lang).label}</span>
-                      {r.seguimentNecessitatId && <span className="badge badge-accent">{t("sd_follow_created")}</span>}
-                    </div>
-                    <RecommendationBody r={r} />
-                    <Link href={`/hr/recommendations/${r.id}`} className="mt-3 inline-block text-xs text-accent-ink hover:underline">{t("sd_full_detail")} →</Link>
-                    {(r.estat === "proposada" || (r.estat === "aprovada" && !r.seguimentNecessitatId)) && (
-                      <div className="mt-3 flex flex-wrap justify-end gap-2 border-t border-line pt-3">
-                        {r.estat === "proposada" && (
-                          <>
-                            <form action={discardFromSignalAction}><input type="hidden" name="id" value={r.id} /><input type="hidden" name="signal" value={signal.id} /><button className="btn">{t("sd_discard")}</button></form>
-                            <form action={approveFromSignalAction} className="flex gap-2"><input type="hidden" name="id" value={r.id} /><input name="approver" maxLength={60} autoComplete="off" aria-label={t("approver_label")} placeholder={t("approver_label")} className="input w-40 text-[13px]" /><input type="hidden" name="signal" value={signal.id} /><button className="btn btn-primary">{t("sd_approve")}</button></form>
-                          </>
-                        )}
-                        {r.estat === "aprovada" && !r.seguimentNecessitatId && (
-                          <form action={followUpFromSignalAction}><input type="hidden" name="id" value={r.id} /><input type="hidden" name="signal" value={signal.id} /><button className="btn btn-primary">{t("sd_create_follow")}</button></form>
-                        )}
-                      </div>
-                    )}
+                  <li key={r.id} className={r.estat === "descartada" ? "opacity-60" : ""}>
+                    <Link href={`/hr/recommendations/${r.id}`} className="group flex items-center gap-3 py-2.5">
+                      <span className="min-w-0 flex-1 truncate text-[13px] font-medium group-hover:underline">{recTitle(r)}</span>
+                      <span className={`badge shrink-0 ${recommendationStatus(r.estat, lang).cls}`}>{recommendationStatus(r.estat, lang).label}</span>
+                      <span aria-hidden className="text-subtle">›</span>
+                    </Link>
                   </li>
                 ))}
               </ul>

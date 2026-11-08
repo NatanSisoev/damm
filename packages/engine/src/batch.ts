@@ -72,7 +72,7 @@ export function selectBatch(input: BatchInput): BatchPick[] {
   const used = new Set<number>();
   const slots = cfg.questionsPerDay;
   const cooldownStart = addDays(day, -cfg.itemCooldownDays);
-  const base = (q: QuestionDef) => !used.has(q.id) && !BATCH_EXCLUDED_TYPES.includes(q.type) && input.formatPref(q.type) > 0;
+  const base = (q: QuestionDef) => !used.has(q.id) && !q.campaign && !BATCH_EXCLUDED_TYPES.includes(q.type) && input.formatPref(q.type) > 0;
   const add = (q: QuestionDef, reason: AssignmentReason) => {
     picks.push({ question: q, reason });
     used.add(q.id);

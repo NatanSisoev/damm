@@ -61,6 +61,8 @@ export default async function NeedsPage({ searchParams }: { searchParams: Promis
   const rank = (n: NeedCard) => STATES.findIndex((s) => s.key === n.state);
   shown.sort((a, b) => rank(a) - rank(b) || b.id - a.id);
   const showForm = all.length === 0 || nova === "1";
+  // While creating a query, show only the form, not the list of earlier queries.
+  const showList = !showForm && all.length > 0;
 
   return (
     <>
@@ -87,30 +89,24 @@ export default async function NeedsPage({ searchParams }: { searchParams: Promis
         </section>
       )}
 
-      {all.length > 0 && (
+      {showList && (
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <nav aria-label={t("needs_filter_aria")} className="hr-seg">
-            {([{ key: "totes", label: t("needs_filter_all"), n: all.length }, ...STATES.map((s) => ({ key: s.key, label: needStatus(s.key, lang).label, n: counts[s.key] }))] as { key: Filter; label: string; n: number }[]).map((f) => {
-              const disabled = f.key !== "totes" && f.n === 0 && filter !== f.key;
-              return (
-                <Link
-                  key={f.key}
-                  href={f.key === "totes" ? "/hr/needs" : `/hr/needs?estat=${f.key}`}
-                  aria-current={filter === f.key ? "page" : undefined}
-                  aria-disabled={disabled || undefined}
-                  tabIndex={disabled ? -1 : undefined}
-                >
-                  {f.label}
-                  {f.n > 0 && <span className="num">{f.n}</span>}
-                </Link>
-              );
-            })}
+          <nav aria-label={t("needs_filter_aria")} className="segmented">
+            {([{ key: "totes", label: t("needs_filter_all"), n: all.length }, ...STATES.map((s) => ({ key: s.key, label: needStatus(s.key, lang).label, n: counts[s.key] }))] as { key: Filter; label: string; n: number }[]).map((f) => (
+              <Link
+                key={f.key}
+                href={f.key === "totes" ? "/hr/needs" : `/hr/needs?estat=${f.key}`}
+                aria-current={filter === f.key ? "true" : undefined}
+              >
+                {f.label} <span className="num ml-1.5 text-xs opacity-70">{f.n}</span>
+              </Link>
+            ))}
           </nav>
           <p className="text-xs text-subtle">{t("needs_flow")}</p>
         </div>
       )}
 
-      {all.length > 0 && shown.length === 0 && filter !== "totes" && (
+      {showList && shown.length === 0 && filter !== "totes" && (
         <Empty>
           <p>{t(STATES.find((s) => s.key === filter)!.empty)}</p>
           <div className="mt-3 flex justify-center gap-2">
@@ -119,7 +115,7 @@ export default async function NeedsPage({ searchParams }: { searchParams: Promis
           </div>
         </Empty>
       )}
-      {shown.length > 0 && (
+      {showList && shown.length > 0 && (
         <div className="space-y-4">
           {shown.map((n) => (
             <NeedItem key={n.id} n={n} draft={drafts.get(n.id)} domainIdx={domainIdx} t={t} lang={lang} />
@@ -197,10 +193,10 @@ function NeedItem({ n, draft, domainIdx, t, lang }: { n: NeedCard; draft?: Retur
               {n.approved.map((q) => (
                 <li key={q.id}>
                   <span className="hr-chip-dot mt-1.5" style={{ background: `var(--dom-${domainIdx.get(q.domini) ?? "muted"})` }} title={domainLabel(q.domini, lang)} aria-hidden />
-                  <span>
+                  <Link href={`/hr/pool/${q.id}`} className="hover:underline">
                     {q.text}
                     <span className="block text-xs text-subtle">{domainLabel(q.domini, lang)}</span>
-                  </span>
+                  </Link>
                   <span className="hr-qmeta">
                     {questionTypeLabel(q.tipus, lang)}
                     {live && <span className="num block">{q.answers != null ? t("need_answers", { n: q.answers }) : t("need_answers_few", { min: MIN_GROUP_SIZE })}</span>}
@@ -210,7 +206,13 @@ function NeedItem({ n, draft, domainIdx, t, lang }: { n: NeedCard; draft?: Retur
             </ul>
           </div>
         )}
-        {n.duradaMaxS != null && <p className="text-xs text-subtle">{t("need_max_duration", { n: n.duradaMaxS })}</p>}
+        {n.questionCount != null ? (
+          <p className="text-xs text-subtle">
+            {t("need_question_count", { n: n.questionCount })} · {t(n.delivery === "campaign" ? "need_delivery_campaign" : "need_delivery_daily")}
+          </p>
+        ) : (
+          n.duradaMaxS != null && <p className="text-xs text-subtle">{t("need_max_duration", { n: n.duradaMaxS })}</p>
+        )}
 
         <div className="hr-actions flex flex-wrap items-center justify-end gap-2 border-t border-line pt-4">
           {n.state === "esborrany" && n.approved.length === 0 && n.nDraft === 0 && <p className="mr-auto text-sm text-subtle">{t("need_no_questions")}</p>}

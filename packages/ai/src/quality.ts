@@ -178,6 +178,18 @@ export function anchorsClash(text: string, low?: string, high?: string): boolean
   return false;
 }
 
+/** Drop questions until there are exactly `count` (open ones first, then from the end). Shorter lists are returned as they are. */
+export function trimToCount(qs: DraftQuestion[], count?: number | null): DraftQuestion[] {
+  const out = [...qs];
+  if (!count) return out;
+  while (out.length > count) {
+    let idx = -1;
+    for (let i = out.length - 1; i >= 0; i--) if (out[i].type === "open") { idx = i; break; }
+    out.splice(idx >= 0 ? idx : out.length - 1, 1);
+  }
+  return out;
+}
+
 /** Drop questions until the survey fits maxSeconds (open ones first, then from the end), never below 3. */
 export function trimToBudget(qs: DraftQuestion[], maxSeconds?: number | null): DraftQuestion[] {
   const out = [...qs];

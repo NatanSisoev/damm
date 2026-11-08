@@ -65,7 +65,7 @@ export const titlesDict = defineDict({
     hr_alarm: "Alarm",
     hr_recs: "Recommendations",
     hr_rec: "Recommendation",
-    hr_needs: "Consultations",
+    hr_needs: "Queries",
     hr_publish: "Links and QR",
     hr_poster: "QR poster",
     hr_teams: "Teams card",

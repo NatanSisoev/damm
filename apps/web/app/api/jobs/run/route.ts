@@ -1,8 +1,9 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getDb, purgeExpired } from "@damm/db";
-import { reinstateAlarmsForReadingPeriod } from "@damm/db/hr";
+import { maxAlarmId, reinstateAlarmsForReadingPeriod } from "@damm/db/hr";
 import { runEngineJob, runCommentAnalysisSync, runRecommendations } from "@damm/engine/job";
 import { draftRecommendations } from "@damm/ai";
+import { notifyNewAlarms } from "@/lib/hr-push";
 import { HR_COOKIE, accessToken, gateEnabled, gateMisconfigured } from "@/lib/hr-access";
 
 // The analysis job: engine (aggregates, insights, alarms) -> comment themes -> recommendation proposals.
@@ -27,6 +28,8 @@ export async function POST(req: NextRequest) {
   try {
     const db = getDb() as unknown as EngineDb;
     const now = Date.now();
+    // Alarms are inserted by the job, so anything above this id afterwards is new (HR alarm push).
+    const alarmBefore = maxAlarmId();
     const engine = runEngineJob(db, { now });
     // A thin newest period (first live answer of a month) makes the engine hide every open alarm: bring back the readable ones.
     const reinstated = reinstateAlarmsForReadingPeriod();
@@ -34,9 +37,14 @@ export async function POST(req: NextRequest) {
     const comments = runCommentAnalysisSync(db, { now });
     // Proposals for open alarms: LLM when LLM_BASE_URL and LLM_API_KEY are set, template library otherwise.
     const recommendations = await runRecommendations(db, { now, draft: (ctx) => draftRecommendations(ctx) });
+    // Web push to subscribed HR browsers for new warning/critical alarms; never fails the job.
+    const alarmPush = await notifyNewAlarms(alarmBefore).catch((e) => {
+      console.warn("[hr-push] failed:", e);
+      return { status: "error" as const };
+    });
     // Retention (R-PRIV-8): last, so aggregates are written before raw rows past the window are deleted. ?dryRun=1 only counts.
     const retention = purgeExpired(getDb(), { dryRun: req.nextUrl.searchParams.get("dryRun") === "1" });
-    return NextResponse.json({ ok: true, engine, reinstatedAlarms: reinstated, comments, recommendations, retention }, { headers: { "Cache-Control": "no-store" } });
+    return NextResponse.json({ ok: true, engine, reinstatedAlarms: reinstated, comments, recommendations, alarmPush, retention }, { headers: { "Cache-Control": "no-store" } });
   } catch (e) {
     console.error("job failed", e);
     return NextResponse.json({ error: "job failed" }, { status: 500 });

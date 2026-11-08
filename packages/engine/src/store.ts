@@ -18,9 +18,24 @@ interface PreguntaRow {
   is_followup: number;
   necessitat_id: number | null;
   prioritat: number;
+  is_campaign?: number;
 }
 
-const Q_COLS = "id, domini_id, collectiu_id, text, tipus, facet, polarity, options_json, is_followup, necessitat_id, prioritat";
+const Q_BASE = "id, domini_id, collectiu_id, text, tipus, facet, polarity, options_json, is_followup, necessitat_id, prioritat";
+
+// `necessitat.delivery` arrived with query delivery modes. The app migrates its DB on connect, but scripts and
+// read-only health checks may open an older file: read the column only when it exists.
+const deliveryCache = new WeakMap<SqlDatabase, boolean>();
+function hasDelivery(db: SqlDatabase): boolean {
+  let v = deliveryCache.get(db);
+  if (v === undefined) {
+    v = all<{ name: string }>(db, "PRAGMA table_info(necessitat)").some((c) => c.name === "delivery");
+    deliveryCache.set(db, v);
+  }
+  return v;
+}
+const qcols = (db: SqlDatabase) =>
+  hasDelivery(db) ? `${Q_BASE}, (necessitat_id IN (SELECT id FROM necessitat WHERE delivery = 'campaign')) AS is_campaign` : `${Q_BASE}, 0 AS is_campaign`;
 
 export function toQuestion(r: PreguntaRow): QuestionDef {
   return {
@@ -35,24 +50,51 @@ export function toQuestion(r: PreguntaRow): QuestionDef {
     isFollowup: r.is_followup === 1,
     needId: r.necessitat_id,
     priority: r.prioritat,
+    campaign: r.is_campaign === 1,
   };
 }
 
 // Need questions are served only once HR has published their need (necessitat.estat = 'publicada').
+// Campaign queries are left out: they are a separate one-off set (campaignQuestionsFor), never part of the daily batch.
 export const approvedQuestionsFor = (db: SqlDatabase, collectiuId: number) =>
   all<PreguntaRow>(
     db,
-    `SELECT ${Q_COLS} FROM pregunta WHERE estat = 'aprovada' AND (collectiu_id IS NULL OR collectiu_id = ?)
-       AND (necessitat_id IS NULL OR necessitat_id IN (SELECT id FROM necessitat WHERE estat = 'publicada'))`,
+    `SELECT ${qcols(db)} FROM pregunta WHERE estat = 'aprovada' AND (collectiu_id IS NULL OR collectiu_id = ?)
+       AND (necessitat_id IS NULL OR necessitat_id IN (SELECT id FROM necessitat WHERE estat = 'publicada'${hasDelivery(db) ? " AND delivery <> 'campaign'" : ""}))`,
     collectiuId,
   ).map(toQuestion);
 
+export interface CampaignQuestion {
+  question: QuestionDef;
+  needId: number;
+  title: string | null;
+  intro: string | null;
+}
+
+/**
+ * Approved questions of published campaign queries that target this collective (or everyone), in need then
+ * question order. Includes answered ones; the caller filters with answeredQuestionIds.
+ */
+export function campaignQuestionsFor(db: SqlDatabase, collectiuId: number): CampaignQuestion[] {
+  if (!hasDelivery(db)) return [];
+  return all<PreguntaRow & { n_titol: string | null; n_intro: string | null }>(
+    db,
+    `SELECT ${Q_BASE.split(", ").map((c) => `p.${c}`).join(", ")}, 1 AS is_campaign, n.titol AS n_titol, n.intro AS n_intro
+       FROM pregunta p JOIN necessitat n ON n.id = p.necessitat_id
+      WHERE n.delivery = 'campaign' AND n.estat = 'publicada' AND p.estat = 'aprovada'
+        AND (n.collectiu_id IS NULL OR n.collectiu_id = ?) AND (p.collectiu_id IS NULL OR p.collectiu_id = ?)
+      ORDER BY n.id, p.ordre, p.id`,
+    collectiuId,
+    collectiuId,
+  ).map((r) => ({ question: toQuestion(r), needId: r.necessitat_id as number, title: r.n_titol, intro: r.n_intro }));
+}
+
 export const allQuestions = (db: SqlDatabase) =>
-  new Map(all<PreguntaRow>(db, `SELECT ${Q_COLS} FROM pregunta`).map((r) => [r.id, toQuestion(r)]));
+  new Map(all<PreguntaRow>(db, `SELECT ${qcols(db)} FROM pregunta`).map((r) => [r.id, toQuestion(r)]));
 
 export function questionsByIds(db: SqlDatabase, ids: number[]): Map<number, QuestionDef> {
   if (ids.length === 0) return new Map();
-  const rows = all<PreguntaRow>(db, `SELECT ${Q_COLS} FROM pregunta WHERE id IN (${ids.map(() => "?").join(",")})`, ...ids);
+  const rows = all<PreguntaRow>(db, `SELECT ${qcols(db)} FROM pregunta WHERE id IN (${ids.map(() => "?").join(",")})`, ...ids);
   return new Map(rows.map((r) => [r.id, toQuestion(r)]));
 }
 

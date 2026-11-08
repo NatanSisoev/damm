@@ -426,6 +426,16 @@ export function listPushTargetsForNecessitat(necessitatId: number): PushTargetLa
     .all(n.c, n.c) as PushTargetLang[];
 }
 
+/** Delivery mode of a query ('daily' when the column is missing on an old database). */
+export function getNecessitatDelivery(necessitatId: number): "daily" | "campaign" {
+  try {
+    const r = getDb().prepare("SELECT delivery FROM necessitat WHERE id = ?").get(necessitatId) as { delivery: string | null } | undefined;
+    return r?.delivery === "campaign" ? "campaign" : "daily";
+  } catch {
+    return "daily";
+  }
+}
+
 /** The push service said the subscription is gone (404/410). */
 export function deletePushSubscriptionByEndpoint(endpoint: string): void {
   getDb().prepare("DELETE FROM push_subscripcio WHERE endpoint = ?").run(endpoint);

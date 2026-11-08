@@ -21,7 +21,7 @@ export const panelDict = defineDict({
 
     // Recommendation detail
     rd_title_fallback: "Recomanació {id}",
-    rd_back: "← Recomanacions",
+    rd_back: "← Alarma",
     rd_followup_created: "Seguiment creat",
     rd_all: "Tots",
     rd_flow: "De la proposta a l'acció",
@@ -78,7 +78,6 @@ export const panelDict = defineDict({
     // Need form errors (server action)
     need_err_empty: "Escriu l'objectiu de la consulta abans de generar els esborranys.",
     need_err_short: "L'objectiu és massa curt perquè la IA el pugui treballar. Explica què vols entendre i de qui.",
-    need_err_duration: "La durada màxima ha de ser d'almenys 30 segons.",
     need_err_failed: "No s'han pogut generar els esborranys (la IA o la base de dades no han respost). No s'ha desat res: torna-ho a provar.",
   },
   es: {
@@ -96,7 +95,7 @@ export const panelDict = defineDict({
     generate: "Genera recomendaciones",
 
     rd_title_fallback: "Recomendación {id}",
-    rd_back: "← Recomendaciones",
+    rd_back: "← Alarma",
     rd_followup_created: "Seguimiento creado",
     rd_all: "Todos",
     rd_flow: "De la propuesta a la acción",
@@ -152,7 +151,6 @@ export const panelDict = defineDict({
 
     need_err_empty: "Escribe el objetivo de la consulta antes de generar los borradores.",
     need_err_short: "El objetivo es demasiado corto para que la IA pueda trabajar con él. Explica qué quieres entender y de quién.",
-    need_err_duration: "La duración máxima debe ser de al menos 30 segundos.",
     need_err_failed: "No se han podido generar los borradores (la IA o la base de datos no han respondido). No se ha guardado nada: vuelve a intentarlo.",
   },
   en: {
@@ -170,7 +168,7 @@ export const panelDict = defineDict({
     generate: "Generate recommendations",
 
     rd_title_fallback: "Recommendation {id}",
-    rd_back: "← Recommendations",
+    rd_back: "← Alarm",
     rd_followup_created: "Follow-up created",
     rd_all: "All",
     rd_flow: "From proposal to action",
@@ -226,7 +224,6 @@ export const panelDict = defineDict({
 
     need_err_empty: "Write the goal of the survey before generating the drafts.",
     need_err_short: "The goal is too short for the AI to work with. Explain what you want to understand and about whom.",
-    need_err_duration: "The maximum duration must be at least 30 seconds.",
     need_err_failed: "The drafts could not be generated (the AI or the database did not respond). Nothing was saved: please try again.",
   },
 });

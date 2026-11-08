@@ -42,7 +42,7 @@ export function runChecks(c: EvalCase, s: DraftSurvey): CheckResult {
   const n = s.questions.length;
   const opens = s.questions.filter((q) => q.type === "open").length;
   const maxOpen = short ? 1 : 2;
-  if (n < 3 || n > 6) fail("count", `${n} questions`);
+  if (need.questionCount ? n !== need.questionCount : n < 3 || n > 6) fail("count", `${n} questions${need.questionCount ? ` (asked for ${need.questionCount})` : ""}`);
   if (opens > maxOpen) fail("open-count", `${opens} open questions (max ${maxOpen})`);
   if (n >= 4 && new Set(s.questions.map((q) => q.type)).size === 1 && s.questions[0].type !== "scale5") warn("type-mix", `all ${s.questions[0].type}`);
 

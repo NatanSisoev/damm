@@ -1,12 +1,11 @@
 "use client";
 
-// Multi-line chart of the domain means per period (plain SVG, one y axis). Domains with a clear change
-// are coloured, the rest are muted grey. Suppressed (n < min group size) points are never drawn: gap in the line.
+// Multi-line chart of the domain means per period (plain SVG, one y axis). Every domain has its own colour;
+// domains with a clear change are drawn thicker and labelled in bold. Suppressed (n < min group size) points are never drawn: gap in the line.
 // Spread band (mean ± 1 SD, clamped to 1-5): always drawn for highlighted series when `highlight` is set; otherwise
 // only for the series being hovered/focused, so six overlapping bands do not turn the chart into a smear.
 import { useEffect, useRef, useState } from "react";
 import type { TrendRow } from "@damm/db/hr";
-import { MIN_GROUP_SIZE } from "@damm/shared";
 import { useLang, useT } from "@/lib/i18n/client";
 import { LOCALES } from "@/lib/i18n/core";
 import { hrResultsDict, type HrResultsKey } from "@/lib/i18n/hr-results";
@@ -21,7 +20,7 @@ export type TrendScale = "1-5" | "0-10";
 // Values arrive on 1-5 (agregat.mitjana, SD of 1-5 answers). On the 0-10 scale (same as the signal headline, score = (mean - 1) x 2.5) both are rescaled.
 const scaleOf = (scale: TrendScale) => (scale === "0-10" ? { min: 0, max: 10, k: 2.5 } : { min: 1, max: 5, k: 1 });
 
-// `highlight`: domain names to emphasise (coloured, thicker); all others muted. Without it, domains with a clear change are coloured.
+// `highlight`: domain names to emphasise (coloured, thicker); all others muted. Without it, all are coloured and clear changes are thicker.
 export function TrendChart({ periodes, rows, highlight, scale = "1-5" }: { periodes: string[]; rows: TrendRow[]; highlight?: string[]; scale?: TrendScale }) {
   const tr = useT(hrResultsDict);
   const lang = useLang();
@@ -99,6 +98,9 @@ export function TrendChart({ periodes, rows, highlight, scale = "1-5" }: { perio
   }
   const labelY = new Map(labels.map((l) => [l.ri, l.ly]));
 
+  // Every domain keeps its own colour; only with `highlight` are the others muted.
+  const colorOf = (s: { ri: number; changed: boolean }) => (highlight && !s.changed ? "var(--dom-muted)" : `var(--dom-${(s.ri % 6) + 1})`);
+
   // Draw muted first so coloured lines sit on top.
   const ordered = [...series].sort((a, b) => Number(a.changed) - Number(b.changed));
   const act = active ? series[active.ri] : null;
@@ -116,7 +118,6 @@ export function TrendChart({ periodes, rows, highlight, scale = "1-5" }: { perio
     return out;
   };
 
-  const hasChange = series.some((s) => s.changed);
 
   return (
     <div className="px-5 py-4">
@@ -132,7 +133,7 @@ export function TrendChart({ periodes, rows, highlight, scale = "1-5" }: { perio
             <text key={p} x={xOf(i)} y={H - 8} textAnchor="middle" fontSize="11" fill="var(--text-subtle)" className="num">{p}</text>
           ))}
           {ordered.map((s) => {
-            const color = s.changed ? `var(--dom-${(s.ri % 6) + 1})` : "var(--dom-muted)";
+            const color = colorOf(s);
             const dim = active && active.ri !== s.ri ? 0.35 : 1;
             const showBand = highlight ? s.changed : active?.ri === s.ri;
             const bandPts = showBand ? s.pts.map((p) => (p && p.lo !== null && p.hi !== null ? p : null)) : [];
@@ -149,7 +150,7 @@ export function TrendChart({ periodes, rows, highlight, scale = "1-5" }: { perio
                 })}
                 {segments(s.pts).map((seg, k) =>
                   seg.length > 1 ? (
-                    <polyline key={k} points={seg.map((p) => `${p.x},${p.y}`).join(" ")} fill="none" stroke={color} strokeWidth={s.changed && highlight ? 3 : 2} strokeLinejoin="round" strokeLinecap="round" />
+                    <polyline key={k} points={seg.map((p) => `${p.x},${p.y}`).join(" ")} fill="none" stroke={color} strokeWidth={s.changed ? 3 : 2} strokeLinejoin="round" strokeLinecap="round" />
                   ) : null,
                 )}
                 {s.pts.map((p, pi) =>
@@ -216,7 +217,7 @@ export function TrendChart({ periodes, rows, highlight, scale = "1-5" }: { perio
       <ul className="mt-3 flex flex-wrap gap-x-5 gap-y-1.5 text-xs" aria-label={tr("ch_legend")}>
         {series.map((s) => (
           <li key={s.r.domini} className="flex items-center gap-1.5">
-            <span aria-hidden className="inline-block h-0.5 w-4" style={{ background: s.changed ? `var(--dom-${(s.ri % 6) + 1})` : "var(--dom-muted)" }} />
+            <span aria-hidden className="inline-block h-0.5 w-4" style={{ background: colorOf(s) }} />
             <span className={s.changed ? "font-semibold" : "text-subtle"}>
               {dom(s.r.domini)}
               {s.changed && s.r.canvi.delta !== null && s.r.canvi.label !== "sense canvi clar" && <span className="num"> · {s.r.canvi.label === "puja" ? "↑" : "↓"} {s.r.canvi.delta! >= 0 ? "+" : "−"}{numD(Math.abs(s.r.canvi.delta!), lang, 2)}</span>}
@@ -224,11 +225,6 @@ export function TrendChart({ periodes, rows, highlight, scale = "1-5" }: { perio
           </li>
         ))}
       </ul>
-      <p className="mt-2 text-xs text-subtle">
-        {highlight ? tr("ch_foot_hl") : hasChange ? tr("ch_foot_change") : tr("ch_foot_none")}{" "}
-        {scale === "0-10" ? tr("ch_scale010") : tr("ch_scale15")} {tr("ch_foot_sup", { min: MIN_GROUP_SIZE })} {tr("ch_foot_band", { scale })} {tr("ch_foot_cons")}
-        {!highlight && ` ${tr("ch_foot_hover")}`}
-      </p>
     </div>
   );
 }

@@ -6,6 +6,8 @@ import { collectiveLabel, domainLabel } from "@/lib/i18n/names";
 import { numD } from "@/lib/i18n/num";
 import { hrCommentsDict } from "@/lib/i18n/hr-comments";
 import { Card, Empty, PageHeader } from "../ui";
+import { AutoSubmitForm } from "../signals/auto-submit-form";
+import "../signals/alarms.css";
 
 export const dynamic = "force-dynamic";
 
@@ -40,97 +42,96 @@ export default async function CommentsPage({ searchParams }: { searchParams: Pro
   };
   const cell = (c: number | null) => (c === null ? t("lt_min", { min: MIN_GROUP_SIZE }) : n0(c));
 
+  if (!themeKey) {
+    return (
+      <div className="space-y-6">
+        <PageHeader title={t("title")} subtitle={t("sub", { min: MIN_GROUP_SIZE })} />
+        <Card title={t("themes")} meta={themes.total !== null ? t("themes_meta", { n: n0(themes.total) }) : undefined} flush>
+          {themes.themes.length === 0 ? (
+            <div className="p-4"><Empty>{t("no_themes")}</Empty></div>
+          ) : (
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>{t("th_theme")}</th>
+                  <th className="num">{t("th_total")}</th>
+                  <th>{t("th_domains")}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {themes.themes.map((th) => (
+                  <tr key={th.key}>
+                    <td>
+                      <Link href={href({ tema: th.key })} className="font-semibold underline-offset-2 hover:underline" aria-label={t("view_theme", { name: th.etiqueta })}>
+                        {th.etiqueta}
+                      </Link>{" "}
+                      {th.emergent && <span className="badge">{t("emergent")}</span>}
+                    </td>
+                    <td className="num">{n0(th.n)}</td>
+                    <td>
+                      {th.domains.map((d) => (
+                        <span key={d.label} className="badge mr-1">{domainLabel(d.label, lang)} {cell(d.n)}</span>
+                      ))}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+          {themes.hiddenThemes > 0 && (
+            <p className="px-4 py-3 text-xs text-subtle">{t("hidden_themes", { n: themes.hiddenThemes, min: MIN_GROUP_SIZE })}</p>
+          )}
+        </Card>
+      </div>
+    );
+  }
+
+  const theme = themes.themes.find((x) => x.key === themeKey)!;
+  const filtered = colId || domId || per || q;
+
   return (
     <div className="space-y-6">
-      <PageHeader title={t("title")} subtitle={t("sub", { min: MIN_GROUP_SIZE })} />
-
-      <Card title={t("themes")} meta={themes.total !== null ? t("themes_meta", { n: n0(themes.total) }) : undefined} flush>
-        {themes.themes.length === 0 ? (
-          <div className="p-4"><Empty>{t("no_themes")}</Empty></div>
-        ) : (
-          <table className="table">
-            <thead>
-              <tr>
-                <th>{t("th_theme")}</th>
-                <th className="num">{t("th_total")}</th>
-                {themes.periodes.map((p) => <th key={p} className="num">{p}</th>)}
-                <th>{t("th_collectives")}</th>
-                <th>{t("th_domains")}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {themes.themes.map((th) => (
-                <tr key={th.key}>
-                  <td>
-                    <Link href={href({ tema: th.key, p: undefined })} className="underline" aria-label={t("view_theme", { name: th.etiqueta })}>
-                      {th.etiqueta}
-                    </Link>{" "}
-                    {th.emergent && <span className="badge">{t("emergent")}</span>}
-                  </td>
-                  <td className="num">{n0(th.n)}</td>
-                  {themes.periodes.map((p) => {
-                    const c = th.periods.find((x) => x.periode === p);
-                    return <td key={p} className="num">{c ? cell(c.n) : cell(null)}</td>;
-                  })}
-                  <td>
-                    {th.collectives.map((c) => (
-                      <span key={c.label} className="badge mr-1">{collectiveLabel(c.label, lang)} {cell(c.n)}</span>
-                    ))}
-                  </td>
-                  <td>
-                    {th.domains.map((d) => (
-                      <span key={d.label} className="badge mr-1">{domainLabel(d.label, lang)} {cell(d.n)}</span>
-                    ))}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-        {themes.hiddenThemes > 0 && (
-          <p className="px-4 py-3 text-xs text-subtle">{t("hidden_themes", { n: themes.hiddenThemes, min: MIN_GROUP_SIZE })}</p>
-        )}
-      </Card>
+      <PageHeader
+        title={theme.etiqueta}
+        aside={theme.emergent ? <span className="badge">{t("emergent")}</span> : undefined}
+        subtitle={t("theme_sub", { n: n0(theme.n), min: MIN_GROUP_SIZE })}
+        actions={<Link href="/hr/comments" className="btn">{t("all_themes")}</Link>}
+      />
 
       <Card title={t("browse")} meta={result.n !== null ? t("count", { n: n0(result.n) }) : undefined}>
-        <form method="get" action="/hr/comments" className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-          <label className="block">
-            <span className="label">{t("f_theme")}</span>
-            <select name="tema" defaultValue={themeKey ?? ""} className="input">
-              <option value="">{t("f_all")}</option>
-              {themes.themes.map((x) => <option key={x.key} value={x.key}>{x.etiqueta}</option>)}
-            </select>
-          </label>
-          <label className="block">
-            <span className="label">{t("f_collective")}</span>
+        <AutoSubmitForm key={JSON.stringify(sp)} method="get" action="/hr/comments" className="alarm-filters mb-4" aria-label={t("browse")}>
+          <input type="hidden" name="tema" value={themeKey} />
+          <label className="alarm-filter">
+            <span>{t("f_collective")}</span>
             <select name="col" defaultValue={colId?.toString() ?? ""} className="input">
               <option value="">{t("f_all")}</option>
               {collectius.map((c) => <option key={c.id} value={c.id}>{collectiveLabel(c.nom, lang)}</option>)}
             </select>
           </label>
-          <label className="block">
-            <span className="label">{t("f_domain")}</span>
+          <label className="alarm-filter">
+            <span>{t("f_domain")}</span>
             <select name="dom" defaultValue={domId?.toString() ?? ""} className="input">
               <option value="">{t("f_all")}</option>
               {dominis.map((d) => <option key={d.id} value={d.id}>{domainLabel(d.nom, lang)}</option>)}
             </select>
           </label>
-          <label className="block">
-            <span className="label">{t("f_period")}</span>
+          <label className="alarm-filter">
+            <span>{t("f_period")}</span>
             <select name="per" defaultValue={per ?? ""} className="input">
               <option value="">{t("f_all")}</option>
               {themes.periodes.map((p) => <option key={p} value={p}>{p}</option>)}
             </select>
           </label>
-          <label className="block">
-            <span className="label">{t("f_search")}</span>
-            <input name="q" defaultValue={q ?? ""} maxLength={80} placeholder={t("f_search_ph")} className="input" />
+          <label className="alarm-filter">
+            <span>{t("f_search")}</span>
+            <input type="search" name="q" defaultValue={q ?? ""} maxLength={80} placeholder={t("f_search_ph")} className="input" />
           </label>
-          <div className="flex gap-2 sm:col-span-2 lg:col-span-5">
-            <button type="submit" className="btn btn-primary">{t("apply")}</button>
-            <Link href="/hr/comments" className="btn btn-ghost">{t("clear")}</Link>
-          </div>
-        </form>
+          {filtered && (
+            <div className="alarm-filter-actions">
+              <Link href={href({ col: undefined, dom: undefined, per: undefined, q: undefined })} className="btn">{t("clear")}</Link>
+            </div>
+          )}
+        </AutoSubmitForm>
 
         {result.suppressed ? (
           <Empty>{t("suppressed", { min: MIN_GROUP_SIZE })}</Empty>
@@ -146,7 +147,7 @@ export default async function CommentsPage({ searchParams }: { searchParams: Pro
                     {c.periode && <span className="badge">{c.periode}</span>}
                     {c.collectiu && <span className="badge">{collectiveLabel(c.collectiu, lang)}</span>}
                     {c.domini && <span className="badge">{domainLabel(c.domini, lang)}</span>}
-                    {c.themes.map((x) => <span key={x} className="badge">{x}</span>)}
+                    {c.themes.filter((x) => x !== theme.etiqueta).map((x) => <span key={x} className="badge">{x}</span>)}
                   </p>
                 </li>
               ))}

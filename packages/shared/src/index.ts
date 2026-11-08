@@ -41,9 +41,13 @@ export type SenyalTipus =
   | "low_confidence"
   | "improvement";
 export type Severity = "info" | "warning" | "critical";
-export type AlarmStatus = "open" | "acknowledged" | "action_linked" | "resolved";
+export type AlarmStatus = "open" | "acknowledged" | "action_linked" | "resolved" | "dismissed";
 export type Audience = "hr" | "hr_manager";
 export type AssignmentReason = "monitor" | "need" | "followup";
+/** How a published query reaches people: inside the daily set, or as a one-off extra set. */
+export type QueryDelivery = "daily" | "campaign";
+export const QUESTION_COUNT_OPTIONS = [2, 3, 4, 5, 6] as const;
+export const DEFAULT_QUESTION_COUNT = 3;
 export type InsightKind =
   | "domain_state"
   | "top_mover"
@@ -74,6 +78,8 @@ export interface Necessitat {
   textNl: string;
   collectiuId: number | null;
   duradaMaxS: number | null;
+  questionCount: number | null;
+  delivery: QueryDelivery;
   exclusions: string | null;
   estat: NecessitatEstat;
 }
@@ -98,8 +104,18 @@ export interface Pregunta {
 // --- API: GET /api/pool/next -------------------------------------------------
 // Account is identified by the session, never by a request parameter.
 // Returns today's batch (questions_per_day items, fixed for the day).
+export type PoolQuestion = Pick<Pregunta, "id" | "dominiId" | "text" | "textI18n" | "tipus" | "options">;
+/** Pending one-off campaign set: all questions of one published campaign query the person has not answered. */
+export interface PoolCampaign {
+  needId: number;
+  title: string;
+  intro: string | null;
+  preguntes: PoolQuestion[];
+}
 export interface PoolNextResponse {
-  preguntes: Pick<Pregunta, "id" | "dominiId" | "text" | "textI18n" | "tipus" | "options">[];
+  preguntes: PoolQuestion[];
+  /** Extra one-off set on top of the daily questions; null when nothing is pending. */
+  campaign: PoolCampaign | null;
 }
 
 // --- API: POST /api/responses ------------------------------------------------

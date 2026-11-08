@@ -80,7 +80,7 @@ export function fallbackQuestions(need: NeedInput, exclude: string[] = []): Draf
   const pool: T[] = /torn/i.test(corpus) ? [...SHIFTS] : [];
   for (const d of pickDomains(corpus)) pool.push(...GENERIC[d]);
   const seen = new Set(exclude);
-  const target = short ? 4 : 5;
+  const target = need.questionCount && need.questionCount > 0 ? need.questionCount : short ? 4 : 5;
   const maxOpen = short ? 1 : 2;
   const out: T[] = [];
   let opens = 0;

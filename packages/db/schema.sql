@@ -66,13 +66,25 @@ CREATE TABLE push_subscripcio (
   creat      TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+-- HR browsers subscribed to alarm notifications. No account, no person: an HR browser endpoint only.
+CREATE TABLE IF NOT EXISTS hr_push_subscription (
+  id          INTEGER PRIMARY KEY,
+  endpoint    TEXT NOT NULL UNIQUE,
+  p256dh      TEXT NOT NULL,
+  auth        TEXT NOT NULL,
+  lang        TEXT NOT NULL DEFAULT 'ca' CHECK (lang IN ('ca','es','en')),
+  created_at  TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
 -- Content -----------------------------------------------------------------
 
 CREATE TABLE necessitat (
   id            INTEGER PRIMARY KEY,
   text_nl       TEXT NOT NULL,                     -- need in natural language
   collectiu_id  INTEGER REFERENCES collectiu(id),  -- NULL = all collectives
-  durada_max_s  INTEGER,
+  durada_max_s  INTEGER,                           -- legacy seconds budget (follow-ups); the form sends question_count instead
+  question_count INTEGER,                          -- questions per person asked of the AI draft; NULL on old rows
+  delivery      TEXT NOT NULL DEFAULT 'daily' CHECK (delivery IN ('daily','campaign')), -- daily = joins the daily set; campaign = one-off extra set
   exclusions    TEXT,
   context       TEXT,                              -- C3 draft: background HR gives the AI
   titol         TEXT,                              -- C3 draft: AI-proposed survey title (editable)
@@ -203,7 +215,7 @@ CREATE TABLE senyal (
   n            INTEGER NOT NULL,
   confianca    REAL,
   severity     TEXT NOT NULL DEFAULT 'info' CHECK (severity IN ('info','warning','critical')),
-  status       TEXT NOT NULL DEFAULT 'open' CHECK (status IN ('open','acknowledged','action_linked','resolved')),
+  status       TEXT NOT NULL DEFAULT 'open' CHECK (status IN ('open','acknowledged','action_linked','resolved','dismissed')),
   audience     TEXT NOT NULL DEFAULT 'hr' CHECK (audience IN ('hr','hr_manager')), -- Lideratge alarms are always 'hr'
   created_at   TEXT NOT NULL DEFAULT (datetime('now')),
   suprimit     INTEGER NOT NULL DEFAULT 0 CHECK (suprimit IN (0,1))

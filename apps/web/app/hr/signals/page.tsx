@@ -1,13 +1,13 @@
 import "./alarms.css";
 import { People } from "../glyphs";
 import { GenerateButton } from "./generate-button";
+import { AutoSubmitForm } from "./auto-submit-form";
 import Link from "next/link";
 import { MIN_GROUP_SIZE } from "@damm/shared";
-import { getTrends, listCollectius, listDomains, listRecommendations, listTorns } from "@damm/db/hr";
+import { listCollectius, listDomains, listRecommendations, listTorns } from "@damm/db/hr";
 import { hrAlarms, type AlarmView } from "@/lib/hr-engine";
 import { Card, Empty, PageHeader } from "../ui";
 import { FoldList } from "../ui-server";
-import { countPendingRecommendations } from "@damm/db/hr";
 import { statusLabel, signalTypeLabel } from "../signal-labels";
 import { getT, getTL } from "@/lib/i18n/server";
 import { hrResultsDict, type HrResultsT } from "@/lib/i18n/hr-results";
@@ -16,10 +16,9 @@ import { signalsDict } from "@/lib/i18n/hr-signals";
 import { collectiveLabel, domainLabel, shiftLabel } from "@/lib/i18n/names";
 import type { Lang } from "@damm/shared";
 
-import { Sparkline } from "../trend";
-import { recomputeAction, setAlarmStatusAction } from "../actions";
+import { setAlarmStatusAction } from "../actions";
 import { ALARM_NEXT } from "./transitions";
-import { NON_ACTIONABLE, alarmHint } from "./alarm-text";
+import { NON_ACTIONABLE } from "./alarm-text";
 import { signalDetail, signalDrop, signalSegment } from "@/lib/signal-text";
 import { generateRecommendationsAction, proposeFollowUpAction } from "./actions";
 import { pageTitle } from "@/lib/i18n/titles";
@@ -30,11 +29,12 @@ const TABS = [
   { key: "obertes", label: "sg_tab_open", statuses: ["open"] },
   { key: "revisades", label: "sg_tab_reviewed", statuses: ["acknowledged", "action_linked"] },
   { key: "resoltes", label: "sg_tab_resolved", statuses: ["resolved"] },
+  { key: "descartades", label: "sg_tab_dismissed", statuses: ["dismissed"] },
 ] as const;
 
 const SEV_RANK: Record<string, number> = { critical: 0, warning: 1, info: 2 };
 
-type Row = AlarmView & { segment: string; domain: string | null; drop: number; detail: string };
+type Row = AlarmView & { segment: string; group: string; shift: string | null; domain: string | null; drop: number; detail: string };
 
 type Params = { estat?: string; tipus?: string; gravetat?: string; collectiu?: string; domini?: string; torn?: string; periode?: string; audiencia?: string; ordre?: string; q?: string };
 
@@ -47,7 +47,6 @@ const SORTS = [
 ] as const;
 
 export default async function AlarmsPage({ searchParams }: { searchParams: Promise<Params> }) {
-  const pendingRecs = countPendingRecommendations();
   const sp = await searchParams;
   const { estat } = sp;
   const { t, lang } = await getTL(hrResultsDict);
@@ -55,7 +54,6 @@ export default async function AlarmsPage({ searchParams }: { searchParams: Promi
   const tab = TABS.find((x) => x.key === estat) ?? TABS[0];
 
 
-  const trends = getTrends();
   const domains = new Map(listDomains().map((d) => [d.id, d.nom]));
   const torns = new Map(listTorns().map((x) => [x.id, x.nom]));
   const recs = listRecommendations(lang);
@@ -63,7 +61,7 @@ export default async function AlarmsPage({ searchParams }: { searchParams: Promi
   const colNames = new Map(listCollectius().map((c) => [c.id, c.nom]));
 
   // Minimum group size is re-checked here even though the engine already suppresses small alarms.
-  const all = hrAlarms({ role: "hr" }, { status: ["open", "acknowledged", "action_linked", "resolved"] }).filter((a) => a.n >= MIN_GROUP_SIZE);
+  const all = hrAlarms({ role: "hr" }, { status: ["open", "acknowledged", "action_linked", "resolved", "dismissed"] }).filter((a) => a.n >= MIN_GROUP_SIZE);
   const counts = Object.fromEntries(TABS.map((x) => [x.key, all.filter((a) => (x.statuses as readonly string[]).includes(a.status)).length]));
   const inTab = all.filter((a) => (tab.statuses as readonly string[]).includes(a.status));
 
@@ -71,7 +69,7 @@ export default async function AlarmsPage({ searchParams }: { searchParams: Promi
     const col = a.collectiuId ? colNames.get(a.collectiuId) ?? null : null;
     const shift = a.tornId ? torns.get(a.tornId) ?? null : null;
     const like = { tipus: a.type, descripcio: a.description };
-    return { ...a, segment: signalSegment({ collectiu: col, torn: shift }, lang), domain: a.domainId ? domains.get(a.domainId) ?? null : null, drop: signalDrop(like), detail: signalDetail(like, lang) };
+    return { ...a, segment: signalSegment({ collectiu: col, torn: shift }, lang), group: signalSegment({ collectiu: col, torn: null }, lang), shift, domain: a.domainId ? domains.get(a.domainId) ?? null : null, drop: signalDrop(like), detail: signalDetail(like, lang) };
   };
   const tabRows = inTab.map(toRow);
 
@@ -91,7 +89,7 @@ export default async function AlarmsPage({ searchParams }: { searchParams: Promi
   };
   const rows = tabRows.filter((r) =>
     (!f.tipus || r.type === f.tipus) &&
-    (!f.gravetat || r.severity === f.gravetat) &&
+    (!f.gravetat || (f.gravetat === "greu" ? r.severity !== "info" : r.severity === f.gravetat)) &&
     (!f.collectiu || (f.collectiu === "tots" ? r.collectiuId == null : String(r.collectiuId) === f.collectiu)) &&
     (!f.domini || String(r.domainId) === f.domini) &&
     (!f.torn || String(r.tornId) === f.torn) &&
@@ -127,40 +125,30 @@ export default async function AlarmsPage({ searchParams }: { searchParams: Promi
     sort === "caiguda" ? (a: Row, b: Row) => b.drop - a.drop || bySeverity(a, b)
     : sort === "mostra" ? (a: Row, b: Row) => b.n - a.n || bySeverity(a, b)
     : sort === "recent" ? (a: Row, b: Row) => b.createdAt.localeCompare(a.createdAt) || bySeverity(a, b)
-    : sort === "grup" ? (a: Row, b: Row) => a.segment.localeCompare(b.segment, lang) || bySeverity(a, b)
+    : sort === "grup" ? (a: Row, b: Row) => a.group.localeCompare(b.group, lang) || a.segment.localeCompare(b.segment, lang) || bySeverity(a, b)
     : bySeverity;
   actionable.sort(order);
 
+  // One group per collective (or the whole company); the shift is shown on each alarm.
   const groups = new Map<string, Row[]>();
-  for (const r of actionable) groups.set(r.segment, [...(groups.get(r.segment) ?? []), r]);
+  for (const r of actionable) groups.set(r.group, [...(groups.get(r.group) ?? []), r]);
   const grouped = [...groups.entries()].sort((a, b) => order(a[1][0], b[1][0]));
   good.sort(order);
 
-  const sparkFor = (r: Row): number[] | null => {
-    const scope = trends.series.find((s) => s.scope === (r.collectiuId ? colNames.get(r.collectiuId) : "Tots"));
-    const row = scope?.rows.find((x) => x.domini === r.domain);
-    const vals = row?.cells.map((c) => c.mitjana) ?? [];
-    return vals.filter((v) => v !== null).length >= 2 ? (vals as number[]) : null;
-  };
-
-  const severe = actionable.filter((r) => r.severity !== "info").length;
+  const critical = actionable.filter((r) => r.severity === "critical").length;
+  // "N critical" links to the same view filtered to critical alarms.
+  const criticalHref = (() => {
+    const qs = new URLSearchParams();
+    for (const [k, v] of Object.entries(sp)) if (v && k !== "gravetat") qs.set(k, v);
+    qs.set("gravetat", "critical");
+    return `/hr/signals?${qs}`;
+  })();
 
   return (
     <>
       <PageHeader
         title={t("sg_title")}
         subtitle={t("sg_sub")}
-        actions={
-          <div className="flex flex-wrap gap-2">
-            <Link href="/hr/recommendations" className="btn">
-              {ts("suggestions")}{pendingRecs > 0 && <span className="badge num">{pendingRecs}</span>}
-            </Link>
-            <form action={recomputeAction}>
-              <button className="btn" type="submit">{t("sg_recalc")}</button>
-            </form>
-          </div>
-
-        }
       />
 
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
@@ -176,19 +164,22 @@ export default async function AlarmsPage({ searchParams }: { searchParams: Promi
           {actionable.length === 0 ? (
             <span className="text-subtle">{t("sg_none_view")}</span>
           ) : (
-            <>
-              <strong>{t(actionable.length === 1 ? "sg_need_one" : "sg_need_many", { n: actionable.length })}</strong>
-              {severe > 0 && severe < actionable.length && <span className="text-subtle"> · {t(severe === 1 ? "sg_sev_one" : "sg_sev_many", { n: severe })}</span>}
-            </>
+            critical > 0 ? (
+              <Link href={criticalHref} className="font-medium text-accent hover:underline">
+                {t("sg_critical", { n: critical })} →
+              </Link>
+            ) : (
+              <span className="text-subtle">{t("sg_no_critical")}</span>
+            )
           )}
         </p>
       </div>
 
       {all.length > 0 && (
-        <form method="get" action="/hr/signals" className="alarm-filters mb-5" aria-label={ts("filters_aria")}>
+        <AutoSubmitForm key={JSON.stringify(sp)} method="get" action="/hr/signals" className="alarm-filters mb-5" aria-label={ts("filters_aria")}>
           {tab.key !== "obertes" && <input type="hidden" name="estat" value={tab.key} />}
           <Select all={ts("f_all")} name="tipus" label={ts("f_type")} value={f.tipus} options={opts.tipus.map((v) => [v, signalTypeLabel(v, lang)])} />
-          <Select all={ts("f_all")} name="gravetat" label={ts("f_severity")} value={f.gravetat} options={[["critical", ts("sev_critical")], ["warning", ts("sev_warning")], ["info", ts("sev_info")]]} />
+          <Select all={ts("f_all")} name="gravetat" label={ts("f_severity")} value={f.gravetat} options={[["greu", ts("sev_severe")], ["critical", ts("sev_critical")], ["warning", ts("sev_warning")], ["info", ts("sev_info")]]} />
           <Select all={ts("f_all")} name="collectiu" label={ts("f_collective")} value={f.collectiu} options={[...opts.collectiu.map((v) => [String(v), colNames.has(v) ? collectiveLabel(colNames.get(v)!, lang) : `#${v}`] as [string, string]), ["tots", ts("f_whole_company")]]} />
           <Select all={ts("f_all")} name="domini" label={ts("f_domain")} value={f.domini} options={opts.domini.map((v) => [String(v), domains.has(v) ? domainLabel(domains.get(v)!, lang) : `#${v}`])} />
           <Select all={ts("f_all")} name="torn" label={ts("f_shift")} value={f.torn} options={opts.torn.map((v) => [String(v), torns.has(v) ? shiftLabel(torns.get(v)!, lang) : `#${v}`])} />
@@ -205,10 +196,9 @@ export default async function AlarmsPage({ searchParams }: { searchParams: Promi
             </select>
           </label>
           <div className="alarm-filter-actions">
-            <button className="btn btn-primary" type="submit">{ts("f_apply")}</button>
             {(activeFilters > 0 || sort !== "gravetat") && <Link className="btn" href={tab.key === "obertes" ? "/hr/signals" : `/hr/signals?estat=${tab.key}`}>{ts("f_clear")}</Link>}
           </div>
-        </form>
+        </AutoSubmitForm>
       )}
 
       {all.length === 0 ? (
@@ -230,7 +220,7 @@ export default async function AlarmsPage({ searchParams }: { searchParams: Promi
                 <FoldList
                   className="divide-y divide-line"
                   items={items.map((r) => (
-                    <AlarmItem key={r.id} t={t} lang={lang} r={r} spark={sparkFor(r)} rec={recs.find((x) => x.senyalId === r.id && x.estat === "aprovada")} drafted={recs.some((x) => x.senyalId === r.id)} />
+                    <AlarmItem key={r.id} t={t} lang={lang} r={r} rec={recs.find((x) => x.senyalId === r.id && x.estat === "aprovada")} drafted={recs.some((x) => x.senyalId === r.id)} />
                   ))}
                 />
               </div>
@@ -289,12 +279,12 @@ function Select({ all, name, label, value, options }: { all: string; name: strin
   );
 }
 
-function AlarmItem({ t, lang, r, spark, rec, drafted }: { t: HrResultsT; lang: Lang; r: Row; spark: number[] | null; rec?: { id: number; seguimentNecessitatId: number | null }; drafted: boolean }) {
+function AlarmItem({ t, lang, r, rec, drafted }: { t: HrResultsT; lang: Lang; r: Row; rec?: { id: number; seguimentNecessitatId: number | null }; drafted: boolean }) {
 
   const next = ALARM_NEXT[r.status];
   return (
     <li className="py-3">
-      <div className="flex flex-wrap items-start gap-x-4 gap-y-2">
+      <div className="flex flex-wrap items-end gap-x-4 gap-y-2">
         <div className="min-w-0 flex-1 basis-64">
           <div className="mb-1 flex flex-wrap items-center gap-1.5">
             <span className={`badge ${r.severity === "critical" ? "badge-crit" : r.severity === "info" ? "" : "badge-warn"}`}>{hrLookup("sev_", r.severity, lang)}</span>
@@ -302,56 +292,62 @@ function AlarmItem({ t, lang, r, spark, rec, drafted }: { t: HrResultsT; lang: L
             {r.status !== "open" && <span className="badge">{statusLabel(r.status, lang)}</span>}
             {r.audience === "hr_manager" && <span className="badge" title={t("sg_vis_title")}>{t("sg_vis")}</span>}
           </div>
-          <p className="text-[14px] font-semibold">{r.domain ? domainLabel(r.domain, lang) : t("sg_general")}</p>
-          <p className="text-[13px] text-muted">{r.detail}</p>
-          <p className="mt-0.5 text-xs text-subtle">
-            <span className="num">{r.periode} · <People n={r.n} scoped={r.collectiuId !== null || r.tornId !== null} /></span>
-            {alarmHint(r.type, lang) && <> · {alarmHint(r.type, lang)}</>}
-
+          <p className="text-[14px] font-semibold">
+            {r.domain ? domainLabel(r.domain, lang) : t("sg_general")}
+            {r.shift && <span className="font-normal text-muted"> · {t("sig_shift", { shift: shiftLabel(r.shift, lang) })}</span>}
           </p>
+          <p className="text-[13px] text-muted">{r.detail}</p>
         </div>
-        {spark && (
-          <div className="shrink-0 text-right" title={t("sg_spark_title")}>
-            <Sparkline values={spark} />
-            <div className="text-[11px] text-subtle">{t("sg_spark_cap")}</div>
-          </div>
-        )}
-      </div>
-      <div className="mt-2 flex flex-wrap items-center gap-2">
-        {rec && !rec.seguimentNecessitatId ? (
-          <form action={proposeFollowUpAction}>
-            <input type="hidden" name="rec" value={rec.id} />
-            <button className="btn btn-primary" type="submit">{t("sg_propose")}</button>
-          </form>
-        ) : rec ? (
-          <Link href={`/hr/signals/${r.id}`} className="btn">{t("sg_created")}</Link>
-        ) : (
-          <Link href={`/hr/signals/${r.id}`} className="btn btn-primary">{t("sg_review")}</Link>
-        )}
+      <div className="ml-auto flex shrink-0 flex-wrap items-center justify-end gap-2">
         {!drafted && r.domainId != null && !NON_ACTIONABLE.has(r.type) && (
           <form action={generateRecommendationsAction}>
             <input type="hidden" name="signal" value={r.id} />
             <GenerateButton />
           </form>
         )}
-        {r.status === "open" && (
-          <form action={setAlarmStatusAction}>
-            <input type="hidden" name="id" value={r.id} />
-            <input type="hidden" name="status" value="acknowledged" />
-            <button type="submit" className="alarm-icon-btn" aria-label={t("sg_dismiss")} title={t("sg_dismiss")}>
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
-            </button>
-          </form>
-        )}
-        {next.includes("resolved") && (
-          <form action={setAlarmStatusAction}>
-            <input type="hidden" name="id" value={r.id} />
-            <input type="hidden" name="status" value="resolved" />
-            <button type="submit" className="alarm-icon-btn" aria-label={t("sg_resolve")} title={t("sg_resolve")}>
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7" /></svg>
-            </button>
-          </form>
-        )}
+        <div className="alarm-split">
+          {rec && !rec.seguimentNecessitatId ? (
+            <form action={proposeFollowUpAction}>
+              <input type="hidden" name="rec" value={rec.id} />
+              <button className="btn btn-primary" type="submit">{t("sg_propose")}</button>
+            </form>
+          ) : rec ? (
+            <Link href={`/hr/signals/${r.id}`} className="btn">{t("sg_created")}</Link>
+          ) : (
+            <Link href={`/hr/signals/${r.id}`} className="btn btn-primary">{t("sg_review")}</Link>
+          )}
+          {next.length > 0 && (
+            <details className="alarm-split-menu">
+              <summary className={`btn ${rec ? (rec.seguimentNecessitatId ? "" : "btn-primary") : "btn-primary"}`} aria-label={t("sg_more")} title={t("sg_more")}>
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg>
+              </summary>
+              <div className="alarm-split-items" role="menu">
+                {r.status === "open" && (
+                  <form action={setAlarmStatusAction}>
+                    <input type="hidden" name="id" value={r.id} />
+                    <input type="hidden" name="status" value="acknowledged" />
+                    <button type="submit" role="menuitem">{t("sg_mark_reviewed")}</button>
+                  </form>
+                )}
+                {next.includes("resolved") && (
+                  <form action={setAlarmStatusAction}>
+                    <input type="hidden" name="id" value={r.id} />
+                    <input type="hidden" name="status" value="resolved" />
+                    <button type="submit" role="menuitem">{t("sg_resolve")}</button>
+                  </form>
+                )}
+                {next.includes("dismissed") && (
+                  <form action={setAlarmStatusAction}>
+                    <input type="hidden" name="id" value={r.id} />
+                    <input type="hidden" name="status" value="dismissed" />
+                    <button type="submit" role="menuitem">{t("sg_dismiss")}</button>
+                  </form>
+                )}
+              </div>
+            </details>
+          )}
+        </div>
+      </div>
       </div>
     </li>
   );

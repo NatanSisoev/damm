@@ -6,6 +6,7 @@ import { hrDict } from "@/lib/i18n/hr";
 import { LangSwitcher } from "@/components/lang-switcher";
 import { Wordmark } from "../wordmark";
 import { HrSidebar, type NavBadges } from "./nav";
+import type { ViewRole } from "@/lib/view-role";
 import "./hr.css";
 
 /** Theme scope only (no chrome), for pages outside the HR layout such as the login. */
@@ -28,7 +29,7 @@ async function Footer() {
  * Shared chrome. /hr gets a grouped sidebar (drawer below 1024px); /manager keeps the neutral top bar.
  * Red only on the active nav item.
  */
-export async function HrShell({ children, subtitle, manager = false, badges }: { children: ReactNode; subtitle?: string; manager?: boolean; badges?: NavBadges }) {
+export async function HrShell({ children, subtitle, manager = false, badges, role = "hr" }: { children: ReactNode; subtitle?: string; manager?: boolean; badges?: NavBadges; role?: ViewRole }) {
   const t = await getT(hrDict);
   subtitle ??= t("shell_subtitle");
   if (manager) {
@@ -54,8 +55,9 @@ export async function HrShell({ children, subtitle, manager = false, badges }: {
     );
   }
   return (
-    <div className={`hr-shell hr-layout`}>
+    <div className={`hr-shell hr-layout`} data-role={role}>
       <HrSidebar
+        role={role}
         badges={badges}
         subtitle={subtitle}
         logo={

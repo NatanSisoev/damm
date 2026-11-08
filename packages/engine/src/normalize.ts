@@ -13,6 +13,8 @@ export interface QuestionDef {
   isFollowup: boolean;
   needId: number | null;
   priority: number;
+  /** Belongs to a one-off campaign query: never part of the daily batch. */
+  campaign: boolean;
 }
 
 export interface RawAnswer {

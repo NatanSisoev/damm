@@ -36,7 +36,7 @@ How the Catalan text in the app should read. Use it when you write or review any
 | Recursos Humans | Portal de persones, RRHH, RH | Name of the HR portal in titles and labels (es "Recursos Humanos", en "HR"). Written out in full. |
 | panell | tauler | |
 | connexió | xarxa | "Sense connexió". |
-| necessitat | | The HR need that starts a survey. |
+| consulta (es "consulta", en "query") | necessitat, petició, sol·licitud (es necesidad, solicitud; en need, request) | The HR query that starts a survey. Plural: consultes / consultas / queries. The route (/hr/needs) and DB names keep the old word. |
 | col·lectiu | | Fàbriques, Logística, Comercial, Oficines. |
 | alarma, recomanació | | Engine outputs. |
 | resum de l'anàlisi | resum del motor | "Motor" stays in code and docs. |

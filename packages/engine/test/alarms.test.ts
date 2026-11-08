@@ -43,18 +43,49 @@ const alarms = (db: SqlDatabase, tipus?: string) =>
     periode: string;
   }[];
 
-test("sharp_drop opens a critical hr_manager alarm on a confident drop", () => {
+test("sharp_drop opens a warning hr_manager alarm on a moderately confident drop", () => {
   const db = makeDb();
   series(db, OFICINES, null, BENESTAR, [{ score: 7.5 }, { score: 6.2, conf: 65 }]);
   const r = runAlarms(db, { now: NOW });
   const a = alarms(db, "sharp_drop");
   assert.equal(a.length, 1);
-  assert.equal(a[0]!.severity, "critical");
+  assert.equal(a[0]!.severity, "warning");
   assert.equal(a[0]!.audience, "hr_manager");
   assert.equal(a[0]!.status, "open");
   assert.equal(a[0]!.periode, "2026-10");
   assert.equal(a[0]!.n, 20);
   assert.equal(r.opened, alarms(db).length);
+});
+
+test("severity levels: deep confident drop is critical, very low score is critical, and severity follows an open alarm", () => {
+  const db = makeDb();
+  series(db, OFICINES, null, BENESTAR, [{ score: 7.5 }, { score: 5.8, conf: 80 }]); // drop 1.7, conf 80
+  runAlarms(db, { now: NOW });
+  assert.equal(alarms(db, "sharp_drop")[0]!.severity, "critical");
+
+  const db2 = makeDb();
+  series(db2, OFICINES, null, BENESTAR, [{ score: 5.5 }, { score: 4.2, conf: 62 }]); // score below 4.5
+  runAlarms(db2, { now: NOW });
+  assert.equal(alarms(db2, "sharp_drop")[0]!.severity, "critical");
+
+  const db3 = makeDb();
+  series(db3, OFICINES, null, BENESTAR, [{ score: 7.5 }, { score: 6.3, conf: 65 }]);
+  runAlarms(db3, { now: NOW });
+  assert.equal(alarms(db3, "sharp_drop")[0]!.severity, "warning");
+  series(db3, OFICINES, null, BENESTAR, [{ score: 7.5 }, { score: 5.7, conf: 85 }]);
+  runAlarms(db3, { now: NOW + DAY_MS });
+  const a = alarms(db3, "sharp_drop");
+  assert.equal(a.length, 1);
+  assert.equal(a[0]!.severity, "critical");
+});
+
+test("severity levels: a small sustained decline at a healthy score is a log (info)", () => {
+  const db = makeDb();
+  series(db, OFICINES, null, BENESTAR, [{ score: 6.5 }, { score: 6.3 }, { score: 6.2 }]);
+  runAlarms(db, { now: NOW });
+  const a = alarms(db, "sustained_decline");
+  assert.equal(a.length, 1);
+  assert.equal(a[0]!.severity, "info");
 });
 
 test("sharp_drop needs confidence >= 60", () => {
@@ -257,7 +288,7 @@ test("changepoint_cluster: >= 10 confirmed drops in the segment within 14 days, 
   const a = alarms(db, "changepoint_cluster");
   assert.equal(a.length, 1);
   assert.equal(a[0]!.n, 10);
-  assert.equal(a[0]!.severity, "critical");
+  assert.equal(a[0]!.severity, "warning"); // critical only at twice the trigger (20+)
   assert.equal(a[0]!.audience, "hr_manager");
   assert.equal(a[0]!.confianca, null);
 });

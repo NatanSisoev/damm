@@ -4,7 +4,7 @@ import { hrResultsDict } from "@/lib/i18n/hr-results";
 import { domainLabel } from "@/lib/i18n/names";
 import { numD } from "@/lib/i18n/num";
 
-// Domain radar: fixed axis order, at most 2 series. The scale adapts to the data
+// Domain radar: fixed axis order, up to 4 series (the shown selection plus up to 3 comparisons). The scale adapts to the data
 // (never narrower than 1 point, always inside 1-5) and is labelled, so small changes stay visible.
 // A suppressed value (n<10) is a gap in the shape, never drawn as 0.
 
@@ -80,7 +80,7 @@ function Shape({ s, n, sc }: { s: RadarSeries; n: number; sc: Scale }) {
           key={key}
           x1={p.x} y1={p.y} x2={q.x} y2={q.y}
           stroke={colorOf(s)}
-          strokeWidth={2}
+          strokeWidth={2.5}
           strokeLinecap="round"
           strokeDasharray={dashedOf(s) ? "5 4" : undefined}
         />
@@ -88,7 +88,7 @@ function Shape({ s, n, sc }: { s: RadarSeries; n: number; sc: Scale }) {
       {pts.map((p, i) =>
         p ? (
           <g key={i}>
-            <circle cx={p.x} cy={p.y} r={4.5} fill={colorOf(s)} className="stroke-surface" strokeWidth={2} />
+            <circle cx={p.x} cy={p.y} r={5} fill={colorOf(s)} className="stroke-surface" strokeWidth={2} />
             <circle cx={p.x} cy={p.y} r={12} fill="transparent">
               <title>{`${s.label}: ${s.values[i]!.toFixed(1)}`}</title>
             </circle>
@@ -99,7 +99,7 @@ function Shape({ s, n, sc }: { s: RadarSeries; n: number; sc: Scale }) {
   );
 }
 
-export async function Radar({ axes, series }: { axes: string[]; series: RadarSeries[] }) {
+export async function Radar({ axes, series, legend = true }: { axes: string[]; series: RadarSeries[]; /** Off when colour-coded chips above already name the series. */ legend?: boolean }) {
   const { t, lang } = await getTL(hrResultsDict);
   const fmt = (v: number) => numD(v, lang, 1);
   // Axes arrive as domain names (data); shown in the UI language.
@@ -109,7 +109,8 @@ export async function Radar({ axes, series }: { axes: string[]; series: RadarSer
   const rings = sc.rings;
   return (
     <figure className="space-y-3">
-      <div className="flex flex-wrap gap-4 text-[13px] text-muted">
+      {legend && (
+      <div className="flex flex-wrap gap-x-4 gap-y-2 text-[13px] text-ink">
         {series.map((s) => (
           <span key={s.label} className="flex items-center gap-2">
             <span
@@ -120,9 +121,10 @@ export async function Radar({ axes, series }: { axes: string[]; series: RadarSer
           </span>
         ))}
       </div>
+      )}
       <svg
-        viewBox={`-80 25 ${SIZE + 160} ${SIZE - 30}`}
-        className="mx-auto w-full max-w-[34rem] text-muted"
+        viewBox={`-80 25 ${SIZE + 160} ${SIZE + 10}`}
+        className="mx-auto w-full max-w-[48rem] text-muted"
         role="img"
         aria-label={t("rd_aria", { lo: fmt(sc.lo), hi: fmt(sc.hi), series: series.map((s) => s.label).join(t("rd_and")) })}
       >

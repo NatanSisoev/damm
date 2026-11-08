@@ -11,7 +11,7 @@ import { updateItemStats } from "../src/item-bias.ts";
 const cfg = DEFAULT_CONFIG;
 const q = (over: Partial<QuestionDef>): QuestionDef => ({
   id: 1, domainId: 1, collectiuId: null, type: "scale10", text: "t", facet: "f", polarity: 1,
-  options: null, isFollowup: false, needId: null, priority: 0, ...over,
+  options: null, isFollowup: false, needId: null, priority: 0, campaign: false, ...over,
 });
 
 test("normalise: every closed type maps to 0..1 with 1 = best", () => {
@@ -109,7 +109,42 @@ test("thompson: never picks a banned format and favours the better arm", () => {
     assert.notEqual(t, "ranking");
     if (t === "yes_no") good++;
   }
-  assert.ok(good > 450);
+  // Expected share ≈ 0.1 + 0.8 · 0.8 = 0.74: the better arm leads, the weaker one still runs.
+  assert.ok(good > 320 && good < 420, `yes_no ${good}/500`);
+});
+
+const shares = (arms: Parameters<typeof chooseFormat>[1], n = 4000, seed = 11) => {
+  const rng = createRng(seed);
+  const c = new Map<string, number>();
+  for (let i = 0; i < n; i++) {
+    const t = chooseFormat(rng, arms)!;
+    c.set(t, (c.get(t) ?? 0) + 1);
+  }
+  return (t: string) => (c.get(t) ?? 0) / n;
+};
+
+test("thompson: a format weight is a lean, not a ranking", () => {
+  // Equal quality, weights 3 : 1 → about 0.1 + 0.8 · 0.75 = 0.70 vs 0.30, not ~100% vs 0%.
+  const s = shares([
+    { type: "yes_no", alpha: 20, beta: 20, pref: 3 },
+    { type: "scale10", alpha: 20, beta: 20, pref: 1 },
+  ]);
+  assert.ok(s("yes_no") > 0.64 && s("yes_no") < 0.76, `yes_no ${s("yes_no")}`);
+  assert.ok(s("scale10") > 0.24 && s("scale10") < 0.36, `scale10 ${s("scale10")}`);
+});
+
+test("thompson: every allowed format keeps a minimum share; weight 0 stays banned", () => {
+  const s = shares([
+    { type: "yes_no", alpha: 50, beta: 2, pref: 100 },
+    { type: "scale10", alpha: 2, beta: 50, pref: 1 },
+    { type: "scale5", alpha: 2, beta: 50, pref: 1 },
+    { type: "ranking", alpha: 50, beta: 2, pref: 0 },
+  ]);
+  assert.ok(s("scale10") >= 0.085, `scale10 ${s("scale10")}`);
+  assert.ok(s("scale5") >= 0.085, `scale5 ${s("scale5")}`);
+  assert.equal(s("ranking"), 0);
+  assert.equal(chooseFormat(createRng(1), [{ type: "yes_no", alpha: 1, beta: 1, pref: 0 }]), undefined);
+  assert.equal(chooseFormat(createRng(1), [{ type: "pair", alpha: 1, beta: 1, pref: 0.2 }]), "pair");
 });
 
 test("rng: seeded and reproducible; beta samples in range", () => {

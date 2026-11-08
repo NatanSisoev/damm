@@ -88,7 +88,7 @@ All six domains stay active. A day is **exactly `questions_per_day` (3) items of
 
 ### Format choice by Thompson sampling
 
-For each (collective, shift, format) keep `Beta(α, β)` (`format_stats`). Reward = a *good answer*: answer time ≥ `min_answer_ms` (1500 ms). Answers without `answer_ms` do not update the arm. (Planned: also flag the same raw value across a whole batch.) Per decision, for each eligible format f draw `θ_f ~ Beta(α_f, β_f)` and pick `argmax θ_f · pref(collective, f)`, where `pref` comes from `format_preference` (HR; 0 = banned, default 1).
+For each (collective, shift, format) keep `Beta(α, β)` (`format_stats`). Reward = a *good answer*: answer time ≥ `min_answer_ms` (1500 ms). Answers without `answer_ms` do not update the arm. (Planned: also flag the same raw value across a whole batch.) Per decision, for each eligible format f draw `θ_f ~ Beta(α_f, β_f)` and pick f at random with probability `0.1 + (1 − 0.1·n) · θ_f·pref_f / Σ θ·pref` over the n allowed formats (floor lowered to 1/n when n > 10), where `pref` comes from `format_preference` (HR; 0 = banned, default 1). The weight is a lean, not a ranking: 3 vs 1 shows the first format about three times as often, and every allowed format keeps at least a 10% share.
 
 Example: HR sets Fàbriques to yes_no 3, scale5 2, pair 1, ranking 0. The engine never shows rankings in Fàbriques and leans to yes/no, but if night shift turns out to answer `scale5` carefully and rush through yes/no, the Beta for yes_no drops and `scale5` wins more often. Formats with little data have wide Betas and still get tried.
 
@@ -104,6 +104,15 @@ HR can ask the engine to dig deeper into an alarm: sample one domain more in one
 - **Open comment prompt:** in a probed domain the format step multiplies the preference for `open` items by 2, so people get the chance to say why. If the facet has no `open` item, the normal format choice applies.
 - **Refusals:** the segment (synthetic population, else accounts) must have at least `min_group_size` (10) people; a second active probe on the same segment and domain is refused; boost and days are range-checked. A probe addresses segments only: nothing in it names or selects an account, and the scheduler's per-account decision is the same function as before.
 - **Progress:** the engine job fills the progress columns on every run from answers since the probe started, never per person. `extraAnswers = answers − answersBefore`, where `answersBefore` counts an equally long window before the start. `confidenceBefore` is the segment's `agregat` confidence when the probe started, `confidenceNow` the latest. If fewer than 10 different people answered during the probe, `suprimit = 1` and every number is hidden. Progress freezes when the probe ends or is stopped.
+
+
+### Campaign queries (delivery = campaign)
+
+A query has `question_count` (2-6) and a `delivery` mode. `daily` queries feed the batch as described above. `campaign` queries are a one-off extra set and never enter the daily batch (excluded in the SQL of `approvedQuestionsFor` and again by `QuestionDef.campaign` in `selectBatch`).
+
+- `engine.getCampaign(accountId)` returns the oldest pending campaign for the person's collective (published, not closed, not yet answered by this person), with all its questions, which may mix types. Pending is derived from the absence of `resposta` rows, so there are no assignment rows and `AssignmentReason` is unchanged.
+- `submitAnswers` accepts each campaign question once (a repeat is `already_answered`) and returns `remainingCampaign` next to `remainingToday`. Campaign answers still feed `learn`.
+- The set stays available until answered or HR closes the query. Databases without the `delivery` column behave as all-daily.
 
 ## 6. Insights (periodic, dashboard)
 
@@ -131,7 +140,7 @@ For each anchor the row has the segment × domain **score, confidence and n in t
 
 ## 7. Alarms (`senyal`)
 
-Each alarm has `severity`, `status` (`open` → `acknowledged` → `action_linked` → `resolved`), `audience`, a trigger level and a separate clear level (hysteresis), and a cooldown of 7 days per (type, segment, domain). Warnings go in a weekly digest; critical alarms are pushed immediately. The AI may attach a proposed `recomanacio`; a human decides.
+Each alarm has `severity`, `status` (`open` → `acknowledged` → `action_linked` → `resolved`, or `dismissed` from any non-final status), `audience`, a trigger level and a separate clear level (hysteresis), and a cooldown of 7 days per (type, segment, domain). Warnings go in a weekly digest; critical alarms are pushed immediately. The AI may attach a proposed `recomanacio`; a human decides.
 
 | `tipus` | Trigger (defaults) | Severity | Audience |
 |---|---|---|---|

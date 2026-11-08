@@ -150,22 +150,23 @@
   background: linear-gradient(90deg, color-mix(in oklab, var(--div-neg) 58%, var(--div-mid)), var(--div-mid), color-mix(in oklab, var(--div-pos) 58%, var(--div-mid)));
 }
 
-/* Radar cohort chips: 44px tap targets, wrap on phones. */
+/* Radar cohort chips: quiet filters (no outline); selected = tinted fill, full ink and a solid dot. */
 .hr-chip {
-  display: inline-flex; min-height: 44px; align-items: center; gap: 0.5rem;
-  padding: 0 0.85rem; border: 1px solid var(--line); border-radius: 2px;
-  font-size: 13px; color: var(--text); background: transparent;
+  display: inline-flex; min-height: 28px; align-items: center; gap: 0.4rem;
+  padding: 0 0.6rem; border: 0; border-radius: 2px;
+  font-size: 12.5px; line-height: 1; color: var(--text-subtle, var(--text)); background: transparent; opacity: 0.75;
 }
-.hr-chip:hover { background: var(--surface-muted); }
-.hr-chip[aria-pressed="true"] { border-color: var(--text); background: var(--surface-muted); font-weight: 600; }
+.hr-chip:hover { background: var(--surface-muted); opacity: 1; }
+.hr-chip:not([aria-pressed="true"]) .hr-chip-dot { opacity: 0.35; }
+.hr-chip[aria-pressed="true"] { color: var(--text); background: var(--surface-muted); opacity: 1; }
 .hr-chip[aria-disabled="true"] { opacity: 0.5; pointer-events: none; }
-.hr-chip-dot { width: 10px; height: 10px; border-radius: 9999px; flex: none; }
+.hr-chip-dot { width: 8px; height: 8px; border-radius: 9999px; flex: none; }
 
 /* Touch targets: 44px on phones. */
 @media (max-width: 767px) {
   .hr-shell .btn,
-  .hr-shell .hr-chip,
   .hr-shell summary { min-height: 44px; }
+  .hr-shell .hr-chip { min-height: 36px; }
   .hr-shell .btn { display: inline-flex; align-items: center; justify-content: center; }
 }
 
@@ -212,3 +213,32 @@
 
 .glyph { display: inline-flex; align-items: center; gap: 3px; white-space: nowrap; }
 @keyframes hr-spin { to { transform: rotate(360deg); } } .gen-spinner-svg { animation: hr-spin 0.9s linear infinite; }
+
+/* Folded Panell sections: native details, summary is the card heading. */
+.hr-card-fold > summary { display: flex; align-items: center; justify-content: flex-start; gap: 8px; list-style: none; cursor: pointer; min-height: 44px; height: auto; padding-top: 12px; padding-bottom: 12px; }
+.hr-card-fold > summary .section-title { margin: 0; text-align: left; }
+.hr-card-fold > summary::-webkit-details-marker { display: none; }
+.hr-card-fold > summary:hover .section-title { text-decoration: underline; }
+.hr-card-fold > summary:focus-visible { outline: 2px solid var(--text); outline-offset: -2px; border-radius: 2px; }
+.hr-card-fold:not([open]) > summary { border-bottom: 0; }
+.hr-card-fold-chev { color: var(--text-subtle); line-height: 1; transition: transform 0.15s; }
+.hr-card-fold[open] > summary .hr-card-fold-chev { transform: rotate(90deg); }
+@media (prefers-reduced-motion: reduce) { .hr-card-fold-chev { transition: none; } }
+
+/* Alarm card: primary action with a caret menu (dismiss / resolve). */
+.alarm-split { display: inline-flex; align-items: stretch; }
+.alarm-split > :first-child .btn, .alarm-split > a.btn { border-top-right-radius: 0; border-bottom-right-radius: 0; }
+.alarm-split-menu { position: relative; display: flex; }
+.alarm-split-menu > summary { list-style: none; cursor: pointer; padding-left: 0.5rem; padding-right: 0.5rem; height: 100%; border-top-left-radius: 0; border-bottom-left-radius: 0; border-left: 1px solid color-mix(in srgb, currentColor 30%, transparent); }
+.alarm-split-menu > summary::-webkit-details-marker { display: none; }
+.alarm-split-items { position: absolute; right: 0; top: calc(100% + 4px); z-index: 20; min-width: 10rem; border: 1px solid var(--line); background: var(--surface); border-radius: 2px; padding: 4px 0; box-shadow: 0 4px 12px rgb(0 0 0 / 0.08); }
+.alarm-split-items button { display: block; width: 100%; text-align: left; padding: 6px 12px; font-size: 13px; color: var(--text); }
+.alarm-split-items button:hover, .alarm-split-items button:focus-visible { background: var(--surface-muted); outline: none; }
+
+/* Testing toggle: HR (full portal) vs manager (dashboard only, no action controls) */
+.hr-role-toggle { display: flex; gap: 2px; margin-top: 8px; padding: 2px; border: 1px solid var(--border); }
+.hr-role-toggle[data-compact="true"] { flex-direction: column; }
+.hr-role-toggle button { flex: 1; min-height: 32px; padding: 0 8px; font-size: 12px; font-weight: 600; color: var(--text-muted); }
+.hr-role-toggle button[aria-pressed="true"] { color: var(--text); background: var(--accent-soft); }
+.hr-shell[data-role="manager"] main form,
+.hr-shell[data-role="manager"] main .hr-act { display: none; }
