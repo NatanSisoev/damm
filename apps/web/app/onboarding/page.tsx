@@ -1,9 +1,10 @@
 import Link from "next/link";
-import { lookupJoinCode } from "@damm/db/join";
+import { listShiftsForJoinCode, lookupJoinCode } from "@damm/db/join";
 import { normalizeJoinCode } from "@/lib/join-code";
 import { LangSwitcher } from "@/components/lang-switcher";
 import { employeeDict } from "@/lib/i18n/employee";
-import { getT } from "@/lib/i18n/server";
+import { getTL } from "@/lib/i18n/server";
+import { shiftChoices } from "@/lib/shift-options";
 import { EmployeeFrame, PageHead } from "../(employee)/components/frame";
 import { OnboardingForm } from "./onboarding-form";
 import { pageTitle } from "@/lib/i18n/titles";
@@ -13,7 +14,7 @@ export const generateMetadata = pageTitle("onboarding");
 export const dynamic = "force-dynamic";
 
 export default async function OnboardingPage({ searchParams }: { searchParams: Promise<{ codi?: string }> }) {
-  const t = await getT(employeeDict);
+  const { t, lang } = await getTL(employeeDict);
   const { codi: raw } = await searchParams;
   const typed = normalizeJoinCode(raw);
   const info = typed ? lookupJoinCode(typed) : null;
@@ -29,7 +30,7 @@ export default async function OnboardingPage({ searchParams }: { searchParams: P
           <>
             <PageHead eyebrow={`${info.empresa} · ${info.collectiu}`} title={t("onb_title")} />
             <div className="px-4 pb-8">
-              <OnboardingForm codi={info.codi} />
+              <OnboardingForm codi={info.codi} shifts={shiftChoices(listShiftsForJoinCode(info.codi), lang)} />
               <p className="mt-6 text-center text-sm">
                 <Link href="/privacitat" className="underline">
                   {t("privacy_link")}

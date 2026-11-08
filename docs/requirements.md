@@ -106,7 +106,7 @@ The guide says "Publicar a Typeform". AGENTS.md decides to ignore Typeform: the 
 | R-FLOW-5b | QR access | done | `/join/[codi]` |
 | R-FLOW-5c | **Frequency** strategy (about 2 a day, no repeats 4 days in a row) | done | `@damm/engine` scheduling, wired to `GET /api/pool/next`; see `docs/engine.md` |
 | R-FLOW-5d | **Reminders** | partial | Web push built: opt-in toggle (`/settings`, nudge on `/`), subscription in `push_subscripcio`, a publish notifies the collective, expired subscriptions (404/410) deleted. Low-participation banner on a published need (`apps/web/app/hr/participation.ts`: under 30 % of the collective's population, or under the minimum group size) with a "Send a reminder" button (`remindNeedAction`, same push path as publish, aggregate device count only, `<10` under the minimum). No automatic daily reminder job yet. A real phone needs HTTPS (task 9). |
-| R-FLOW-5e | **Representativeness control** while collecting (warn when a group is under-sampled) | partial | Shown on results; the reach card links to a new need aimed at the gap (`/hr/needs?nova=1#nova`, c1c7422). The engine raises a `baixa_participacio` alarm (C9); the needs page now shows a participation banner with a reminder action and can act on it with a time-boxed probe that samples a domain more in a segment (`startProbe`, C12) with progress. Indagar button and progress card on the signal page (51458d3). |
+| R-FLOW-5e | **Representativeness control** while collecting (warn when a group is under-sampled) | done | Shown on results and as a warning banner on `/hr` (`rep-banner.tsx`, 80% rule on the methodology page); the reach card links to a new need aimed at the gap (`/hr/needs?nova=1#nova`, c1c7422). The engine raises a `baixa_participacio` alarm (C9); the needs page now shows a participation banner with a reminder action and can act on it with a time-boxed probe that samples a domain more in a segment (`startProbe`, C12) with progress. Indagar button and progress card on the signal page (51458d3). |
 | R-FLOW-5f | Does not saturate anyone | done | Engine rules (daily cap, no same question 4 days in a row), wired to the pool |
 
 ### R-FLOW-6 Collect and analyse
@@ -151,7 +151,7 @@ At least one must run end to end in the final demo; ideally all three (G-§5).
 | A2 | The AI proposes **4 short questions with a warm tone** | done (live drafting, see `docs/ai-drafting-eval.md`) |
 | A3 | HR **edits one** and approves | done |
 | A4 | Publish **with a QR for the plant** | done |
-| A5 | The system **warns that the night shift responds little** | partial: engine emits a `baixa_participacio` alarm per collective × shift (C9); the explicit banner is Jan's |
+| A5 | The system **warns that the night shift responds little** | done: banner on `/hr` (`rep-banner.tsx`) fed by `underRepresented()`: a visible segment is flagged when its response rate is under 80% of its reference rate (collective for shifts, company for collectives); suppressed rows never show; links to a new need and the methodology. Engine also emits `baixa_participacio` (C9). Real accounts get their shift from an optional onboarding step (and `/settings`), stored in `compte.torn_id`, so the banner works beyond synthetic data |
 | A6 | Comments grouped into **communication** and **breaks** | partial: seeded October theme |
 | A7 | **2 actions** recommended plus a follow-up survey | partial: seeded recommendations; follow-up done |
 | A8 | Answers whether the change was understood, what difficulties it causes and what to reinforce (G-§5 A) | partial: depends on A2 question quality |
@@ -161,7 +161,7 @@ At least one must run end to end in the final demo; ideally all three (G-§5).
 |------|----------|--------|
 | B1 | Mobile experience, reached by QR, very short | done |
 | B2 | No computer, little email access, so no email-based flow | done (join code plus username, no email) |
-| B3 | A control that **warns when the sample is not representative** | partial: engine emits `baixa_participacio` (C9); show it as an explicit warning banner per need/collective |
+| B3 | A control that **warns when the sample is not representative** | done: same banner on `/hr` (rule documented on the methodology page, section 1) with actions to the reminder flow and a new need aimed at the gap |
 
 ### R-SC-C Large volume of comments
 | Step | Expected | Status |
@@ -171,7 +171,7 @@ At least one must run end to end in the final demo; ideally all three (G-§5).
 | C3 | Summarise them | done (engine: `tema.resum`); HR display: C10 (Jan) |
 | C4 | Detect **emerging themes compared with a previous period** | done (engine: `emergent` alarm on the October shift-communication theme); HR display: C10 (Jan) |
 | C5 | Propose areas for action | partial (themes and emergent alarms feed the AI recommendations; the proposals are the recommendations module) |
-| C6 | **Explain the limits of the analysis** | partial: limits written in engine.md section 12 for the methodology page (task 18); the per-screen note is still to do (Jan) |
+| C6 | **Explain the limits of the analysis** | done: methodology page (engine.md section 12) plus a one-line per-view note with a "Com es calcula?" link under results, trends, signals and signal detail, comment themes and the manager view (`limits-note.tsx`, ca/es/en) |
 
 ## 5. Bias and analysis-difficulty coverage
 
@@ -181,7 +181,7 @@ D-S9 and D-S10. Each needs a named mitigation we can point at in the demo. "AI d
 | ID | Bias | Our mitigation | Status |
 |----|------|----------------|--------|
 | R-BIAS-1 | Coverage | Representativeness against the 1,200 synthetic population, per collective and shift | done |
-| R-BIAS-2 | Non-response | Night shift under-response shown and alarmed (`baixa_participacio`, C9); engine oversampling of under-represented groups | partial (oversampling blocked) |
+| R-BIAS-2 | Non-response | Night shift under-response shown and alarmed (`baixa_participacio`, C9); engine oversampling of under-represented groups | partial (warning banner and optional shift at signup done; oversampling blocked) |
 | R-BIAS-3 | Self-selection | Push-driven continuous micro-questions rather than opt-in surveys; representativeness weighting | partial (push on publish built; no daily reminder) |
 | R-BIAS-4 | Wording | Question-quality checker (19); human approval | done (per-question warnings in the draft review, N-10) |
 | R-BIAS-5 | Social desirability | Anonymity promise plus `/privacitat`; **show the manager positivity gap** (seeded `MANAGER_BONUS`) | done (dashboard card "Responsables d'equip i la resta": manager vs other mean per domain, each side hidden under 10; demo DB shows +0.25 to +0.48 points) |

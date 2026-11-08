@@ -24,6 +24,7 @@ export async function registerAction(_prev: OnboardingState, formData: FormData)
     username: String(formData.get("username") ?? ""),
     password,
     lang,
+    torn: String(formData.get("torn") ?? "") || undefined,
   });
   if (!res.ok) return { error: t(ERRORS[res.error]) };
   await createSession(res.compteId);

@@ -11,7 +11,7 @@ Scope: the employee side only (onboarding, answering, push). Anything the HR sid
 ## Screens (mobile first, Catalan)
 
 1. `/join/[codi]` (exists): shows company and collective for a valid code, "codi no vàlid" otherwise. "Continua" goes to onboarding.
-2. `/onboarding`: pick username and password (the join code is carried in the session, not the URL query). On submit show the one-time recovery code once, with a "L'he desat" confirmation. No email, phone or name anywhere.
+2. `/onboarding`: pick username and password (the join code is carried in the session, not the URL query). On submit show the one-time recovery code once, with a "L'he desat" confirmation. No email, phone or name anywhere. For collectives whose population has shifts (derived from the data: today Fàbriques and Logística), one optional step follows: "Quin torn fas?" with Matí / Tarda / Nit / Prefereixo no dir-ho (default) and the line "Només per saber si arribem a tots els torns. Mai es mostra per persona." The choice is stored in `compte.torn_id` (NULL when skipped) and can be changed or cleared in `/settings` ("Torn"). It only feeds the per-shift response rate (representativeness banner, n >= 10); it is never shown per person.
 3. `/login`: username and password. "He perdut la contrasenya" takes the recovery code and sets a new password; the used recovery code is cleared and a new one is shown.
 4. `/` (home): today's questions, one at a time, with progress ("1 de 2"). Empty state: "Res més per avui".
 5. Question renderers per `tipus`: `escala5`, `escala10`, `swipe`, `ranking`, `obert` (free text with a short note that it is anonymous and should not include personal data).

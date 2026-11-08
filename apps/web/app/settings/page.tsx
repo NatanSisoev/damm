@@ -1,15 +1,17 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { getShiftChoice } from "@damm/db/employee";
 import { MIN_GROUP_SIZE } from "@damm/shared";
 import { LangSwitcher } from "@/components/lang-switcher";
 import { employeeDict } from "@/lib/i18n/employee";
-import { getT } from "@/lib/i18n/server";
+import { getTL } from "@/lib/i18n/server";
+import { shiftChoices } from "@/lib/shift-options";
 import { vapidPublicKey } from "@/lib/push";
 import { getCompteId } from "@/lib/session";
 import { PushToggle } from "../(employee)/components/push-toggle";
 import { EmployeeShell } from "../(employee)/components/shell";
 import { logoutAction } from "./actions";
-import { ChangePasswordPanel, DeleteAccountPanel, RecoveryPanel } from "./account-panels";
+import { ChangePasswordPanel, DeleteAccountPanel, RecoveryPanel, ShiftPanel } from "./account-panels";
 import { pageTitle } from "@/lib/i18n/titles";
 
 export const generateMetadata = pageTitle("settings");
@@ -17,8 +19,10 @@ export const generateMetadata = pageTitle("settings");
 export const dynamic = "force-dynamic";
 
 export default async function SettingsPage() {
-  if (!(await getCompteId())) redirect("/login");
-  const t = await getT(employeeDict);
+  const compteId = await getCompteId();
+  if (!compteId) redirect("/login");
+  const { t, lang } = await getTL(employeeDict);
+  const shift = getShiftChoice(compteId);
   return (
     <EmployeeShell back title={t("settings_title")}>
       <h1 className="page-title">{t("settings_title")}</h1>
@@ -43,6 +47,8 @@ export default async function SettingsPage() {
           </Link>
         </div>
       </section>
+
+      {shift.options.length > 0 && <ShiftPanel options={shiftChoices(shift.options, lang)} current={shift.current ?? ""} />}
 
       {vapidPublicKey() ? (
         <PushToggle vapidKey={vapidPublicKey()!} />
