@@ -12,6 +12,7 @@ export const hrDict = defineDict({
     full_detail: "Veure tot el detall",
     sections: "Seccions",
     logo_aria: "Give a Damm, inici",
+    skip_to_content: "Salta al contingut",
     footer: "Dades sintètiques. Cap resposta individual. Grups de menys de {n} persones suprimits. La IA proposa, una persona decideix.",
     manager_to_portal: "Recursos Humans →",
 
@@ -404,6 +405,7 @@ export const hrDict = defineDict({
     full_detail: "Ver todo el detalle",
     sections: "Secciones",
     logo_aria: "Give a Damm, inicio",
+    skip_to_content: "Saltar al contenido",
     footer: "Datos sintéticos. Ninguna respuesta individual. Grupos de menos de {n} personas suprimidos. La IA propone, una persona decide.",
     manager_to_portal: "Recursos Humanos →",
 
@@ -781,6 +783,7 @@ export const hrDict = defineDict({
     full_detail: "See the full detail",
     sections: "Sections",
     logo_aria: "Give a Damm, home",
+    skip_to_content: "Skip to content",
     footer: "Synthetic data. No individual answers. Groups of fewer than {n} people are suppressed. AI proposes, a person decides.",
     manager_to_portal: "HR portal →",
 
