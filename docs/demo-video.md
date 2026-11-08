@@ -24,7 +24,7 @@ One example runs through both parts: **shift communication and breaks in Fàbriq
 | 0:25 to 0:45 | Video | Analytics | Real stills: radar ("Perfil per domini"), representativeness with the night-shift gap, "Suprimit" on a group under 10, "Emergent" theme, Logística weak signal. Slow zooms, animated cursor. |
 | 0:45 to 0:53 | Video | Manager view | Short shot of `/manager`: one collective, read-only. Cut if the video runs long. |
 | 0:53 to 1:05 | Video | Anonymity | Cards: "Mínim 10 persones per grup.", "Cap resposta individual.", "L'administració només veu recomptes." Ends with the hook into the live part: "Ara, en directe." |
-| 1:05 to 1:25 | Live (P1) | Need and drafts | Paste the need into `/hr/needs`, generate drafts. Pre-warmed drafts are ready if the gateway is slow. |
+| 1:05 to 1:25 | Live (P1) | Need and drafts | Paste the need into `/hr/needs/new`, generate drafts. Pre-warmed drafts are ready if the gateway is slow. |
 | 1:25 to 1:40 | Live (P1) | Human approval | Edit one question, "Aprova" two, "Descarta" one. Say it: the AI proposes, a person decides. |
 | 1:40 to 1:50 | Live (P1) | Publish | Publish to the collective. The push lands on P2's phone. |
 | 1:50 to 2:10 | Live (P2) | Answer | P2 answers two questions on the phone, anonymously. |
@@ -47,7 +47,7 @@ One example runs through both parts: **shift communication and breaks in Fàbriq
 3. Phone push needs public HTTPS, the PWA on the home screen on iOS, and the venue network tested.
 4. No secrets and no real data in any frame (R-X-1, R-X-4).
 
-## Live need text (paste into `/hr/needs`, collective Fàbriques)
+## Live need text (paste into `/hr/needs/new`, collective Fàbriques)
 
 The objective is the platform's own suggested example (`nf_objective_ph`), so the audience sees the product's guidance used as is. Context and exclusions are short and tie to the story thread.
 

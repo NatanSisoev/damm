@@ -404,7 +404,7 @@ export async function ReachCard({ gaps, fold }: { gaps: ReachGap[]; fold?: boole
             <li key={g.key} className="py-3">
               <p className="text-[14px]">{text}</p>
               <p className="mt-1 text-[13px] text-muted">{t(g.kind === "torn" ? "an_reach_act_shift" : "an_reach_act_col", { label })}</p>
-              <Link href="/hr/needs?nova=1#nova" className="btn hr-act mt-2 inline-flex" aria-label={t("an_reach_aria", { text })}>{t("an_follow")}</Link>
+              <Link href="/hr/needs/new" className="btn hr-act mt-2 inline-flex" aria-label={t("an_reach_aria", { text })}>{t("an_follow")}</Link>
             </li>
             );
           })}

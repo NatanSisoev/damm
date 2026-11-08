@@ -20,7 +20,7 @@ Flow: need in natural language, AI drafts, human approval, publish (push to the 
 
 ### 1. The need (1:05 to 1:25)
 
-Who: P1 (HR). URL: `/hr/needs` (sidebar "Consultar", page "Consultes"). If the page already lists needs, click "+ Nova consulta"; otherwise the form is shown directly.
+Who: P1 (HR). URL: `/hr/needs` (sidebar "Consultar", page "Consultes"). Click "+ Nova consulta" in the header to open the form at `/hr/needs/new`.
 
 Fill in:
 
@@ -71,7 +71,7 @@ Who: P1, on the laptop. Run the Live trigger below (plan A, or plan B if it misb
 
 Say: "Detect, act, re-measure, learn. Every step has a person approving."
 
-Fallback: no alarm on `/hr/signals` (empty state "Cap alarma. Prem «Recalcula ara»…"): press "Recalcula ara", or use plan B, or walk an alarm that already exists in the demo DB (Fàbriques Condicions i organització, the October shift-communication theme, Oficines polarisation, the Logística heat/PPE theme).
+Fallback: no alarm on `/hr/signals` (empty state "Cap alarma. Prem «Recalcula ara»…"): press "Recalcula ara", or use plan B, or walk what is open in the demo DB (tab "Obertes"): two "Crítica" "Descens sostingut" alarms, Fàbriques Condicions i organització (signal 26, 2026-11, score 6.0 to 4.9 to 4.9) and Logística Lideratge (signal 10, 2026-10, 5.5 to 5.2 to 3.9), plus the "Senyal feble" in Logística Desenvolupament (signal 31, 2026-11), and the Logística "Calor i equips de protecció (EPI)" theme on `/hr/comments`. The sharp drop, emergent, polarisation and changepoint alarms are "Resolta" (tab "Resoltes"): do not walk them.
 
 ## Close (10 s)
 

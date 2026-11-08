@@ -4,6 +4,7 @@
 import type { Lang } from "@damm/shared";
 import { makeT } from "@/lib/i18n/core";
 import { hrResultsDict } from "@/lib/i18n/hr-results";
+import { pointsUnit } from "@/lib/signal-text";
 import { ALARM_DEFAULTS as T } from "@/lib/hr-engine";
 
 export interface AlarmReasonInput {
@@ -47,15 +48,16 @@ export function alarmReason(a: AlarmReasonInput, lang: Lang = "ca"): string | nu
     if (fall === null || !Number.isFinite(fall) || c === null) return null;
     const need = sharp ? T.criticalDrop : T.sharpDropTrigger;
     const x = dec(fall, lang);
+    const u = pointsUnit(x, true, lang);
     const m = dec(need, lang);
     const highConf = c >= T.criticalConfidence;
     if (sev === "critical") {
-      if (fall >= need && highConf) return t("ar_crit_fall", { x, c });
+      if (fall >= need && highConf) return t("ar_crit_fall", { x, c, u });
       return t("ar_crit_score", { s: dec(T.criticalScore, lang) });
     }
-    if (sev === "info") return t("ar_info", { x, f: dec(T.logFall, lang), s: dec(T.logScoreFloor, lang) });
-    if (fall >= need && !highConf) return t("ar_warn_lowconf", { x, c, k: T.criticalConfidence });
-    return t("ar_warn_small", { x, m });
+    if (sev === "info") return t("ar_info", { x, u, f: dec(T.logFall, lang), s: dec(T.logScoreFloor, lang) });
+    if (fall >= need && !highConf) return t("ar_warn_lowconf", { x, u, c, k: T.criticalConfidence });
+    return t("ar_warn_small", { x, u, m });
   }
 
   if (a.tipus === "polarisation") {
@@ -63,9 +65,10 @@ export function alarmReason(a: AlarmReasonInput, lang: Lang = "ca"): string | nu
     if (!m || c === null) return null;
     const fall = Number(m[1]);
     const x = String(fall);
-    if (sev === "critical") return t("ar_crit_cons", { x, c });
-    if (fall >= T.criticalPolarisation && c < T.criticalConfidence) return t("ar_warn_cons_lowconf", { x, c, k: T.criticalConfidence });
-    return t("ar_warn_cons_small", { x, m: T.criticalPolarisation });
+    const pt = pointsUnit(fall, false, lang);
+    if (sev === "critical") return t("ar_crit_cons", { x, pt, c });
+    if (fall >= T.criticalPolarisation && c < T.criticalConfidence) return t("ar_warn_cons_lowconf", { x, pt, c, k: T.criticalConfidence });
+    return t("ar_warn_cons_small", { x, pt, m: T.criticalPolarisation });
   }
 
   if (a.tipus === "changepoint_cluster") {

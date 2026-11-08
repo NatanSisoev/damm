@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
-import { getT } from "@/lib/i18n/server";
+import { getTL } from "@/lib/i18n/server";
+import { tidyRationale, tidyShift } from "@/lib/rationale-text";
 import { hrDict } from "@/lib/i18n/hr";
 
 interface RecommendationBody {
@@ -17,7 +18,7 @@ interface RecommendationBody {
 
 /** Structured body of a recommendation: what, who, when, why, limits and source. No "done" state: HR only approves or discards. */
 export async function RecommendationBody({ r }: { r: RecommendationBody }): Promise<ReactNode> {
-  const t = await getT(hrDict);
+  const { t, lang } = await getTL(hrDict);
   return (
     <div className="space-y-2">
       {r.font && (
@@ -29,7 +30,7 @@ export async function RecommendationBody({ r }: { r: RecommendationBody }): Prom
         </span>
       )}
       {r.titol && <h3 className="font-semibold">{r.titol}</h3>}
-      <p>{r.text}</p>
+      <p>{lang === "ca" ? tidyShift(r.text) : r.text}</p>
       {r.iniciativa && <p className="text-[13px]"><span className="font-semibold">{t("rc_initiative")}</span> {r.iniciativa}</p>}
       {(r.responsableSuggerit || r.terminiSuggerit) && (
         <p className="text-[13px] text-muted">
@@ -38,7 +39,7 @@ export async function RecommendationBody({ r }: { r: RecommendationBody }): Prom
           {r.terminiSuggerit && <>{t("rc_term", { v: r.terminiSuggerit })}</>}
         </p>
       )}
-      {r.justificacio && <p className="text-[13px] text-muted"><span className="font-semibold">{t("rc_why")}</span> {r.justificacio}</p>}
+      {r.justificacio && <p className="text-[13px] text-muted"><span className="font-semibold">{t("rc_why")}</span> {tidyRationale(r.justificacio, lang)}</p>}
       {r.limits && <p className="text-xs text-subtle"><span className="font-semibold">{t("rc_limits")}</span> {r.limits}</p>}
       <p className="text-xs text-subtle">
         {r.font === "llm" ? t("rc_by_ai") : r.font === "template" ? t("rc_by_template") : null}

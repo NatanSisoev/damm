@@ -23,6 +23,11 @@ const SEV_RANK: Record<string, number> = { critical: 0, warning: 1, info: 2 };
 
 /** "1.2" or "74" to "1,2" / "74" (ca, es) or "1.2" (en). */
 const dec = (x: string, lang: Lang) => (lang === "en" ? x : x.replace(".", ","));
+/** Unit word for a figure: singular for exactly 1 ("1 punt sobre 10"), plural otherwise. `x` uses "." or "," as decimal. */
+export function pointsUnit(x: string | number, scale: boolean, lang: Lang): string {
+  const one = Number(String(x).replace(",", ".")) === 1;
+  return makeT(hrResultsDict, lang)(scale ? (one ? "sig_u1" : "sig_u") : one ? "sig_pt1" : "sig_pt");
+}
 const WORD_KEYS = { 2: "sig_w2", 3: "sig_w3", 4: "sig_w4", 5: "sig_w5", 6: "sig_w6" } as const;
 
 /** Segment: "Fàbriques, torn de nit" / "Logística" / "Tota l'empresa". */
@@ -64,23 +69,23 @@ export function signalDetail(s: Pick<SignalLike, "tipus" | "descripcio">, lang: 
       const wk = WORD_KEYS[ser.length as keyof typeof WORD_KEYS];
       if (ser.length < 2) return t("sig_sd_plain");
       const r = span(true);
-      return r.flat ? t("sig_sd_plain") : t("sig_sd_series", { count: wk ? t(wk) : String(ser.length), a: r.a, b: r.b, x: r.x });
+      return r.flat ? t("sig_sd_plain") : t("sig_sd_series", { count: wk ? t(wk) : String(ser.length), a: r.a, b: r.b, x: r.x, u: pointsUnit(r.x, true, lang) });
     }
     case "sharp_drop": {
       const m = d.match(/fell\s+([\d.]+)\s+points?/i);
       if (ser.length >= 2) {
         const r = span(true);
-        if (!r.flat) return t("sig_sharp", { a: r.a, b: r.b, x: r.x });
+        if (!r.flat) return t("sig_sharp", { a: r.a, b: r.b, x: r.x, u: pointsUnit(r.x, true, lang) });
       }
-      return m ? t("sig_sharp_x", { de: deNum(m[1]) }) : t("sig_sharp_plain");
+      return m ? t("sig_sharp_x", { de: deNum(m[1]), u: pointsUnit(m[1], true, lang) }) : t("sig_sharp_plain");
     }
     case "feble": {
       const m = d.match(/decline of\s+([\d.]+)\s+points?\s+over\s+(\d+)\s+periods?/i);
-      return m ? t("sig_weak", { x: D(m[1]), p: m[2] }) : t("sig_weak_plain");
+      return m ? t("sig_weak", { x: D(m[1]), p: m[2], u: pointsUnit(m[1], true, lang) }) : t("sig_weak_plain");
     }
     case "polarisation": {
       const m = d.match(/fell\s+(\d+)\s+points?\s*\((\d+)\s*→\s*(\d+)\)/i);
-      return m && Number(m[2]) > Number(m[3]) ? t("sig_polar", { x: String(Number(m[2]) - Number(m[3])), a: m[2], b: m[3] }) : t("sig_polar_plain");
+      return m && Number(m[2]) > Number(m[3]) ? t("sig_polar", { x: String(Number(m[2]) - Number(m[3])), a: m[2], b: m[3], pt: pointsUnit(Number(m[2]) - Number(m[3]), false, lang) }) : t("sig_polar_plain");
     }
     case "changepoint_cluster": {
       const m = d.match(/^(\d+)\s+people.*?last\s+(\d+)\s+days/i);
@@ -94,13 +99,19 @@ export function signalDetail(s: Pick<SignalLike, "tipus" | "descripcio">, lang: 
       const m = d.match(/rose\s+([\d.]+)\s+points?/i);
       if (ser.length >= 2) {
         const r = span(false);
-        if (!r.flat) return t("sig_improve", { a: r.a, b: r.b, x: r.x });
+        if (!r.flat) return t("sig_improve", { a: r.a, b: r.b, x: r.x, u: pointsUnit(r.x, true, lang) });
       }
-      return m ? t("sig_improve_x", { de: deNum(m[1]) }) : t("sig_improve_plain");
+      return m ? t("sig_improve_x", { de: deNum(m[1]), u: pointsUnit(m[1], true, lang) }) : t("sig_improve_plain");
     }
     case "emergent":
       // Written by the analysis job: the theme label itself (data, kept as is).
-      return d.trim() ? t("sig_emergent", { label: d.trim() }) : t("sig_emergent_plain");
+      if (!d.trim()) return t("sig_emergent_plain");
+      {
+        // Engine wording (Catalan): "<theme>: tema emergent a <collective>. Ha passat a ser el 23% dels comentaris (+19 punts ...)".
+        const m = d.match(/^(.+?): tema emergent a .+?\.\s*Ha passat a ser el (\d+(?:[.,]\d+)?)\s*% dels comentaris \(\+(\d+) punts/);
+        if (m) return t("sig_emergent_full", { label: m[1], share: D(m[2].replace(",", ".")), p: m[3], pt: pointsUnit(m[3], false, lang) });
+      }
+      return t("sig_emergent", { label: d.trim() });
     case "baixa_participacio": {
       const m = d.match(/(\d+(?:[.,]\d+)?)\s*%/);
       return m ? t("sig_lowpart", { x: D(m[1]) }) : t("sig_lowpart_plain");

@@ -5,13 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#fafaf8">
 <title>Sense connexió</title>
+<script>if(/(?:^|; )damm_theme=dark/.test(document.cookie))document.documentElement.dataset.theme="dark";</script>
 <style>
-  :root { color-scheme: light dark; --bg: #fafaf8; --text: #141414; --muted: #6a6a66; --accent: #141414; --on-accent: #fafaf8; --focus: #141414; }
-  @media (prefers-color-scheme: dark) { :root { --bg: #0f0f0e; --text: #ececea; --muted: #9b9b96; --accent: #ececea; --on-accent: #0f0f0e; --focus: #ececea; } }
+  :root { color-scheme: light; --bg: #fafaf8; --text: #141414; --muted: #6a6a66; --accent: #141414; --on-accent: #fafaf8; --focus: #141414; }
+  :root[data-theme="dark"] { color-scheme: dark; --bg: #0f0f0e; --text: #ececea; --muted: #9b9b96; --accent: #ececea; --on-accent: #0f0f0e; --focus: #ececea; }
   body { font-family: "Hanken Grotesk", system-ui, sans-serif; margin: 0; min-height: 100dvh; display: grid; place-items: center; padding: 24px; text-align: center; color: var(--text); background: var(--bg); }
   main { max-width: 24rem; }
   .mark { margin: 0 0 24px; } .mark img { height: 24px; width: auto; }
-  .mark .dk { display: none; } @media (prefers-color-scheme: dark) { .mark .dk { display: inline; } .mark .lt { display: none; } }
+  .mark .dk { display: none; } :root[data-theme="dark"] .mark .dk { display: inline; } :root[data-theme="dark"] .mark .lt { display: none; }
   h1 { font-size: 1.5rem; font-weight: 800; margin: 0 0 8px; }
   p { margin: 0 0 20px; color: var(--muted); line-height: 1.5; }
   button { font: inherit; font-weight: 600; min-height: 48px; padding: 0 20px; border: 0; border-radius: 2px; background: var(--accent); color: var(--on-accent); cursor: pointer; }

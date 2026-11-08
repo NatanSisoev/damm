@@ -214,7 +214,7 @@ const POLARISATION: Lever = L(
 const FOLLOW_UP = " Tanca el cercle amb una micro-enquesta de seguiment d'unes 3 preguntes al cap d'un mes.";
 
 function seg(ctx: RecommendationContext): string {
-  return [ctx.collective ?? "tota l'empresa", ctx.shift ? `torn ${ctx.shift}` : null].filter(Boolean).join(", ");
+  return [ctx.collective ?? "tota l'empresa", ctx.shift ? `torn ${ctx.shift === "mati" ? "matí" : ctx.shift}` : null].filter(Boolean).join(", ");
 }
 
 const fill = (s: string, ctx: RecommendationContext) => s.replace(/\{seg\}/g, seg(ctx));
@@ -224,13 +224,14 @@ function rationale(ctx: RecommendationContext): string {
   const bits = [
     `${TYPE_LABEL[ctx.alarmType] ?? "un senyal"} a ${ctx.domain} (${seg(ctx)}, ${ctx.period})`,
     ctx.score !== null ? `puntuació ${num(ctx.score)}/10` : null,
-    ctx.change !== null ? `canvi ${ctx.change > 0 ? "+" : ""}${num(ctx.change)}` : null,
+    ctx.change !== null ? `canvi respecte al període anterior ${ctx.change > 0 ? "+" : ""}${num(ctx.change)}` : null,
     `n = ${ctx.n}`,
     ctx.confidence !== null ? `confiança ${Math.round(ctx.confidence)}%` : null,
   ].filter(Boolean);
-  const ins = ctx.insights.slice(0, 2).map((i) => i.summary);
+  const ins = ctx.insights.slice(0, 2).map((i) => i.summary.replace(/(\d)\.(\d)/g, "$1,$2"));
   const themes = (ctx.themes ?? []).slice(0, 2);
-  return `${bits.join(", ")}.${ins.length ? ` Context: ${ins.join("; ")}.` : ""}${themes.length ? ` Temes recurrents en els comentaris (agregats): ${themes.join("; ")}.` : ""}`;
+  const head = bits.join(", ");
+  return `${head.charAt(0).toUpperCase()}${head.slice(1)}.${ins.length ? ` Context: ${ins.join("; ")}.` : ""}${themes.length ? ` Temes recurrents en els comentaris (agregats): ${themes.join("; ")}.` : ""}`;
 }
 
 function limits(ctx: RecommendationContext): string {
@@ -265,7 +266,7 @@ export function templateRecommendations(ctx: RecommendationContext): Recommendat
     let action = fill(lv.action, ctx);
     if (hasGap && i === 0) {
       const low = ctx.insights.find((x) => x.lowestShift)?.lowestShift;
-      action += ` Comença pel torn ${low}, que és on la puntuació és més baixa.`;
+      action += ` Comença pel torn ${low === "mati" ? "matí" : low}, que és on la puntuació és més baixa.`;
     }
     if (i === 0 && ctx.alarmType !== "improvement") action += FOLLOW_UP;
     return {
@@ -293,7 +294,7 @@ Format: {"proposals": [{"title": string, "action": string, "initiative": string,
 function userPrompt(ctx: RecommendationContext): string {
   return [
     `Alarma: ${ctx.alarmType} (${ctx.severity}) al domini ${ctx.domain}.`,
-    `Segment: ${seg(ctx)}. Període ${ctx.period}. Puntuació ${num(ctx.score)}/10, canvi ${num(ctx.change)}, n=${ctx.n}, confiança ${ctx.confidence === null ? "?" : Math.round(ctx.confidence)}%.`,
+    `Segment: ${seg(ctx)}. Període ${ctx.period}. Puntuació ${num(ctx.score)}/10, canvi respecte al període anterior ${num(ctx.change)}, n=${ctx.n}, confiança ${ctx.confidence === null ? "?" : Math.round(ctx.confidence)}%.`,
     ctx.insights.length ? `Context agregat: ${ctx.insights.map((i) => i.summary).join("; ")}.` : null,
     ctx.themes?.length ? `Temes agregats: ${ctx.themes.join("; ")}.` : null,
   ].filter(Boolean).join("\n");

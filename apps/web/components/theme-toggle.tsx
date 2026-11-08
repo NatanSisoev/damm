@@ -1,5 +1,5 @@
 "use client";
-// Two-state light/dark toggle. Flips to the opposite of what is shown now (even if that came from the OS),
+// Two-state light/dark toggle. Flips to the opposite of what is shown now (light is the default),
 // applies instantly via data-theme on <html>, and stores the choice in a cookie read by the root layout.
 import { useT } from "@/lib/i18n/client";
 import { themeDict } from "@/lib/i18n/theme";
@@ -11,7 +11,7 @@ export function ThemeToggle({ className = "" }: { className?: string }) {
   const t = useT(themeDict);
   const flip = () => {
     const root = document.documentElement;
-    const shown = root.dataset.theme ?? (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+    const shown = root.dataset.theme === "dark" ? "dark" : "light";
     const next = shown === "dark" ? "light" : "dark";
     root.dataset.theme = next;
     document.cookie = `${COOKIE}=${next}; path=/; max-age=31536000; samesite=lax${location.protocol === "https:" ? "; secure" : ""}`;
