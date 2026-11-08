@@ -220,7 +220,7 @@ export function HrSidebar({ badges, subtitle, logo, role = "hr" }: { badges?: Na
           <div className="hr-scrim" onClick={close} aria-hidden="true" />
           <nav id="hr-drawer" ref={drawerRef} aria-label={t("sections")} role="dialog" aria-modal="true" className="hr-drawer">
             <div className="hr-drawer-head">
-              <Wordmark className="h-5 w-auto" />
+              <Wordmark className="h-4 w-auto" />
               <button type="button" className="hr-icon-btn" aria-label={t("nav_close_menu")} onClick={close}>
                 {svg(<path d="M6 6l12 12M18 6L6 18" />)}
               </button>

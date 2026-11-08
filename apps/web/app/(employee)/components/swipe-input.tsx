@@ -61,7 +61,7 @@ export function SwipeInput({
           role="radio"
           aria-checked={value === 0}
           onClick={() => onChange(0)}
-          className={`h-14 rounded-xl border text-base font-semibold ${
+          className={`h-12 rounded-md border text-[15px] font-medium ${
             value === 0 ? "border-accent bg-accent text-[color:var(--on-accent)]" : "border-line-strong bg-surface text-ink"
           }`}
         >
@@ -72,7 +72,7 @@ export function SwipeInput({
           role="radio"
           aria-checked={value === 1}
           onClick={() => onChange(1)}
-          className={`h-14 rounded-xl border text-base font-semibold ${
+          className={`h-12 rounded-md border text-[15px] font-medium ${
             value === 1 ? "border-good bg-good text-[color:var(--on-accent)]" : "border-line-strong bg-surface text-ink"
           }`}
         >

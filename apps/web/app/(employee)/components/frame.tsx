@@ -23,7 +23,7 @@ export function PageHead({
 }) {
   return (
     <header className="border-b border-line px-4 pb-6 pt-4">
-      <Wordmark className="h-5" />
+      <Wordmark className="h-4" />
       <div className="mt-8">
         {eyebrow && <p className="eyebrow mb-2">{eyebrow}</p>}
         <h1 className="page-title">{title}</h1>
