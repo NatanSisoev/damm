@@ -434,6 +434,7 @@ const s3ca = {
   sg_review: "Revisa",
   sg_dismiss: "Descarta (marca com a revisada)",
   sg_resolve: "Marca com a resolta",
+  sg_more: "Més accions",
   sg_vis: "Visible al responsable",
   sg_vis_title: "L'alarma també arriba al responsable del col·lectiu",
   // signal detail
@@ -552,6 +553,7 @@ const s3es: Record<keyof typeof s3ca, string> = {
   sg_review: "Revisar",
   sg_dismiss: "Descartar (marcar como revisada)",
   sg_resolve: "Marcar como resuelta",
+  sg_more: "Más acciones",
   sg_vis: "Visible para el responsable",
   sg_vis_title: "La alarma también llega al responsable del colectivo",
   sd_back: "← Alarmas",
@@ -669,6 +671,7 @@ const s3en: Record<keyof typeof s3ca, string> = {
   sg_review: "Review",
   sg_dismiss: "Dismiss (mark as reviewed)",
   sg_resolve: "Mark as resolved",
+  sg_more: "More actions",
   sg_vis: "Visible to the manager",
   sg_vis_title: "The alarm also reaches the collective's manager",
   sd_back: "← Alarms",
