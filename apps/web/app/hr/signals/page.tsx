@@ -1,4 +1,5 @@
 import "./alarms.css";
+import { SubmitButton } from "@/app/hr/submit-button";
 import { People } from "../glyphs";
 import { AutoSubmitForm } from "./auto-submit-form";
 import Link from "next/link";
@@ -324,7 +325,7 @@ function AlarmItem({ t, lang, r, rec, archived }: { t: HrResultsT; lang: Lang; r
           {rec && !rec.seguimentNecessitatId ? (
             <form action={proposeFollowUpAction}>
               <input type="hidden" name="rec" value={rec.id} />
-              <button className="btn btn-primary" type="submit">{t("sg_propose")}</button>
+              <SubmitButton className="btn btn-primary" busyLabel={t("sd_rec_followup_busy")}>{t("sg_propose")}</SubmitButton>
             </form>
           ) : rec ? (
             <Link href={`/hr/signals/${r.id}`} className="btn">{t("sg_created")}</Link>

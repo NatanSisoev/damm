@@ -2,7 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { advanceSignalStatus } from "@damm/db/hr";
+import { advanceSignalStatus, approveRecommendation, discardRecommendation } from "@damm/db/hr";
+import { createDraftedFollowUp } from "../../follow-up";
 import { ProbeError, hrStartProbe, hrStopProbe } from "@/lib/hr-engine";
 import { getT } from "@/lib/i18n/server";
 import { hrResultsDict } from "@/lib/i18n/hr-results";
@@ -44,4 +45,26 @@ export async function stopProbeAction(formData: FormData) {
     if (!(e instanceof ProbeError)) throw e;
   }
   revalidatePath(`/hr/signals/${signalId}`);
+}
+
+// The decisions on a recommendation, taken from the alarm's own "Actuar" card: the page stays where it is.
+function refreshSignal(formData: FormData) {
+  revalidatePath(`/hr/signals/${Number(formData.get("signal"))}`);
+  revalidatePath("/hr", "layout");
+}
+
+export async function approveRecFromSignalAction(formData: FormData) {
+  approveRecommendation(Number(formData.get("id")), "hr-demo");
+  refreshSignal(formData);
+}
+
+export async function discardRecFromSignalAction(formData: FormData) {
+  discardRecommendation(Number(formData.get("id")), "hr-demo");
+  refreshSignal(formData);
+}
+
+/** AI drafts the follow-up questions; a person still reviews them before anything is published. */
+export async function followUpFromSignalAction(formData: FormData) {
+  await createDraftedFollowUp(Number(formData.get("id")));
+  refreshSignal(formData);
 }
