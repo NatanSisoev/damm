@@ -201,6 +201,8 @@
 .hr-fold .hr-fold-close, .hr-fold[open] .hr-fold-open { display: none; }
 .hr-fold[open] .hr-fold-close { display: inline; }
 /* Question pool: a data row and its detail row read as one block. */
+.pool-domain { text-decoration: none; transition: border-color 120ms; }
+.pool-domain:hover, .pool-domain:focus-visible { border-color: var(--ink, currentColor); text-decoration: none; }
 .pool-row { position: relative; }
 .pool-row > td { padding: 14px 12px; vertical-align: top; }
 .pool-row:hover { background: var(--surface-muted); }
