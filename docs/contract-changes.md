@@ -43,7 +43,7 @@ What changed and why.
 - `/hr` is now the dashboard ("Panell") with interval and collective dropdowns and an "Actualitza" button (`refreshDashboardAction`: runs the engine job and, with `LLM_API_KEY`, the narrative). The sidebar is now Panell, Banc de preguntes, Alarmes, Consultes; Enllaços i QR, Cervell, Com es calcula? and Vista de responsables are at the bottom. "Necessitats" is renamed "Consultes" in the UI only; routes are unchanged.
 
 Action items:
-- [ ] Jan: FYI only. If you rework the HR sidebar or `/hr`, keep these entries and the filter dropdowns.
+- [x] Jan: FYI only. If you rework the HR sidebar or `/hr`, keep these entries and the filter dropdowns. (done 2026-11-08, merge of origin/main into jan/dev)
 
 ---
 
@@ -55,7 +55,7 @@ Action items:
 - New page `/hr/brain` ("Cervell", sidebar footer) with server actions in `apps/web/app/hr/brain/actions.ts`. It writes only through the existing HR setters (`setConfig`, `setDomainWeight`, `setFormatPreference`). No schema or API change for the employee side.
 
 Action items:
-- [ ] Jan: FYI only. If you rework the HR sidebar, keep the `/hr/brain` link.
+- [x] Jan: FYI only. If you rework the HR sidebar, keep the `/hr/brain` link. (done 2026-11-08, merge of origin/main into jan/dev)
 
 ---
 
@@ -66,7 +66,7 @@ Action items:
 - The web top-up is now redundant but harmless (`addPublishedNeedsToDay` skips rows already in the batch).
 
 Action items:
-- [ ] Jan: remove `addPublishedNeedsToDay` (`@damm/db/employee`) and `getTodaysBatch` (`apps/web/lib/engine.ts`) and call `getEngine().getDailyBatch` directly in `GET /api/pool/next`.
+- [x] Jan: remove `addPublishedNeedsToDay` (`@damm/db/employee`) and `getTodaysBatch` (`apps/web/lib/engine.ts`) and call `getEngine().getDailyBatch` directly in `GET /api/pool/next`. (done 2026-11-08, merge of origin/main into jan/dev)
 
 ## C17 · 2026-11-07 · Jan · NeedCard carries dates, per-question answer counts and participation
 

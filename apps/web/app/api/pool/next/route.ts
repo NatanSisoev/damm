@@ -1,5 +1,5 @@
 import { getCompteId } from "@/lib/session";
-import { getTodaysBatch } from "@/lib/engine";
+import { getEngine } from "@/lib/engine";
 import { getLang } from "@/lib/lang";
 import { getQuestionTranslations } from "@damm/db/employee";
 import { EngineError } from "@damm/engine";
@@ -9,12 +9,12 @@ export const dynamic = "force-dynamic";
 
 // Today's fixed batch from @damm/engine. The account comes from the session cookie only, never
 // from a request parameter. Already answered items are left out: the client shows what is left.
-// Published HR needs are added on top of the daily cap (see getTodaysBatch).
+// The engine appends the unanswered questions of published HR needs on top of the daily cap (C18).
 export async function GET() {
   const compteId = await getCompteId();
   if (!compteId) return Response.json({ error: "no_autenticat" }, { status: 401 });
   try {
-    const batch = getTodaysBatch(compteId);
+    const batch = getEngine().getDailyBatch(compteId);
     // Translations live in the DB (text_i18n / options i18n); the engine only knows the base text.
     // Merged here by question id, falling back to Catalan and then to the stored text.
     const lang = await getLang();
