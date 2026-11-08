@@ -163,7 +163,6 @@ export default async function HrDashboard({ searchParams }: { searchParams: Prom
               {(["r", "from", "to", "c", "dom", "hide"] as const).map((k) => (q[k] ? <input key={k} type="hidden" name={k} value={q[k]} /> : null))}
               <RefreshButton />
             </form>
-            <a href="/hr/results/export" className="btn" download>{tr("rs_export")}</a>
           </div>
         }
       />
