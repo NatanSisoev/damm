@@ -15,15 +15,15 @@ const hanken = Hanken_Grotesk({
   display: "swap",
 });
 
-// The product name stays "Escolta activa" in every language; only the description is translated.
+// The product name stays "Give a Damm" in every language; only the description is translated.
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getT(signalsDict);
   return {
-    title: { default: "Escolta activa", template: "%s · Escolta activa" },
+    title: { default: "Give a Damm", template: "%s · Give a Damm" },
     description: t("app_description"),
-    applicationName: "Escolta activa",
+    applicationName: "Give a Damm",
     icons: { apple: "/icons/apple-touch-icon.png" },
-    appleWebApp: { capable: true, title: "Escolta", statusBarStyle: "default" },
+    appleWebApp: { capable: true, title: "Give a Damm", statusBarStyle: "default" },
   };
 }
 

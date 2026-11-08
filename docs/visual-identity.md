@@ -6,10 +6,10 @@ Idea: ink on paper. Text first, thin rules, no decoration. Red is a signal, neve
 
 ## Name and mark
 
-- Product name stays **Escolta activa** (short name in the PWA: **Escolta**).
+- Product name is **Give a Damm** (also the PWA short name). It replaced the working name "Escolta activa" on 2026-11-08.
 - Wordmark is plain text in Hanken Grotesk 800. No logo lockup with a symbol.
 - Do **not** use the Damm wordmark (`app/hr/damm-logo.tsx`, from Wikimedia) or the white "D" speech bubble icon. Both read as Damm's own branding. Replace them.
-- App icon: ink `#0a0a0a` square with a white "E" or a plain speech-bubble outline. Maskable variant keeps the glyph inside the safe zone.
+- App icon: ink `#0a0a0a` square with a white "G" (for Give a Damm) or a plain speech-bubble outline. Maskable variant keeps the glyph inside the safe zone.
 - Relation to Estrella Damm: a small text label such as "Persones · Estrella Damm" in the footer or the login. No logo, star, red-and-gold combination or proprietary font.
 
 ## Palette

@@ -1,6 +1,6 @@
-# Active-listening platform
+# Give a Damm
 
-Estrella Damm, UAB THE HACK 2026. A platform that turns an HR need in natural language into AI-drafted micro-surveys, collects anonymous answers from a mobile app (PWA), and turns them into aggregated insights, recommendations and follow-up surveys.
+Estrella Damm, UAB THE HACK 2026. An active-listening platform that turns an HR need in natural language into AI-drafted micro-surveys, collects anonymous answers from a mobile app (PWA), and turns them into aggregated insights, recommendations and follow-up surveys.
 AI proposes, a human decides: every question is approved by HR before it is published.
 Anonymity is guaranteed by design: only aggregates are shown, never individual answers.
 
