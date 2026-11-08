@@ -178,13 +178,15 @@ export default async function SignalPage({ params, searchParams }: { params: Pro
   const related = trend.filter((r) => r.related);
   const shownTrend = related.length > 0 ? related : trend;
   const probes = hrListProbes(signal.id);
+  const commentsHref = (key: string) => `/hr/comments?tema=${encodeURIComponent(key)}&per=${signal.periode}${signal.collectiuId != null ? `&col=${signal.collectiuId}` : ""}`;
+  const emergentTheme = signal.tipus === "emergent" ? themes.find((th) => th.emergent) : undefined;
 
   return (
     <>
       <PageHeader
         title={signalHeadline(signal, lang)}
         subtitle={signalDetail(signal, lang)}
-        actions={<Link href="/hr/signals" className="btn">{t("sd_back")}</Link>}
+        actions={<>{emergentTheme && <Link href={commentsHref(emergentTheme.key)} className="btn btn-primary">{t("sd_view_comments")}</Link>}<Link href="/hr/signals" className="btn">{t("sd_back")}</Link></>}
       />
 
       <div className="mb-6 flex flex-wrap items-center gap-2">
@@ -310,7 +312,7 @@ export default async function SignalPage({ params, searchParams }: { params: Pro
                     <div className="mb-1.5 flex flex-wrap items-center gap-2">
                       <h3 className="font-medium">{th.etiqueta}</h3>
                       {th.emergent && <span className="badge badge-warn">{t("rs_emergent")}</span>}
-                      <span className="num ml-auto text-xs text-subtle"><Comments n={th.n} /></span>
+                      <Link href={commentsHref(th.key)} className="num ml-auto text-xs text-accent-ink hover:underline"><Comments n={th.n} /> →</Link>
 
                     </div>
                     {th.resum && <p className="text-[13px] text-muted">{th.resum} <span className="text-xs text-subtle">{t("sd_ai_summary")}</span></p>}

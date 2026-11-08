@@ -39,6 +39,7 @@ export interface SignalTrendRow {
 
 export interface SignalTheme {
   id: number;
+  key: string; // tema.clau, for linking to the comment browser
   etiqueta: string;
   resum: string | null;
   emergent: boolean;
@@ -134,13 +135,13 @@ export function getSignalDetail(id: number, lang?: Lang): SignalDetail | null {
   // --- Themes: counted within the signal's collective through the analytics view.
   const themeRows = db
     .prepare(
-      `SELECT t.id, t.etiqueta, t.resum, t.emergent, t.n AS tn, t.suprimit AS ts,
+      `SELECT t.id, t.clau, t.etiqueta, t.resum, t.emergent, t.n AS tn, t.suprimit AS ts,
               (SELECT COUNT(*) FROM comentari_tema ct JOIN v_resposta_analitica v ON v.id = ct.resposta_id
                 WHERE ct.tema_id = t.id AND (? IS NULL OR v.collectiu_id = ?)) AS cn
        FROM tema t WHERE t.periode = ? ORDER BY t.emergent DESC, t.n DESC`,
     )
     .all(signal.collectiuId, signal.collectiuId, signal.periode) as {
-      id: number; etiqueta: string; resum: string | null; emergent: number; tn: number; ts: number; cn: number;
+      id: number; clau: string; etiqueta: string; resum: string | null; emergent: number; tn: number; ts: number; cn: number;
     }[];
   const themes: SignalTheme[] = [];
   let hiddenThemes = 0;
@@ -155,7 +156,7 @@ export function getSignalDetail(id: number, lang?: Lang): SignalDetail | null {
       )
       .all(t.id, signal.collectiuId, signal.collectiuId, SNIPPETS_PER_THEME) as { c: string }[])
       .map((r) => (r.c.length > SNIPPET_MAX_CHARS ? `${r.c.slice(0, SNIPPET_MAX_CHARS - 1)}…` : r.c));
-    themes.push({ id: t.id, etiqueta: t.etiqueta, resum: t.resum, emergent: !!t.emergent, n: t.cn, snippets });
+    themes.push({ id: t.id, key: t.clau, etiqueta: t.etiqueta, resum: t.resum, emergent: !!t.emergent, n: t.cn, snippets });
   }
   overlayTranslations(db, "tema", themes, { etiqueta: "etiqueta", resum: "resum" }, lang);
 
