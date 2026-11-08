@@ -101,7 +101,7 @@ Manager view (`/manager`, "Vista de responsables", read-only), then the Re-measu
 
 What is primed. The demo DB plants one segment, **Comercial · Desenvolupament**, with a slow slide and no open alarm. A published need ("We want to know how much room people in Comercial have to grow in their role", question "How much room do you have to grow in your current role?", scale 1 to 5) is served first to any Comercial account, so a fresh phone sees it at once. Period scores of the segment (n about 105): Sep 5.60, Oct 5.52, Nov 5.41. The sustained-decline rule needs the last three periods strictly decreasing and Nov minus Sep of -0.2 or lower (score points). Before the answer Nov minus Sep is -0.19, so nothing fires. One answer moves the Nov score by about -0.04 (1/5), 0 (3/5) or +0.04 (5/5): 1/5 gives Nov 5.37, so Nov minus Sep is -0.23 and the engine opens a **warning** (n >= 10, audience hr_manager) that is pushed; 3/5 (5.41) and 5/5 (5.45) change nothing. Say it plainly: the last straw on a sliding trend, not one answer deciding a score. The numbers are exact for this seed and date; `packages/engine/demo/live-check.ts` re-checks them (below).
 
-Setup on the server (Railway service `web`, branch `jan/deploy`):
+Setup on the server (Railway service `web`, branch `main`):
 
 ```bash
 railway variables --set DEMO_LIVE_JOB=1 DEMO_RESET_ENABLED=1
