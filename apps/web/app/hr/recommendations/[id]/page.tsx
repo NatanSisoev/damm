@@ -32,7 +32,7 @@ function Fact({ label, children }: { label: string; children: ReactNode }) {
 export default async function RecommendationPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const { t, lang } = await getTL(panelDict);
-  const detail = Number.isInteger(Number(id)) ? getRecommendationDetail(Number(id)) : null;
+  const detail = Number.isInteger(Number(id)) ? getRecommendationDetail(Number(id), lang) : null;
   if (!detail) notFound();
   const { recommendation: r, signal: sd, siblings, followUp } = detail;
   const status = recommendationStatus(r.estat, lang);

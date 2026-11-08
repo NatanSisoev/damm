@@ -99,6 +99,8 @@ export interface WorldOptions {
   days?: number;
   /** Multiplies every stratum's participation (speed vs realism). Default 1. */
   participationScale?: number;
+  /** Per-stratum participation override, keyed "collectiuId:tornId" (tornId "0" = no shift). Applied before the scale. */
+  participation?: Record<string, number>;
   /** Answer noise sd per type before rounding to the format. */
   answerNoise?: Partial<Record<ClosedType, number>>;
   /** Reporting bias added to managers' answers (not to their true level). Default +0.08. */
@@ -244,7 +246,8 @@ export function createWorld(opts: WorldOptions = {}): World {
   for (const c of collectives)
     for (const s of c.strata) {
       const members = people.filter((p) => p.collectiuId === s.collectiuId && p.tornId === s.tornId);
-      const k = Math.round(members.length * clamp(s.participation * scale, 0, 1));
+      const part = opts.participation?.[`${s.collectiuId}:${s.tornId ?? 0}`] ?? s.participation;
+      const k = Math.round(members.length * clamp(part * scale, 0, 1));
       for (const p of shuffle(rng, members).slice(0, k)) p.accountId = `acc${String(p.idx).padStart(4, "0")}`;
     }
   const accounts = people.filter((p) => p.accountId !== null);

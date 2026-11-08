@@ -58,7 +58,7 @@ export default async function AlarmsPage({ searchParams }: { searchParams: Promi
   const trends = getTrends();
   const domains = new Map(listDomains().map((d) => [d.id, d.nom]));
   const torns = new Map(listTorns().map((x) => [x.id, x.nom]));
-  const recs = listRecommendations();
+  const recs = listRecommendations(lang);
 
   const colNames = new Map(listCollectius().map((c) => [c.id, c.nom]));
 

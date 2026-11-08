@@ -71,7 +71,7 @@ Representativeness: the collective score is computed by shift strata and combine
 
 ## 5. Choosing the daily batch
 
-All six domains stay active. Per person per day:
+All six domains stay active. A day is **exactly `questions_per_day` (3) items of one answer type** (C23). The type is decided first: the top HR need's type, else a due follow-up's type, else Thompson sampling over the types that can fill the day. Everything below then only considers items of that type. `open` questions are never batch items; commenting is an optional extra on any answer. Published needs take a slot inside the 3, never on top. A day is shorter only when no more items of the type exist. Per person per day:
 
 1. **Follow-up** (at most 1/day): if a follow-up is due, it takes a slot.
 2. **HR needs** (at most 1/day by default): approved items with `necessitat_id` for this collective, highest `prioritat` first.

@@ -41,29 +41,40 @@ const BAD: Record<string, Record<string, unknown>[]> = {
 };
 
 test("malformed answers are rejected without throwing or writing anything", () => {
-  const db = makeDb();
-  fullPool(db);
-  addPool(db);
-  // questions_per_day large enough that every type is in today's batch
-  run(db, "INSERT INTO engine_config (key, value) VALUES ('questions_per_day', '40')");
-  const engine = createEngine({ db, redact: identity, now: () => T0 });
-  const batch = engine.getDailyBatch("f1");
-  const types = new Set(batch.items.map((i) => i.type));
-  for (const t of Object.keys(BAD)) assert.ok(types.has(t as never), `batch should include ${t}`);
-  const before = snapshot(db);
+  // A day's batch holds one answer type, so each type gets its own DB with the other formats banned.
+  // Open questions are never served; a legacy open assignment row is inserted by hand to keep the check.
   let tried = 0;
-  for (const item of batch.items) {
-    for (const bad of BAD[item.type] ?? []) {
-      tried++;
-      const res = engine.submitAnswers("f1", [{ preguntaId: item.questionId, ...bad } as never]);
-      assert.deepEqual(res.accepted, [], `${item.type} accepted ${String(JSON.stringify(bad))}`);
-      assert.equal(res.rejected.length, 1);
-      assert.ok(["invalid_value", "missing_comment"].includes(res.rejected[0]!.reason), `${item.type}: ${res.rejected[0]!.reason}`);
+  for (const type of Object.keys(BAD)) {
+    const db = makeDb();
+    fullPool(db);
+    addPool(db);
+    run(db, "INSERT INTO engine_config (key, value) VALUES ('questions_per_day', '40')");
+    for (const other of Object.keys(BAD)) if (other !== type) run(db, "INSERT INTO format_preference (collectiu_id, tipus, weight) VALUES (NULL, ?, 0)", other);
+    const engine = createEngine({ db, redact: identity, now: () => T0 });
+    const batch = engine.getDailyBatch("f1");
+    if (type === "open") {
+      assert.equal(batch.items.length, 0, "open questions are never in a batch");
+      const id = one<{ id: number }>(db, "SELECT id FROM pregunta WHERE tipus = 'open'")!.id;
+      run(db, "INSERT INTO assignment (compte_id, pregunta_id, day, slot, reason) VALUES ('f1', ?, ?, 0, 'monitor')", id, dayOf(T0, DEFAULT_CONFIG.timezone));
+    } else {
+      assert.ok(batch.items.length > 0 && batch.items.every((i) => i.type === type), `batch should be all ${type}`);
     }
+    const before = snapshot(db);
+    const items = type === "open" ? engine.getDailyBatch("f1").items : batch.items;
+    assert.ok(items.length > 0, type);
+    for (const item of items) {
+      for (const bad of BAD[item.type] ?? []) {
+        tried++;
+        const res = engine.submitAnswers("f1", [{ preguntaId: item.questionId, ...bad } as never]);
+        assert.deepEqual(res.accepted, [], `${item.type} accepted ${String(JSON.stringify(bad))}`);
+        assert.equal(res.rejected.length, 1);
+        assert.ok(["invalid_value", "missing_comment"].includes(res.rejected[0]!.reason), `${item.type}: ${res.rejected[0]!.reason}`);
+      }
+    }
+    assert.deepEqual(snapshot(db), before, "a rejected answer must not change any table");
+    assert.equal(one<{ n: number }>(db, "SELECT COUNT(*) AS n FROM assignment WHERE answered_at IS NOT NULL")?.n, 0);
   }
   assert.ok(tried > 50);
-  assert.deepEqual(snapshot(db), before, "a rejected answer must not change any table");
-  assert.equal(one<{ n: number }>(db, "SELECT COUNT(*) AS n FROM assignment WHERE answered_at IS NOT NULL")?.n, 0);
 });
 
 test("garbage question ids and entries inside the answers list never throw", () => {

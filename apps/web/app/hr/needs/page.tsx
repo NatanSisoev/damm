@@ -53,7 +53,7 @@ export default async function NeedsPage({ searchParams }: { searchParams: Promis
   const { estat, publicada, recordatori, avis, nova } = await searchParams;
   const { t, lang } = await getTL(hrDict);
   const filter: Filter = isFilter(estat) ? estat : "totes";
-  const all = listNeedCards();
+  const all = listNeedCards(lang);
   const drafts = new Map(listNeedDrafts().map((g) => [g.id, g]));
   const domainIdx = new Map(listDomains().map((d, i) => [d.nom, i + 1]));
   const counts = Object.fromEntries(STATES.map((s) => [s.key, all.filter((n) => n.state === s.key).length])) as Record<NeedState, number>;

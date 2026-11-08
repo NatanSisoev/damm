@@ -9,7 +9,8 @@ export const dynamic = "force-dynamic";
 
 // Today's fixed batch from @damm/engine. The account comes from the session cookie only, never
 // from a request parameter. Already answered items are left out: the client shows what is left.
-// The engine appends the unanswered questions of published HR needs on top of the daily cap (C18).
+// The batch is exactly the daily cap, one answer type, no free-text items (C18 revised, C23).
+// Text is in the user's language, then Catalan, then the stored text.
 export async function GET() {
   const compteId = await getCompteId();
   if (!compteId) return Response.json({ error: "no_autenticat" }, { status: 401 });

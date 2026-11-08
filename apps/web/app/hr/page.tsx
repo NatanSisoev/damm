@@ -71,11 +71,11 @@ export default async function HrDashboard({ searchParams }: { searchParams: Prom
   const seriesVisible = visible(series);
   const everyone = col ? getWindowTrends({ ...win, bucket: "all" }, null) : whole;
 
-  const needs = listNeedCards();
+  const needs = listNeedCards(lang);
   const drafts = needs.filter((n) => n.state === "esborrany" || n.state === "llesta").length;
   const live = needs.filter((n) => n.state === "publicada").length;
   const rep = getRepresentativeness();
-  const themes = listThemes().filter((th) => !th.suprimit);
+  const themes = listThemes({ lang }).filter((th) => !th.suprimit);
   const heatmap = { ...getHeatmap(everyone), periode: `${fmtDay(range.from)} – ${fmtDay(range.to)}` };
 
   const overall = whole.series[0];
@@ -208,7 +208,7 @@ export default async function HrDashboard({ searchParams }: { searchParams: Prom
         {/* Story + profile */}
         <div className="grid gap-6 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
           <div className="space-y-6">
-            <NarrativeCard narrative={getNarrative(col?.nom ?? "All")} title={t("dash_narr", { scope: col ? collectiveLabel(col.nom, lang) : t("dash_scope_all") })} />
+            <NarrativeCard narrative={getNarrative(col?.nom ?? "All", lang)} title={t("dash_narr", { scope: col ? collectiveLabel(col.nom, lang) : t("dash_scope_all") })} />
             <HeadlineStrip headlines={getHeadlines()} />
           </div>
           <Card title={tr("rs_profile")} meta={<span className="num">{prevWin ? t("dash_prof_vs") : t("dash_prof_full")}</span>}>

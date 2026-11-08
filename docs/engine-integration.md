@@ -300,7 +300,7 @@ stopProbe(db, probe.id);
 ### Brain (`/hr/brain`)
 
 - `getBrain(db)` returns the whole state the daily batch is built from: `config` (key, effective value, default, `overridden`), per collective the domain rows (weight and where it comes from, probe boost, priority, `drawShare`, and `stats` with score, confidence, consensus, info gain and outlier share, or `null` when the collective has fewer accounts than the minimum group size), the format rows (preference and Thompson arms per shift) and the question pool counts.
-- `simulateBrain(db, input)` plays 1..300 fresh hypothetical people for 1..28 days with the real question bank and the same `selectBatch` and need top-up as the live engine. `config` (snake_case), `domainWeights`, `formatPreferences` and `probeBoosts` override the saved values for that run only. It returns the domain, format and reason mix, repeat gap, need coverage by day and the day-by-day queue of one imaginary person. The page runs the saved and the draft settings side by side.
+- `simulateBrain(db, input)` plays 1..300 fresh hypothetical people for 1..28 days with the real question bank and the same `selectBatch` as the live engine (needs inside the cap). `config` (snake_case), `domainWeights`, `formatPreferences` and `probeBoosts` override the saved values for that run only. It returns the domain, format and reason mix, repeat gap, need coverage by day and the day-by-day queue of one imaginary person. The page runs the saved and the draft settings side by side.
 - Writes go through `setConfig`, `resetConfig`, `setDomainWeight`, `setFormatPreference` and the two `clear*` helpers. Config changes apply to batches generated after the save; a batch already made for today does not change.
 
 ### Getting alarms to the screen
@@ -364,7 +364,7 @@ The engine works with the seed as it is:
 
 ## Demo data
 
-`pnpm --filter @damm/engine run demo` builds `data/demo.db` from scratch, in about 4 minutes. It is separate from the seed's `data/app.db`, so nothing of Jan's is overwritten. Run the app on it with `DB_PATH=data/demo.db pnpm dev`.
+`pnpm demo-db` (scripts/build-demo-db.mts) is the one database: it wraps the engine demo pipeline and adds ca/es/en. It writes `data/app.db` in about 90 s, and `pnpm dev` runs on it. The bare `pnpm --filter @damm/engine run demo` (English only, `data/demo.db`) is legacy.
 
 What it contains (all synthetic):
 - **Population:** 1,200 invented employees across the 4 collectives and 3 shifts, of whom 344 have accounts. Night shifts are deliberately thin.
