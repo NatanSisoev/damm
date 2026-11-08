@@ -226,7 +226,7 @@ export default async function SignalPage({ params, searchParams }: { params: Pro
               <div className="px-5 pb-5"><Empty>{t("sd_trend_empty")}</Empty></div>
             ) : (
               <>
-                <TrendChart periodes={periodes} rows={shownTrend} highlight={shownTrend.filter((r) => r.related).map((r) => r.domini)} scale="0-10" />
+                <TrendChart periodes={periodes} rows={shownTrend} highlight={shownTrend.filter((r) => r.related).map((r) => r.domini)} scale="0-10" defaultMetrics={signal.tipus === "polarisation" ? ["consensus"] : signal.tipus === "low_confidence" ? ["confidence"] : []} />
                 <details className="border-t border-line">
                   <summary className="cursor-pointer px-5 py-3 text-xs font-medium text-subtle">{t("rs_show_table")}</summary>
                   <div className="overflow-x-auto">
