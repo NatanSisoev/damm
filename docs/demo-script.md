@@ -1,155 +1,99 @@
 # Demo script
 
-Live demo of the whole challenge flow, written against the current `jan/dev`. All data is synthetic. The UI is in Catalan; labels below are the real ones from `apps/web/app`.
+Live demo of the whole challenge flow, in step with the agreed 3:00 run of show in [`demo-video.md`](demo-video.md) (video about 1:05, live about 1:45, close 10 s). All data is synthetic. The UI is in Catalan; the labels below are the real ones from `apps/web`.
 
-Flow: need → AI drafts → human approval → publish with link and QR → answer on the phone → results (radar, representativeness, suppression) → recommendation → follow-up survey.
-
-## Status flags
-
-| Flag | Meaning |
-| --- | --- |
-| ✅ Works now | Runs on current `jan/dev`. |
-| ⏳ Pending Jan | Jan's branch, not on `jan/dev` yet (`jan/pwa-answer`). |
-| 🔶 Needs Natan | Depends on Natan's engine, AI or analysis work (`packages/engine`, `packages/ai`, `packages/analysis`), which has not landed. Until it does, the step shows fixture data and the fallback is the script. |
-
-Re-check every flag against `jan/dev` the day of the demo and update this table.
+Flow: need in natural language, AI drafts, human approval, publish (push to the phone), answer on the phone, alarm on the laptop, then Detect, Act, Re-measure, Learn.
 
 ## Before you go on stage
 
-**Use the trilingual demo DB: `pnpm demo-db` (writes `data/app.db`, about 90 s, join codes `DEMO-FAB`, `DEMO-LOG`, `DEMO-COM`, `DEMO-OFI`).** The two databases below are legacy and not interchangeable: both write `data/app.db`.
+1. `pnpm install`, copy `.env.example` to `.env`. Set `HR_ACCESS_CODE` (HR login is `/hr-login`, field "Codi d'accés", button "Entra"), `LLM_API_KEY`, the VAPID keys and `PUBLIC_BASE_URL`. The key stays in `.env`; never show it.
+2. Build the one demo DB: `source ~/.claude/bin/heavy-gate.sh` then `pnpm demo-db` (about 90 s, writes `data/app.db`). Join codes: `DEMO-FAB`, `DEMO-LOG`, `DEMO-COM`, `DEMO-OFI`. Then `pnpm dev`, or use the Railway deploy (`docs/deploy.md`).
+3. Push needs public HTTPS. The phone cannot reach `localhost`: use the deployed URL or a tunnel, and set `PUBLIC_BASE_URL` to it.
+4. Health check: `pnpm --filter @damm/engine run health`.
+5. Laptop: sign in at `/hr-login`. Open `/hr/settings` and turn on alarm push ("Activa els avisos", confirm with "Envia una prova"). Keep the laptop open.
+6. Phone: open `<PUBLIC_BASE_URL>/join/DEMO-FAB` (or scan the QR on `/hr/publish`), "Continua", create the account ("Nom d'usuari", "Contrasenya", "Repeteix la contrasenya", "Crea el compte"), save the recovery code, allow notifications. On iOS the PWA must be added to the home screen first.
+7. Pre-warm the AI drafts for the live need (below) so you can show them if the gateway is slow. Never wait on the gateway on stage.
+8. Dry run once end to end. Publishing and approving write to the DB; "Restaura la demo" on `/hr/settings` (needs `DEMO_RESET_ENABLED=1`) or a fresh `pnpm demo-db` resets it.
+9. Record the backup: a 15 s phone clip of the push, plus screenshots.
 
-| DB | Command | Gives you | Lacks |
-| --- | --- | --- | --- |
-| Fixture | `pnpm --filter @damm/db run init` | Populated HR screens: one need with 3 AI drafts, 1,200-person population, aggregates (Logística night shift suppressed), 5 themes (one suppressed), 1 signal, 1 recommendation | Accounts and join codes of the seed |
-| Seed | `pnpm --filter @damm/seed run seed` | ~1,200 employees, ~700 responses, ~500 comments, join codes `DAMM-FAB`, `DAMM-LOG`, `DAMM-COM`, `DAMM-OFI` | HR results stay empty until the analysis job (🔶 Natan) writes the aggregates |
+## Live beats
 
-Pick the fixture DB for the stage demo until the analysis lands. After landing, run seed, then the analysis job, and use that DB instead.
+### 1. The need (1:05 to 1:25)
 
-Checklist:
+Who: P1 (HR). URL: `/hr/needs` (sidebar "Consultar", page "Consultes"). If the page already lists needs, click "+ Nova consulta"; otherwise the form is shown directly.
 
-1. `pnpm install`, copy `.env.example` to `.env`. The LLM key stays in `.env` only; never show it.
-2. Create the DB (fixture, see above), then `pnpm dev`. App at `http://localhost:3000`.
-3. Phone: it cannot reach `localhost`. Set `PUBLIC_BASE_URL` in `.env` to the laptop's LAN address (for example `http://192.168.1.20:3000`) or a tunnel URL, then restart. Join links and QR use this base. Phone and laptop on the same Wi-Fi. Push notifications need public HTTPS (tunnel or quick deploy); they are not part of this script.
-4. Open `/hr` in one browser window and keep a second tab ready on `/hr/signals`.
-5. Dry run once end to end. Publishing and approving write to the DB; re-run the DB command to reset.
+Fill in:
 
-## Steps
+- Objectiu: `Volem saber com viuen els equips de planta el nou sistema de torns.`
+- Context (opcional): `A l'octubre han augmentat els comentaris sobre la comunicació dels canvis de torn i les pauses. Afecta Fàbriques.`
+- Què no s'ha de preguntar (opcional): `Salaris. Preguntes sobre persones concretes.`
+- Col·lectiu: Fàbriques. "Com es lliura": "Diària" (the other option is "Campanya puntual").
 
-### 1. The need
+Click "Genera els esborranys" (it shows "La IA està redactant les preguntes…"). The example buttons A / B / C pre-fill a need if you prefer; A is the shift-system one.
 
-| | |
-| --- | --- |
-| Status | ✅ Works now |
-| Who | HR person (presenter 1) |
-| URL | `http://localhost:3000/hr/needs` |
-| Click | On the page "Quina necessitat vols escoltar?", fill the "Necessitat" box (placeholder: "Ex.: Volem saber com viuen els equips de planta el nou sistema de torns."). Pick the "Col·lectiu", set "Durada màxima per persona (segons)". Click "Genera els esborranys". |
-| Audience should notice | The need is plain language, no survey-design skill needed. A note says "Després passaràs a Revisió." |
-| Fallback | If the form errors, go to `/hr/needs`: the fixture already holds a need (Fàbriques) with its drafts. |
+Say: "HR writes the need in plain words. No survey design skill needed."
 
-Suggested text: "Volem saber com viuen els equips de planta el nou sistema de torns."
+Fallback: gateway slow or down, show the pre-warmed drafts. If the LLM is unavailable the drafts carry the badge "Plantilla de reserva" instead of "Proposta de la IA"; say they are template drafts.
 
-### 2. AI drafts
+### 2. Human approval (1:25 to 1:40)
 
-| | |
-| --- | --- |
-| Status | 🔶 Needs Natan. `createNeedAction` only saves the need and redirects. Draft generation (`packages/ai`) is not wired, so a new need gets no drafts today. |
-| Who | HR person |
-| URL | `http://localhost:3000/hr/needs` |
-| Click | Open the "Esborranys pendents" list. Each card is marked "Proposta de la IA". |
-| Audience should notice | The questions are proposals. The banner reads "La IA proposa, una persona decideix." and the page states "Cap pregunta entra al banc de preguntes fins que una persona l'aprova." |
-| Fallback | AI or LLM down, slow, or not landed: use the three seeded drafts of the fixture need. Say "these are the drafts the AI proposed earlier" and carry on. Never wait on the gateway on stage. |
+Same page, inside the need card. Edit one question (textareas Català / Castellà / Anglès, then "Desa els textos"), click "Aprova" on two questions and "Descarta" on one. Approved questions are listed under "Preguntes aprovades". Wording warnings ("Avisos de redacció") do not block approval: you decide.
 
-### 3. Human approval
+Say: "The AI proposes, a person decides. Nothing enters the pool until it is approved."
 
-| | |
-| --- | --- |
-| Status | ✅ Works now (on fixture drafts) |
-| Who | HR person |
-| URL | `http://localhost:3000/hr/needs` |
-| Click | Edit one question's text in the "Text de la pregunta" box and click "Desa el text". Click "Aprova" on two drafts. Click "Descarta" on the third. |
-| Audience should notice | A human edited and decided. Approved questions move to "Llestes per publicar". Questions linked to a need get top priority in the pool (priority 100). |
-| Fallback | If an action fails, reload the page; state is in the DB. If all drafts are already approved from a rehearsal, reset the DB. |
+Fallback: an action fails, reload; state is in the DB. If everything is already approved from a rehearsal, reset the DB.
 
-### 4. Publish with link and QR
+### 3. Publish and push (1:40 to 1:50)
 
-| | |
-| --- | --- |
-| Status | ✅ Works now |
-| Who | HR person |
-| URL | `http://localhost:3000/hr/needs` |
-| Click | Click "Publicar amb enllaç i QR". The page shows the join link `<PUBLIC_BASE_URL>/join/<codi>` and a QR. The item then appears under "Publicades". |
-| Audience should notice | "Publish" means the approved questions enter the survey pool and a join link and QR are generated. There is no external survey tool. |
-| Fallback | QR does not scan: type the link into the phone browser. Phone cannot reach the laptop: show the QR and link on the projector and continue step 5 from a laptop browser in a private window at `/join/<codi>`. |
+Click "Publica i envia la notificació" on the need card, then confirm in the modal "Publicar la consulta" (it shows "Qui la rep", "Preguntes", "Com s'envia"). The notice reads "Consulta publicada. S'han enviat notificacions a {n} dispositius del col·lectiu." Under 10 devices it says "…a menys de 10 dispositius: no en mostrem el nombre exacte." The push lands on P2's phone: "Tens preguntes noves. Només et prendrà un minut."
 
-### 5. Answer on the phone
+Say: "Publish puts the questions in the pool and pings the collective. HR only gets a device count, and under 10 it hides even that."
 
-| | |
-| --- | --- |
-| Status | Onboarding ✅ Works now. Answering ⏳ Pending Jan (`jan/pwa-answer`): on `jan/dev`, `/` is still the Next template, and `GET /api/pool/next` and `POST /api/responses` do not exist. The engine that picks the questions is 🔶 Needs Natan. |
-| Who | Employee (presenter 2, on a phone) |
-| URL | `<PUBLIC_BASE_URL>/join/<codi>`, then `/onboarding?codi=<codi>`, then `/` |
-| Click | Scan the QR. Page "Codi d'accés". Continue to "Crea el teu compte": choose "Nom d'usuari", "Contrasenya", "Repeteix la contrasenya". Note the "Codi de recuperació" shown once. Land on `/`. Answer the questions. |
-| Audience should notice | No email, no phone, no personal data: a join code that identifies only company and collective, a username and a password, and a one-time recovery code. The page says "Les teves respostes són anònimes i només es mostren agregades." |
-| Fallback | Answer flow not merged: stop after onboarding and say "the answer screens are in the next branch". Show `/settings` ("Configuració": change password, "Tanca la sessió"). Or play a short pre-recorded screen capture of the answer flow. Wrong or expired code gives "Codi no vàlid"; use `/login` ("Entra") with the account you made in rehearsal, or "He perdut la contrasenya" for recovery. |
+Fallback: no push arrives. Open the app on the phone anyway (the questions are in the pool) and show the 15 s backup clip of the push.
 
-The fixture DB has no join codes. For a live scan use the seed DB, or publish in step 4 (which creates a code).
+Join links and QR are per collective, not per need: they live on `/hr/publish` ("Enllaços i QR per col·lectiu", with "Cartell per imprimir" and "Publica a Teams"). Show them only if asked how people get onboarded.
 
-### 6. Results: radar, representativeness, suppression
+### 4. Answer on the phone (1:50 to 2:10)
 
-| | |
-| --- | --- |
-| Status | ✅ Works now with the fixture DB. 🔶 Needs Natan with the seed DB: the analysis job that writes the aggregates, themes and trends is not landed, so the pages are empty. |
-| Who | HR person |
-| URL | `http://localhost:3000/hr` |
-| Click | Read "Perfil per domini" (radar). Use "Compara amb" to overlay a second series. Scroll to "Representativitat" and the "Per torn" breakdown. Scroll to "Temes dels comentaris" and "Tendències per domini". |
-| Audience should notice | (a) Radar: fixed 1–5 scale, at most two series. A group under 10 people is a gap labelled "n<10", not a number. (b) Representativitat: respondents against the population ("Població"), with the "Diferència" column; gaps of 5 points or more are flagged. Night shift is the low-response group. (c) Suppressed items show "Suprimit" and the summary tile "Segments suprimits". (d) Comment themes: the "Emergent" badge on the October theme about shift communication and breaks. (e) "Cap resposta individual." appears where individual answers would be: there are none. |
-| Fallback | Page empty: you are on the seed DB. Rerun the fixture DB command and reload. If the DB is gone, show the screenshots from the backup folder. |
+Who: P2, on the phone, already onboarded. Open the app (`/`), answer two questions. The button reads "Envia i continua" and the end screen "Gràcies". The need's questions are served first; the daily engine can add others.
 
-Talking point for the suppression: Logística night shift has 6 respondents in the fixture; the tool hides it rather than showing a small, identifiable group.
+Say: "A join code, a username and a password. No email, no phone, no name. The answers are anonymous and only shown in groups of 10 or more."
 
-### 7. Recommendation
+Fallback: wrong or expired code gives "Codi no vàlid"; use `/login` ("Entra") with the account made in rehearsal, or the recovery code.
 
-| | |
-| --- | --- |
-| Status | ✅ Works now (fixture). 🔶 Needs Natan for live generation: `packages/ai` proposes recommendations from signals; today only the fixture row exists. |
-| Who | HR person |
-| URL | `http://localhost:3000/hr/recommendations` |
-| Click | Read "Senyals" (the Logística weak signal about safety equipment and heat) and "Recomanacions". Click "Aprova" on the recommendation (or "Descarta"). |
-| Audience should notice | The signal is a weak one: few mentions, easy to miss in an average. Signals under the minimum group size do not appear. The page says "Senyals detectats a l'anàlisi i accions proposades per la IA. Una persona decideix quines tirar endavant." |
-| Fallback | Empty states read "Encara no hi ha senyals." and "Encara no hi ha recomanacions.": switch to the fixture DB. |
+### 5. The alarm and the loop (2:10 to 2:50)
 
-### 8. Follow-up survey
+Who: P1, on the laptop. Run the Live trigger below (plan A, or plan B if it misbehaves) or, without it, open an existing alarm.
 
-| | |
-| --- | --- |
-| Status | Button and redirect ✅ Works now. The follow-up questions themselves are 🔶 Needs Natan (AI drafting). |
-| Who | HR person |
-| URL | `http://localhost:3000/hr/recommendations`, then `/hr/needs` |
-| Click | On the approved recommendation click "Crea l'enquesta de seguiment". The recommendation gets a "Seguiment creat" badge and the follow-up need shows up in `/hr/needs`. |
-| Audience should notice | The loop closes: signal → recommendation → a new need → drafts → approval → publish, always with a person approving. |
-| Fallback | No follow-up drafts appear: say the AI drafts for follow-ups arrive with the AI work, and show the need created in `/hr/needs`. |
+- Detect: `/hr/signals` (sidebar "Detectar", page "Alarmes"). Labels such as "Emergent", "Senyal feble", "Caiguda brusca", "Descens sostingut"; severities "Registre", "Avís", "Crítica". Open an alarm for its detail.
+- Act: `/hr/recommendations` ("Recomanacions": "Alarmes detectades per l'anàlisi i accions proposades per la IA. Una persona decideix quines tirar endavant."). Click "Aprova" (or "Descarta") on a recommendation, then "Crea l'enquesta de seguiment"; the card gets the badge "Seguiment creat" and the follow-up appears in `/hr/needs`.
+- Re-measure and Learn: the follow-up need goes through the same approval and publish, then results come back to `/hr`. The panel is titled "Panell" and shows "Perfil per domini", "Representativitat" and the KPIs; suppressed segments show "Suprimit".
 
-## Anonymity close (1 minute, no clicking)
+Say: "Detect, act, re-measure, learn. Every step has a person approving."
 
-Say, with the repo open if there is a screen:
+Fallback: no alarm on `/hr/signals` (empty state "Cap alarma. Prem «Recalcula ara»…"): press "Recalcula ara", or use plan B, or walk an alarm that already exists in the demo DB (Fàbriques Condicions i organització, the October shift-communication theme, Oficines polarisation, the Logística heat/PPE theme).
 
-- HR code imports only `@damm/db/hr` and `@damm/shared`. `pnpm lint` enforces it.
-- `pnpm check:anonymity` fails if HR code touches raw responses or accounts, or if the analytics view exposes `compte_id`. Run it live if time allows.
-- Admin sees account counts per collective, never identities.
-- The LLM is never called in a dashboard request path.
+## Close (10 s)
+
+"Every employee can speak, HR can act, and nobody can be identified."
+
+If there is a screen and time, the anonymity proof: HR code imports only `@damm/db/hr` and `@damm/shared` (`pnpm lint` enforces it), and `pnpm check:anonymity` fails if HR code touches raw responses or accounts or the analytics view exposes `compte_id`. Admin sees account counts per collective only. The LLM is never called in a dashboard request path.
+
+## Cut order if over time
+
+Manager view (`/manager`, "Vista de responsables", read-only), then the Re-measure and Learn detail, then the second approval.
 
 ## If everything breaks
 
-1. Reset the fixture DB, restart `pnpm dev`.
-2. Walk steps 6 and 7 only (results and recommendation) and narrate steps 1–5 from the slides.
-3. Last resort: the screenshots and the recording.
+1. Reset the DB (`pnpm demo-db` or "Restaura la demo"), restart `pnpm dev`.
+2. Walk `/hr` and `/hr/signals` and `/hr/recommendations` only, and narrate the rest.
+3. Last resort: the backup push clip and the screenshots (R-DEL-8).
 
-## Open items to close before the demo
+## Things to confirm before the demo
 
-- 🔶 Natan: AI drafts, engine, analysis job. Re-check steps 2, 5, 6, 7, 8.
-- ⏳ Jan: `jan/pwa-answer` merged to `jan/dev`, then step 5 can run fully.
-- Tunnel or LAN setup for the phone (`jan/tunnel`, blocked at the time of writing).
-- Record the backup screen capture and take screenshots once everything is in.
+- Questions a day: the engine default is 3 (`questionsPerDay`), but the join page says "Dues preguntes breus al dia". Do not state a number on stage.
+- The push copy and the "Has dit, hem fet" card are in the employee strings; not seen on a device by whoever wrote this script.
+- The video says P2 answers two questions: that holds only if the published need has at least two approved questions, so approve two in beat 2.
 
 ## Live trigger: phone answer to laptop alarm
 
