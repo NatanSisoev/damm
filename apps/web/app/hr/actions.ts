@@ -2,10 +2,10 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { draftSurvey, redraftQuestion } from "@damm/ai";
+import { draftSurvey, redraftQuestion, translateQuestionTexts } from "@damm/ai";
 import { DEFAULT_QUESTION_COUNT, QUESTION_COUNT_OPTIONS, type QueryDelivery } from "@damm/shared";
 import {
-  approveQuestion, getRedraftContext, listCollectius, listNeedCards, moveDraft, replaceDraft, saveDraftSurvey, updateNeedHeader, approveRecommendation, createNecessitat, discardQuestion,
+  approveQuestion, fillQuestionTranslations, getQuestionWording, getRedraftContext, listCollectius, listNeedCards, moveDraft, replaceDraft, saveDraftSurvey, updateNeedHeader, approveRecommendation, createNecessitat, discardQuestion,
   discardRecommendation, publishNecessitat, updateDraftText, closeNecessitat, setSignalStatus, setAlarmArchived, reopenClosedAlarm,
 } from "@damm/db/hr";
 import { createDraftedFollowUp } from "./follow-up";
@@ -69,8 +69,22 @@ export async function editNeedHeaderAction(formData: FormData) {
   revalidatePath("/hr/needs");
 }
 
+/** Makes sure a question has es and en wording before it enters the pool. Never throws: a failed call leaves the Catalan text, which readers fall back to. */
+async function ensureQuestionTranslations(id: number): Promise<void> {
+  try {
+    const w = getQuestionWording(id);
+    if (!w || (w.es && w.en)) return;
+    const tr = await translateQuestionTexts([w.text]);
+    if (tr) fillQuestionTranslations(id, tr[0].es, tr[0].en);
+  } catch {
+    /* approval must never block on translation */
+  }
+}
+
 export async function approveQuestionAction(formData: FormData) {
-  approveQuestion(Number(formData.get("id")), HR_USER);
+  const id = Number(formData.get("id"));
+  await ensureQuestionTranslations(id);
+  approveQuestion(id, HR_USER);
   invalidateHrPool();
   revalidatePath("/hr/review");
   revalidatePath("/hr/needs");

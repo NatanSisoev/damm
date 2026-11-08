@@ -216,6 +216,27 @@ export function updateDraftText(id: number, text: string, es?: string | null, en
   getDb().prepare("UPDATE pregunta SET text = ?, text_i18n = ? WHERE id = ? AND estat = 'draft'").run(text, textI18nJson(text, es, en), id);
 }
 
+/** Catalan text and the stored es/en wording of a question (empty string = missing). */
+export function getQuestionWording(id: number): { text: string; es: string; en: string } | null {
+  const r = getDb().prepare("SELECT text, text_i18n AS ti FROM pregunta WHERE id = ?").get(id) as { text: string; ti: string | null } | undefined;
+  if (!r) return null;
+  let v: Record<string, unknown> = {};
+  try {
+    v = r.ti ? JSON.parse(r.ti) : {};
+  } catch {
+    /* malformed: treated as missing */
+  }
+  const g = (k: string) => (typeof v?.[k] === "string" ? (v[k] as string).trim() : "");
+  return { text: r.text, es: g("es"), en: g("en") };
+}
+
+/** Fills the missing es/en wording of a question of any state; existing es/en are never overwritten (HR edits win). */
+export function fillQuestionTranslations(id: number, es: string | null, en: string | null): void {
+  const w = getQuestionWording(id);
+  if (!w) return;
+  getDb().prepare("UPDATE pregunta SET text_i18n = ? WHERE id = ?").run(textI18nJson(w.text, w.es || es, w.en || en), id);
+}
+
 /** Human approval: the only code path that sets estat = 'aprovada'. */
 export function approveQuestion(id: number, approvedBy: string): void {
   getDb()
