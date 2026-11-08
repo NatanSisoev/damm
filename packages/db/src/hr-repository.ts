@@ -3,6 +3,9 @@
 import type { Agregat, Lang, QueryDelivery, Recomanacio, Senyal } from "@damm/shared";
 import { MIN_GROUP_SIZE } from "@damm/shared";
 import { getDb } from "./connection";
+import { alarmInfo, approverLabel, needSubject, originalQuestionText, questionInfo, recommendationInfo, recordDecision } from "./hr-decisions";
+
+export { approverLabel };
 import { overlayTranslations, RECOMMENDATION_FIELDS } from "./hr-i18n";
 import type { SignalRecommendation } from "./hr-signals";
 import { classifyChange, complementarySuppression, precisionBand, type Change, type HideReason, type PrecisionBand } from "./hr-rigour";
@@ -188,14 +191,18 @@ export function getRedraftContext(id: number) {
 }
 
 /** Replace the wording of a draft in place (same row, same position). Still a draft: a human approves later. */
-export function replaceDraft(id: number, q: DraftInput, byIa: boolean): void {
+export function replaceDraft(id: number, q: DraftInput, byIa: boolean, actor?: string): void {
   const db = getDb();
   const dom = db.prepare("SELECT id FROM domini WHERE nom = ?").get(q.domain) as { id: number } | undefined;
   const tipus = TIPUS_FROM_AI[q.type];
   if (!dom || !tipus) throw new Error(`Unknown domain or type: ${q.domain} / ${q.type}`);
-  db.prepare(
+  const before = questionInfo(id);
+  const res = db.prepare(
     "UPDATE pregunta SET text = ?, text_i18n = ?, tipus = ?, domini_id = ?, motiu = ?, generada_per_ia = ? WHERE id = ? AND estat = 'draft'",
   ).run(q.text, textI18nJson(q.text, q.i18n?.es?.text, q.i18n?.en?.text), tipus, dom.id, q.reason, byIa ? 1 : 0, id);
+  if (res.changes > 0 && before) {
+    recordDecision({ entity: "pregunta", entityId: id, necessitatId: before.necessitatId, action: "regenerate", font: "ai_redraft", actor: actor ?? "HR", fromState: "draft", toState: "draft", subject: q.text, textOriginal: originalQuestionText(id, before.text), textFinal: q.text });
+  }
 }
 
 export function listCollectius(): { id: number; nom: string }[] {
@@ -222,8 +229,14 @@ export function listDrafts(): DraftQuestion[] {
 }
 
 /** HR edit of a draft: Catalan text plus the Spanish and English wording (empty means "fall back to Catalan"). */
-export function updateDraftText(id: number, text: string, es?: string | null, en?: string | null): void {
-  getDb().prepare("UPDATE pregunta SET text = ?, text_i18n = ? WHERE id = ? AND estat = 'draft'").run(text, textI18nJson(text, es, en), id);
+export function updateDraftText(id: number, text: string, es?: string | null, en?: string | null, actor?: string): void {
+  const before = questionInfo(id);
+  const i18nBefore = (getDb().prepare("SELECT text_i18n AS t FROM pregunta WHERE id = ?").get(id) as { t: string | null } | undefined)?.t ?? null;
+  const i18n = textI18nJson(text, es, en);
+  const res = getDb().prepare("UPDATE pregunta SET text = ?, text_i18n = ? WHERE id = ? AND estat = 'draft'").run(text, i18n, id);
+  if (res.changes > 0 && before && (before.text !== text || i18nBefore !== i18n)) {
+    recordDecision({ entity: "pregunta", entityId: id, necessitatId: before.necessitatId, action: "edit", font: "hr_edit", actor: actor ?? "HR", fromState: "draft", toState: "draft", subject: text, textOriginal: originalQuestionText(id, before.text), textFinal: text });
+  }
 }
 
 /** Catalan text and the stored es/en wording of a question (empty string = missing). */
@@ -249,12 +262,17 @@ export function fillQuestionTranslations(id: number, es: string | null, en: stri
 
 /** Human approval: the only code path that sets estat = 'aprovada'. */
 export function approveQuestion(id: number, approvedBy: string): void {
-  getDb()
+  const info = questionInfo(id);
+  const followups = getDb().prepare("SELECT id FROM pregunta WHERE followup_of = ? AND estat = 'draft'").all(id) as { id: number }[];
+  const res = getDb()
     .prepare(
       `UPDATE pregunta SET estat = 'aprovada', prioritat = CASE WHEN necessitat_id IS NULL THEN prioritat ELSE 100 END,
        aprovada_per = ?, aprovada_el = datetime('now') WHERE id = ? AND estat = 'draft'`,
     )
     .run(approvedBy, id);
+  if (res.changes > 0 && info) {
+    recordDecision({ entity: "pregunta", entityId: id, necessitatId: info.necessitatId, action: "approve", font: info.font, actor: approvedBy, fromState: "draft", toState: "aprovada", subject: info.text });
+  }
   // A suggested follow-up still in draft is approved with its parent (HR can remove it before, see removeDraftFollowup).
   getDb()
     .prepare(
@@ -262,6 +280,10 @@ export function approveQuestion(id: number, approvedBy: string): void {
        WHERE followup_of = ? AND estat = 'draft' AND EXISTS (SELECT 1 FROM pregunta p WHERE p.id = ? AND p.estat = 'aprovada')`,
     )
     .run(approvedBy, id, id);
+  for (const f of followups) {
+    const fi = questionInfo(f.id);
+    if (fi?.estat === "aprovada") recordDecision({ entity: "pregunta", entityId: f.id, necessitatId: info?.necessitatId ?? null, action: "approve", font: "ai_followup", actor: approvedBy, fromState: "draft", toState: "aprovada", subject: fi.text });
+  }
 }
 
 /** The suggested follow-up (a draft child) of a draft question, if any. */
@@ -270,12 +292,21 @@ export function getDraftFollowup(parentId: number): { id: number; text: string }
 }
 
 /** HR removes the AI-suggested follow-up of a draft question (AI proposes, HR decides). */
-export function removeDraftFollowup(parentId: number): void {
-  getDb().prepare("UPDATE pregunta SET estat = 'retirada' WHERE followup_of = ? AND estat = 'draft'").run(parentId);
+export function removeDraftFollowup(parentId: number, actor?: string): void {
+  const f = getDraftFollowup(parentId);
+  const res = getDb().prepare("UPDATE pregunta SET estat = 'retirada' WHERE followup_of = ? AND estat = 'draft'").run(parentId);
+  if (res.changes > 0 && f) {
+    const info = questionInfo(f.id);
+    recordDecision({ entity: "pregunta", entityId: f.id, necessitatId: info?.necessitatId ?? null, action: "remove_followup", font: "ai_followup", actor: actor ?? "HR", fromState: "draft", toState: "retirada", subject: f.text });
+  }
 }
 
-export function discardQuestion(id: number): void {
-  getDb().prepare("UPDATE pregunta SET estat = 'retirada' WHERE (id = ? OR followup_of = ?) AND estat = 'draft'").run(id, id);
+export function discardQuestion(id: number, actor?: string): void {
+  const info = questionInfo(id);
+  const res = getDb().prepare("UPDATE pregunta SET estat = 'retirada' WHERE (id = ? OR followup_of = ?) AND estat = 'draft'").run(id, id);
+  if (res.changes > 0 && info && info.estat === "draft") {
+    recordDecision({ entity: "pregunta", entityId: id, necessitatId: info.necessitatId, action: "reject", font: info.font, actor: actor ?? "HR", fromState: "draft", toState: "retirada", subject: info.text });
+  }
 }
 
 export function listApprovedUnpublishedNeeds(): { id: number; textNl: string; approved: number }[] {
@@ -295,7 +326,7 @@ export function listApprovedUnpublishedNeeds(): { id: number; textNl: string; ap
  * notification through the employee side and gets back an aggregate count only.
  * Returns false when the need does not exist or has no approved question.
  */
-export function publishNecessitat(necessitatId: number): boolean {
+export function publishNecessitat(necessitatId: number, actor?: string): boolean {
   const db = getDb();
   const ok = db
     .prepare(
@@ -303,6 +334,9 @@ export function publishNecessitat(necessitatId: number): boolean {
        AND EXISTS (SELECT 1 FROM pregunta p WHERE p.necessitat_id = necessitat.id AND p.estat = 'aprovada')`,
     )
     .run(necessitatId);
+  if (ok.changes > 0) {
+    recordDecision({ entity: "necessitat", entityId: necessitatId, necessitatId, action: "publish", font: "hr_need", actor: actor ?? "HR", fromState: "oberta", toState: "publicada", subject: needSubject(necessitatId)?.subject });
+  }
   return ok.changes > 0;
 }
 
@@ -436,17 +470,13 @@ export function listManagerRecommendations(collectiuId: number, lang?: Lang): { 
   return overlayTranslations(db, "recomanacio", rows, { text: "text" }, lang);
 }
 
-/** Non-personal approver label: control characters and "@" stripped (no emails), max 60 chars, "HR" when empty. */
-export function approverLabel(raw: unknown): string {
-  const v = String(raw ?? "").replace(/[\u0000-\u001f\u007f@]/g, "").replace(/\s+/g, " ").trim().slice(0, 60);
-  return v || "HR";
-}
-
 /** Human approval of a recommendation. Records a non-personal label (what HR typed, or "HR") and the time (R-X-3). */
 export function approveRecommendation(id: number, approvedBy?: string): void {
-  getDb()
+  const info = recommendationInfo(id);
+  const res = getDb()
     .prepare("UPDATE recomanacio SET estat = 'aprovada', aprovada_el = datetime('now'), aprovada_per = ? WHERE id = ? AND estat = 'proposada'")
     .run(approverLabel(approvedBy), id);
+  if (res.changes > 0 && info) recordDecision({ entity: "recomanacio", entityId: id, necessitatId: info.necessitatId, action: "approve", font: "ai_recommendation", actor: approvedBy, fromState: "proposada", toState: "aprovada", subject: info.subject });
   linkSignalOfRecommendation(id);
 }
 
@@ -479,17 +509,22 @@ export function listContextEvents(): ContextEvent[] {
   ).map((r) => ({ id: r.id, date: r.event_date, collectiuId: r.collectiu_id, tornId: r.torn_id, dominiId: r.domini_id, label: r.label, createdAt: r.created_at }));
 }
 
-export function discardRecommendation(id: number): void {
-  getDb().prepare("UPDATE recomanacio SET estat = 'descartada' WHERE id = ? AND estat = 'proposada'").run(id);
+export function discardRecommendation(id: number, actor?: string): void {
+  const info = recommendationInfo(id);
+  const res = getDb().prepare("UPDATE recomanacio SET estat = 'descartada' WHERE id = ? AND estat = 'proposada'").run(id);
+  if (res.changes > 0 && info) recordDecision({ entity: "recomanacio", entityId: id, necessitatId: info.necessitatId, action: "reject", font: "ai_recommendation", actor: actor ?? "HR", fromState: "proposada", toState: "descartada", subject: info.subject });
 }
 
 export const SIGNAL_STATUSES = ["open", "acknowledged", "action_linked", "resolved", "dismissed"] as const;
 export type SignalStatus = (typeof SIGNAL_STATUSES)[number];
 
 /** Human action: move a signal through open → acknowledged → action_linked → resolved (any order, schema enum only). */
-export function setSignalStatus(id: number, status: string): boolean {
+export function setSignalStatus(id: number, status: string, actor?: string): boolean {
   if (!(SIGNAL_STATUSES as readonly string[]).includes(status)) return false;
-  return getDb().prepare("UPDATE senyal SET status = ? WHERE id = ?").run(status, id).changes > 0;
+  const before = alarmInfo(id);
+  const ok = getDb().prepare("UPDATE senyal SET status = ? WHERE id = ?").run(status, id).changes > 0;
+  if (ok && before && before.status !== status) recordDecision({ entity: "senyal", entityId: id, action: "status", font: "engine_alarm", actor: actor ?? "HR", fromState: before.status, toState: status, subject: before.description });
+  return ok;
 }
 
 const AUTO_ORDER = ["open", "acknowledged", "action_linked"] as const;
@@ -514,8 +549,11 @@ export function linkSignalOfRecommendation(recId: number): void {
 }
 
 /** Human action: close a need (necessitat.estat = 'tancada'). Its published questions stay in the DB; no new publication. */
-export function closeNecessitat(id: number): boolean {
-  return getDb().prepare("UPDATE necessitat SET estat = 'tancada' WHERE id = ? AND estat <> 'tancada'").run(id).changes > 0;
+export function closeNecessitat(id: number, actor?: string): boolean {
+  const before = needSubject(id);
+  const ok = getDb().prepare("UPDATE necessitat SET estat = 'tancada' WHERE id = ? AND estat <> 'tancada'").run(id).changes > 0;
+  if (ok && before) recordDecision({ entity: "necessitat", entityId: id, necessitatId: id, action: "close", font: "hr_need", actor: actor ?? "HR", fromState: before.estat, toState: "tancada", subject: before.subject });
+  return ok;
 }
 
 export function listNeeds(): { id: number; textNl: string; estat: string; collectiu: string | null }[] {

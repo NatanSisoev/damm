@@ -247,6 +247,27 @@ CREATE TABLE recomanacio (
   aprovada_per             TEXT                                 -- non-personal label of the approver (HR role or a display name, max 60 chars); never an email
 );
 
+-- Decision trail (R-PRIV-10, N-11): every human decision on AI output. HR side only; no compte_id, no employee data.
+-- `subject` is a short snapshot of what was decided on, so the trail stays readable after the row changes.
+-- `font` is where the decided output came from; `actor` is a non-personal HR label (see approverLabel), never an employee.
+CREATE TABLE IF NOT EXISTS decisio (
+  id           INTEGER PRIMARY KEY,
+  created_at   TEXT NOT NULL DEFAULT (datetime('now')),
+  entity       TEXT NOT NULL CHECK (entity IN ('pregunta','recomanacio','necessitat','senyal')),
+  entity_id    INTEGER NOT NULL,
+  necessitat_id INTEGER REFERENCES necessitat(id),   -- the need the decision belongs to, when there is one
+  action       TEXT NOT NULL CHECK (action IN ('approve','reject','edit','regenerate','remove_followup','publish','close','retire','restore','status','archive','unarchive','reopen')),
+  from_state   TEXT,
+  to_state     TEXT,
+  font         TEXT NOT NULL CHECK (font IN ('ai_draft','ai_redraft','ai_followup','ai_recommendation','hr_edit','engine_alarm','engine_pool','hr_need')),
+  actor        TEXT NOT NULL,
+  subject      TEXT,
+  text_original TEXT,                                 -- AI wording before an HR edit or a regeneration
+  text_final   TEXT                                   -- wording after it
+);
+CREATE INDEX IF NOT EXISTS idx_decisio_entity ON decisio(entity, entity_id);
+CREATE INDEX IF NOT EXISTS idx_decisio_need ON decisio(necessitat_id, created_at);
+
 -- Something that happened in the organisation, recorded by HR (e.g. "new shift system from 1 Oct").
 -- Anchor of the before/after comparison (insight `action_effect`) when it has a domain.
 -- Optional scope: collectiu_id / torn_id NULL = all. Never holds personal data.

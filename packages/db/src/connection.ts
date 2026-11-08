@@ -20,6 +20,7 @@ export function getDb(): Db {
     ensureHrPushTable(cached);
     ensureAlarmArchiveColumn(cached);
     ensureFollowupColumns(cached);
+    ensureDecisionTable(cached);
   }
   return cached;
 }
@@ -85,4 +86,25 @@ function ensureFollowupColumns(db: Db): void {
   if (!cols.length) return;
   if (!cols.some((c) => c.name === "followup_of")) db.exec("ALTER TABLE pregunta ADD COLUMN followup_of INTEGER REFERENCES pregunta(id)");
   if (!cols.some((c) => c.name === "followup_when")) db.exec("ALTER TABLE pregunta ADD COLUMN followup_when TEXT");
+}
+
+/** Decision trail (schema.sql has the same statements). Idempotent. */
+function ensureDecisionTable(db: Db): void {
+  db.exec(`CREATE TABLE IF NOT EXISTS decisio (
+    id           INTEGER PRIMARY KEY,
+    created_at   TEXT NOT NULL DEFAULT (datetime('now')),
+    entity       TEXT NOT NULL CHECK (entity IN ('pregunta','recomanacio','necessitat','senyal')),
+    entity_id    INTEGER NOT NULL,
+    necessitat_id INTEGER REFERENCES necessitat(id),
+    action       TEXT NOT NULL CHECK (action IN ('approve','reject','edit','regenerate','remove_followup','publish','close','retire','restore','status','archive','unarchive','reopen')),
+    from_state   TEXT,
+    to_state     TEXT,
+    font         TEXT NOT NULL CHECK (font IN ('ai_draft','ai_redraft','ai_followup','ai_recommendation','hr_edit','engine_alarm','engine_pool','hr_need')),
+    actor        TEXT NOT NULL,
+    subject      TEXT,
+    text_original TEXT,
+    text_final   TEXT
+  );
+  CREATE INDEX IF NOT EXISTS idx_decisio_entity ON decisio(entity, entity_id);
+  CREATE INDEX IF NOT EXISTS idx_decisio_need ON decisio(necessitat_id, created_at);`);
 }

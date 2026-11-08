@@ -3,6 +3,7 @@
 // Every figure re-applies the minimum group size on read.
 import { MIN_GROUP_SIZE, type Lang } from "@damm/shared";
 import { getDb } from "./connection";
+import { alarmInfo, recordDecision } from "./hr-decisions";
 import { RECOMMENDATION_COLUMNS, getShiftTrend, getTrends, type TrendCell } from "./hr-repository";
 import { overlayTranslations, RECOMMENDATION_FIELDS } from "./hr-i18n";
 import type { Change } from "./hr-rigour";
@@ -249,13 +250,17 @@ export function archivedAlarmIds(): Set<number> {
 }
 
 /** Archive a resolved alarm, or bring an archived one back. No-op for any other status. */
-export function setAlarmArchived(id: number, archived: boolean): void {
-  getDb()
+export function setAlarmArchived(id: number, archived: boolean, actor?: string): void {
+  const before = alarmInfo(id);
+  const res = getDb()
     .prepare(`UPDATE senyal SET archived_at = ${archived ? "datetime('now')" : "NULL"} WHERE id = ? AND status IN ('resolved', 'dismissed')`)
     .run(id);
+  if (res.changes > 0 && before) recordDecision({ entity: "senyal", entityId: id, action: archived ? "archive" : "unarchive", font: "engine_alarm", actor: actor ?? "HR", fromState: before.status, toState: before.status, subject: before.description });
 }
 
 /** Reopen a resolved or dismissed alarm: back to open, out of the archive. */
-export function reopenClosedAlarm(id: number): void {
-  getDb().prepare("UPDATE senyal SET status = 'open', archived_at = NULL WHERE id = ? AND status IN ('resolved', 'dismissed')").run(id);
+export function reopenClosedAlarm(id: number, actor?: string): void {
+  const before = alarmInfo(id);
+  const res = getDb().prepare("UPDATE senyal SET status = 'open', archived_at = NULL WHERE id = ? AND status IN ('resolved', 'dismissed')").run(id);
+  if (res.changes > 0 && before) recordDecision({ entity: "senyal", entityId: id, action: "reopen", font: "engine_alarm", actor: actor ?? "HR", fromState: before.status, toState: "open", subject: before.description });
 }
