@@ -16,7 +16,7 @@ import { signalsDict } from "@/lib/i18n/hr-signals";
 import { collectiveLabel, domainLabel, shiftLabel } from "@/lib/i18n/names";
 import type { Lang } from "@damm/shared";
 
-import { recomputeAction, setAlarmStatusAction } from "../actions";
+import { setAlarmStatusAction } from "../actions";
 import { ALARM_NEXT } from "./transitions";
 import { NON_ACTIONABLE } from "./alarm-text";
 import { signalDetail, signalDrop, signalSegment } from "@/lib/signal-text";
@@ -89,7 +89,7 @@ export default async function AlarmsPage({ searchParams }: { searchParams: Promi
   };
   const rows = tabRows.filter((r) =>
     (!f.tipus || r.type === f.tipus) &&
-    (!f.gravetat || r.severity === f.gravetat) &&
+    (!f.gravetat || (f.gravetat === "greu" ? r.severity !== "info" : r.severity === f.gravetat)) &&
     (!f.collectiu || (f.collectiu === "tots" ? r.collectiuId == null : String(r.collectiuId) === f.collectiu)) &&
     (!f.domini || String(r.domainId) === f.domini) &&
     (!f.torn || String(r.tornId) === f.torn) &&
@@ -136,20 +136,19 @@ export default async function AlarmsPage({ searchParams }: { searchParams: Promi
   good.sort(order);
 
   const severe = actionable.filter((r) => r.severity !== "info").length;
+  // The "N are warnings or critical" count links to the same view filtered to those alarms.
+  const severeHref = (() => {
+    const qs = new URLSearchParams();
+    for (const [k, v] of Object.entries(sp)) if (v && k !== "gravetat") qs.set(k, v);
+    qs.set("gravetat", "greu");
+    return `/hr/signals?${qs}`;
+  })();
 
   return (
     <>
       <PageHeader
         title={t("sg_title")}
         subtitle={t("sg_sub")}
-        actions={
-          <div className="flex flex-wrap gap-2">
-            <form action={recomputeAction}>
-              <button className="btn" type="submit">{t("sg_recalc")}</button>
-            </form>
-          </div>
-
-        }
       />
 
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
@@ -165,19 +164,23 @@ export default async function AlarmsPage({ searchParams }: { searchParams: Promi
           {actionable.length === 0 ? (
             <span className="text-subtle">{t("sg_none_view")}</span>
           ) : (
-            <>
+            severe > 0 && severe < actionable.length ? (
+              <Link href={severeHref} className="group" title={ts("sev_severe")}>
+                <strong className="underline decoration-1 underline-offset-2 group-hover:decoration-2">{t(actionable.length === 1 ? "sg_need_one" : "sg_need_many", { n: actionable.length })}</strong>
+                <span className="text-subtle group-hover:text-ink"> · {t(severe === 1 ? "sg_sev_one" : "sg_sev_many", { n: severe })} →</span>
+              </Link>
+            ) : (
               <strong>{t(actionable.length === 1 ? "sg_need_one" : "sg_need_many", { n: actionable.length })}</strong>
-              {severe > 0 && severe < actionable.length && <span className="text-subtle"> · {t(severe === 1 ? "sg_sev_one" : "sg_sev_many", { n: severe })}</span>}
-            </>
+            )
           )}
         </p>
       </div>
 
       {all.length > 0 && (
-        <AutoSubmitForm method="get" action="/hr/signals" className="alarm-filters mb-5" aria-label={ts("filters_aria")}>
+        <AutoSubmitForm key={JSON.stringify(sp)} method="get" action="/hr/signals" className="alarm-filters mb-5" aria-label={ts("filters_aria")}>
           {tab.key !== "obertes" && <input type="hidden" name="estat" value={tab.key} />}
           <Select all={ts("f_all")} name="tipus" label={ts("f_type")} value={f.tipus} options={opts.tipus.map((v) => [v, signalTypeLabel(v, lang)])} />
-          <Select all={ts("f_all")} name="gravetat" label={ts("f_severity")} value={f.gravetat} options={[["critical", ts("sev_critical")], ["warning", ts("sev_warning")], ["info", ts("sev_info")]]} />
+          <Select all={ts("f_all")} name="gravetat" label={ts("f_severity")} value={f.gravetat} options={[["greu", ts("sev_severe")], ["critical", ts("sev_critical")], ["warning", ts("sev_warning")], ["info", ts("sev_info")]]} />
           <Select all={ts("f_all")} name="collectiu" label={ts("f_collective")} value={f.collectiu} options={[...opts.collectiu.map((v) => [String(v), colNames.has(v) ? collectiveLabel(colNames.get(v)!, lang) : `#${v}`] as [string, string]), ["tots", ts("f_whole_company")]]} />
           <Select all={ts("f_all")} name="domini" label={ts("f_domain")} value={f.domini} options={opts.domini.map((v) => [String(v), domains.has(v) ? domainLabel(domains.get(v)!, lang) : `#${v}`])} />
           <Select all={ts("f_all")} name="torn" label={ts("f_shift")} value={f.torn} options={opts.torn.map((v) => [String(v), torns.has(v) ? shiftLabel(torns.get(v)!, lang) : `#${v}`])} />
@@ -282,7 +285,7 @@ function AlarmItem({ t, lang, r, rec, drafted }: { t: HrResultsT; lang: Lang; r:
   const next = ALARM_NEXT[r.status];
   return (
     <li className="py-3">
-      <div className="flex flex-wrap items-start gap-x-4 gap-y-2">
+      <div className="flex flex-wrap items-end gap-x-4 gap-y-2">
         <div className="min-w-0 flex-1 basis-64">
           <div className="mb-1 flex flex-wrap items-center gap-1.5">
             <span className={`badge ${r.severity === "critical" ? "badge-crit" : r.severity === "info" ? "" : "badge-warn"}`}>{hrLookup("sev_", r.severity, lang)}</span>
@@ -296,8 +299,7 @@ function AlarmItem({ t, lang, r, rec, drafted }: { t: HrResultsT; lang: Lang; r:
           </p>
           <p className="text-[13px] text-muted">{r.detail}</p>
         </div>
-      </div>
-      <div className="mt-2 flex flex-wrap items-center justify-end gap-2">
+      <div className="ml-auto flex shrink-0 flex-wrap items-center justify-end gap-2">
         {!drafted && r.domainId != null && !NON_ACTIONABLE.has(r.type) && (
           <form action={generateRecommendationsAction}>
             <input type="hidden" name="signal" value={r.id} />
@@ -346,6 +348,7 @@ function AlarmItem({ t, lang, r, rec, drafted }: { t: HrResultsT; lang: Lang; r:
             </details>
           )}
         </div>
+      </div>
       </div>
     </li>
   );
