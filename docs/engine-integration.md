@@ -384,7 +384,7 @@ What it contains (all synthetic):
 - **Population:** 1,200 invented employees across the 4 collectives and 3 shifts, of whom 344 have accounts. Night shifts are deliberately thin.
 - **Questions:** the 163-question sample bank, plus one published HR need ("shift-change communication" for Fàbriques, two questions).
 - **Format preferences per collective:** quick formats for Fàbriques and Logística, reading formats for Oficines.
-- **Answers:** 92 days (1 Aug to 31 Oct 2026) of daily batches, answered through the real engine, about 95,000 answers of every type including rankings.
+- **Answers:** 99 days (1 Aug to 7 Nov 2026) of daily batches, answered through the real engine (about 83% of served questions: yes/no about 90%, ranking about 74%; unanswered assignments keep `answered_at` NULL), about 158,000 answers of every type including rankings.
 - **Comments:** about 20,000 English template comments, with recurring themes (see below).
 - **Results:** at the end it runs `runEngineJob`, so `agregat`, `domain_importance`, `insight` and `senyal` are filled.
 

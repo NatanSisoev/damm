@@ -5,7 +5,7 @@ import { QUESTION_TYPES, type QuestionType } from "@damm/shared";
 import { resolveConfig, type EngineConfig } from "./config.ts";
 import { all, one, run, type SqlDatabase } from "./db.ts";
 import { segmentStats, type PersonPoint } from "./segment.ts";
-import { population } from "./store.ts";
+import { notChild, population } from "./store.ts";
 import { addDays, dayOf, daysBetween, toSqlDatetime } from "./time.ts";
 
 export type PoolState = "live" | "waiting" | "inactive";
@@ -170,6 +170,8 @@ export function classify(r: Pick<Row, "estat" | "is_followup" | "necessitat_id" 
 
 /** Everything the dashboard shows about the question bank. `config` overrides engine_config (tests). */
 export function listPool(db: SqlDatabase, opts: { now?: number; config?: Partial<EngineConfig> } = {}): Pool {
+  // Databases built before schema.sql gained this index would otherwise scan all of `assignment` per question. Idempotent.
+  db.exec("CREATE INDEX IF NOT EXISTS idx_assignment_pregunta ON assignment(pregunta_id, day)");
   const cfg = resolveConfig(db, opts.config);
   const nowMs = opts.now ?? Date.now();
   const today = dayOf(nowMs, cfg.timezone);
@@ -186,6 +188,7 @@ export function listPool(db: SqlDatabase, opts: { now?: number; config?: Partial
        JOIN domini d ON d.id = p.domini_id
   LEFT JOIN collectiu c ON c.id = p.collectiu_id
   LEFT JOIN necessitat n ON n.id = p.necessitat_id
+      WHERE 1 = 1${notChild(db, "p.")}
    ORDER BY p.id`,
   );
 

@@ -1,13 +1,14 @@
 // Minimal service worker: installability, an offline fallback for page navigations and a push stub.
 // It never caches API responses or any other request: only the static offline page below.
-const CACHE = "escolta-offline-v1";
+const CACHE = "damm-offline-v2";
 const OFFLINE_URL = "/offline.html";
+const OFFLINE_ASSETS = [OFFLINE_URL, "/brand/title-oneline-light.svg", "/brand/title-oneline-dark.svg"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches
       .open(CACHE)
-      .then((cache) => cache.add(new Request(OFFLINE_URL, { cache: "reload" })))
+      .then((cache) => Promise.all(OFFLINE_ASSETS.map((u) => cache.add(new Request(u, { cache: "reload" })))))
       .then(() => self.skipWaiting()),
   );
 });
@@ -47,7 +48,7 @@ self.addEventListener("push", (event) => {
     data = { body: event.data ? event.data.text() : "" };
   }
   event.waitUntil(
-    self.registration.showNotification(data.title || "Escolta activa", {
+    self.registration.showNotification(data.title || "Give a Damm", {
       body: data.body || fallbackBody(),
       icon: "/icons/icon-192.png",
       badge: "/icons/icon-192.png",

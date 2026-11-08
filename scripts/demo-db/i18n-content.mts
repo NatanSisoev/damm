@@ -126,6 +126,16 @@ export function translateResum(ca: string, lang: Lang, misses: Misses): string {
 
 // Placeholders: {C} collective, {T} shift. Segments are substituted before lookup and restored after.
 const REC_TEXT: Record<string, Tri> = {
+  "Fer un taller de 90 minuts sobre col·laboració i resolució de conflictes entre equips que treballen units.": {
+    ca: "",
+    es: "Hacer un taller de 90 minutos sobre colaboración y resolución de conflictos entre equipos que trabajan juntos.",
+    en: "Hold a 90-minute workshop on collaboration and conflict resolution between teams that work together.",
+  },
+  "Fer una ronda curta amb l'equip per identificar l'equipament, l'espai o les eines que dificulten la feina, i prioritzar-ne dues millores.": {
+    ca: "",
+    es: "Hacer una ronda corta con el equipo para identificar el equipamiento, el espacio o las herramientas que dificultan el trabajo, y priorizar dos mejoras.",
+    en: "Do a short round with the team to identify the equipment, space or tools that get in the way of work, and prioritise two improvements.",
+  },
   "Abans d'una mesura general, fer 2 o 3 sessions d'escolta agregades (mínim 10 persones) per entendre què separa les opinions i dissenyar una acció que serveixi a tots els grups.": {
     ca: "",
     es: "Antes de una medida general, hacer 2 o 3 sesiones de escucha agregadas (mínimo 10 personas) para entender qué separa las opiniones y diseñar una acción que sirva a todos los grupos.",
@@ -221,6 +231,9 @@ const REC_TEXT: Record<string, Tri> = {
 const REC_TITLE: Record<string, Tri> = {
   "Ergonomia i rotació de llocs a {C}": { ca: "", es: "Ergonomía y rotación de puestos en {C}", en: "Ergonomics and job rotation in {C}" },
   "Pausa de microdescans a {C}, torn {T}": { ca: "", es: "Pausa de microdescansos en {C}, turno {T}", en: "Micro-break pause in {C}, {T} shift" },
+  "Dinàmiques de col·laboració": { ca: "", es: "Dinámicas de colaboración", en: "Collaboration dynamics" },
+  "Revisar càrrega i planificació de tota l'empresa": { ca: "", es: "Revisar carga y planificación de toda la empresa", en: "Review workload and planning across the whole company" },
+  "Revisar equipament i entorn físic": { ca: "", es: "Revisar equipamiento y entorno físico", en: "Review equipment and physical environment" },
   "Acompanyament entre iguals": { ca: "", es: "Acompañamiento entre iguales", en: "Peer support" },
   "Comunicar els torns amb més antelació": { ca: "", es: "Comunicar los turnos con más antelación", en: "Communicate shifts with more notice" },
   "Consolidar el que ha funcionat": { ca: "", es: "Consolidar lo que ha funcionado", en: "Consolidate what has worked" },

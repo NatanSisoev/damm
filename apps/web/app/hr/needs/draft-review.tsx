@@ -5,12 +5,12 @@ import { hrDict } from "@/lib/i18n/hr";
 import { draftReviewDict } from "@/lib/i18n/hr-draft-review";
 import { domainLabel } from "@/lib/i18n/names";
 import {
-  approveQuestionAction, discardQuestionAction, editNeedHeaderAction, editQuestionAction, moveDraftAction,
+  approveQuestionAction, discardQuestionAction, removeFollowupAction, editNeedHeaderAction, editQuestionAction, moveDraftAction,
   regenerateQuestionAction,
 } from "../actions";
 
 /** Draft review for one need: title and intro, then each proposed question with its actions. */
-export async function DraftReview({ g }: { g: NeedDraftGroup }) {
+export async function DraftReview({ g, regenError = null }: { g: NeedDraftGroup; regenError?: number | null }) {
   const { t, lang } = await getTL(draftReviewDict);
   const { t: th } = await getTL(hrDict);
   const typeLabel = (tipus: string) => (t(`type_${tipus}` as never) === `type_${tipus}` ? tipus : t(`type_${tipus}` as never));
@@ -67,7 +67,7 @@ export async function DraftReview({ g }: { g: NeedDraftGroup }) {
               if (warns.length === 0) return null;
               return (
                 <div role="status" className="rounded-lg border border-warn px-3 py-2 text-sm">
-                  <p className="text-xs font-medium text-warn">{t("warn_title")}</p>
+                  <p className="text-xs font-semibold text-warn">{t("warn_title")}</p>
                   <ul className="mt-1 list-disc space-y-0.5 pl-4">
                     {warns.map((w) => (
                       <li key={w.code}>{t(`w_${w.code}` as never, { topics: w.detail ?? "", n: w.n ?? 0, max: wordLimit(g.collectiu) } as never)}</li>
@@ -76,6 +76,17 @@ export async function DraftReview({ g }: { g: NeedDraftGroup }) {
                 </div>
               );
             })()}
+            {q.followup && (
+              <div className="flex flex-wrap items-center gap-2 rounded-lg border border-line px-3 py-2 text-sm">
+                <span className="badge">{t("followup_badge")}</span>
+                <span className="min-w-0 flex-1">{q.followup.text}</span>
+                <span className="text-xs text-subtle">{t(q.tipus === "yes_no" ? "followup_when_no" : "followup_when_low")}</span>
+                <form action={removeFollowupAction}>
+                  <input type="hidden" name="id" value={q.id} />
+                  <button className="btn btn-ghost">{t("followup_remove")}</button>
+                </form>
+              </div>
+            )}
             <div className="flex flex-wrap items-center justify-end gap-2">
               <form action={editQuestionAction} className="w-full min-w-0 space-y-2">
                 <input type="hidden" name="id" value={q.id} />
@@ -107,6 +118,7 @@ export async function DraftReview({ g }: { g: NeedDraftGroup }) {
               <form action={regenerateQuestionAction}>
                 <input type="hidden" name="id" value={q.id} />
                 <button className="btn btn-ghost">{t("regenerate")}</button>
+                {regenError === q.id && <p role="alert" className="mt-1 text-xs font-semibold text-warn">{t("regenerate_failed")}</p>}
               </form>
               <form action={discardQuestionAction}>
                 <input type="hidden" name="id" value={q.id} />

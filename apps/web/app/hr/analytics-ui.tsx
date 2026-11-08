@@ -8,6 +8,7 @@ import { Card, Empty } from "./ui";
 import { FoldList } from "./ui-server";
 import { RecommendationBody } from "./recommendation-card";
 import { approveRecommendationAction, discardRecommendationAction, followUpAction, setAlarmStatusAction } from "./actions";
+import type { DomainInitiative, DomainInitiatives, ManagerGap } from "@damm/db/hr";
 import type { Headline, HeadlineWhere, Heatmap, HeatCell, NarrativeView, ReachGap, SegmentTrend, ThemesByDomain } from "./analytics";
 import { segHref } from "./analytics";
 import { getTL } from "@/lib/i18n/server";
@@ -85,7 +86,7 @@ export async function NarrativeCard({ narrative, title, fold }: { narrative: Nar
               <ul className="space-y-3">
                 {d.suggestedActions.map((a, i) => (
                   <li key={i} className="rounded-lg border border-line p-3">
-                    <div className="font-medium">{a.title}</div>
+                    <div className="font-semibold">{a.title}</div>
                     <p className="mt-0.5 text-[13px] text-muted">{a.why}</p>
                     <div className="mt-2 flex flex-wrap items-center gap-2">
                       {a.recommendationId !== null ? (
@@ -132,7 +133,7 @@ export async function ProposalsCard({ proposals, fold }: { proposals: (Parameter
       ) : (
         <FoldList visible={3} className="-my-1 divide-y divide-line" items={proposals.map((r) => (
             <li key={r.id} className="py-3">
-              <div className="mb-1 text-xs font-medium text-subtle">{t("an_ai_short")}</div>
+              <div className="mb-1 text-xs font-semibold text-subtle">{t("an_ai_short")}</div>
               <RecommendationBody r={r} />
               <div className="mt-2 flex flex-wrap gap-2">
                 <form action={discardRecommendationAction}>
@@ -220,6 +221,8 @@ export async function HeatmapCard({ map, selected, cellHref = segHref }: { map: 
   const { t, lang } = await getTL(hrResultsDict);
   return (
     <Card
+      id="mapa"
+      className="scroll-mt-20"
       title={t("an_heat")}
       meta={map.periode ? rich(t("an_heat_meta", { periode: "{periode}" }), { periode: <span className="num">{map.periode}</span> }) : undefined}
     >
@@ -232,38 +235,49 @@ export async function HeatmapCard({ map, selected, cellHref = segHref }: { map: 
               <caption className="sr-only">{t("an_heat_cap")}</caption>
               <thead>
                 <tr>
-                  <th scope="col" className="w-24 text-left text-xs font-medium text-subtle">{t("an_th_coll")}</th>
+                  <th scope="col" className="w-24 text-left text-xs font-semibold text-subtle">{t("an_th_coll")}</th>
                   {map.domains.map((d) => (
-                    <th key={d} scope="col" className="px-1 text-center text-[11px] leading-tight font-medium text-subtle">{domainLabel(d, lang)}</th>
+                    <th key={d} scope="col" className="px-1 text-center text-[11px] leading-tight font-semibold text-subtle">{domainLabel(d, lang)}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {map.collectives.map((col, ci) => (
                   <tr key={col}>
-                    <th scope="row" className="pr-2 text-left text-[13px] font-medium">{collectiveLabel(col, lang)}</th>
+                    <th scope="row" className="pr-2 text-left text-[13px] font-semibold">{collectiveLabel(col, lang)}</th>
                     {map.cells[ci].map((c) => {
                       const on = selected?.seg === c.collective && selected?.dom === c.domain;
                       return (
                         <td key={c.domain} className="p-0">
-                          <Link
-                            href={cellHref(c.collective, c.domain)}
-                            scroll={false}
-                            title={cellTitle(t, lang, c)}
-                            aria-label={cellTitle(t, lang, c)}
-                            aria-current={on ? "true" : undefined}
-                            className={`hr-heat-cell ${c.suppressed ? "hr-heat-hatch" : ""} ${on ? "hr-heat-on" : ""}`}
-                            style={cellStyle(c, map.maxAbs)}
-                          >
-                            {c.suppressed ? <span className="sr-only">{t("an_supp")}</span> : c.mean === null ? "—" : <span className="num">{numD(c.mean, lang, 1)}</span>}
-                          </Link>
+                          {c.suppressed ? (
+                            <span
+                              title={cellTitle(t, lang, c)}
+                              aria-label={cellTitle(t, lang, c)}
+                              className="hr-heat-cell hr-heat-hatch"
+                              style={cellStyle(c, map.maxAbs)}
+                            >
+                              <span className="sr-only">{t("an_supp")}</span>
+                            </span>
+                          ) : (
+                            <Link
+                              href={cellHref(c.collective, c.domain)}
+                              scroll={false}
+                              title={cellTitle(t, lang, c)}
+                              aria-label={cellTitle(t, lang, c)}
+                              aria-current={on ? "true" : undefined}
+                              className={`hr-heat-cell ${on ? "hr-heat-on" : ""}`}
+                              style={cellStyle(c, map.maxAbs)}
+                            >
+                              {c.mean === null ? "—" : <span className="num">{numD(c.mean, lang, 1)}</span>}
+                            </Link>
+                          )}
                         </td>
                       );
                     })}
                   </tr>
                 ))}
                 <tr>
-                  <th scope="row" className="pr-2 pt-1 text-left text-xs font-medium text-subtle">{t("an_company")}</th>
+                  <th scope="row" className="pr-2 pt-1 text-left text-xs font-semibold text-subtle">{t("an_company")}</th>
                   {map.company.map((v, i) => (
                     <td key={i} className="num pt-1 text-center text-xs text-subtle">{v === null ? "—" : numD(v, lang, 1)}</td>
                   ))}
@@ -351,7 +365,7 @@ export async function ThemesCard({ groups }: { groups: ThemesByDomain }) {
                   <li key={th.label} className="flex flex-wrap items-start gap-x-3 gap-y-1 py-2.5">
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="font-medium">{th.label}</span>
+                        <span className="font-semibold">{th.label}</span>
                         {th.isNew && <span className="badge badge-accent">{t("an_new")}</span>}
                         {th.weak && <span className="badge badge-warn">{t("an_weak")}</span>}
                       </div>
@@ -395,6 +409,95 @@ export async function ReachCard({ gaps, fold }: { gaps: ReachGap[]; fold?: boole
           })}
         </ul>
       )}
+    </Card>
+  );
+}
+
+// ---------- initiatives by domain (R-DOM-5, N-14) ----------
+function IniScore({ t, lang, it }: { t: HrResultsT; lang: Lang; it: DomainInitiative }) {
+  const fmt = (r: { mitjana: number | null } | null) => (r && r.mitjana !== null ? numD(r.mitjana, lang, 1) : null);
+  const b = fmt(it.before);
+  const a = fmt(it.after);
+  if (!it.anchor) return null;
+  const delta = it.before?.mitjana != null && it.after?.mitjana != null ? it.after.mitjana - it.before.mitjana : null;
+  return (
+    <p className="mt-1 text-[13px] text-muted">
+      {t("ini_before")}: {b ? `${b} (${it.before!.periode})` : t("ini_no_before")} · {t("ini_after")}: {a ? `${a} (${it.after!.periode})` : t("ini_no_after")}
+      {delta !== null && <strong className="ml-1 text-ink">{t("ini_pts", { d: signed(delta, lang) })}</strong>}
+    </p>
+  );
+}
+
+export async function InitiativesCard({ groups, fold }: { groups: DomainInitiatives[]; fold?: boolean }) {
+  const { t, lang } = await getTL(hrResultsDict);
+  const kindKey = { recommendation: "ini_k_recommendation", followup: "ini_k_followup", need: "ini_k_need", probe: "ini_k_probe" } as const;
+  return (
+    <Card fold={fold} title={t("ini_title")} meta={t("ini_note", { min: MIN_GROUP_SIZE })}>
+      {groups.length === 0 ? (
+        <Empty>{t("ini_empty")}</Empty>
+      ) : (
+        <div className="space-y-5">
+          {groups.map((g) => (
+            <section key={g.domini}>
+              <h3 className="text-[14px] font-semibold">{domainLabel(g.domini, lang)}</h3>
+              <ul className="mt-1 divide-y divide-line">
+                {g.items.map((it) => {
+                  const scope = it.scope ? collectiveLabel(it.scope, lang) : t("ini_company");
+                  const title = it.kind === "probe" ? t("ini_probe", { scope }) : it.title;
+                  return (
+                    <li key={`${it.kind}-${it.id}`} className="py-3">
+                      <p className="text-[14px]">{title}</p>
+                      <p className="mt-0.5 text-[12px] text-subtle">
+                        {t(kindKey[it.kind])} · {t(`ini_st_${it.status}` as HrResultsKey)} · {scope}
+                        {it.anchor ? ` · ${t("ini_since", { date: it.anchor })}` : ""}
+                      </p>
+                      <IniScore t={t} lang={lang} it={it} />
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          ))}
+        </div>
+      )}
+    </Card>
+  );
+}
+
+// ---------- manager positivity bias ----------
+
+export async function ManagerGapCard({ gap, fold }: { gap: ManagerGap; fold?: boolean }) {
+  const { t, lang } = await getTL(hrResultsDict);
+  const f = (x: number | null) => (x === null ? t("mg_hidden", { min: MIN_GROUP_SIZE }) : numD(x, lang, 2));
+  const tot = gap.total;
+  return (
+    <Card fold={fold} title={t("mg_title")} meta={<Link href="/hr/methodology" className="underline">{t("an_how")}</Link>}>
+      <p className="text-[13px] text-muted">{t("mg_lede")}</p>
+      <p className="mt-2 text-[14px]">
+        {tot.gap === null || tot.managers === null || tot.others === null
+          ? t("mg_head_none", { min: MIN_GROUP_SIZE })
+          : t("mg_head", { x: numD(tot.gap, lang, 2), a: numD(tot.managers, lang, 2), b: numD(tot.others, lang, 2) })}
+      </p>
+      <table className="mt-3 w-full text-[13px]">
+        <thead>
+          <tr className="text-left text-subtle">
+            <th className="py-1 font-medium">{t("mg_col_dom")}</th>
+            <th className="py-1 font-medium">{t("mg_col_mgr")}</th>
+            <th className="py-1 font-medium">{t("mg_col_oth")}</th>
+            <th className="py-1 font-medium">{t("mg_col_gap")}</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-line">
+          {gap.rows.map((r) => (
+            <tr key={r.domini}>
+              <td className="py-1.5">{domainLabel(r.domini, lang)}</td>
+              <td className="num py-1.5">{f(r.managers)}</td>
+              <td className="num py-1.5">{f(r.others)}</td>
+              <td className="num py-1.5">{r.gap === null ? "–" : `${r.gap > 0 ? "+" : ""}${numD(r.gap, lang, 2)}`}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </Card>
   );
 }

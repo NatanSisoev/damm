@@ -2,26 +2,18 @@
 
 Goal: show the judges that anonymity is enforced by the code and the database, not by good intentions. Five proofs, about 25 seconds each.
 
-All output below was produced by running the commands on this branch against synthetic data. Account ids, salts and hashes change on every seed, so yours will differ in the hex strings; everything else is the same.
+Every step runs on the one demo database. Account ids, salts and hashes change on every run, so yours will differ in the hex strings; everything else is the same.
 
 ## Setup (before going on stage)
 
 ```bash
+source ~/.claude/bin/heavy-gate.sh   # shared lock + memory check, then:
 pnpm install
-pnpm --filter @damm/db run init
-pnpm --filter @damm/seed run seed
+pnpm demo-db      # about 90 s, writes data/app.db (1 Aug to 7 Nov 2026, ca/es/en, every segment n >= 10)
+pnpm dev          # http://localhost:3000, /hr opens without login unless HR_ACCESS_CODE is set
 ```
 
-That gives `data/app.db` with about 170 synthetic accounts and the seeded responses (used by steps d and e).
-
-Until the analysis job exists, the seed writes raw data only, so the aggregate tables (`agregat`, `tema`) are empty and `/hr/results` would be blank. Step (c) therefore runs the HR app on a second database made by `init` alone, which loads the aggregate fixtures, including the n<10 group:
-
-```bash
-DB_PATH="$PWD/data/results-fixtures.db" pnpm --filter @damm/db run init
-cd apps/web && DB_PATH="$PWD/../../data/results-fixtures.db" pnpm exec next dev -p 3217
-```
-
-Leave that dev server running in a second terminal tab. When the analysis job lands, `data/app.db` will be enough and this extra database can go.
+`data/app.db` is the only database. Steps 1 and 2 need no data. Step 3 works on a scratch copy of it (the original is never modified). Steps 4 and 5 read it, and step 5 registers one account on a scratch copy.
 
 ## 1. The compiler stops a forbidden import (a), 25 s
 
@@ -64,7 +56,7 @@ Say: "Lint can be skipped. So there is a second check, built for CI, that also r
 The same script runs `pnpm check:anonymity` three times. On the clean tree (exit code 0):
 
 ```
-Anonymity check passed: 3 HR data file(s), HR app imports and v_resposta_analitica are clean.
+Anonymity check passed: 10 HR data file(s), HR app imports and v_resposta_analitica are clean.
 ```
 
 With the planted file (exit code 1):
@@ -92,50 +84,47 @@ What the check covers (`scripts/check-anonymity.mjs`):
 - nothing under `apps/web/app/hr/**` may import the DB root, raw repositories or a driver;
 - the view `v_resposta_analitica` may not expose `compte_id`.
 
-## 3. Groups under 10 show as "Suprimit" (c), 30 s
+## 3. Groups under 10 are suppressed (c), 45 s
 
-Say: "Minimum group size is 10. Below that, the number is not hidden by the UI, it never leaves the repository."
+Say: "Minimum group size is 10. Below that, the number is not hidden by the UI, it never leaves the repository. I will make a group small on a scratch copy and show you."
 
-With the step 1 dev server running, open `http://localhost:3217/hr/results`. Scroll to the cards "Temes dels comentaris", "Representativitat" and "Tendències per domini". Point at:
-- the top note: "Els segments amb menys de 10 respondents es mostren com a Suprimit";
-- the row `Logística · nit` showing a "Suprimit" badge and "Menys de 10 respondents" instead of a percentage and an n;
-- in the trends table, `Desenvolupament` for Logística in Aug 2026 shows "Suprimit" instead of a number;
-- the theme "Càrrega de feina a final de mes" with 28 comments is shown, while a theme under 10 comments appears as "Suprimit / Menys de 10 comentaris: tema ocult".
-
-Page text captured from the running page:
-
-```
-Logística · nit Suprimit Menys de 10 respondents
-```
-
-Now the same in the export, the other way data could leave the system. Download `http://localhost:3217/hr/results/export` (button "Exporta CSV") or run:
+The demo data has no group under 10 by design (every dashboard cell has a value). So the proof thins one segment on a copy: Comercial in October keeps 6 respondents, the analysis job runs again on the copy, and we read the result through the HR repository and the CSV export, the two ways data can leave the system.
 
 ```bash
-curl -s http://localhost:3217/hr/results/export | grep -E 'tipus,|,1$'
+source ~/.claude/bin/heavy-gate.sh
+bash scripts/suppression-demo.sh
 ```
 
-Output (the header, then the two suppressed rows; the 6 respondents of Logística/nit are blank):
+It copies `data/app.db` to `/tmp/damm-suppression-demo.db`, thins the segment, runs `pnpm --filter @damm/engine run job` and the health check on the copy, and prints:
 
 ```
-tipus,periode,collectiu,torn,domini,respondents,resp_pct,pop_pct,diferencia_pp,mitjana,suprimit
-representativitat_torn,2026-10,Logística,nit,,,,,,,1
-tendencia,2026-08,Logística,,Desenvolupament,,,,,,1
+2026-10  Comercial  6           1            <- raw agregat row: n=6, no mean, suprimit=1 (HR code never reads this table)
+HEALTHY: 17 passed, 0 warnings, 0 failed     <- includes "suppression: agregat/insight/senyal: every row with n < 10 is suppressed with NULL values"
+getRepresentativeness() ...                  <- Comercial is hidden (motiu primari)
+tendencia,2026-10,Comercial,,Benestar,,,,,,1,,,   <- CSV: blank values, suprimit=1, for all six domains
+tendencia,2026-10,Oficines,,Benestar,,,,,,1,,,    <- Oficines is hidden too (complementary suppression)
 ```
 
-For contrast, the raw fixture row in the database does hold the small number. This is the number the repository refuses to hand out:
+Point at three things:
+- the raw row holds `n=6` and no mean: the job already wrote `suprimit=1` with NULL values, so there is nothing to leak;
+- the CSV rows for Comercial in October are blank with `suprimit=1`, while August and September still show values;
+- **Oficines is hidden as well**, although it has plenty of respondents. With the company total public and only Comercial missing, anyone could subtract the visible groups and recover Comercial. Complementary suppression (`packages/db/src/hr-rigour.ts`) hides one more group so the hidden number cannot be recovered.
+
+Optional, not part of the timed demo and not rehearsed: run the app on the copy in a second terminal (the server on `data/app.db` can stay up on port 3000) and look at `http://localhost:3217/hr`; the dashboard reads the newest period with 10 or more respondents (`readingPeriod`), so it may open on November. The CSV (button "Exporta CSV" on `/hr/settings`, route `/hr/results/export`) carries every period.
 
 ```bash
-sqlite3 -header -column data/results-fixtures.db "SELECT a.periode, c.nom AS collectiu, t.nom AS torn, a.n, a.mitjana, a.suprimit FROM agregat a JOIN collectiu c ON c.id=a.collectiu_id LEFT JOIN torn t ON t.id=a.torn_id WHERE a.suprimit=1;"
+cd apps/web && DB_PATH=/tmp/damm-suppression-demo.db pnpm exec next dev -p 3217
 ```
 
-```
-periode  collectiu  torn  n  mitjana  suprimit
--------  ---------  ----  -  -------  --------
-2026-10  Logística  nit   6           1
-2026-08  Logística        7           1
-```
+If there is no time to run the script, the explanation of the same rules is on `/hr/methodology` (k-anonymity: primary suppression under 10, complementary suppression, precision labels indicativa under 30, moderada 30 to 99, sòlida from 100).
 
-Code: `MIN_GROUP_SIZE = 10` in `packages/shared/src/index.ts`; the checks `r.n < MIN_GROUP_SIZE || !!r.suprimit` in `packages/db/src/hr-repository.ts`, used by both the page and `exportResultsCsv()`. Shares are computed among visible segments only, so a hidden count cannot be recovered by subtraction.
+Code: `MIN_GROUP_SIZE = 10` in `packages/shared/src/index.ts`; primary and complementary suppression in `packages/db/src/hr-repository.ts` (`buildRep`, `segmentCounts`) and `packages/db/src/hr-rigour.ts`, used by the pages and `exportResultsCsv()`. Comment themes and searches with fewer than 10 comments return `suppressed: true` with no number (`packages/db/src/hr-comments.ts`).
+
+Clean up afterwards:
+
+```bash
+pkill -f "next dev -p 3217"; rm -f /tmp/damm-suppression-demo.db /tmp/damm-suppression-demo.db-shm /tmp/damm-suppression-demo.db-wal
+```
 
 ## 4. The analytics view has no `compte_id` (d), 20 s
 
@@ -156,9 +145,10 @@ cid  name             type     notnull  dflt_value  pk
 5    torn_id          INTEGER  0                    0
 6    es_manager       INTEGER  0                    0
 7    valor_num        REAL     0                    0
-8    comentari        TEXT     0                    0
-9    periode          TEXT     0                    0
-10   data             TEXT     0                    0
+8    score            REAL     0                    0
+9    comentari        TEXT     0                    0
+10   periode          TEXT     0                    0
+11   data             TEXT     0                    0
 ```
 
 One-line proof that can be read from the back of the room:
@@ -180,7 +170,7 @@ sqlite3 data/app.db "SELECT sql FROM sqlite_master WHERE name='v_resposta_analit
 ```
 CREATE VIEW v_resposta_analitica AS
 SELECT r.id, r.pregunta_id, p.domini_id, c.collectiu_id, c.centre_tipus_id, c.torn_id,
-       c.es_manager, r.valor_num, r.comentari, r.periode, r.data
+       c.es_manager, r.valor_num, r.score, r.comentari, r.periode, r.data
 FROM resposta r
 JOIN compte c   ON c.id = r.compte_id
 JOIN pregunta p ON p.id = r.pregunta_id
@@ -193,8 +183,8 @@ sqlite3 data/app.db "SELECT * FROM v_resposta_analitica LIMIT 2;"
 ```
 
 ```
-1|3|1|1|1|1|0|10.0||2026-08|2026-08-01 10:14:38
-2|66|2|3|4||0|5.0|Últimament es parla de canvis però no se sap què implicaran. Seria bo millorar-ho.|2026-08|2026-08-01 12:28:28
+1|169|6|1|1|1|0|1.0|1.0||2026-08|2026-08-01 08:57:12
+2|36|2|1|1|1|0|1.0|1.0|Depèn de qui mana aquell dia.|2026-08|2026-08-01 08:57:12
 ```
 
 The view is defined in `packages/db/schema.sql`. Step (b) fails the build if someone adds `compte_id` or a `*` to it.
@@ -205,10 +195,10 @@ Say: "There is no email, no phone, no name. An account is a random id, a usernam
 
 The schema says it (`packages/db/schema.sql`): `compte` has `username`, `password_hash`, `salt`, `recovery_hash`, and nothing personal.
 
-The seeded accounts use a deliberately fake hash, so to show the real scrypt hashes and a real recovery code, register one account through the real onboarding code on a scratch copy of the database. Never point this at `data/app.db`.
+The demo accounts (`demo3`, `demo5` and so on) have placeholder credentials and no usable password, so to show the real scrypt hashes and a real recovery code, register one account through the real onboarding code (join code `DEMO-LOG`, override with `JOIN_CODE`) on a scratch copy of the database. Never point this at `data/app.db`.
 
 ```bash
-cp data/app.db /tmp/demo-copy.db
+sqlite3 data/app.db ".backup '/tmp/demo-copy.db'"
 cd packages/db && DB_PATH=/tmp/demo-copy.db pnpm exec tsx ../../scripts/security-demo-account.mts; cd ../..
 ```
 
@@ -223,41 +213,17 @@ sqlite3 -header -column /tmp/demo-copy.db "SELECT id, username, substr(salt,1,16
 ```
 
 ```
-id                                    username    salt               password_hash              hash_len  recovery_hash
-------------------------------------  ----------  -----------------  -------------------------  --------  -------------------------
-9825fdb9-afa9-4c1c-80fb-c91c6159c0cb  demo_jutge  2e87e3001b77f168…  5615a76cacd6680ca3d3319b…  128       d530f9757286b0520469d6ec…
-```
-
-Point at: the id is a random UUID, the salt is unique per account, `password_hash` is 128 hex characters (a 64-byte scrypt output), `recovery_hash` is hashed with the same salt. The password `contrasenya-de-prova-1` and the code above appear nowhere:
-
-```bash
-sqlite3 /tmp/demo-copy.db "SELECT count(*) FROM compte WHERE password_hash LIKE '%contrasenya%' OR recovery_hash LIKE '%contrasenya%';"
-```
-
-```
-0
-```
-
-Code: `packages/db/src/employee-repository.ts` (`scrypt` with a per-account random salt, constant-time comparison with `timingSafeEqual`, five attempts per 15 minutes, recovery code replaced by a new one after use).
-
-For the seeded accounts, the same columns look like this (synthetic placeholder hashes, no recovery code yet because nobody has onboarded):
-
-```bash
-sqlite3 -header -column data/app.db "SELECT id, username, substr(salt,1,16)||'…' AS salt, substr(password_hash,1,24)||'…' AS password_hash, substr(recovery_hash,1,24)||'…' AS recovery_hash FROM compte LIMIT 3;"
-```
-
-```
-id                username       salt               password_hash              recovery_hash
-----------------  -------------  -----------------  -------------------------  -------------
-8a99e8e189c33ac4  cim_brau11     0ff1584221c4e1ae…  df3af5e1acfe692d552f64e8…
-34e0d869a6010769  vent_alegre79  9f0bcf77610d504c…  59c29b715fdc14561f14768a…
-e6845856a084d0b4  bosc_ferm12    2be2d388b1f62d35…  3bce9005c9e92bb0aef2c82e…
+id       username  salt   password_hash  recovery_hash
+-------  --------  -----  -------------  -------------
+acc0003  demo3     demo…  demo…
+acc0005  demo5     demo…  demo…
+acc0008  demo8     demo…  demo…
 ```
 
 Clean up afterwards:
 
 ```bash
-rm /tmp/demo-copy.db
+rm -f /tmp/demo-copy.db /tmp/demo-copy.db-shm /tmp/demo-copy.db-wal
 ```
 
 ## Closing line
@@ -267,12 +233,13 @@ rm /tmp/demo-copy.db
 ## After the demo
 
 ```bash
-pkill -f "next dev -p 3217"; rm -f data/results-fixtures.db*
+pkill -f "next dev -p 3217"; rm -f /tmp/damm-suppression-demo.db /tmp/demo-copy.db
 git status   # should be clean
 ```
 
 ## Known limits to be honest about if asked
 
-- The seed writes raw data only; the aggregates on `/hr/results` come from the `init` fixtures until the analysis job is merged.
 - The rate limiter for login attempts is in memory (single process, prototype).
-- The seeded accounts use a placeholder sha256 hash, not scrypt; real onboarding uses scrypt as shown in step 5.
+- The demo accounts use placeholder credentials and cannot log in; real onboarding uses scrypt as shown in step 5.
+- The demo data has no group under 10 (so the dashboard looks complete); step 3 creates one on a scratch copy on purpose.
+- `/hr` opens without a login unless `HR_ACCESS_CODE` is set; set it for any shared or public deployment.

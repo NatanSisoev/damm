@@ -3,6 +3,9 @@
 import type { Agregat, Lang, QueryDelivery, Recomanacio, Senyal } from "@damm/shared";
 import { MIN_GROUP_SIZE } from "@damm/shared";
 import { getDb } from "./connection";
+import { alarmInfo, approverLabel, needSubject, originalQuestionText, questionInfo, recommendationInfo, recordDecision } from "./hr-decisions";
+
+export { approverLabel };
 import { overlayTranslations, RECOMMENDATION_FIELDS } from "./hr-i18n";
 import type { SignalRecommendation } from "./hr-signals";
 import { classifyChange, complementarySuppression, precisionBand, type Change, type HideReason, type PrecisionBand } from "./hr-rigour";
@@ -49,6 +52,8 @@ export interface DraftInput {
   reason: string;
   /** Spanish / English wording proposed by the AI or edited by HR. Catalan `text` is canonical. */
   i18n?: { es?: { text: string }; en?: { text: string } };
+  /** Catalan wording of a suggested open follow-up (scale5/scale10/yes_no only); stored as a draft child HR can remove. */
+  followup?: string;
 }
 
 /** `pregunta.text_i18n` JSON for a Catalan text plus optional es/en; null when there is nothing to add (readers fall back to `text`). */
@@ -67,6 +72,13 @@ function insertDraft(necessitatId: number, collectiuId: number | null, q: DraftI
     `INSERT INTO pregunta (domini_id, collectiu_id, text, text_i18n, tipus, necessitat_id, generada_per_ia, motiu, ordre)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   ).run(dom.id, collectiuId, q.text, textI18nJson(q.text, q.i18n?.es?.text, q.i18n?.en?.text), tipus, necessitatId, byIa ? 1 : 0, q.reason, ordre);
+  const parentId = Number((db.prepare("SELECT last_insert_rowid() AS id").get() as { id: number }).id);
+  if (q.followup?.trim() && (tipus === "scale5" || tipus === "scale10" || tipus === "yes_no")) {
+    db.prepare(
+      `INSERT INTO pregunta (domini_id, collectiu_id, text, tipus, necessitat_id, generada_per_ia, motiu, ordre, followup_of, followup_when)
+       VALUES (?, ?, ?, 'open', ?, ?, ?, 0, ?, ?)`,
+    ).run(dom.id, collectiuId, q.followup.trim(), necessitatId, byIa ? 1 : 0, q.reason, parentId, tipus === "yes_no" ? "no" : "low");
+  }
 }
 
 /** Store an AI (or fallback) survey as draft questions of a need. Nothing is approved here. */
@@ -101,7 +113,7 @@ export interface NeedDraftGroup {
   collectiu: string | null;
   /** Topics the need says must not be asked about (free text), for the wording check. */
   exclusions: string | null;
-  questions: (DraftQuestion & { motiu: string | null; ordre: number; tipusAi: string })[];
+  questions: (DraftQuestion & { motiu: string | null; ordre: number; tipusAi: string; followup: { id: number; text: string } | null })[];
 }
 
 /** Draft questions grouped by need, in review order. */
@@ -118,7 +130,7 @@ export function listNeedDrafts(): NeedDraftGroup[] {
   const qs = db.prepare(
     `SELECT p.id, d.nom AS domini, p.tipus, p.text, p.text_i18n AS ti, p.necessitat_id AS necessitatId, p.generada_per_ia AS ia, p.motiu, p.ordre
      FROM pregunta p JOIN domini d ON d.id = p.domini_id
-     WHERE p.estat = 'draft' AND p.necessitat_id = ? ORDER BY p.ordre, p.id`,
+     WHERE p.estat = 'draft' AND p.necessitat_id = ? AND p.followup_of IS NULL ORDER BY p.ordre, p.id`,
   );
   return needs.map((n) => ({
     ...n,
@@ -126,6 +138,7 @@ export function listNeedDrafts(): NeedDraftGroup[] {
       id: r.id, domini: r.domini, tipus: r.tipus, text: r.text, necessitatId: r.necessitatId,
       generadaPerIa: !!r.ia, motiu: r.motiu, ordre: r.ordre, tipusAi: TIPUS_TO_AI[r.tipus] ?? r.tipus,
       textEs: parseTr(r.ti)?.es ?? null, textEn: parseTr(r.ti)?.en ?? null,
+      followup: getDraftFollowup(r.id),
     })),
   }));
 }
@@ -141,7 +154,7 @@ export function moveDraft(id: number, dir: "up" | "down"): void {
   const q = db.prepare("SELECT necessitat_id AS n FROM pregunta WHERE id = ? AND estat = 'draft'").get(id) as { n: number | null } | undefined;
   if (!q?.n) return;
   db.transaction(() => {
-    const ids = (db.prepare("SELECT id FROM pregunta WHERE necessitat_id = ? AND estat = 'draft' ORDER BY ordre, id").all(q.n) as { id: number }[]).map((r) => r.id);
+    const ids = (db.prepare("SELECT id FROM pregunta WHERE necessitat_id = ? AND estat = 'draft' AND followup_of IS NULL ORDER BY ordre, id").all(q.n) as { id: number }[]).map((r) => r.id);
     const i = ids.indexOf(id);
     const j = dir === "up" ? i - 1 : i + 1;
     if (i < 0 || j < 0 || j >= ids.length) return;
@@ -167,7 +180,7 @@ export function getRedraftContext(id: number) {
   const others = (db
     .prepare(
       `SELECT p.text, p.tipus, d.nom AS domini, p.motiu FROM pregunta p JOIN domini d ON d.id = p.domini_id
-       WHERE p.necessitat_id = ? AND p.estat = 'draft' AND p.id <> ? ORDER BY p.ordre, p.id`,
+       WHERE p.necessitat_id = ? AND p.estat = 'draft' AND p.followup_of IS NULL AND p.id <> ? ORDER BY p.ordre, p.id`,
     )
     .all(row.nid, id) as any[]).map((o) => ({ text: o.text, type: TIPUS_TO_AI[o.tipus] ?? o.tipus, domain: o.domini, reason: o.motiu ?? "" }));
   return {
@@ -178,14 +191,18 @@ export function getRedraftContext(id: number) {
 }
 
 /** Replace the wording of a draft in place (same row, same position). Still a draft: a human approves later. */
-export function replaceDraft(id: number, q: DraftInput, byIa: boolean): void {
+export function replaceDraft(id: number, q: DraftInput, byIa: boolean, actor?: string): void {
   const db = getDb();
   const dom = db.prepare("SELECT id FROM domini WHERE nom = ?").get(q.domain) as { id: number } | undefined;
   const tipus = TIPUS_FROM_AI[q.type];
   if (!dom || !tipus) throw new Error(`Unknown domain or type: ${q.domain} / ${q.type}`);
-  db.prepare(
+  const before = questionInfo(id);
+  const res = db.prepare(
     "UPDATE pregunta SET text = ?, text_i18n = ?, tipus = ?, domini_id = ?, motiu = ?, generada_per_ia = ? WHERE id = ? AND estat = 'draft'",
   ).run(q.text, textI18nJson(q.text, q.i18n?.es?.text, q.i18n?.en?.text), tipus, dom.id, q.reason, byIa ? 1 : 0, id);
+  if (res.changes > 0 && before) {
+    recordDecision({ entity: "pregunta", entityId: id, necessitatId: before.necessitatId, action: "regenerate", font: "ai_redraft", actor: actor ?? "HR", fromState: "draft", toState: "draft", subject: q.text, textOriginal: originalQuestionText(id, before.text), textFinal: q.text });
+  }
 }
 
 export function listCollectius(): { id: number; nom: string }[] {
@@ -205,29 +222,91 @@ export function listDrafts(): DraftQuestion[] {
     .prepare(
       `SELECT p.id, d.nom AS domini, p.tipus, p.text, p.necessitat_id AS necessitatId, p.generada_per_ia AS ia
        FROM pregunta p JOIN domini d ON d.id = p.domini_id
-       WHERE p.estat = 'draft' ORDER BY p.id`,
+       WHERE p.estat = 'draft' AND p.followup_of IS NULL ORDER BY p.id`,
     )
     .all()
     .map((r: any) => ({ ...r, generadaPerIa: !!r.ia }));
 }
 
 /** HR edit of a draft: Catalan text plus the Spanish and English wording (empty means "fall back to Catalan"). */
-export function updateDraftText(id: number, text: string, es?: string | null, en?: string | null): void {
-  getDb().prepare("UPDATE pregunta SET text = ?, text_i18n = ? WHERE id = ? AND estat = 'draft'").run(text, textI18nJson(text, es, en), id);
+export function updateDraftText(id: number, text: string, es?: string | null, en?: string | null, actor?: string): void {
+  const before = questionInfo(id);
+  const i18nBefore = (getDb().prepare("SELECT text_i18n AS t FROM pregunta WHERE id = ?").get(id) as { t: string | null } | undefined)?.t ?? null;
+  const i18n = textI18nJson(text, es, en);
+  const res = getDb().prepare("UPDATE pregunta SET text = ?, text_i18n = ? WHERE id = ? AND estat = 'draft'").run(text, i18n, id);
+  if (res.changes > 0 && before && (before.text !== text || i18nBefore !== i18n)) {
+    recordDecision({ entity: "pregunta", entityId: id, necessitatId: before.necessitatId, action: "edit", font: "hr_edit", actor: actor ?? "HR", fromState: "draft", toState: "draft", subject: text, textOriginal: originalQuestionText(id, before.text), textFinal: text });
+  }
+}
+
+/** Catalan text and the stored es/en wording of a question (empty string = missing). */
+export function getQuestionWording(id: number): { text: string; es: string; en: string } | null {
+  const r = getDb().prepare("SELECT text, text_i18n AS ti FROM pregunta WHERE id = ?").get(id) as { text: string; ti: string | null } | undefined;
+  if (!r) return null;
+  let v: Record<string, unknown> = {};
+  try {
+    v = r.ti ? JSON.parse(r.ti) : {};
+  } catch {
+    /* malformed: treated as missing */
+  }
+  const g = (k: string) => (typeof v?.[k] === "string" ? (v[k] as string).trim() : "");
+  return { text: r.text, es: g("es"), en: g("en") };
+}
+
+/** Fills the missing es/en wording of a question of any state; existing es/en are never overwritten (HR edits win). */
+export function fillQuestionTranslations(id: number, es: string | null, en: string | null): void {
+  const w = getQuestionWording(id);
+  if (!w) return;
+  getDb().prepare("UPDATE pregunta SET text_i18n = ? WHERE id = ?").run(textI18nJson(w.text, w.es || es, w.en || en), id);
 }
 
 /** Human approval: the only code path that sets estat = 'aprovada'. */
 export function approveQuestion(id: number, approvedBy: string): void {
-  getDb()
+  const info = questionInfo(id);
+  const followups = getDb().prepare("SELECT id FROM pregunta WHERE followup_of = ? AND estat = 'draft'").all(id) as { id: number }[];
+  const res = getDb()
     .prepare(
       `UPDATE pregunta SET estat = 'aprovada', prioritat = CASE WHEN necessitat_id IS NULL THEN prioritat ELSE 100 END,
        aprovada_per = ?, aprovada_el = datetime('now') WHERE id = ? AND estat = 'draft'`,
     )
     .run(approvedBy, id);
+  if (res.changes > 0 && info) {
+    recordDecision({ entity: "pregunta", entityId: id, necessitatId: info.necessitatId, action: "approve", font: info.font, actor: approvedBy, fromState: "draft", toState: "aprovada", subject: info.text });
+  }
+  // A suggested follow-up still in draft is approved with its parent (HR can remove it before, see removeDraftFollowup).
+  getDb()
+    .prepare(
+      `UPDATE pregunta SET estat = 'aprovada', aprovada_per = ?, aprovada_el = datetime('now')
+       WHERE followup_of = ? AND estat = 'draft' AND EXISTS (SELECT 1 FROM pregunta p WHERE p.id = ? AND p.estat = 'aprovada')`,
+    )
+    .run(approvedBy, id, id);
+  for (const f of followups) {
+    const fi = questionInfo(f.id);
+    if (fi?.estat === "aprovada") recordDecision({ entity: "pregunta", entityId: f.id, necessitatId: info?.necessitatId ?? null, action: "approve", font: "ai_followup", actor: approvedBy, fromState: "draft", toState: "aprovada", subject: fi.text });
+  }
 }
 
-export function discardQuestion(id: number): void {
-  getDb().prepare("UPDATE pregunta SET estat = 'retirada' WHERE id = ? AND estat = 'draft'").run(id);
+/** The suggested follow-up (a draft child) of a draft question, if any. */
+export function getDraftFollowup(parentId: number): { id: number; text: string } | null {
+  return (getDb().prepare("SELECT id, text FROM pregunta WHERE followup_of = ? AND estat = 'draft' LIMIT 1").get(parentId) as { id: number; text: string } | undefined) ?? null;
+}
+
+/** HR removes the AI-suggested follow-up of a draft question (AI proposes, HR decides). */
+export function removeDraftFollowup(parentId: number, actor?: string): void {
+  const f = getDraftFollowup(parentId);
+  const res = getDb().prepare("UPDATE pregunta SET estat = 'retirada' WHERE followup_of = ? AND estat = 'draft'").run(parentId);
+  if (res.changes > 0 && f) {
+    const info = questionInfo(f.id);
+    recordDecision({ entity: "pregunta", entityId: f.id, necessitatId: info?.necessitatId ?? null, action: "remove_followup", font: "ai_followup", actor: actor ?? "HR", fromState: "draft", toState: "retirada", subject: f.text });
+  }
+}
+
+export function discardQuestion(id: number, actor?: string): void {
+  const info = questionInfo(id);
+  const res = getDb().prepare("UPDATE pregunta SET estat = 'retirada' WHERE (id = ? OR followup_of = ?) AND estat = 'draft'").run(id, id);
+  if (res.changes > 0 && info && info.estat === "draft") {
+    recordDecision({ entity: "pregunta", entityId: id, necessitatId: info.necessitatId, action: "reject", font: info.font, actor: actor ?? "HR", fromState: "draft", toState: "retirada", subject: info.text });
+  }
 }
 
 export function listApprovedUnpublishedNeeds(): { id: number; textNl: string; approved: number }[] {
@@ -247,7 +326,7 @@ export function listApprovedUnpublishedNeeds(): { id: number; textNl: string; ap
  * notification through the employee side and gets back an aggregate count only.
  * Returns false when the need does not exist or has no approved question.
  */
-export function publishNecessitat(necessitatId: number): boolean {
+export function publishNecessitat(necessitatId: number, actor?: string): boolean {
   const db = getDb();
   const ok = db
     .prepare(
@@ -255,6 +334,9 @@ export function publishNecessitat(necessitatId: number): boolean {
        AND EXISTS (SELECT 1 FROM pregunta p WHERE p.necessitat_id = necessitat.id AND p.estat = 'aprovada')`,
     )
     .run(necessitatId);
+  if (ok.changes > 0) {
+    recordDecision({ entity: "necessitat", entityId: necessitatId, necessitatId, action: "publish", font: "hr_need", actor: actor ?? "HR", fromState: "oberta", toState: "publicada", subject: needSubject(necessitatId)?.subject });
+  }
   return ok.changes > 0;
 }
 
@@ -388,17 +470,14 @@ export function listManagerRecommendations(collectiuId: number, lang?: Lang): { 
   return overlayTranslations(db, "recomanacio", rows, { text: "text" }, lang);
 }
 
-/** Non-personal approver label: control characters and "@" stripped (no emails), max 60 chars, "HR" when empty. */
-export function approverLabel(raw: unknown): string {
-  const v = String(raw ?? "").replace(/[\u0000-\u001f\u007f@]/g, "").replace(/\s+/g, " ").trim().slice(0, 60);
-  return v || "HR";
-}
-
 /** Human approval of a recommendation. Records a non-personal label (what HR typed, or "HR") and the time (R-X-3). */
 export function approveRecommendation(id: number, approvedBy?: string): void {
-  getDb()
+  const info = recommendationInfo(id);
+  const res = getDb()
     .prepare("UPDATE recomanacio SET estat = 'aprovada', aprovada_el = datetime('now'), aprovada_per = ? WHERE id = ? AND estat = 'proposada'")
     .run(approverLabel(approvedBy), id);
+  if (res.changes > 0 && info) recordDecision({ entity: "recomanacio", entityId: id, necessitatId: info.necessitatId, action: "approve", font: "ai_recommendation", actor: approvedBy, fromState: "proposada", toState: "aprovada", subject: info.subject });
+  linkSignalOfRecommendation(id);
 }
 
 export interface ContextEvent {
@@ -430,22 +509,51 @@ export function listContextEvents(): ContextEvent[] {
   ).map((r) => ({ id: r.id, date: r.event_date, collectiuId: r.collectiu_id, tornId: r.torn_id, dominiId: r.domini_id, label: r.label, createdAt: r.created_at }));
 }
 
-export function discardRecommendation(id: number): void {
-  getDb().prepare("UPDATE recomanacio SET estat = 'descartada' WHERE id = ? AND estat = 'proposada'").run(id);
+export function discardRecommendation(id: number, actor?: string): void {
+  const info = recommendationInfo(id);
+  const res = getDb().prepare("UPDATE recomanacio SET estat = 'descartada' WHERE id = ? AND estat = 'proposada'").run(id);
+  if (res.changes > 0 && info) recordDecision({ entity: "recomanacio", entityId: id, necessitatId: info.necessitatId, action: "reject", font: "ai_recommendation", actor: actor ?? "HR", fromState: "proposada", toState: "descartada", subject: info.subject });
 }
 
 export const SIGNAL_STATUSES = ["open", "acknowledged", "action_linked", "resolved", "dismissed"] as const;
 export type SignalStatus = (typeof SIGNAL_STATUSES)[number];
 
 /** Human action: move a signal through open → acknowledged → action_linked → resolved (any order, schema enum only). */
-export function setSignalStatus(id: number, status: string): boolean {
+export function setSignalStatus(id: number, status: string, actor?: string): boolean {
   if (!(SIGNAL_STATUSES as readonly string[]).includes(status)) return false;
-  return getDb().prepare("UPDATE senyal SET status = ? WHERE id = ?").run(status, id).changes > 0;
+  const before = alarmInfo(id);
+  const ok = getDb().prepare("UPDATE senyal SET status = ? WHERE id = ?").run(status, id).changes > 0;
+  if (ok && before && before.status !== status) recordDecision({ entity: "senyal", entityId: id, action: "status", font: "engine_alarm", actor: actor ?? "HR", fromState: before.status, toState: status, subject: before.description });
+  return ok;
+}
+
+const AUTO_ORDER = ["open", "acknowledged", "action_linked"] as const;
+
+/**
+ * Automatic status step: only moves a signal forward along open → acknowledged → action_linked.
+ * Never moves backwards and never touches a resolved or dismissed signal. Returns true when it changed.
+ */
+export function advanceSignalStatus(id: number, target: "acknowledged" | "action_linked"): boolean {
+  const db = getDb();
+  const row = db.prepare("SELECT status FROM senyal WHERE id = ?").get(id) as { status: string } | undefined;
+  if (!row) return false;
+  const cur = (AUTO_ORDER as readonly string[]).indexOf(row.status);
+  if (cur < 0 || cur >= (AUTO_ORDER as readonly string[]).indexOf(target)) return false;
+  return db.prepare("UPDATE senyal SET status = ? WHERE id = ?").run(target, id).changes > 0;
+}
+
+/** A recommendation was approved or got a follow-up: its signal now has an action linked. */
+export function linkSignalOfRecommendation(recId: number): void {
+  const r = getDb().prepare("SELECT senyal_id AS s FROM recomanacio WHERE id = ?").get(recId) as { s: number | null } | undefined;
+  if (r?.s) advanceSignalStatus(r.s, "action_linked");
 }
 
 /** Human action: close a need (necessitat.estat = 'tancada'). Its published questions stay in the DB; no new publication. */
-export function closeNecessitat(id: number): boolean {
-  return getDb().prepare("UPDATE necessitat SET estat = 'tancada' WHERE id = ? AND estat <> 'tancada'").run(id).changes > 0;
+export function closeNecessitat(id: number, actor?: string): boolean {
+  const before = needSubject(id);
+  const ok = getDb().prepare("UPDATE necessitat SET estat = 'tancada' WHERE id = ? AND estat <> 'tancada'").run(id).changes > 0;
+  if (ok && before) recordDecision({ entity: "necessitat", entityId: id, necessitatId: id, action: "close", font: "hr_need", actor: actor ?? "HR", fromState: before.estat, toState: "tancada", subject: before.subject });
+  return ok;
 }
 
 export function listNeeds(): { id: number; textNl: string; estat: string; collectiu: string | null }[] {
@@ -494,7 +602,7 @@ export function listNeedCards(lang?: Lang): NeedCard[] {
     .prepare(
       `SELECT n.id, n.text_nl AS textNl, n.titol, n.intro, n.durada_max_s AS duradaMaxS, n.question_count AS questionCount, n.delivery, n.draft_font AS draftFont,
               n.creat, n.estat, c.nom AS collectiu,
-              (SELECT COUNT(*) FROM pregunta p WHERE p.necessitat_id = n.id AND p.estat = 'draft') AS nDraft
+              (SELECT COUNT(*) FROM pregunta p WHERE p.necessitat_id = n.id AND p.estat = 'draft' AND p.followup_of IS NULL) AS nDraft
        FROM necessitat n LEFT JOIN collectiu c ON c.id = n.collectiu_id
        ORDER BY n.id DESC`,
     )
@@ -732,6 +840,7 @@ export interface TrendCell {
   suprimit: boolean;
   motiu: HideReason;
   consensus: number | null; // 0-100 (engine), higher = answers more alike; null when suppressed
+  confidence: number | null; // 0-100 (engine), how sure the score is; null when suppressed
   sd: number | null; // population SD of the 1-5 scale answers; null when suppressed
 }
 export interface TrendRow { domini: string; cells: TrendCell[]; canvi: Change }
@@ -774,10 +883,10 @@ export function getTrends(): Trends {
   const doms = db.prepare("SELECT id, nom FROM domini ORDER BY id").all() as { id: number; nom: string }[];
   const rows = db
     .prepare(
-      `SELECT periode, collectiu_id AS c, domini_id AS d, n, mitjana, consensus, suprimit FROM agregat
+      `SELECT periode, collectiu_id AS c, domini_id AS d, n, mitjana, consensus, confidence, suprimit FROM agregat
        WHERE torn_id IS NULL AND domini_id IS NOT NULL`,
     )
-    .all() as { periode: string; c: number | null; d: number; n: number; mitjana: number | null; consensus: number | null; suprimit: number }[];
+    .all() as { periode: string; c: number | null; d: number; n: number; mitjana: number | null; consensus: number | null; confidence: number | null; suprimit: number }[];
   const spread = scaleSpread();
   const cols = listCollectius();
   const scopes: { id: number | null; nom: string }[] = [{ id: null, nom: "Tots" }, ...cols.map((c) => ({ id: c.id, nom: c.nom }))];
@@ -803,13 +912,13 @@ export function getTrends(): Trends {
       const trendRows = doms.map((d): TrendRow => {
         const cells = periodes.map((per): TrendCell => {
           const r = find(per, s.id, d.id);
-          if (!r) return { mitjana: null, n: null, precisio: null, suprimit: false, motiu: null, consensus: null, sd: null };
+          if (!r) return { mitjana: null, n: null, precisio: null, suprimit: false, motiu: null, consensus: null, confidence: null, sd: null };
           const motiu = reasonOf.get(`${per}|${s.id}|${d.id}`) ?? null;
-          if (motiu) return { mitjana: null, n: null, precisio: null, suprimit: true, motiu, consensus: null, sd: null };
+          if (motiu) return { mitjana: null, n: null, precisio: null, suprimit: true, motiu, consensus: null, confidence: null, sd: null };
           const sd = spread.get(`${per}|${s.id}|${d.id}`);
           return {
             mitjana: r.mitjana, n: r.n, precisio: precisionBand(r.n), suprimit: false, motiu: null,
-            consensus: r.consensus, sd: sd === undefined || r.n < MIN_GROUP_SIZE ? null : +sd.toFixed(2),
+            consensus: r.consensus, confidence: r.confidence, sd: sd === undefined || r.n < MIN_GROUP_SIZE ? null : +sd.toFixed(2),
           };
         });
         const last = cells.length - 1;
@@ -844,10 +953,10 @@ export function getShiftTrend(collectiuId: number, tornId: number): { periodes: 
   const doms = db.prepare("SELECT id, nom FROM domini ORDER BY id").all() as { id: number; nom: string }[];
   const rows = db
     .prepare(
-      `SELECT periode, torn_id AS t, domini_id AS d, n, mitjana, consensus, suprimit FROM agregat
+      `SELECT periode, torn_id AS t, domini_id AS d, n, mitjana, consensus, confidence, suprimit FROM agregat
        WHERE collectiu_id = ? AND torn_id IS NOT NULL AND domini_id IS NOT NULL`,
     )
-    .all(collectiuId) as { periode: string; t: number; d: number; n: number; mitjana: number | null; consensus: number | null; suprimit: number }[];
+    .all(collectiuId) as { periode: string; t: number; d: number; n: number; mitjana: number | null; consensus: number | null; confidence: number | null; suprimit: number }[];
   if (!rows.some((r) => r.t === tornId)) return null;
   const shifts = [...new Set(rows.map((r) => r.t))];
   const find = (per: string, t: number, d: number) => rows.find((x) => x.periode === per && x.t === t && x.d === d);
@@ -855,18 +964,18 @@ export function getShiftTrend(collectiuId: number, tornId: number): { periodes: 
   const trendRows = doms.map((d): TrendRow => {
     const cells = periodes.map((per): TrendCell => {
       const r = find(per, tornId, d.id);
-      if (!r) return { mitjana: null, n: null, precisio: null, suprimit: false, motiu: null, consensus: null, sd: null };
+      if (!r) return { mitjana: null, n: null, precisio: null, suprimit: false, motiu: null, consensus: null, confidence: null, sd: null };
       const present = shifts.filter((t) => find(per, t, d.id));
       const res = complementarySuppression(present.map((t) => {
         const x = find(per, t, d.id)!;
         return { n: x.n, primary: !!x.suprimit };
       }));
       const motiu = res[present.indexOf(tornId)] ?? null;
-      if (motiu) return { mitjana: null, n: null, precisio: null, suprimit: true, motiu, consensus: null, sd: null };
+      if (motiu) return { mitjana: null, n: null, precisio: null, suprimit: true, motiu, consensus: null, confidence: null, sd: null };
       const sd = spread.get(`${per}|${tornId}|${d.id}`);
       return {
         mitjana: r.mitjana, n: r.n, precisio: precisionBand(r.n), suprimit: false, motiu: null,
-        consensus: r.consensus, sd: sd === undefined || r.n < MIN_GROUP_SIZE ? null : +sd.toFixed(2),
+        consensus: r.consensus, confidence: r.confidence, sd: sd === undefined || r.n < MIN_GROUP_SIZE ? null : +sd.toFixed(2),
       };
     });
     const last = cells.length - 1;
@@ -955,7 +1064,7 @@ export function exportResultsCsv(now: Date = new Date()): string {
     }
   }
   const meta = [
-    "# Escolta activa · resultats agregats (dades sintètiques)",
+    "# Give a Damm · resultats agregats (dades sintètiques)",
     `# Període: ${rep.periode ?? "–"} (representativitat); tendències: ${trends.periodes.join(", ") || "–"}`,
     `# Generat: ${now.toISOString()}`,
     `# Mida mínima de grup: n >= ${MIN_GROUP_SIZE}`,
@@ -1221,10 +1330,10 @@ export function getWindowTrends(w: DateWindow, collectiuId: number | null = null
       rows: doms.map((d): TrendRow => {
         const cells = keys.map((b): TrendCell => {
           const r = cell(b, s.id, d.id);
-          if (!r) return { mitjana: null, n: null, precisio: null, suprimit: false, motiu: null, consensus: null, sd: null };
+          if (!r) return { mitjana: null, n: null, precisio: null, suprimit: false, motiu: null, consensus: null, confidence: null, sd: null };
           const motiu = reasonOf.get(`${b}|${s.id}|${d.id}`) ?? null;
-          if (motiu) return { mitjana: null, n: null, precisio: null, suprimit: true, motiu, consensus: null, sd: null };
-          return { mitjana: r.mean, n: r.n, precisio: precisionBand(r.n), suprimit: false, motiu: null, consensus: null, sd: null };
+          if (motiu) return { mitjana: null, n: null, precisio: null, suprimit: true, motiu, consensus: null, confidence: null, sd: null };
+          return { mitjana: r.mean, n: r.n, precisio: precisionBand(r.n), suprimit: false, motiu: null, consensus: null, confidence: null, sd: null };
         });
         const last = cells.length - 1;
         return { domini: d.nom, cells, canvi: classifyChange(cells[last - 1], cells[last]) };
@@ -1232,4 +1341,48 @@ export function getWindowTrends(w: DateWindow, collectiuId: number | null = null
     }))
     .filter((s) => s.rows.some((r) => r.cells.some((c) => c.mitjana !== null || c.suprimit)));
   return { periodes: keys.map((k) => bucketLabel(w.bucket, k)), series };
+}
+
+// ---------- manager positivity bias (N-8, R-BIAS-5) ----------
+
+export interface ManagerGapRow {
+  domini: string;
+  /** Means on the 1-5 scale; null when that side is under the minimum group size (suppressed). */
+  managers: number | null;
+  others: number | null;
+  /** managers - others, in points; null when either side is suppressed. */
+  gap: number | null;
+}
+export interface ManagerGap {
+  /** Per domain, plus `total` over all domains. */
+  rows: ManagerGapRow[];
+  total: ManagerGapRow;
+}
+
+/**
+ * Manager vs non-manager mean per domain, from the analytics view (it carries the role flag, never an account id). A side is
+ * suppressed when its largest per-question ANSWER count in the cell is under the minimum group size (same convention as the trends);
+ * the gap is shown only when both sides are visible. Managers are not removed from any other result: this is the documented bias.
+ */
+export function getManagerGap(): ManagerGap {
+  const db = getDb();
+  const doms = db.prepare("SELECT id, nom FROM domini ORDER BY id").all() as { id: number; nom: string }[];
+  const rows = db
+    .prepare(
+      `SELECT v.domini_id AS d, v.es_manager AS m, v.pregunta_id AS q, COUNT(*) AS n, SUM(v.score) AS s
+       FROM v_resposta_analitica v WHERE v.score IS NOT NULL GROUP BY v.domini_id, v.es_manager, v.pregunta_id`,
+    )
+    .all() as { d: number; m: number; q: number; n: number; s: number }[];
+  type Acc = { n: number; s: number; maxQ: number };
+  const side = (pick: (r: { d: number; m: number }) => boolean, m: number): number | null => {
+    const a: Acc = { n: 0, s: 0, maxQ: 0 };
+    for (const r of rows) if (r.m === m && pick(r)) { a.n += r.n; a.s += r.s; a.maxQ = Math.max(a.maxQ, r.n); }
+    return a.maxQ >= MIN_GROUP_SIZE && a.n > 0 ? 1 + 4 * (a.s / a.n) : null;
+  };
+  const build = (domini: string, pick: (r: { d: number; m: number }) => boolean): ManagerGapRow => {
+    const managers = side(pick, 1);
+    const others = side(pick, 0);
+    return { domini, managers, others, gap: managers !== null && others !== null ? managers - others : null };
+  };
+  return { rows: doms.map((d) => build(d.nom, (r) => r.d === d.id)), total: build("", () => true) };
 }

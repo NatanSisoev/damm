@@ -15,6 +15,8 @@ export interface SignalLike {
   torn?: string | null;
   severity?: string | null;
   n?: number;
+  /** Period the signal was raised in ("2026-10"); names the points of its series. */
+  periode?: string | null;
 }
 
 const SEV_RANK: Record<string, number> = { critical: 0, warning: 1, info: 2 };
@@ -50,17 +52,27 @@ export function signalDetail(s: Pick<SignalLike, "tipus" | "descripcio">, lang: 
   const deNum = (x: string) => t(/^1([.,]|$)/.test(x) ? "sig_de1" : "sig_de", { x: D(x) });
   const d = s.descripcio;
   const ser = series(d);
-  const range = ser.length >= 2 ? ` (${ser.map(D).join(" → ")})` : "";
+  /** Start, end and total change of a series, one decimal, in the UI's decimal style. */
+  const span = (down: boolean) => {
+    const f = Number(ser[0]);
+    const l = Number(ser[ser.length - 1]);
+    const x = Math.abs(l - f).toFixed(1);
+    return { a: D(ser[0]), b: D(ser[ser.length - 1]), x: D(x), flat: Number(x) === 0 || (down ? l >= f : l <= f) };
+  };
   switch (s.tipus) {
     case "sustained_decline": {
       const wk = WORD_KEYS[ser.length as keyof typeof WORD_KEYS];
-      return ser.length >= 2
-        ? t("sig_sd_series", { count: wk ? t(wk) : String(ser.length), series: ser.map(D).join(" → ") })
-        : t("sig_sd_plain");
+      if (ser.length < 2) return t("sig_sd_plain");
+      const r = span(true);
+      return r.flat ? t("sig_sd_plain") : t("sig_sd_series", { count: wk ? t(wk) : String(ser.length), a: r.a, b: r.b, x: r.x });
     }
     case "sharp_drop": {
       const m = d.match(/fell\s+([\d.]+)\s+points?/i);
-      return m ? t("sig_sharp", { de: deNum(m[1]), range }) : t("sig_sharp_plain");
+      if (ser.length >= 2) {
+        const r = span(true);
+        if (!r.flat) return t("sig_sharp", { a: r.a, b: r.b, x: r.x });
+      }
+      return m ? t("sig_sharp_x", { de: deNum(m[1]) }) : t("sig_sharp_plain");
     }
     case "feble": {
       const m = d.match(/decline of\s+([\d.]+)\s+points?\s+over\s+(\d+)\s+periods?/i);
@@ -68,7 +80,7 @@ export function signalDetail(s: Pick<SignalLike, "tipus" | "descripcio">, lang: 
     }
     case "polarisation": {
       const m = d.match(/fell\s+(\d+)\s+points?\s*\((\d+)\s*→\s*(\d+)\)/i);
-      return m ? t("sig_polar", { x: m[1], a: m[2], b: m[3] }) : t("sig_polar_plain");
+      return m && Number(m[2]) > Number(m[3]) ? t("sig_polar", { x: String(Number(m[2]) - Number(m[3])), a: m[2], b: m[3] }) : t("sig_polar_plain");
     }
     case "changepoint_cluster": {
       const m = d.match(/^(\d+)\s+people.*?last\s+(\d+)\s+days/i);
@@ -80,7 +92,11 @@ export function signalDetail(s: Pick<SignalLike, "tipus" | "descripcio">, lang: 
     }
     case "improvement": {
       const m = d.match(/rose\s+([\d.]+)\s+points?/i);
-      return m ? t("sig_improve", { de: deNum(m[1]), range }) : t("sig_improve_plain");
+      if (ser.length >= 2) {
+        const r = span(false);
+        if (!r.flat) return t("sig_improve", { a: r.a, b: r.b, x: r.x });
+      }
+      return m ? t("sig_improve_x", { de: deNum(m[1]) }) : t("sig_improve_plain");
     }
     case "emergent":
       // Written by the analysis job: the theme label itself (data, kept as is).
@@ -92,6 +108,94 @@ export function signalDetail(s: Pick<SignalLike, "tipus" | "descripcio">, lang: 
     default:
       return t("sig_default");
   }
+}
+
+const MONTHS: Record<Lang, string[]> = {
+  ca: ["gen", "febr", "març", "abr", "maig", "juny", "jul", "ag", "set", "oct", "nov", "des"],
+  es: ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"],
+  en: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+};
+
+/** Names of the `count` consecutive months ending at `periode` ("2026-10"), oldest first. Empty when the period is unknown. */
+function periodNames(periode: string | null | undefined, count: number, lang: Lang): string[] {
+  const m = periode?.match(/^(\d{4})-(\d{2})$/);
+  if (!m) return [];
+  const end = Number(m[1]) * 12 + Number(m[2]) - 1;
+  return Array.from({ length: count }, (_, i) => MONTHS[lang][(((end - (count - 1 - i)) % 12) + 12) % 12]);
+}
+
+export interface SignalTrend {
+  /** Short name of the movement: "Baixa sostinguda". */
+  label: string;
+  /** Signed change with one decimal in the UI's decimal style ("−1,1"); null when the signal has no single figure. */
+  delta: string;
+  /** "punts" / "punts de consens". */
+  unit: string;
+  /** Series as read from the engine, unrounded. Empty when there is none (weak signals). */
+  values: number[];
+  /** One name per value (month, or before/now). Empty strings when the period is unknown. */
+  names: string[];
+  /** Full series in words, for the sparkline's aria-label. */
+  aria: string;
+  /** One-line text without markup (push, search): "Baixa sostinguda · −1,1 punts (ago→oct)". */
+  plain: string;
+}
+
+const SIGNED = (n: number, lang: Lang) => `${n < 0 ? "−" : "+"}${dec(Math.abs(n).toFixed(1), lang)}`;
+
+/**
+ * Option C text for a signal that moves along a series: short label, signed delta, the values to plot.
+ * Null for the other types (their sentence from `signalDetail` is used).
+ */
+export function signalTrend(s: Pick<SignalLike, "tipus" | "descripcio" | "periode">, lang: Lang = "ca"): SignalTrend | null {
+  const t = makeT(hrResultsDict, lang);
+  const ser = series(s.descripcio);
+  const values = ser.map(Number);
+  const hasSeries = values.length >= 2 && values.every(Number.isFinite);
+  const build = (label: string, change: number, unitKey: "sig_tr_unit" | "sig_tr_unit_cons", names: string[], decimals: boolean, tail?: string): SignalTrend => {
+    const unit = t(unitKey);
+    const delta = decimals ? SIGNED(change, lang) : `${change < 0 ? "−" : "+"}${Math.abs(Math.round(change))}`;
+    const named = values.map((v, i) => `${names[i] ? `${names[i]} ` : ""}${dec(ser[i], lang)}`).join(", ");
+    const span = names[0] && names[names.length - 1] ? `${names[0]}→${names[names.length - 1]}` : "";
+    const paren = tail ?? span;
+    return {
+      label, delta, unit, values, names,
+      aria: t("sig_tr_aria", { label, series: named, delta, unit }),
+      plain: `${label} · ${delta} ${unit}${paren ? ` (${paren})` : ""}`,
+    };
+  };
+  const last = values[values.length - 1];
+  const change = hasSeries ? last - values[0] : 0;
+  const shown = Number(Math.abs(change).toFixed(1));
+  switch (s.tipus) {
+    case "sustained_decline":
+    case "sharp_drop":
+      if (!hasSeries || change >= 0 || shown === 0) return null;
+      return build(t(s.tipus === "sharp_drop" ? "sig_tl_sharp" : "sig_tl_sd"), change, "sig_tr_unit", periodNames(s.periode, values.length, lang), true);
+    case "improvement":
+      if (!hasSeries || change <= 0 || shown === 0) return null;
+      return build(t("sig_tl_improve"), change, "sig_tr_unit", [t("sig_tr_before"), t("sig_tr_now")].slice(0, 2).concat(values.slice(2).map(() => "")), true, "");
+    case "polarisation":
+      // Consensus out of 100 (a whole number): the spread is the fall from one period to the next.
+      if (!hasSeries || values.length !== 2 || change >= 0) return null;
+      return build(t("sig_tl_polar"), change, "sig_tr_unit_cons", periodNames(s.periode, 2, lang), false);
+    case "feble": {
+      const m = s.descripcio.match(/decline of\s+([\d.]+)\s+points?\s+over\s+(\d+)\s+periods?/i);
+      if (!m || Number(m[1]) === 0) return null;
+      const delta = `−${dec(Number(m[1]).toFixed(1), lang)}`;
+      const unit = t("sig_tr_unit");
+      const label = t("sig_tl_weak");
+      const per = t("sig_tr_weak_per", { p: m[2] });
+      return { label, delta, unit, values: [], names: [], aria: `${label}: ${delta} ${unit} ${per}`, plain: `${label} · ${delta} ${unit} (${per})` };
+    }
+    default:
+      return null;
+  }
+}
+
+/** Plain one-line version for places that cannot hold markup (push body): trend line when the signal has one, else the sentence. */
+export function signalPlain(s: Pick<SignalLike, "tipus" | "descripcio" | "periode">, lang: Lang = "ca"): string {
+  return signalTrend(s, lang)?.plain ?? signalDetail(s, lang);
 }
 
 /** Size of the movement, for sorting inside the same severity (score points; consensus points are scaled to the 0-10 score). */

@@ -1,5 +1,7 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import type { Lang } from "@damm/shared";
 import { deleteHrPushSubscription, saveHrPushSubscription } from "@damm/db/hr";
 import { sendHrTestPush } from "@/lib/hr-push";
@@ -34,4 +36,12 @@ export async function testHrPushAction(sub: SubJson): Promise<{ ok: boolean }> {
   if (!s) return { ok: false };
   saveHrPushSubscription(s);
   return { ok: await sendHrTestPush(s) };
+}
+
+/** Demo reset (N-17): refused unless DEMO_RESET_ENABLED=1. Redirects back with the outcome. */
+export async function resetDemoAction() {
+  const { resetDemoNow } = await import("@/lib/demo-reset");
+  const result = resetDemoNow();
+  revalidatePath("/hr", "layout");
+  redirect(`/hr/settings?reset=${result}`);
 }

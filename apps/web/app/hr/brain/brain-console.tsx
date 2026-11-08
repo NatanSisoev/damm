@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, useTransition, type ReactNode } from "react";
-import type { QuestionType } from "@damm/shared";
+import { MIN_GROUP_SIZE, type QuestionType } from "@damm/shared";
 import type { Brain, BrainCollective, SimResult } from "@/lib/hr-engine";
 import { Card, Empty, SuppressedBadge } from "../ui";
 import { recomputeAction } from "../actions";
@@ -371,20 +371,20 @@ function Summary({ brain, c }: { brain: Brain; c: BrainCollective }) {
           <table className="w-full min-w-[720px] text-left text-[13px]">
             <thead className="text-subtle">
               <tr>
-                <th className="py-2 pr-3 font-medium">{t("th_domain")}</th>
-                <th className="py-2 pr-3 font-medium">{t("th_score")}</th>
-                <th className="py-2 pr-3 font-medium">{t("th_confidence")}</th>
-                <th className="py-2 pr-3 font-medium">{t("th_consensus")}</th>
-                <th className="py-2 pr-3 font-medium">{t("th_gain")}</th>
-                <th className="py-2 pr-3 font-medium">{t("th_jumps")}</th>
-                <th className="py-2 pr-3 font-medium">{t("th_weight")}</th>
-                <th className="py-2 pr-3 font-medium">{t("th_first")}</th>
+                <th className="py-2 pr-3 font-semibold">{t("th_domain")}</th>
+                <th className="py-2 pr-3 font-semibold">{t("th_score")}</th>
+                <th className="py-2 pr-3 font-semibold">{t("th_confidence")}</th>
+                <th className="py-2 pr-3 font-semibold">{t("th_consensus")}</th>
+                <th className="py-2 pr-3 font-semibold">{t("th_gain")}</th>
+                <th className="py-2 pr-3 font-semibold">{t("th_jumps")}</th>
+                <th className="py-2 pr-3 font-semibold">{t("th_weight")}</th>
+                <th className="py-2 pr-3 font-semibold">{t("th_first")}</th>
               </tr>
             </thead>
             <tbody>
               {c.domains.map((d) => (
                 <tr key={d.domainId} className="border-t border-line align-middle">
-                  <td className="py-2 pr-3 font-medium">{domainLabel(d.name, lang)}<span className="block text-xs font-normal text-subtle">{t("n_questions", { n: d.questions })}</span></td>
+                  <td className="py-2 pr-3 font-semibold">{domainLabel(d.name, lang)}<span className="block text-xs font-normal text-subtle">{t("n_questions", { n: d.questions })}</span></td>
                   <td className="num py-2 pr-3">{d.stats ? fmt(d.stats.score, 1) : <SuppressedBadge label={t("suppressed")} />}</td>
                   <td className="num py-2 pr-3">{d.stats ? `${fmt(d.stats.confidence, 0)} %` : "—"}</td>
                   <td className="num py-2 pr-3">{d.stats ? `${fmt(d.stats.consensus, 0)} %` : "—"}</td>
@@ -413,16 +413,16 @@ function Summary({ brain, c }: { brain: Brain; c: BrainCollective }) {
           <table className="w-full min-w-[640px] text-left text-[13px]">
             <thead className="text-subtle">
               <tr>
-                <th className="py-2 pr-3 font-medium">{t("th_format")}</th>
-                <th className="py-2 pr-3 font-medium">{t("th_questions")}</th>
-                <th className="py-2 pr-3 font-medium">{t("th_preference")}</th>
-                <th className="py-2 pr-3 font-medium">{t("th_attentive")}</th>
+                <th className="py-2 pr-3 font-semibold">{t("th_format")}</th>
+                <th className="py-2 pr-3 font-semibold">{t("th_questions")}</th>
+                <th className="py-2 pr-3 font-semibold">{t("th_preference")}</th>
+                <th className="py-2 pr-3 font-semibold">{t("th_attentive")}</th>
               </tr>
             </thead>
             <tbody>
               {c.formats.map((f) => (
                 <tr key={f.type} className="border-t border-line align-middle">
-                  <td className="py-2 pr-3 font-medium">{t(FORMAT_KEYS[f.type])}</td>
+                  <td className="py-2 pr-3 font-semibold">{t(FORMAT_KEYS[f.type])}</td>
                   <td className="num py-2 pr-3">{f.questions}</td>
                   <td className="num py-2 pr-3">{f.preference === 0 ? <span className="badge badge-warn">{t("forbidden")}</span> : fmt(f.preference, 1)}</td>
                   <td className="py-2 pr-3">
@@ -430,8 +430,8 @@ function Summary({ brain, c }: { brain: Brain; c: BrainCollective }) {
                       <div className="flex flex-wrap gap-x-4 gap-y-1">
                         {f.arms.map((a) => (
                           <span key={a.tornId} className="num">
-                            {shiftLabel(a.shift, lang)}: <strong>{c.suppressed ? "—" : pct(a.mean)}</strong>
-                            <span className="text-xs text-subtle"> {t("obs", { n: a.observations })}</span>
+                            {shiftLabel(a.shift, lang)}: <strong>{c.suppressed || a.observations < MIN_GROUP_SIZE ? "—" : pct(a.mean)}</strong>
+                            <span className="text-xs text-subtle"> {a.observations < MIN_GROUP_SIZE ? `(<${MIN_GROUP_SIZE} obs.)` : t("obs", { n: a.observations })}</span>
                           </span>
                         ))}
                       </div>
@@ -460,7 +460,7 @@ function Summary({ brain, c }: { brain: Brain; c: BrainCollective }) {
 function Fact({ label, value, hint }: { label: string; value: ReactNode; hint?: string }) {
   return (
     <div className="card px-5 py-4">
-      <div className="text-xs font-medium text-subtle">{label}</div>
+      <div className="text-xs font-semibold text-subtle">{label}</div>
       <div className="num mt-1 text-2xl font-semibold tracking-tight">{value}</div>
       {hint && <div className="mt-0.5 text-xs text-subtle">{hint}</div>}
     </div>

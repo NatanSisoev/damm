@@ -1,6 +1,6 @@
-# Active-listening platform
+# Give a Damm
 
-Estrella Damm, UAB THE HACK 2026. A platform that turns an HR need in natural language into AI-drafted micro-surveys, collects anonymous answers from a mobile app (PWA), and turns them into aggregated insights, recommendations and follow-up surveys.
+Estrella Damm, UAB THE HACK 2026. An active-listening platform that turns an HR need in natural language into AI-drafted micro-surveys, collects anonymous answers from a mobile app (PWA), and turns them into aggregated insights, recommendations and follow-up surveys.
 AI proposes, a human decides: every question is approved by HR before it is published.
 Anonymity is guaranteed by design: only aggregates are shown, never individual answers.
 
@@ -11,7 +11,7 @@ Requires Node and pnpm 10.
 ```bash
 pnpm install
 cp .env.example .env   # fill in values; never commit .env
-pnpm --filter @damm/db run init   # creates data/app.db (override with DB_PATH)
+pnpm demo-db   # builds the demo database data/app.db (about 90 s; trilingual, 99 days of synthetic answers)
 pnpm dev
 ```
 

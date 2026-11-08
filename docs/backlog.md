@@ -20,6 +20,7 @@ Status: `running`, `ready` (can start now), `blocked` (waiting on a dependency),
 | 6 | Security demo | `jan/security-demo` | done | light |
 | 7 | Demo script and slide notes | `jan/demo-script` | done | light |
 | 8 | HR CSV export with suppression | `jan/hr-export` | done | light |
+| 28 | HR web push for new alarms (toggle on `/hr/settings`, sent from the job only, link to the alarm; R-FLOW-7e) | `jan/alarm-push` | done on the branch, not merged; real-device test needs HTTPS | light |
 | 10 | `jan/dev` → `main` PR | coordinating session | ready | light |
 | 12 | HR home overview | `jan/hr-home` | done | light |
 | 13 | Publish page: join link, QR and print poster | `jan/publish-qr` | done | light |
@@ -37,7 +38,7 @@ Status: `running`, `ready` (can start now), `blocked` (waiting on a dependency),
 | 24 | Apply the Paper visual identity to employee, HR and manager | `jan/paper-identity` | done (merged 44cccfc) | heavy |
 | 25 | Signal page: recommendation fields (C11), Indagar probes (C12), context events and "des de" effects (C13); R-DIFF-6, R-FLOW-8e | `jan/signal-actions` | done (51458d3) | light |
 | 26 | Multi-language CAT/ES/EN: per-question translations and portal strings | `jan/i18n` | running | heavy |
-| 27 | Product name: pick a proper name to replace the working name "Escolta activa" (wordmark, PWA manifest and short name, page titles, push title, poster, deck, `docs/visual-identity.md`) | `jan/product-name` | deferred (Jan decides the name first) | light |
+| 27 | Product name: pick a proper name to replace the working name "Escolta activa" (wordmark, PWA manifest and short name, page titles, push title, poster, deck, `docs/visual-identity.md`) | `jan/rename-give-a-damm` | done 2026-11-08: "Give a Damm" (deck still to update) | light |
 | 28 | Paper redesign to strict white, black and red: neutral white paper and black ink instead of the current green-tinted tokens (`--bg #eef0ea`, ink `#17211a`), red stays signal only; update `globals.css`, icons, manifest and `themeColor`, `docs/visual-identity.md`; re-run the dataviz validation if chart tokens change | `jan/paper-bw` | phase 1 tokens done (jan/paper-bw); phase 2 done on jan/paper-phase2: themeColor, icons (svg and png), manifest, offline page; no other tinted colours left in `apps/web`. Per-screen visual QA remains | heavy |
 
 Order for the next free slots: 18, 19, then 4. Pitch deck and demo work (14, 15) go last and are not raised before 8 Nov 9:00.
@@ -134,7 +135,7 @@ Findings from reading `hr-repository.ts` against the seeded fixtures:
 New read functions for 16 to 20 go in new files under `packages/db/src/` (for example `hr-signals.ts`, `hr-rigour.ts`) and are re-exported from `hr.ts`, so parallel branches do not collide in `hr-repository.ts`.
 
 ### 17. Statistical rigour: `jan/rigour` (light)
-- Files: `packages/db/src/hr-rigour.ts` (new), `packages/db/src/hr.ts` (re-export), `packages/db/src/hr-repository.ts` (call sites only), `apps/web/app/hr/results/**`, `apps/web/app/hr/trends/**` if it exists.
+- Files: `packages/db/src/hr-rigour.ts` (new), `packages/db/src/hr.ts` (re-export), `packages/db/src/hr-repository.ts` (call sites only), `apps/web/app/hr/**`, `apps/web/app/hr/trends/**` if it exists.
 - Complementary suppression on read: when a parent has exactly one suppressed child (or the suppressed children sum to under 10), also suppress the smallest visible sibling, and blank the n of suppressed cells. Applies to the page and the CSV export.
 - Precision: every mean shows its n; a precision label per n band (n < 30 "indicativa", 30 to 99 "moderada", 100 or more "sòlida"). A true confidence interval needs a per-segment standard deviation in `agregat` (see Natan table).
 - Change rule: a period-over-period change is only called "puja" or "baixa" when |Δ| ≥ 0.3 on the 1-5 scale and both periods have n ≥ 30; otherwise "sense canvi clar". One constant in `@damm/shared` once agreed, local constant until then.
@@ -151,8 +152,8 @@ New read functions for 16 to 20 go in new files under `packages/db/src/` (for ex
 - Files: employee home section, a new read function in `packages/db/src/employee-*.ts` that returns approved recommendations and their aggregate context (no per-account data).
 - Shows employees what changed because they answered: approved actions per collective, with the period and n. Closing the loop is what keeps participation up and makes the anonymity promise credible.
 
-### 21. Decision audit log and AI provenance: `jan/audit-log` (blocked on schema)
-- Needs a `decisio` table (what, previous and new state, AI original text, timestamp, HR role) and a `font` field on `pregunta` and `recomanacio` (source signal, n, confidence). Shared contract: agree with Natan first.
+### 21. Decision audit log and AI provenance: `jan/traceability` (done 2026-11-08)
+- `decisio` table (what, previous and new state, AI original text, timestamp, HR label, source `font`), written by every HR action on AI output; trail on `/hr/traceability` and per need. Provenance lives in `decisio.font`, no new columns on `pregunta` or `recomanacio`. Contract entry in `docs/contract-changes.md`.
 
 ## Needs Natan first
 
@@ -165,7 +166,7 @@ New read functions for 16 to 20 go in new files under `packages/db/src/` (for ex
 | Branch protection on `main` | repo flow | 10 |
 | A standard deviation (`desviacio`) per `agregat` row, written by the analysis job | real confidence intervals instead of n bands | 17 (full) |
 | Complementary suppression in the analysis job too, so stored aggregates are already safe | defence in depth for 17 | 17 |
-| `decisio` table and `font` provenance fields | audit trail of human decisions over AI proposals | 21 |
+| ~~`decisio` table and `font` provenance fields~~ (done 2026-11-08, Jan) | audit trail of human decisions over AI proposals | 21 |
 | Signals carry a minimum effect size and n in their criteria | signals are not noise | 16, 18 |
 | Catalan seed text in `packages/engine/demo/build-demo.ts` and `comments.ts` (NEEDS-DECISION HR-X-8, HR-NEED-1) | demo copy matches `docs/copy-guide.md` | 22, demo |
 | Wording of 'punts' for scores (NEEDS-DECISION HR-X-9) | one consistent unit on the 1-5 scale | 22 |

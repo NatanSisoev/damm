@@ -4,6 +4,7 @@ import { maxAlarmId, reinstateAlarmsForReadingPeriod } from "@damm/db/hr";
 import { runEngineJob, runCommentAnalysisSync, runRecommendations } from "@damm/engine/job";
 import { draftRecommendations } from "@damm/ai";
 import { notifyNewAlarms } from "@/lib/hr-push";
+import { notifyTeamsNewAlarms } from "@/lib/teams-alarm";
 import { HR_COOKIE, accessToken, gateEnabled, gateMisconfigured } from "@/lib/hr-access";
 
 // The analysis job: engine (aggregates, insights, alarms) -> comment themes -> recommendation proposals.
@@ -42,9 +43,11 @@ export async function POST(req: NextRequest) {
       console.warn("[hr-push] failed:", e);
       return { status: "error" as const };
     });
+    // Teams channel card for each new critical alarm (TEAMS_ALARM_WEBHOOK_URL or TEAMS_WEBHOOK_URL); never fails the job.
+    const teamsAlarm = await notifyTeamsNewAlarms(alarmBefore);
     // Retention (R-PRIV-8): last, so aggregates are written before raw rows past the window are deleted. ?dryRun=1 only counts.
     const retention = purgeExpired(getDb(), { dryRun: req.nextUrl.searchParams.get("dryRun") === "1" });
-    return NextResponse.json({ ok: true, engine, reinstatedAlarms: reinstated, comments, recommendations, alarmPush, retention }, { headers: { "Cache-Control": "no-store" } });
+    return NextResponse.json({ ok: true, engine, reinstatedAlarms: reinstated, comments, recommendations, alarmPush, teamsAlarm, retention }, { headers: { "Cache-Control": "no-store" } });
   } catch (e) {
     console.error("job failed", e);
     return NextResponse.json({ error: "job failed" }, { status: 500 });

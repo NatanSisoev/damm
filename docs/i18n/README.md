@@ -16,7 +16,7 @@ Catalan is canonical. Everything falls back to Catalan, then to the key.
 - AI drafting adds es/en in a second pass (`packages/ai/src/translate.ts`); HR reviews and edits them in `/hr/needs` before approving.
 
 ## Not translated
-Text produced into the DB by jobs or HR (theme names, signal titles, recommendations, need text), drafted scale anchors, the brand "Escolta activa".
+Text produced into the DB by jobs or HR (theme names, signal titles, recommendations, need text), drafted scale anchors, the brand "Give a Damm".
 
 ## HR query form: questions per person and delivery
 

@@ -3,6 +3,7 @@
 // Every figure re-applies the minimum group size on read.
 import { MIN_GROUP_SIZE, type Lang } from "@damm/shared";
 import { getDb } from "./connection";
+import { alarmInfo, recordDecision } from "./hr-decisions";
 import { RECOMMENDATION_COLUMNS, getShiftTrend, getTrends, type TrendCell } from "./hr-repository";
 import { overlayTranslations, RECOMMENDATION_FIELDS } from "./hr-i18n";
 import type { Change } from "./hr-rigour";
@@ -39,6 +40,7 @@ export interface SignalTrendRow {
 
 export interface SignalTheme {
   id: number;
+  key: string; // tema.clau, for linking to the comment browser
   etiqueta: string;
   resum: string | null;
   emergent: boolean;
@@ -134,13 +136,13 @@ export function getSignalDetail(id: number, lang?: Lang): SignalDetail | null {
   // --- Themes: counted within the signal's collective through the analytics view.
   const themeRows = db
     .prepare(
-      `SELECT t.id, t.etiqueta, t.resum, t.emergent, t.n AS tn, t.suprimit AS ts,
+      `SELECT t.id, t.clau, t.etiqueta, t.resum, t.emergent, t.n AS tn, t.suprimit AS ts,
               (SELECT COUNT(*) FROM comentari_tema ct JOIN v_resposta_analitica v ON v.id = ct.resposta_id
                 WHERE ct.tema_id = t.id AND (? IS NULL OR v.collectiu_id = ?)) AS cn
        FROM tema t WHERE t.periode = ? ORDER BY t.emergent DESC, t.n DESC`,
     )
     .all(signal.collectiuId, signal.collectiuId, signal.periode) as {
-      id: number; etiqueta: string; resum: string | null; emergent: number; tn: number; ts: number; cn: number;
+      id: number; clau: string; etiqueta: string; resum: string | null; emergent: number; tn: number; ts: number; cn: number;
     }[];
   const themes: SignalTheme[] = [];
   let hiddenThemes = 0;
@@ -155,7 +157,7 @@ export function getSignalDetail(id: number, lang?: Lang): SignalDetail | null {
       )
       .all(t.id, signal.collectiuId, signal.collectiuId, SNIPPETS_PER_THEME) as { c: string }[])
       .map((r) => (r.c.length > SNIPPET_MAX_CHARS ? `${r.c.slice(0, SNIPPET_MAX_CHARS - 1)}…` : r.c));
-    themes.push({ id: t.id, etiqueta: t.etiqueta, resum: t.resum, emergent: !!t.emergent, n: t.cn, snippets });
+    themes.push({ id: t.id, key: t.clau, etiqueta: t.etiqueta, resum: t.resum, emergent: !!t.emergent, n: t.cn, snippets });
   }
   overlayTranslations(db, "tema", themes, { etiqueta: "etiqueta", resum: "resum" }, lang);
 
@@ -239,4 +241,26 @@ export function getRecommendationDetail(id: number, lang?: Lang): Recommendation
     siblings: (signal?.recommendations ?? []).filter((r) => r.id !== id),
     followUp: signal?.followUps.find((f) => f.necessitatId === row.seguimentNecessitatId) ?? null,
   };
+}
+
+/** Ids of alarms HR has archived (only resolved alarms can be archived). */
+export function archivedAlarmIds(): Set<number> {
+  const rows = getDb().prepare("SELECT id FROM senyal WHERE archived_at IS NOT NULL").all() as { id: number }[];
+  return new Set(rows.map((r) => r.id));
+}
+
+/** Archive a resolved alarm, or bring an archived one back. No-op for any other status. */
+export function setAlarmArchived(id: number, archived: boolean, actor?: string): void {
+  const before = alarmInfo(id);
+  const res = getDb()
+    .prepare(`UPDATE senyal SET archived_at = ${archived ? "datetime('now')" : "NULL"} WHERE id = ? AND status IN ('resolved', 'dismissed')`)
+    .run(id);
+  if (res.changes > 0 && before) recordDecision({ entity: "senyal", entityId: id, action: archived ? "archive" : "unarchive", font: "engine_alarm", actor: actor ?? "HR", fromState: before.status, toState: before.status, subject: before.description });
+}
+
+/** Reopen a resolved or dismissed alarm: back to open, out of the archive. */
+export function reopenClosedAlarm(id: number, actor?: string): void {
+  const before = alarmInfo(id);
+  const res = getDb().prepare("UPDATE senyal SET status = 'open', archived_at = NULL WHERE id = ? AND status IN ('resolved', 'dismissed')").run(id);
+  if (res.changes > 0 && before) recordDecision({ entity: "senyal", entityId: id, action: "reopen", font: "engine_alarm", actor: actor ?? "HR", fromState: before.status, toState: "open", subject: before.description });
 }

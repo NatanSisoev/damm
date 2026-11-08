@@ -4,7 +4,7 @@ import { GenerateButton } from "./generate-button";
 import { AutoSubmitForm } from "./auto-submit-form";
 import Link from "next/link";
 import { MIN_GROUP_SIZE } from "@damm/shared";
-import { listCollectius, listDomains, listRecommendations, listTorns } from "@damm/db/hr";
+import { archivedAlarmIds, listCollectius, listDomains, listRecommendations, listTorns } from "@damm/db/hr";
 import { hrAlarms, type AlarmView } from "@/lib/hr-engine";
 import { Card, Empty, PageHeader } from "../ui";
 import { FoldList } from "../ui-server";
@@ -16,11 +16,13 @@ import { signalsDict } from "@/lib/i18n/hr-signals";
 import { collectiveLabel, domainLabel, shiftLabel } from "@/lib/i18n/names";
 import type { Lang } from "@damm/shared";
 
-import { setAlarmStatusAction } from "../actions";
+import { archiveAlarmAction, reopenAlarmAction, setAlarmStatusAction } from "../actions";
 import { ALARM_NEXT } from "./transitions";
 import { NON_ACTIONABLE } from "./alarm-text";
-import { signalDetail, signalDrop, signalSegment } from "@/lib/signal-text";
+import { signalPlain, signalDrop, signalSegment } from "@/lib/signal-text";
+import { SignalSummary } from "@/components/signal-trend-line";
 import { generateRecommendationsAction, proposeFollowUpAction } from "./actions";
+import { alarmConfidence, alarmConfidenceLabel, alarmReason } from "@/lib/alarm-reason";
 import { pageTitle } from "@/lib/i18n/titles";
 
 export const generateMetadata = pageTitle("hr_alarms");
@@ -30,11 +32,12 @@ const TABS = [
   { key: "revisades", label: "sg_tab_reviewed", statuses: ["acknowledged", "action_linked"] },
   { key: "resoltes", label: "sg_tab_resolved", statuses: ["resolved"] },
   { key: "descartades", label: "sg_tab_dismissed", statuses: ["dismissed"] },
+  { key: "arxivades", label: "sg_tab_archived", statuses: ["resolved", "dismissed"] },
 ] as const;
 
 const SEV_RANK: Record<string, number> = { critical: 0, warning: 1, info: 2 };
 
-type Row = AlarmView & { segment: string; group: string; shift: string | null; domain: string | null; drop: number; detail: string };
+type Row = AlarmView & { segment: string; group: string; shift: string | null; domain: string | null; drop: number; detail: string; like: { tipus: string; descripcio: string; periode: string } };
 
 type Params = { estat?: string; tipus?: string; gravetat?: string; collectiu?: string; domini?: string; torn?: string; periode?: string; audiencia?: string; ordre?: string; q?: string };
 
@@ -62,14 +65,17 @@ export default async function AlarmsPage({ searchParams }: { searchParams: Promi
 
   // Minimum group size is re-checked here even though the engine already suppresses small alarms.
   const all = hrAlarms({ role: "hr" }, { status: ["open", "acknowledged", "action_linked", "resolved", "dismissed"] }).filter((a) => a.n >= MIN_GROUP_SIZE);
-  const counts = Object.fromEntries(TABS.map((x) => [x.key, all.filter((a) => (x.statuses as readonly string[]).includes(a.status)).length]));
-  const inTab = all.filter((a) => (tab.statuses as readonly string[]).includes(a.status));
+  // Archived resolved alarms live only in their own tab.
+  const archived = archivedAlarmIds();
+  const inTabOf = (x: (typeof TABS)[number], a: AlarmView) => (x.statuses as readonly string[]).includes(a.status) && archived.has(a.id) === (x.key === "arxivades");
+  const counts = Object.fromEntries(TABS.map((x) => [x.key, all.filter((a) => inTabOf(x, a)).length]));
+  const inTab = all.filter((a) => inTabOf(tab, a));
 
   const toRow = (a: AlarmView): Row => {
     const col = a.collectiuId ? colNames.get(a.collectiuId) ?? null : null;
     const shift = a.tornId ? torns.get(a.tornId) ?? null : null;
-    const like = { tipus: a.type, descripcio: a.description };
-    return { ...a, segment: signalSegment({ collectiu: col, torn: shift }, lang), group: signalSegment({ collectiu: col, torn: null }, lang), shift, domain: a.domainId ? domains.get(a.domainId) ?? null : null, drop: signalDrop(like), detail: signalDetail(like, lang) };
+    const like = { tipus: a.type, descripcio: a.description, periode: a.periode };
+    return { ...a, segment: signalSegment({ collectiu: col, torn: shift }, lang), group: signalSegment({ collectiu: col, torn: null }, lang), shift, domain: a.domainId ? domains.get(a.domainId) ?? null : null, drop: signalDrop(like), detail: signalPlain(like, lang), like };
   };
   const tabRows = inTab.map(toRow);
 
@@ -165,7 +171,7 @@ export default async function AlarmsPage({ searchParams }: { searchParams: Promi
             <span className="text-subtle">{t("sg_none_view")}</span>
           ) : (
             critical > 0 ? (
-              <Link href={criticalHref} className="font-medium text-accent hover:underline">
+              <Link href={criticalHref} className="font-semibold text-accent hover:underline">
                 {t("sg_critical", { n: critical })} →
               </Link>
             ) : (
@@ -220,7 +226,7 @@ export default async function AlarmsPage({ searchParams }: { searchParams: Promi
                 <FoldList
                   className="divide-y divide-line"
                   items={items.map((r) => (
-                    <AlarmItem key={r.id} t={t} lang={lang} r={r} rec={recs.find((x) => x.senyalId === r.id && x.estat === "aprovada")} drafted={recs.some((x) => x.senyalId === r.id)} />
+                    <AlarmItem key={r.id} t={t} lang={lang} r={r} rec={recs.find((x) => x.senyalId === r.id && x.estat === "aprovada")} drafted={recs.some((x) => x.senyalId === r.id)} archived={archived.has(r.id)} />
                   ))}
                 />
               </div>
@@ -231,7 +237,7 @@ export default async function AlarmsPage({ searchParams }: { searchParams: Promi
             <Card title={t("sg_good")} meta={<span className="num">{good.length}</span>}>
               <FoldList className="divide-y divide-line" items={good.map((r) => (
                   <li key={r.id} className="py-2 text-[13px]">
-                    <strong>{r.domain ? `${domainLabel(r.domain, lang)} · ` : ""}{r.segment}</strong>: {r.detail}
+                    <strong>{r.domain ? `${domainLabel(r.domain, lang)} · ` : ""}{r.segment}</strong>: <SignalSummary s={r.like} lang={lang} />
                     <span className="num ml-2 text-xs text-subtle">{r.periode} · <People n={r.n} scoped={r.collectiuId !== null || r.tornId !== null} /></span>
 
                   </li>
@@ -259,7 +265,7 @@ export default async function AlarmsPage({ searchParams }: { searchParams: Promi
           )}
 
           <p className="text-xs text-subtle">
-            {t("sg_foot", { label: t("sg_vis") })}
+            {t("sg_foot", { label: t("sg_vis") })} {t("sg_limit")}
           </p>
         </div>
       )}
@@ -279,7 +285,7 @@ function Select({ all, name, label, value, options }: { all: string; name: strin
   );
 }
 
-function AlarmItem({ t, lang, r, rec, drafted }: { t: HrResultsT; lang: Lang; r: Row; rec?: { id: number; seguimentNecessitatId: number | null }; drafted: boolean }) {
+function AlarmItem({ t, lang, r, rec, drafted, archived }: { t: HrResultsT; lang: Lang; r: Row; rec?: { id: number; seguimentNecessitatId: number | null }; drafted: boolean; archived: boolean }) {
 
   const next = ALARM_NEXT[r.status];
   return (
@@ -296,8 +302,22 @@ function AlarmItem({ t, lang, r, rec, drafted }: { t: HrResultsT; lang: Lang; r:
             {r.domain ? domainLabel(r.domain, lang) : t("sg_general")}
             {r.shift && <span className="font-normal text-muted"> · {t("sig_shift", { shift: shiftLabel(r.shift, lang) })}</span>}
           </p>
-          <p className="text-[13px] text-muted">{r.detail}</p>
+          <p className="text-[13px] text-muted"><SignalSummary s={r.like} lang={lang} /></p>
+          <AlarmWhy r={r} lang={lang} />
         </div>
+      {r.status === "resolved" || r.status === "dismissed" ? (
+      <div className="ml-auto flex shrink-0 items-center gap-2">
+        <form action={reopenAlarmAction}>
+          <input type="hidden" name="id" value={r.id} />
+          <button className="btn" type="submit">{t("sg_reopen")}</button>
+        </form>
+        <form action={archiveAlarmAction}>
+          <input type="hidden" name="id" value={r.id} />
+          <input type="hidden" name="archive" value={archived ? "0" : "1"} />
+          <button className="btn" type="submit">{t(archived ? "sg_unarchive" : "sg_archive")}</button>
+        </form>
+      </div>
+      ) : (
       <div className="ml-auto flex shrink-0 flex-wrap items-center justify-end gap-2">
         {!drafted && r.domainId != null && !NON_ACTIONABLE.has(r.type) && (
           <form action={generateRecommendationsAction}>
@@ -348,7 +368,21 @@ function AlarmItem({ t, lang, r, rec, drafted }: { t: HrResultsT; lang: Lang; r:
           )}
         </div>
       </div>
+      )}
       </div>
     </li>
+  );
+}
+
+/** Confidence of the current score and the rule behind the severity, in small muted text. */
+function AlarmWhy({ r, lang }: { r: Row; lang: Lang }) {
+  const reason = alarmReason({ tipus: r.type, descripcio: r.description, severity: r.severity, n: r.n, confidence: r.confidence }, lang);
+  const conf = alarmConfidenceLabel(r.confidence, lang);
+  if (!reason && !conf) return null;
+  return (
+    <p className="num mt-0.5 text-xs text-subtle">
+      {reason ?? conf}
+      {reason && conf && !reason.includes(`${alarmConfidence(r.confidence)}`) ? ` · ${conf}` : ""}
+    </p>
   );
 }

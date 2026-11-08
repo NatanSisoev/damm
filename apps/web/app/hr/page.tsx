@@ -8,6 +8,8 @@ import {
   getWindowTrends,
   listCollectius,
   getParticipation,
+  getManagerGap,
+  getDomainInitiatives,
   getAnswersPerDay,
   CHANGE_MIN_DELTA,
   CHANGE_MIN_N,
@@ -26,7 +28,7 @@ import { Radar, type RadarSeries } from "./radar";
 import { RepTable, TrendTable } from "./tables";
 import { InsightCards } from "./insight-cards";
 import { getHeadlines, getHeatmap, getNarrative, getProposals, getReachGaps, getSegmentTrend } from "./analytics";
-import { HeadlineStrip, HeatmapCard, NarrativeCard, ProposalsCard, ReachCard, SegmentTrendCard } from "./analytics-ui";
+import { HeadlineStrip, HeatmapCard, NarrativeCard, ProposalsCard, ManagerGapCard, ReachCard, SegmentTrendCard, InitiativesCard } from "./analytics-ui";
 import { PRESETS, bucketFor, fmtDay, previousWindow, resolveRange } from "./range";
 import { refreshDashboardAction } from "./actions";
 import { RefreshButton } from "./refresh-button";
@@ -194,7 +196,7 @@ export default async function HrDashboard({ searchParams }: { searchParams: Prom
               value={<Link href={alarmsHref()} className="hover:underline">{openAlarms}</Link>}
               hint={
                 criticalAlarms > 0 ? (
-                  <Link href={alarmsHref("critical")} className="font-medium text-accent hover:underline">{t("kpi_alarms_critical", { n: criticalAlarms })}</Link>
+                  <Link href={alarmsHref("critical")} className="font-semibold text-accent hover:underline">{t("kpi_alarms_critical", { n: criticalAlarms })}</Link>
                 ) : (
                   t("kpi_alarms_no_critical")
                 )
@@ -247,25 +249,25 @@ export default async function HrDashboard({ searchParams }: { searchParams: Prom
               {coarsened && <p className="px-5 pt-3 text-xs text-subtle">{t(chartBucket === "week" ? "dash_coarse_week" : "dash_coarse_month", { min: MIN_GROUP_SIZE })}</p>}
               <TrendChart periodes={series.periodes} rows={series.series[0].rows} />
               <details className="group/all border-t border-line">
-                <summary className="flex cursor-pointer list-none items-center gap-2 px-5 py-3 font-medium hover:bg-surface-muted">
+                <summary className="flex cursor-pointer list-none items-center gap-2 px-5 py-3 font-semibold hover:bg-surface-muted">
                   <span aria-hidden className="text-subtle transition-transform group-open/all:rotate-90">›</span>
                   {t("dash_trend_tables")}
                 </summary>
                 <details className="group border-t border-line">
-                  <summary className="flex cursor-pointer list-none items-center gap-2 py-3 pl-10 pr-5 font-medium hover:bg-surface-muted">
+                  <summary className="flex cursor-pointer list-none items-center gap-2 py-3 pl-10 pr-5 font-semibold hover:bg-surface-muted">
                     <span aria-hidden className="text-subtle transition-transform group-open:rotate-90">›</span>
                     {tr("rs_show_table")}
                   </summary>
                   <p className="border-t border-line px-5 py-3 text-xs text-subtle">
-                    {tr("rs_prec_a")}<span className="font-medium">{tr("prec_indicativa")}</span>{tr("rs_prec_b", { a: PRECISION_MODERADA_MIN_N })}
-                    <span className="font-medium">{tr("prec_moderada")}</span>{tr("rs_prec_c", { a: PRECISION_MODERADA_MIN_N, b: PRECISION_SOLIDA_MIN_N - 1 })}
-                    <span className="font-medium">{tr("prec_solida")}</span>{tr("rs_prec_d", { c: PRECISION_SOLIDA_MIN_N, delta: numD(CHANGE_MIN_DELTA, lang, 1), n: CHANGE_MIN_N })}
+                    {tr("rs_prec_a")}<span className="font-semibold">{tr("prec_indicativa")}</span>{tr("rs_prec_b", { a: PRECISION_MODERADA_MIN_N })}
+                    <span className="font-semibold">{tr("prec_moderada")}</span>{tr("rs_prec_c", { a: PRECISION_MODERADA_MIN_N, b: PRECISION_SOLIDA_MIN_N - 1 })}
+                    <span className="font-semibold">{tr("prec_solida")}</span>{tr("rs_prec_d", { c: PRECISION_SOLIDA_MIN_N, delta: numD(CHANGE_MIN_DELTA, lang, 1), n: CHANGE_MIN_N })}
                   </p>
                   <TrendTable periodes={series.periodes} rows={series.series[0].rows} />
                 </details>
                 {perCollective.map((s) => (
                   <details key={s.scope} className="group border-t border-line">
-                    <summary className="flex cursor-pointer list-none items-center gap-2 py-3 pl-10 pr-5 font-medium hover:bg-surface-muted">
+                    <summary className="flex cursor-pointer list-none items-center gap-2 py-3 pl-10 pr-5 font-semibold hover:bg-surface-muted">
                       <span aria-hidden className="text-subtle transition-transform group-open:rotate-90">›</span>
                       {collectiveLabel(s.scope, lang)}
                     </summary>
@@ -286,7 +288,7 @@ export default async function HrDashboard({ searchParams }: { searchParams: Prom
             <>
               <RepTable rows={rep.collectius} byShift={false} />
               <details className="group border-t border-line">
-                <summary className="flex cursor-pointer list-none items-center gap-2 px-5 py-3 font-medium hover:bg-surface-muted">
+                <summary className="flex cursor-pointer list-none items-center gap-2 px-5 py-3 font-semibold hover:bg-surface-muted">
                   <span aria-hidden className="text-subtle transition-transform group-open:rotate-90">›</span>
                   {tr("rs_by_shift")}
                 </summary>
@@ -299,11 +301,14 @@ export default async function HrDashboard({ searchParams }: { searchParams: Prom
         {/* Everything else: collapsed by default */}
         <NarrativeCard fold narrative={getNarrative(col?.nom ?? "All", lang)} title={t("dash_narr", { scope: col ? collectiveLabel(col.nom, lang) : t("dash_scope_all") })} />
         <HeadlineStrip fold headlines={getHeadlines()} />
+        <InitiativesCard fold groups={getDomainInitiatives(lang)} />
         <ReachCard fold gaps={getReachGaps(4)} />
+        <ManagerGapCard fold gap={getManagerGap()} />
         <Card fold title={tr("rs_engine")} meta={<span className="num">{insights.length}</span>}>
           <InsightCards insights={insights} empty={tr("rs_engine_empty", { min: MIN_GROUP_SIZE })} />
         </Card>
         {role === "hr" && <ProposalsCard fold proposals={getProposals()} />}
+        <p className="text-xs text-subtle">{t("dash_limit")}</p>
       </div>
     </>
   );

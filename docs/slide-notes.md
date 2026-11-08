@@ -10,7 +10,7 @@ Facts to use come from the product decisions in `AGENTS.md` and from the current
 
 ## 1. Context
 
-**On slide:** Estrella Damm · Escolta activa · UAB THE HACK 2026
+**On slide:** Estrella Damm · Give a Damm · UAB THE HACK 2026
 
 **Speaker notes**
 - The challenge: an active-listening platform that creates tailored micro-surveys, gets representative participation, and turns answers into insights and actions, while always guaranteeing anonymity.

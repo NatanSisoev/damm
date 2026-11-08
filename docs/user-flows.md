@@ -14,7 +14,7 @@ How to read this:
 | Tag | Meaning |
 |---|---|
 | **DB-seed** | Dev DB from `pnpm --filter @damm/seed run seed` (`data/app.db`). About 1,200 synthetic employees, about 700 responses, about 500 comments. Join codes `DAMM-FAB`, `DAMM-LOG`, `DAMM-COM`, `DAMM-OFI`. Logística/nit has 6 accounts by design (below 10). |
-| **DB-demo** | `data/app.db` (default `DB_PATH`), built by `pnpm demo-db` (trilingual, about 90 s). Three months of synthetic answers, planted alarms and insights (stories S-90). Join codes are `DEMO-<first three letters of the collective>` (the deployed DB has `DEMO-FAB`: accents are stripped at startup); read the real values from the `joincode` table before testing. |
+| **DB-demo** | `data/app.db` (default `DB_PATH`), built by `pnpm demo-db` (trilingual, about 90 s). Synthetic answers from 1 Aug to 7 Nov 2026 (November is a partial period), planted alarms and insights (stories S-90). Join codes are `DEMO-<first three letters of the collective>` (the deployed DB has `DEMO-FAB`: accents are stripped at startup); read the real values from the `joincode` table before testing. |
 | **GATE-ON** | `HR_ACCESS_CODE` is set in `.env`. `/hr`, `/manager` and their subpaths redirect to `/hr-login?next=<path>` without the cookie `hr_access`. |
 | **GATE-OFF** | `HR_ACCESS_CODE` is empty. The gate is off and `/hr` opens directly. |
 | **LLM-ON** | `LLM_API_KEY` and `LLM_BASE_URL` set. Model `ornith`. |
@@ -203,7 +203,7 @@ Status: **built for publish**, no daily reminder. Needs `VAPID_PUBLIC_KEY` and `
 | 1 | `/settings`, card "Notificacions" | Text "Activa-les i t'avisarem quan hi hagi preguntes noves. No veiem qui les rep.", button "Activa les notificacions". No permission prompt before the tap. |
 | 2 | Press "Activa les notificacions", allow | Browser permission prompt, then text "Rebràs un avís en aquest dispositiu…" and button "Desactiva les notificacions". One `push_subscripcio` row keyed by `compte_id` (upsert, one per account). |
 | 3 | `/` with notifications off | A compact "Notificacions" card under the answer flow with the same button; hidden once on, denied or unsupported. |
-| 4 | HR publishes a need for the account's collective (F-HR-4) | Notification "Escolta activa" / "Tens preguntes noves. Només et prendrà un minut." (no question text). Tapping it focuses or opens the app at `/`. |
+| 4 | HR publishes a need for the account's collective (F-HR-4) | Notification "Give a Damm" / "Tens preguntes noves. Només et prendrà un minut." (no question text). Tapping it focuses or opens the app at `/`. |
 | 5 | "Desactiva les notificacions" | Browser unsubscribes, row deleted. |
 
 Branches: permission denied shows "Has bloquejat les notificacions…"; a browser without push (iPhone Safari outside the home screen) shows "Aquest navegador no admet notificacions. A l'iPhone, afegeix l'app a la pantalla d'inici i obre-la des d'allà." The row is deleted on logout and account deletion and when the push service answers 404/410. Never joined to analytics. A real phone needs public HTTPS (tunnel).
@@ -299,7 +299,7 @@ Preconditions: a need in "Llesta per publicar".
 | # | Route and action | Expected result |
 |---|---|---|
 | 1 | On the need card press "Publica i envia la notificació" | State "Publicada", hint "Les preguntes són al banc de preguntes i el col·lectiu ha rebut una notificació al mòbil." `necessitat.estat = 'publicada'`. No `joincode` or `publicacio` row is created. Every subscribed device in the need's collective (all collectives when it has none) gets a push. A notice above the list reads "S'han enviat notificacions a N dispositius del col·lectiu.", or "…menys de 10 dispositius…" under 10, or says notifications are off when the VAPID keys are missing. HR never sees which accounts. |
-| 2 | `/hr/publish` | Title "Enllaços i QR per col·lectiu". One card per collective with the code, link, QR, a "Copia" button, "Cartell per imprimir" (A4 poster at `/hr/publish/<codi>/poster`), "Publica a Teams" (`/hr/publish/<codi>/teams`, Adaptive Card titled "Escolta activa"), and "comptes al col·lectiu" (count only, `<10` when under 10). |
+| 2 | `/hr/publish` | Title "Enllaços i QR per col·lectiu". One card per collective with the code, link, QR, a "Copia" button, "Cartell per imprimir" (A4 poster at `/hr/publish/<codi>/poster`), "Publica a Teams" (`/hr/publish/<codi>/teams`, Adaptive Card titled "Give a Damm"), and "comptes al col·lectiu" (count only, `<10` when under 10). |
 | 3 | Open a collective's join link on a phone (onboarding) | F-EMP-1. |
 
 Notes: the card text shows the code and the link uses `PUBLIC_BASE_URL` (default `http://localhost:3000`; missing from `.env.example`, a known finding). Approved questions were already in the pool at F-HR-3 (the engine serves `aprovada` questions whatever the need's state); publishing marks the need and tells the collective. Join codes, links and QR are per collective, for onboarding only; the seed codes `DAMM-*` are always active.
@@ -469,7 +469,7 @@ Covers: R-FLOW-5c, R-FLOW-5f, R-TENSION-1.
 
 Covers: R-DATA-1 to R-DATA-9.
 - Seed: `pnpm --filter @damm/seed run seed` is fresh and deterministic; about 1,200 synthetic employees, about 700 responses over Aug, Sep, Oct 2026, about 500 comments; planted bias: low night-shift response, October emerging theme (shift system communication and breaks), Logística weak signal (safety equipment, heat), manager positivity, one sub-threshold group (Logística/nit, 6).
-- Demo: `pnpm demo-db` builds `data/app.db` with three months and planted stories (S-90). About 90 s.
+- Demo: `pnpm demo-db` builds `data/app.db` (1 Aug to 7 Nov 2026) and planted stories (S-90). About 90 s.
 - Comments: `pnpm --filter @damm/seed run comments` (template mode) or `-- --llm`. Committed JSON so nobody needs the key to seed.
 
 ### F-JOB-4 Daily push send (expected gap)
@@ -539,7 +539,7 @@ The plan was reworked against this file (2026-11-07). Every M-* and S-* case now
 3. **Form validation in HR (F-HR-2 B2 to B6).**
 4. **Empty pool and day cap (F-EMP-5 B1; 3 a day by default).**
 5. **Deleted account with live cookie (F-EMP-3 B3), second use of a recovery code (F-EMP-4), inactive code mid-flow (F-EMP-2 B5).**
-6. **Approver recording (F-HR-3).** `aprovada_per = 'hr-demo'` and `aprovada_el`; R-PRIV-10 stays partial.
+6. **Approver recording (F-HR-3).** `aprovada_per = 'hr-demo'` and `aprovada_el`; each approval also writes a `decisio` row (R-PRIV-10 done), shown on `/hr/traceability`.
 7. **Manager scope (S-72).** All collectives open is the expected current behaviour (N-8 gap), not a failure.
 8. **Atomic batch in `POST /api/responses`.**
 9. **PII redaction forms** beyond one name, email and phone: DNI/NIE and IBAN.

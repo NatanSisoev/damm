@@ -368,8 +368,10 @@ export function getQuestionTranslations(ids: number[]): Map<number, QuestionTran
   return out;
 }
 
-export function deletePushSubscription(compteId: string): void {
-  getDb().prepare("DELETE FROM push_subscripcio WHERE compte_id = ?").run(compteId);
+/** Removes one device (endpoint) of the account, or all its devices when no endpoint is given (logout). */
+export function deletePushSubscription(compteId: string, endpoint?: string): void {
+  if (endpoint) pushDb().prepare("DELETE FROM push_subscripcio WHERE compte_id = ? AND endpoint = ?").run(compteId, endpoint);
+  else pushDb().prepare("DELETE FROM push_subscripcio WHERE compte_id = ?").run(compteId);
 }
 
 // --- Answer flow -------------------------------------------------------------------------
@@ -384,6 +386,40 @@ export { redactPii };
 // joined to analytics. Only the push sender (apps/web/lib/push.ts) reads targets, and it reports
 // aggregate counts only.
 
+/**
+ * Databases built when push_subscripcio was keyed by compte_id (one device per account): rebuild it
+ * keyed by endpoint so an account can have several devices. Rows are kept. Idempotent.
+ */
+function ensurePushPerDevice(db: ReturnType<typeof getDb>): void {
+  const cols = db.prepare("PRAGMA table_info(push_subscripcio)").all() as { name: string; pk: number }[];
+  if (!cols.length || cols.find((c) => c.name === "endpoint")?.pk) return;
+  db.transaction(() => {
+    db.exec(`CREATE TABLE push_subscripcio_new (
+      endpoint   TEXT PRIMARY KEY,
+      compte_id  TEXT NOT NULL REFERENCES compte(id) ON DELETE CASCADE,
+      p256dh     TEXT NOT NULL,
+      auth       TEXT NOT NULL,
+      creat      TEXT NOT NULL DEFAULT (datetime('now'))
+    )`);
+    db.exec(`INSERT OR REPLACE INTO push_subscripcio_new (endpoint, compte_id, p256dh, auth, creat)
+             SELECT endpoint, compte_id, p256dh, auth, creat FROM push_subscripcio ORDER BY creat`);
+    db.exec("DROP TABLE push_subscripcio");
+    db.exec("ALTER TABLE push_subscripcio_new RENAME TO push_subscripcio");
+    db.exec("CREATE INDEX IF NOT EXISTS idx_push_subscripcio_compte ON push_subscripcio(compte_id)");
+  })();
+}
+
+let pushTableChecked = false;
+/** The DB with push_subscripcio keyed per device (migrates an old database once per process). */
+function pushDb() {
+  const db = getDb();
+  if (!pushTableChecked) {
+    ensurePushPerDevice(db);
+    pushTableChecked = true;
+  }
+  return db;
+}
+
 export interface PushTarget {
   endpoint: string;
   p256dh: string;
@@ -395,19 +431,22 @@ export interface PushTargetLang extends PushTarget {
   lang: Lang;
 }
 
-/** Stores (or replaces) this account's subscription: one device per account. */
+/**
+ * Stores (or refreshes) one device's subscription. An account can have several devices; a device
+ * (endpoint) belongs to one account, so signing in with another account on it moves it over.
+ */
 export function savePushSubscription(compteId: string, sub: PushTarget): void {
-  getDb()
+  pushDb()
     .prepare(
       `INSERT INTO push_subscripcio (compte_id, endpoint, p256dh, auth) VALUES (?, ?, ?, ?)
-       ON CONFLICT(compte_id) DO UPDATE SET endpoint = excluded.endpoint, p256dh = excluded.p256dh,
+       ON CONFLICT(endpoint) DO UPDATE SET compte_id = excluded.compte_id, p256dh = excluded.p256dh,
        auth = excluded.auth, creat = datetime('now')`,
     )
     .run(compteId, sub.endpoint, sub.p256dh, sub.auth);
 }
 
 export function hasPushSubscription(compteId: string): boolean {
-  return getDb().prepare("SELECT 1 FROM push_subscripcio WHERE compte_id = ?").get(compteId) !== undefined;
+  return pushDb().prepare("SELECT 1 FROM push_subscripcio WHERE compte_id = ?").get(compteId) !== undefined;
 }
 
 /**
@@ -415,7 +454,7 @@ export function hasPushSubscription(compteId: string): boolean {
  * none). Returns endpoints and keys only, never the account id.
  */
 export function listPushTargetsForNecessitat(necessitatId: number): PushTargetLang[] {
-  const db = getDb();
+  const db = pushDb();
   const n = db.prepare("SELECT collectiu_id AS c FROM necessitat WHERE id = ?").get(necessitatId) as { c: number | null } | undefined;
   if (!n) return [];
   return db
@@ -438,5 +477,5 @@ export function getNecessitatDelivery(necessitatId: number): "daily" | "campaign
 
 /** The push service said the subscription is gone (404/410). */
 export function deletePushSubscriptionByEndpoint(endpoint: string): void {
-  getDb().prepare("DELETE FROM push_subscripcio WHERE endpoint = ?").run(endpoint);
+  pushDb().prepare("DELETE FROM push_subscripcio WHERE endpoint = ?").run(endpoint);
 }

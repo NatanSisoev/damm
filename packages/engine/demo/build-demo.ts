@@ -1,4 +1,4 @@
-// Builds a demo database with three months of synthetic answers, so the dashboard shows real scores,
+// Builds a demo database with 99 days (1 Aug to 7 Nov 2026) of synthetic answers, so the dashboard shows real scores,
 // insights and alarms. Synthetic data only: invented people, invented answers, template comments.
 //
 // Usage: pnpm --filter @damm/engine run demo [-- --out data/demo.db --seed damm-demo]
@@ -27,7 +27,7 @@ import { createRng, pick, type Rng } from "../src/rng.ts";
 import type { QuestionDef } from "../src/normalize.ts";
 import { toQuestion } from "../src/store.ts";
 import { createWorld, normal, type Person } from "../sim/world.ts";
-import { loadQuestionBank } from "../fixtures/load-question-bank.ts";
+import { loadBankFollowups, loadQuestionBank } from "../fixtures/load-question-bank.ts";
 import { COMMENTS, THEME_COMMENTS } from "./comments.ts";
 
 const REPO = resolve(import.meta.dirname, "../../..");
@@ -79,7 +79,7 @@ export async function buildDemo(opts: DemoOptions = {}): Promise<DemoSummary> {
   db.exec("PRAGMA journal_mode = WAL");
   db.exec(readFileSync(resolve(REPO, "packages/db/schema.sql"), "utf8"));
 
-  const world = createWorld({ seed, start: opts.start ?? "2026-08-01", days: opts.days ?? 92, participationScale: 1.6, participation: opts.participation });
+  const world = createWorld({ seed, start: opts.start ?? "2026-08-01", days: opts.days ?? 99, participationScale: 1.6, participation: opts.participation });
   const rng = createRng(`demo|${seed}`);
 
   // --- reference data, population, accounts ------------------------------------------------
@@ -103,6 +103,7 @@ export async function buildDemo(opts: DemoOptions = {}): Promise<DemoSummary> {
 
   // --- questions, one HR need, format preferences --------------------------------------------
   loadQuestionBank(db);
+  loadBankFollowups(db); // a few scale / yes-no questions with a conditional open follow-up
   transaction(db, () => {
     run(
       db,
@@ -159,6 +160,10 @@ export async function buildDemo(opts: DemoOptions = {}): Promise<DemoSummary> {
     return pick(r, pool.COMMENTS[q.domainId]![tone])!;
   };
 
+  /** Chance a served question is answered: by type (effort), minus a little for long text. Kept within 0.70-0.90. */
+  const BASE_RATE: Record<string, number> = { yes_no: 0.9, pair: 0.87, scale5: 0.85, scale10: 0.82, choice: 0.79, ranking: 0.74, open: 0.71 };
+  const answerRate = (q: QuestionDef) => clamp((BASE_RATE[q.type] ?? 0.8) - Math.max(0, (q.text?.length ?? 0) - 80) / 2000, 0.7, 0.9);
+
   const answerFor = (r: Rng, p: Person, item: BatchItem, t: number) => {
     const q = questions.get(item.questionId)!;
     const level = truth(p, q.domainId, t);
@@ -205,7 +210,7 @@ export async function buildDemo(opts: DemoOptions = {}): Promise<DemoSummary> {
     }
   };
 
-  // --- three months of daily batches through the real engine --------------------------------
+  // --- daily batches through the real engine --------------------------------
   let now = Date.parse(`${world.start}T06:00:00Z`);
   const engine = createEngine({ db, redact, now: () => now });
   let answers = 0;
@@ -215,13 +220,25 @@ export async function buildDemo(opts: DemoOptions = {}): Promise<DemoSummary> {
     for (const acct of byId.keys()) {
       const p = byId.get(acct)!;
       const r = createRng(`answer|${seed}|${acct}|${t}`);
-      // Everyone answers (current assumption), at a time that fits their shift.
+      // Answers come at a time that fits the shift.
       // Hours after 05:00 UTC; the latest answer is 20:00 UTC, still the same day in Madrid all year.
       const shiftOffset = p.tornId === 2 ? 9 : p.tornId === 3 ? 12 : 3;
       now = dayStart + (shiftOffset + r() * 3) * 3_600_000;
       const batch = engine.getDailyBatch(acct);
-      const res = engine.submitAnswers(acct, batch.items.map((it) => answerFor(r, p, it, t)));
+      // Not every served question gets answered: easy ones (yes/no) about 90%, long reads and open text about 70%.
+      const answered = batch.items.filter((it) => {
+        const q = questions.get(it.questionId)!;
+        return createRng(`skip|${seed}|${acct}|${t}|${q.id}`)() < answerRate(q);
+      });
+      const res = engine.submitAnswers(acct, answered.map((it) => answerFor(r, p, it, t)));
       answers += res.accepted.length;
+    }
+    // The real job runs on a schedule, so it also ran at the end of each month: alarms and emergent themes opened then
+    // (October's stories) stay open when the final run only sees a short November.
+    if (world.dates[t] === "2026-10-31" && t < world.days - 1) {
+      const monthEnd = Date.parse(`${world.dates[t]}T22:00:00Z`);
+      runEngineJob(db, { now: monthEnd });
+      runCommentAnalysisSync(db, { now: monthEnd });
     }
     if (t % 15 === 0) log(`day ${t + 1}/${world.days} (${world.dates[t]}): ${answers} answers so far`);
   }

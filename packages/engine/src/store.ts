@@ -34,6 +34,19 @@ function hasDelivery(db: SqlDatabase): boolean {
   }
   return v;
 }
+// `pregunta.followup_of` (conditional follow-ups) arrived later too; same guard.
+const followupCache = new WeakMap<SqlDatabase, boolean>();
+export function hasFollowupCols(db: SqlDatabase): boolean {
+  let v = followupCache.get(db);
+  if (v === undefined) {
+    v = all<{ name: string }>(db, "PRAGMA table_info(pregunta)").some((c) => c.name === "followup_of");
+    followupCache.set(db, v);
+  }
+  return v;
+}
+/** Conditional follow-ups are never part of a batch or a campaign set: they are served only after their parent's answer. */
+export const notChild = (db: SqlDatabase, alias = "") => (hasFollowupCols(db) ? ` AND ${alias}followup_of IS NULL` : "");
+
 const qcols = (db: SqlDatabase) =>
   hasDelivery(db) ? `${Q_BASE}, (necessitat_id IN (SELECT id FROM necessitat WHERE delivery = 'campaign')) AS is_campaign` : `${Q_BASE}, 0 AS is_campaign`;
 
@@ -59,7 +72,7 @@ export function toQuestion(r: PreguntaRow): QuestionDef {
 export const approvedQuestionsFor = (db: SqlDatabase, collectiuId: number) =>
   all<PreguntaRow>(
     db,
-    `SELECT ${qcols(db)} FROM pregunta WHERE estat = 'aprovada' AND (collectiu_id IS NULL OR collectiu_id = ?)
+    `SELECT ${qcols(db)} FROM pregunta WHERE estat = 'aprovada'${notChild(db)} AND (collectiu_id IS NULL OR collectiu_id = ?)
        AND (necessitat_id IS NULL OR necessitat_id IN (SELECT id FROM necessitat WHERE estat = 'publicada'${hasDelivery(db) ? " AND delivery <> 'campaign'" : ""}))`,
     collectiuId,
   ).map(toQuestion);
@@ -81,12 +94,55 @@ export function campaignQuestionsFor(db: SqlDatabase, collectiuId: number): Camp
     db,
     `SELECT ${Q_BASE.split(", ").map((c) => `p.${c}`).join(", ")}, 1 AS is_campaign, n.titol AS n_titol, n.intro AS n_intro
        FROM pregunta p JOIN necessitat n ON n.id = p.necessitat_id
-      WHERE n.delivery = 'campaign' AND n.estat = 'publicada' AND p.estat = 'aprovada'
+      WHERE n.delivery = 'campaign' AND n.estat = 'publicada' AND p.estat = 'aprovada'${notChild(db, "p.")}
         AND (n.collectiu_id IS NULL OR n.collectiu_id = ?) AND (p.collectiu_id IS NULL OR p.collectiu_id = ?)
       ORDER BY n.id, p.ordre, p.id`,
     collectiuId,
     collectiuId,
   ).map((r) => ({ question: toQuestion(r), needId: r.necessitat_id as number, title: r.n_titol, intro: r.n_intro }));
+}
+
+export type FollowupCondition = "low" | "no";
+
+/** True when a stored answer to the parent meets the condition: scale5/scale10 raw value <= 2, yes_no answered no (0). */
+export function followupTriggered(when: FollowupCondition, valorNum: number | null): boolean {
+  if (valorNum === null) return false;
+  return when === "no" ? valorNum === 0 : valorNum <= 2;
+}
+
+export interface FollowupLink {
+  question: QuestionDef;
+  parentId: number;
+  when: FollowupCondition;
+}
+
+/** The approved open follow-up linked to a parent question, or undefined. */
+export function followupOfParent(db: SqlDatabase, parentId: number): FollowupLink | undefined {
+  if (!hasFollowupCols(db)) return undefined;
+  const r = one<PreguntaRow & { followup_of: number; followup_when: string }>(
+    db,
+    `SELECT ${qcols(db)}, followup_of, followup_when FROM pregunta WHERE followup_of = ? AND estat = 'aprovada' AND tipus = 'open' AND followup_when IN ('low','no')`,
+    parentId,
+  );
+  return r ? { question: toQuestion(r), parentId: r.followup_of, when: r.followup_when as FollowupCondition } : undefined;
+}
+
+/** A follow-up child looked up by its own id. */
+export function followupById(db: SqlDatabase, id: number): FollowupLink | undefined {
+  if (!hasFollowupCols(db)) return undefined;
+  const r = one<PreguntaRow & { followup_of: number | null; followup_when: string | null }>(
+    db,
+    `SELECT ${qcols(db)}, followup_of, followup_when FROM pregunta WHERE id = ? AND estat = 'aprovada' AND tipus = 'open'`,
+    id,
+  );
+  if (!r || r.followup_of === null || (r.followup_when !== "low" && r.followup_when !== "no")) return undefined;
+  return { question: toQuestion(r), parentId: r.followup_of, when: r.followup_when };
+}
+
+/** This account's stored answer value for a question, or null when unanswered. */
+export function answerValue(db: SqlDatabase, accountId: string, questionId: number): { valorNum: number | null } | undefined {
+  const r = one<{ valor_num: number | null }>(db, "SELECT valor_num FROM resposta WHERE compte_id = ? AND pregunta_id = ? LIMIT 1", accountId, questionId);
+  return r ? { valorNum: r.valor_num } : undefined;
 }
 
 export const allQuestions = (db: SqlDatabase) =>

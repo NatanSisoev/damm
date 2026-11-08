@@ -57,14 +57,16 @@ CREATE TABLE compte (
   creat            TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
--- Web push subscription: own table, deleted on logout, never joined to analytics.
+-- Web push subscriptions: own table, one row per device (an account can have several), deleted on
+-- logout, never joined to analytics.
 CREATE TABLE push_subscripcio (
-  compte_id  TEXT PRIMARY KEY REFERENCES compte(id) ON DELETE CASCADE,
-  endpoint   TEXT NOT NULL,
+  endpoint   TEXT PRIMARY KEY,
+  compte_id  TEXT NOT NULL REFERENCES compte(id) ON DELETE CASCADE,
   p256dh     TEXT NOT NULL,
   auth       TEXT NOT NULL,
   creat      TEXT NOT NULL DEFAULT (datetime('now'))
 );
+CREATE INDEX idx_push_subscripcio_compte ON push_subscripcio(compte_id);
 
 -- HR browsers subscribed to alarm notifications. No account, no person: an HR browser endpoint only.
 CREATE TABLE IF NOT EXISTS hr_push_subscription (
@@ -105,6 +107,8 @@ CREATE TABLE pregunta (
   polarity       INTEGER NOT NULL DEFAULT 1 CHECK (polarity IN (1,-1)), -- -1 = negatively worded, score is flipped
   options_json   TEXT,                              -- pair/choice: [{"label","score","i18n"?}]; ranking: [{"label","domain_id","i18n"?}]; i18n = {"ca","es","en"} label, optional
   is_followup    INTEGER NOT NULL DEFAULT 0 CHECK (is_followup IN (0,1)), -- worded as a follow-up ("has anything changed?")
+  followup_of    INTEGER REFERENCES pregunta(id), -- conditional follow-up: this open question is served only after an answer to the parent that meets followup_when
+  followup_when  TEXT,                            -- 'low' (scale5/scale10 raw answer <= 2) or 'no' (yes_no answered no); NULL when not a conditional follow-up
   necessitat_id  INTEGER REFERENCES necessitat(id), -- NULL = continuous monitoring pool
   estat          TEXT NOT NULL DEFAULT 'draft' CHECK (estat IN ('draft','aprovada','retirada')),
   prioritat      INTEGER NOT NULL DEFAULT 0,        -- approved HR needs get the highest value
@@ -218,7 +222,8 @@ CREATE TABLE senyal (
   status       TEXT NOT NULL DEFAULT 'open' CHECK (status IN ('open','acknowledged','action_linked','resolved','dismissed')),
   audience     TEXT NOT NULL DEFAULT 'hr' CHECK (audience IN ('hr','hr_manager')), -- Lideratge alarms are always 'hr'
   created_at   TEXT NOT NULL DEFAULT (datetime('now')),
-  suprimit     INTEGER NOT NULL DEFAULT 0 CHECK (suprimit IN (0,1))
+  suprimit     INTEGER NOT NULL DEFAULT 0 CHECK (suprimit IN (0,1)),
+  archived_at  TEXT -- HR archived a resolved or dismissed alarm: hidden from its tab, kept for history
 );
 
 -- AI proposes, a human decides: estat changes only through an HR action.
@@ -241,6 +246,27 @@ CREATE TABLE recomanacio (
   aprovada_el              TEXT,                                -- when HR adopted it (set with estat = 'aprovada'); anchor of the "listen again" before/after
   aprovada_per             TEXT                                 -- non-personal label of the approver (HR role or a display name, max 60 chars); never an email
 );
+
+-- Decision trail (R-PRIV-10, N-11): every human decision on AI output. HR side only; no compte_id, no employee data.
+-- `subject` is a short snapshot of what was decided on, so the trail stays readable after the row changes.
+-- `font` is where the decided output came from; `actor` is a non-personal HR label (see approverLabel), never an employee.
+CREATE TABLE IF NOT EXISTS decisio (
+  id           INTEGER PRIMARY KEY,
+  created_at   TEXT NOT NULL DEFAULT (datetime('now')),
+  entity       TEXT NOT NULL CHECK (entity IN ('pregunta','recomanacio','necessitat','senyal')),
+  entity_id    INTEGER NOT NULL,
+  necessitat_id INTEGER REFERENCES necessitat(id),   -- the need the decision belongs to, when there is one
+  action       TEXT NOT NULL CHECK (action IN ('approve','reject','edit','regenerate','remove_followup','publish','close','retire','restore','status','archive','unarchive','reopen')),
+  from_state   TEXT,
+  to_state     TEXT,
+  font         TEXT NOT NULL CHECK (font IN ('ai_draft','ai_redraft','ai_followup','ai_recommendation','hr_edit','engine_alarm','engine_pool','hr_need')),
+  actor        TEXT NOT NULL,
+  subject      TEXT,
+  text_original TEXT,                                 -- AI wording before an HR edit or a regeneration
+  text_final   TEXT                                   -- wording after it
+);
+CREATE INDEX IF NOT EXISTS idx_decisio_entity ON decisio(entity, entity_id);
+CREATE INDEX IF NOT EXISTS idx_decisio_need ON decisio(necessitat_id, created_at);
 
 -- Something that happened in the organisation, recorded by HR (e.g. "new shift system from 1 Oct").
 -- Anchor of the before/after comparison (insight `action_effect`) when it has a domain.
@@ -270,6 +296,7 @@ CREATE TABLE assignment (
   UNIQUE (compte_id, day, slot)
 );
 CREATE INDEX idx_assignment_compte ON assignment(compte_id, day);
+CREATE INDEX IF NOT EXISTS idx_assignment_pregunta ON assignment(pregunta_id, day);
 
 -- Personal trajectory per account x domain (Kalman local level). Never leaves the engine.
 CREATE TABLE person_domain_state (

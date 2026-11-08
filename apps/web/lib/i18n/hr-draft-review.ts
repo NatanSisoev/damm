@@ -3,6 +3,10 @@ import { defineDict } from "./core";
 
 export const draftReviewDict = defineDict({
   ca: {
+    followup_badge: "Pregunta de seguiment",
+    followup_when_low: "Només si la resposta és 1–2",
+    followup_when_no: "Només si la resposta és «no»",
+    followup_remove: "Treu el seguiment",
     fallback_badge: "Plantilla de reserva",
     fallback_title: "La IA no ha estat disponible: són preguntes de plantilla",
     ai_badge: "Proposta de la IA",
@@ -22,6 +26,7 @@ export const draftReviewDict = defineDict({
     move_up: "Mou amunt",
     move_down: "Mou avall",
     regenerate: "Torna a generar",
+    regenerate_failed: "No s'ha pogut tornar a generar la pregunta. Torna-ho a provar.",
     discard: "Descarta",
     approve: "Aprova",
     type_scale5: "Escala 1–5",
@@ -43,6 +48,10 @@ export const draftReviewDict = defineDict({
     w_too_long: "És llarga: {n} paraules, es recomanen com a màxim {max}.",
   },
   es: {
+    followup_badge: "Pregunta de seguimiento",
+    followup_when_low: "Solo si la respuesta es 1–2",
+    followup_when_no: "Solo si la respuesta es «no»",
+    followup_remove: "Quitar el seguimiento",
     fallback_badge: "Plantilla de reserva",
     fallback_title: "La IA no ha estado disponible: son preguntas de plantilla",
     ai_badge: "Propuesta de la IA",
@@ -62,6 +71,7 @@ export const draftReviewDict = defineDict({
     move_up: "Subir",
     move_down: "Bajar",
     regenerate: "Volver a generar",
+    regenerate_failed: "No se ha podido volver a generar la pregunta. Inténtalo de nuevo.",
     discard: "Descartar",
     approve: "Aprobar",
     type_scale5: "Escala 1–5",
@@ -83,6 +93,10 @@ export const draftReviewDict = defineDict({
     w_too_long: "Es larga: {n} palabras, se recomiendan como máximo {max}.",
   },
   en: {
+    followup_badge: "Follow-up question",
+    followup_when_low: "Only if the answer is 1–2",
+    followup_when_no: "Only if the answer is \"no\"",
+    followup_remove: "Remove follow-up",
     fallback_badge: "Fallback template",
     fallback_title: "The AI was unavailable: these are template questions",
     ai_badge: "AI proposal",
@@ -102,6 +116,7 @@ export const draftReviewDict = defineDict({
     move_up: "Move up",
     move_down: "Move down",
     regenerate: "Regenerate",
+    regenerate_failed: "Could not regenerate this question. Try again.",
     discard: "Discard",
     approve: "Approve",
     type_scale5: "Scale 1–5",

@@ -11,11 +11,12 @@
 .gen-icon { width: 14px; height: 14px; flex: none; }
 .gen-spinner { width: 13px; height: 13px; flex: none; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: gen-spin .7s linear infinite; }
 @keyframes gen-spin { to { transform: rotate(360deg); } }
-.gen-btn-lg { padding: 9px 18px; font-size: 14px; }
-.gen-panel { display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; padding: 28px 20px 24px; border: 1px solid var(--border); border-radius: 8px; background: var(--accent-soft); }
-.gen-panel-mark { display: grid; place-items: center; width: 40px; height: 40px; margin-bottom: 4px; border-radius: 50%; background: var(--surface); border: 1px solid var(--border-strong); color: var(--text); }
-.gen-panel-mark svg { width: 18px; height: 18px; }
-.gen-panel h3 { font-size: 14px; font-weight: 600; color: var(--text); }
-.gen-panel p { max-width: 34ch; font-size: 13px; color: var(--text-muted); }
-.gen-panel form { margin-top: 10px; }
-.gen-panel small { margin-top: 6px; font-size: 11.5px; color: var(--text-subtle); }
+
+/* Signal loop: the active step and the card where it is done (red as signal), later steps locked */
+.loop-num-active { border-color: var(--red); color: var(--red); background: transparent; }
+.loop-step-locked { opacity: .45; cursor: not-allowed; }
+.loop-target { border-color: var(--red); box-shadow: inset 2px 0 0 var(--red); scroll-margin-top: 24px; }
+.loop-target:target { animation: loop-flash 1.4s ease-out; }
+.loop-target-tag { margin-left: 8px; padding: 1px 6px; border: 1px solid var(--red); border-radius: 2px; color: var(--red); font-size: 10px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; vertical-align: 2px; }
+@keyframes loop-flash { 0%, 30% { box-shadow: inset 2px 0 0 var(--red), 0 0 0 4px rgb(from var(--red) r g b / .18); } 100% { box-shadow: inset 2px 0 0 var(--red), 0 0 0 0 transparent; } }
+@media (prefers-reduced-motion: reduce) { .loop-target:target { animation: none; } }

@@ -41,7 +41,7 @@ export async function RepTable({ rows, byShift }: { rows: RepRow[]; byShift: boo
       <tbody>
         {rows.map((r, i) => (
           <tr key={i}>
-            <td className="font-medium">{byShift ? `${collectiveLabel(r.collectiu, lang)} · ${r.torn ? shiftLabel(r.torn, lang) : ""}` : collectiveLabel(r.collectiu, lang)}</td>
+            <td className="font-semibold">{byShift ? `${collectiveLabel(r.collectiu, lang)} · ${r.torn ? shiftLabel(r.torn, lang) : ""}` : collectiveLabel(r.collectiu, lang)}</td>
             {r.suprimit ? (
               <td colSpan={3}>
                 <span className="flex items-center gap-2">
@@ -96,7 +96,7 @@ export async function TrendTable({ periodes, rows }: { periodes: string[]; rows:
       <tbody>
         {rows.map((r) => (
           <tr key={r.domini}>
-            <td className="font-medium">{domainLabel(r.domini, lang)}</td>
+            <td className="font-semibold">{domainLabel(r.domini, lang)}</td>
             {r.cells.map((c, i) => (
               <td key={i} className="num text-right">
                 {c.suprimit ? (

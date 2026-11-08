@@ -68,9 +68,9 @@ export default async function MethodologyPage() {
                 <tr><th>{t("meth_th_precision")}</th><th>{t("meth_th_n")}</th><th>{t("meth_th_read")}</th></tr>
               </thead>
               <tbody>
-                <tr><td className="font-medium">{t("meth_prec_ind")}</td><td className="num">n &lt; {PRECISION_MODERADA_MIN_N}</td><td>{t("meth_prec_ind_read")}</td></tr>
-                <tr><td className="font-medium">{t("meth_prec_mod")}</td><td className="num">{PRECISION_MODERADA_MIN_N} ≤ n &lt; {PRECISION_SOLIDA_MIN_N}</td><td>{t("meth_prec_mod_read")}</td></tr>
-                <tr><td className="font-medium">{t("meth_prec_sol")}</td><td className="num">n ≥ {PRECISION_SOLIDA_MIN_N}</td><td>{t("meth_prec_sol_read")}</td></tr>
+                <tr><td className="font-semibold">{t("meth_prec_ind")}</td><td className="num">n &lt; {PRECISION_MODERADA_MIN_N}</td><td>{t("meth_prec_ind_read")}</td></tr>
+                <tr><td className="font-semibold">{t("meth_prec_mod")}</td><td className="num">{PRECISION_MODERADA_MIN_N} ≤ n &lt; {PRECISION_SOLIDA_MIN_N}</td><td>{t("meth_prec_mod_read")}</td></tr>
+                <tr><td className="font-semibold">{t("meth_prec_sol")}</td><td className="num">n ≥ {PRECISION_SOLIDA_MIN_N}</td><td>{t("meth_prec_sol_read")}</td></tr>
               </tbody>
             </table>
           </div>
@@ -104,6 +104,10 @@ export default async function MethodologyPage() {
             <li>{bold(t("meth_s6_li2"))}</li>
             <li>{bold(t("meth_s6_li3", { n: PERIODES_SEED.length, periods: PERIODES_SEED.join(", ") }))}</li>
             <li>{bold(t("meth_s6_li4", { domains: DOMINIS.length, collectives: COLLECTIUS.length }))}</li>
+            <li>{bold(t("meth_s6_li5"))}</li>
+            <li>{bold(t("meth_s6_li6"))}</li>
+            <li>{bold(t("meth_s6_li7"))}</li>
+            <li>{bold(t("meth_s6_li8"))}</li>
           </ul>
         </Section>
 

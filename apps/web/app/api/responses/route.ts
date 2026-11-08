@@ -2,7 +2,10 @@ import { z } from "zod";
 import { getCompteId } from "@/lib/session";
 import { getEngine } from "@/lib/engine";
 import { EngineError } from "@damm/engine";
-import type { PostResponsesRequest } from "@damm/shared";
+import { maybeFireDemoAlarm } from "@/lib/demo-tripwire";
+import { getLang } from "@/lib/lang";
+import { getQuestionTranslations } from "@damm/db/employee";
+import { pickText, type PoolFollowup, type PostResponsesRequest, type PostResponsesResult } from "@damm/shared";
 
 export const dynamic = "force-dynamic";
 
@@ -54,5 +57,20 @@ export async function POST(request: Request) {
   }
   const bad = result.rejected[0];
   if (bad) return Response.json({ error: bad.reason, preguntaId: bad.questionId }, { status: STATUS[bad.reason] });
-  return new Response(null, { status: 204 });
+  maybeFireDemoAlarm(parsed.data.respostes); // demo only, off unless DEMO_TRIPWIRE=1
+  if (result.followups.length === 0) return new Response(null, { status: 204 });
+  // A low scale answer or a "no" triggers its linked open follow-up: returned here, shown right after, skippable.
+  const lang = await getLang();
+  const tr = getQuestionTranslations(result.followups.map((f) => f.questionId));
+  const body: PostResponsesResult = {
+    followups: result.followups.map<PoolFollowup>((f) => ({
+      id: f.questionId,
+      dominiId: f.domainId,
+      text: pickText(tr.get(f.questionId)?.text, f.text, lang),
+      tipus: f.type,
+      options: null,
+      parentId: f.parentId,
+    })),
+  };
+  return Response.json(body, { headers: { "Cache-Control": "no-store" } });
 }

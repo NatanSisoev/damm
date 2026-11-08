@@ -1,6 +1,7 @@
 // Labels (ca/es/en) for senyal type, severity and status (C1: engine alarms add new types and both fields).
 import type { Lang } from "@damm/shared";
-import { signalDetail, signalHeadline, type SignalLike } from "@/lib/signal-text";
+import { signalHeadline, type SignalLike } from "@/lib/signal-text";
+import { SignalSummary } from "@/components/signal-trend-line";
 import { getLang } from "@/lib/lang";
 import { hrDict, hrLookup } from "@/lib/i18n/hr";
 
@@ -41,7 +42,7 @@ export async function SignalText({ s }: { s: SignalLike }) {
   return (
     <>
       <p className="text-[14px] font-semibold">{signalHeadline(s, lang)}</p>
-      <p className="mt-0.5 text-[13px] text-muted">{signalDetail(s, lang)}</p>
+      <p className="mt-0.5 text-[13px] text-muted"><SignalSummary s={s} lang={lang} /></p>
     </>
   );
 }

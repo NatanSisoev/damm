@@ -14,6 +14,8 @@ if [ ! -s "$DB_PATH" ]; then
   pnpm demo-db -- --out "$TMP"
   mv "$TMP" "$DB_PATH"
   rm -f "$TMP-wal" "$TMP-shm"
+  # Pristine copy for the demo reset button (DEMO_RESET_ENABLED=1); a rebuilt DB invalidates the old one.
+  cp "$DB_PATH" "$DB_PATH.pristine"
   echo "[start] database ready"
 else
   echo "[start] using existing database at $DB_PATH"
