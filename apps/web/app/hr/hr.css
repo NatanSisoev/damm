@@ -223,3 +223,13 @@
 .hr-card-fold-chev { color: var(--text-subtle); line-height: 1; transition: transform 0.15s; }
 .hr-card-fold[open] > summary .hr-card-fold-chev { transform: rotate(90deg); }
 @media (prefers-reduced-motion: reduce) { .hr-card-fold-chev { transition: none; } }
+
+/* Alarm card: primary action with a caret menu (dismiss / resolve). */
+.alarm-split { display: inline-flex; align-items: stretch; }
+.alarm-split > :first-child .btn, .alarm-split > a.btn { border-top-right-radius: 0; border-bottom-right-radius: 0; }
+.alarm-split-menu { position: relative; display: flex; }
+.alarm-split-menu > summary { list-style: none; cursor: pointer; padding-left: 0.5rem; padding-right: 0.5rem; height: 100%; border-top-left-radius: 0; border-bottom-left-radius: 0; border-left: 1px solid color-mix(in srgb, currentColor 30%, transparent); }
+.alarm-split-menu > summary::-webkit-details-marker { display: none; }
+.alarm-split-items { position: absolute; right: 0; top: calc(100% + 4px); z-index: 20; min-width: 10rem; border: 1px solid var(--line); background: var(--surface); border-radius: 2px; padding: 4px 0; box-shadow: 0 4px 12px rgb(0 0 0 / 0.08); }
+.alarm-split-items button { display: block; width: 100%; text-align: left; padding: 6px 12px; font-size: 13px; color: var(--text); }
+.alarm-split-items button:hover, .alarm-split-items button:focus-visible { background: var(--surface-muted); outline: none; }

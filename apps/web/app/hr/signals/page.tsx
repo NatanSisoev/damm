@@ -304,34 +304,41 @@ function AlarmItem({ t, lang, r, rec, drafted }: { t: HrResultsT; lang: Lang; r:
             <GenerateButton />
           </form>
         )}
-        {r.status === "open" && (
-          <form action={setAlarmStatusAction}>
-            <input type="hidden" name="id" value={r.id} />
-            <input type="hidden" name="status" value="acknowledged" />
-            <button type="submit" className="alarm-icon-btn" aria-label={t("sg_dismiss")} title={t("sg_dismiss")}>
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
-            </button>
-          </form>
-        )}
-        {rec && !rec.seguimentNecessitatId ? (
-          <form action={proposeFollowUpAction}>
-            <input type="hidden" name="rec" value={rec.id} />
-            <button className="btn btn-primary" type="submit">{t("sg_propose")}</button>
-          </form>
-        ) : rec ? (
-          <Link href={`/hr/signals/${r.id}`} className="btn">{t("sg_created")}</Link>
-        ) : (
-          <Link href={`/hr/signals/${r.id}`} className="btn btn-primary">{t("sg_review")}</Link>
-        )}
-        {next.includes("resolved") && (
-          <form action={setAlarmStatusAction}>
-            <input type="hidden" name="id" value={r.id} />
-            <input type="hidden" name="status" value="resolved" />
-            <button type="submit" className="alarm-icon-btn" aria-label={t("sg_resolve")} title={t("sg_resolve")}>
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7" /></svg>
-            </button>
-          </form>
-        )}
+        <div className="alarm-split">
+          {rec && !rec.seguimentNecessitatId ? (
+            <form action={proposeFollowUpAction}>
+              <input type="hidden" name="rec" value={rec.id} />
+              <button className="btn btn-primary" type="submit">{t("sg_propose")}</button>
+            </form>
+          ) : rec ? (
+            <Link href={`/hr/signals/${r.id}`} className="btn">{t("sg_created")}</Link>
+          ) : (
+            <Link href={`/hr/signals/${r.id}`} className="btn btn-primary">{t("sg_review")}</Link>
+          )}
+          {(r.status === "open" || next.includes("resolved")) && (
+            <details className="alarm-split-menu">
+              <summary className={`btn ${rec ? (rec.seguimentNecessitatId ? "" : "btn-primary") : "btn-primary"}`} aria-label={t("sg_more")} title={t("sg_more")}>
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg>
+              </summary>
+              <div className="alarm-split-items" role="menu">
+                {r.status === "open" && (
+                  <form action={setAlarmStatusAction}>
+                    <input type="hidden" name="id" value={r.id} />
+                    <input type="hidden" name="status" value="acknowledged" />
+                    <button type="submit" role="menuitem">{t("sg_dismiss")}</button>
+                  </form>
+                )}
+                {next.includes("resolved") && (
+                  <form action={setAlarmStatusAction}>
+                    <input type="hidden" name="id" value={r.id} />
+                    <input type="hidden" name="status" value="resolved" />
+                    <button type="submit" role="menuitem">{t("sg_resolve")}</button>
+                  </form>
+                )}
+              </div>
+            </details>
+          )}
+        </div>
       </div>
     </li>
   );
