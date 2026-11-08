@@ -50,10 +50,16 @@ async function send(subs: HrPushSubscription[], bodyFor: (lang: Lang) => string 
 
 /** Notifies HR browsers about the alarms created after `afterId` (taken before the job ran). */
 export async function notifyNewAlarms(afterId: number): Promise<HrPushOutcome> {
-  if (!pushEnabled()) return { status: "off" };
+  if (!pushEnabled()) {
+    console.warn("[hr-push] off: VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY missing or invalid, nobody is notified");
+    return { status: "off" };
+  }
   const alarms = listNewAlarms(afterId);
   if (!alarms.length) return { status: "none" };
-  const browsers = await send(listHrPushSubscriptions(), (lang) => alarmPayload(alarms, lang));
+  const subs = listHrPushSubscriptions();
+  if (!subs.length) console.warn(`[hr-push] ${alarms.length} new alarm(s) but no HR browser is subscribed: turn on alarm push on /hr/settings (a reseed or reset wipes subscriptions)`);
+  const browsers = await send(subs, (lang) => alarmPayload(alarms, lang));
+  console.log(`[hr-push] ${alarms.length} alarm(s), ${subs.length} subscribed browser(s), ${browsers} delivered`);
   return { status: "sent", alarms: alarms.length, browsers };
 }
 

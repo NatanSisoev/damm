@@ -75,6 +75,18 @@ railway variables --set DEMO_RESET_ENABLED=1
 railway variables --set DEMO_LIVE_JOB=1
 ```
 
+With the flag on, any answer opens an alarm: the engine's own when it finds one, otherwise the staged "Demo:" one on Logística · Condicions i organització. Read `railway logs` after one answer; the first line that is missing is where it broke:
+
+| Log line | If missing or odd |
+|---|---|
+| `[demo-live-job] answer stored but DEMO_LIVE_JOB is ...` | the flag is not `1` on the service |
+| `[demo-live-job] answer stored, run scheduled` | the answer never reached the route (see the `POST /api/responses` line) |
+| `[demo-live-job] engine found no new alarm, staged fallback: ...` | it names why no alarm opened (no segment with n >= 10, cooldown) |
+| `[hr-push] off: VAPID...` | VAPID keys missing or invalid on the service |
+| `[hr-push] ... no HR browser is subscribed` | turn on alarm push on `/hr/settings` (a reseed or demo reset wipes it) |
+| `[hr-push] N alarm(s), M subscribed browser(s), K delivered` | K < M: see the `[hr-push] send failed: <status>` line (404/410 drop the dead subscription) |
+| `[demo-live-job] done ... push: ...` | final summary of the run |
+
 ## Health check
 
 ```bash
