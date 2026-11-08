@@ -19,11 +19,15 @@ import { ChangeBadge, Sparkline } from "../../trend";
 import { TrendChart } from "../../trend-chart";
 import { STATUS_ORDER, SignalBadges, statusLabel } from "../../signal-labels";
 import { signalDetail, signalHeadline } from "@/lib/signal-text";
-import { getTL } from "@/lib/i18n/server";
+import { getT, getTL } from "@/lib/i18n/server";
 import { hrResultsDict, type HrResultsKey, type HrResultsT } from "@/lib/i18n/hr-results";
-import { collectiveLabel, domainLabel } from "@/lib/i18n/names";
+import { collectiveLabel, domainLabel, shiftLabel } from "@/lib/i18n/names";
 import { numD } from "@/lib/i18n/num";
+import { signalsDict } from "@/lib/i18n/hr-signals";
 import { rich } from "@/lib/i18n/rich";
+import { pageTitle } from "@/lib/i18n/titles";
+
+export const generateMetadata = pageTitle("hr_alarm");
 
 const NEXT: Partial<Record<SignalTimelineStep["key"], { href: string; label: HrResultsKey }>> = {
   recomanacio: { href: "#recomanacions", label: "sd_next_rec" },
@@ -31,11 +35,30 @@ const NEXT: Partial<Record<SignalTimelineStep["key"], { href: string; label: HrR
   resultats: { href: "#seguiment", label: "sd_next_results" },
 };
 
-// Timeline step label/detail come from the db package (Catalan); only the chrome around them is translated.
+// Timeline step label/detail come from the db package as Catalan strings; map them by step key and known value.
+function timelineText(s: SignalTimelineStep, t: HrResultsT): { label: string; detail: string } {
+  const label = t(`sd_tl_${s.key}` as HrResultsKey);
+  const d = s.detail;
+  let m: RegExpMatchArray | null;
+  let detail = d;
+  if ((m = d.match(/^Detectat (.+)$/))) detail = t("sd_td_detected", { p: m[1] });
+  else if ((m = d.match(/^(\d+) aprovad/))) detail = t(Number(m[1]) > 1 ? "sd_td_approved_many" : "sd_td_approved_one", { n: m[1] });
+  else if (d === "Pendent de decisió") detail = t("sd_td_undecided");
+  else if (d === "Sense recomanació") detail = t("sd_td_no_rec");
+  else if (d === "Publicada") detail = t("sd_td_published");
+  else if (d === "Creada, sense publicar") detail = t("sd_td_created");
+  else if (d === "Per crear") detail = t("sd_td_to_create");
+  else if (d === "Disponibles") detail = t("sd_td_available");
+  else if ((m = d.match(/^Cal n ≥ (\d+)$/))) detail = t("sd_td_need_n", { n: m[1] });
+  return { label, detail };
+}
+
 function Timeline({ steps, t }: { steps: SignalTimelineStep[]; t: HrResultsT }) {
   return (
     <ol className="grid gap-4 sm:grid-cols-4">
-      {steps.map((s, i) => (
+      {steps.map((s, i) => {
+        const tx = timelineText(s, t);
+        return (
         <li key={s.key} className="flex items-start gap-3 sm:border-l sm:border-line sm:pl-4 sm:first:border-l-0 sm:first:pl-0">
           <span
             className={`num mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full border text-xs font-semibold ${
@@ -46,16 +69,17 @@ function Timeline({ steps, t }: { steps: SignalTimelineStep[]; t: HrResultsT }) 
             {s.state === "done" ? "✓" : i + 1}
           </span>
           <div>
-            <div className="text-[13px] font-medium">{s.label}</div>
+            <div className="text-[13px] font-medium">{tx.label}</div>
             <div className="text-xs text-subtle">
-              {s.state === "done" ? t("sd_done") : t("sd_pending")} · {s.detail}
+              {s.state === "done" ? t("sd_done") : t("sd_pending")} · {tx.detail}
             </div>
             {s.state !== "done" && NEXT[s.key] && (
               <Link href={NEXT[s.key]!.href} className="mt-1 inline-block text-xs text-accent-ink hover:underline">{t(NEXT[s.key]!.label)} →</Link>
             )}
           </div>
         </li>
-      ))}
+        );
+      })}
     </ol>
   );
 }
@@ -118,6 +142,7 @@ function ProbeCard({ t, lang, probes, signal, error }: { t: HrResultsT; lang: La
 export default async function SignalPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ probeError?: string }> }) {
   const { id } = await params;
   const { t, lang } = await getTL(hrResultsDict);
+  const ts = await getT(signalsDict);
   const { probeError } = await searchParams;
   const detail = Number.isInteger(Number(id)) ? getSignalDetail(Number(id)) : null;
   if (!detail) notFound();
@@ -160,7 +185,7 @@ export default async function SignalPage({ params, searchParams }: { params: Pro
       <div className="grid gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
         <div className="space-y-6">
           <Card
-            title={t("sd_evo", { scope: trendScope === "Tots" ? t("sd_all") : collectiveLabel(trendScope, lang) })}
+            title={t("sd_evo", { scope: trendScope.split(" · ").map((x) => (x === "Tots" ? t("sd_all") : collectiveLabel(x, lang) !== x ? collectiveLabel(x, lang) : shiftLabel(x, lang))).join(" · ") })}
             meta={t("sd_score010")}
             flush
           >
@@ -258,16 +283,16 @@ export default async function SignalPage({ params, searchParams }: { params: Pro
                   <span className="gen-panel-mark" aria-hidden>
                     <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" strokeLinecap="round"><path d="M8 1.5 9.6 6.4 14.5 8 9.6 9.6 8 14.5 6.4 9.6 1.5 8 6.4 6.4Z" /></svg>
                   </span>
-                  <h3>Encara no hi ha cap recomanació</h3>
-                  <p>Proposa fins a 3 accions concretes per a aquest senyal, amb responsable i termini suggerits.</p>
+                  <h3>{ts("no_recs_title")}</h3>
+                  <p>{ts("no_recs_text")}</p>
                   <form action={generateRecommendationsAction}>
                     <input type="hidden" name="signal" value={signal.id} />
                     <GenerateButton variant="panel" />
                   </form>
-                  <small>Una persona les aprova o les descarta.</small>
+                  <small>{ts("no_recs_note")}</small>
                 </div>
               ) : (
-                <Empty>Aquest senyal no té un domini concret, així que no es poden proposar recomanacions.</Empty>
+                <Empty>{ts("no_recs_domain")}</Empty>
               )
             ) : (
               <ul className="space-y-3">
@@ -278,7 +303,7 @@ export default async function SignalPage({ params, searchParams }: { params: Pro
                       {r.seguimentNecessitatId && <span className="badge badge-accent">{t("sd_follow_created")}</span>}
                     </div>
                     <RecommendationBody r={r} />
-                    <Link href={`/hr/recommendations/${r.id}`} className="mt-3 inline-block text-xs text-accent-ink hover:underline">Veure tot el detall →</Link>
+                    <Link href={`/hr/recommendations/${r.id}`} className="mt-3 inline-block text-xs text-accent-ink hover:underline">{t("sd_full_detail")} →</Link>
                     {(r.estat === "proposada" || (r.estat === "aprovada" && !r.seguimentNecessitatId)) && (
                       <div className="mt-3 flex flex-wrap justify-end gap-2 border-t border-line pt-3">
                         {r.estat === "proposada" && (

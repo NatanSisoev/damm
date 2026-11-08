@@ -13,6 +13,9 @@ import { SignalBadges, SignalText } from "../signal-labels";
 import { compareSignals } from "@/lib/signal-text";
 import { recommendationStatus } from "../labels";
 import { RecommendationBody } from "../recommendation-card";
+import { pageTitle } from "@/lib/i18n/titles";
+
+export const generateMetadata = pageTitle("hr_recs");
 
 
 export default async function RecommendationsPage() {
@@ -53,7 +56,7 @@ export default async function RecommendationsPage() {
                     {r.seguimentNecessitatId && <span className="badge badge-accent">{t("recs_followup_created")}</span>}
                   </div>
                   <RecommendationBody r={r} />
-                  <Link href={`/hr/recommendations/${r.id}`} className="mt-3 inline-block text-xs text-accent-ink hover:underline">Veure tot el detall →</Link>
+                  <Link href={`/hr/recommendations/${r.id}`} className="mt-3 inline-block text-xs text-accent-ink hover:underline">{t("full_detail")} →</Link>
                   {(r.estat === "proposada" || (r.estat === "aprovada" && !r.seguimentNecessitatId)) && (
                     <div className="mt-3 flex flex-wrap justify-end gap-2 border-t border-line pt-3">
                       {r.estat === "proposada" && (

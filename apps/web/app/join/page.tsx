@@ -4,6 +4,9 @@ import { getT } from "@/lib/i18n/server";
 import { MIN_GROUP_SIZE } from "@damm/shared";
 import { EmployeeFrame, CompanyLabel, PageHead, PrivacyNote } from "../(employee)/components/frame";
 import { goToJoinAction } from "./actions";
+import { pageTitle } from "@/lib/i18n/titles";
+
+export const generateMetadata = pageTitle("join");
 
 export default async function JoinEntryPage({ searchParams }: { searchParams: Promise<{ compte?: string }> }) {
   const t = await getT(employeeDict);

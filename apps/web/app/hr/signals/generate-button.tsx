@@ -1,4 +1,6 @@
 "use client";
+import { useT } from "@/lib/i18n/client";
+import { panelDict } from "@/lib/i18n/hr-panel";
 
 import { useFormStatus } from "react-dom";
 
@@ -10,11 +12,12 @@ const Sparkle = () => (
 
 /** Submit button for "draft recommendations": shows progress while the server action runs. */
 export function GenerateButton({ variant = "inline" }: { variant?: "inline" | "panel" }) {
+  const t = useT(panelDict);
   const { pending } = useFormStatus();
   return (
     <button type="submit" disabled={pending} aria-busy={pending} className={variant === "panel" ? "btn btn-primary gen-btn gen-btn-lg" : "btn gen-btn"}>
       {pending ? <span className="gen-spinner" aria-hidden /> : <Sparkle />}
-      {pending ? "Generant…" : "Genera recomanacions"}
+      {pending ? t("generate_busy") : t("generate")}
     </button>
   );
 }

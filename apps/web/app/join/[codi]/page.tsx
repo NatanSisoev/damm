@@ -6,6 +6,9 @@ import { LangSwitcher } from "@/components/lang-switcher";
 import { employeeDict } from "@/lib/i18n/employee";
 import { getT } from "@/lib/i18n/server";
 import { EmployeeFrame, PageHead, PrivacyNote } from "../../(employee)/components/frame";
+import { pageTitle } from "@/lib/i18n/titles";
+
+export const generateMetadata = pageTitle("welcome");
 
 export const dynamic = "force-dynamic";
 

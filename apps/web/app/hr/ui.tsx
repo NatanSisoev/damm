@@ -35,7 +35,7 @@ export function Empty({ children }: { children: ReactNode }) {
 }
 
 /** Client-safe lock badge; server pages use the translated one from ./ui-server. */
-export function SuppressedBadge({ title, label = "Suprimit" }: { title?: string; label?: string }) {
+export function SuppressedBadge({ title, label }: { title?: string; label: string }) {
   return (
     <span className="badge" title={title}>
       <svg aria-hidden viewBox="0 0 16 16" className="size-3" fill="none" stroke="currentColor" strokeWidth="1.6">

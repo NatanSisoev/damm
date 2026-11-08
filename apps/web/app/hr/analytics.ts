@@ -10,10 +10,10 @@ export const COMPANY = "Tots";
 
 export const segHref = (collective: string | null, domain: string | null) => {
   const p = new URLSearchParams();
-  if (collective && collective !== "All" && collective !== COMPANY) p.set("seg", collective);
+  if (collective && collective !== "All" && collective !== COMPANY) p.set("c", collective);
   if (domain) p.set("dom", domain);
   const q = p.toString();
-  return `/hr/results${q ? `?${q}` : ""}#tendencia`;
+  return `/hr${q ? `?${q}` : ""}#tendencia`;
 };
 
 // ---------- narrative ----------

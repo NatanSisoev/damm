@@ -12,6 +12,9 @@ import { LOCALES, type TFn } from "@/lib/i18n/core";
 import { hrDict, collectiveLabel, domainLabel, type HrKey } from "@/lib/i18n/hr";
 import { DraftReview } from "./draft-review";
 import { NeedForm } from "./need-form";
+import { pageTitle } from "@/lib/i18n/titles";
+
+export const generateMetadata = pageTitle("hr_needs");
 
 export const dynamic = "force-dynamic";
 

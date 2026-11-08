@@ -23,9 +23,9 @@ export async function RecommendationBody({ r }: { r: RecommendationBody }): Prom
       {r.font && (
         <span
           className={`badge ${r.font === "llm" ? "badge-accent" : ""}`}
-          title={r.font === "llm" ? "Text redactat pel model d'IA a partir de dades agregades" : "Text de la biblioteca de plantilles, sense IA"}
+          title={r.font === "llm" ? t("rc_tip_ai") : t("rc_tip_template")}
         >
-          {r.font === "llm" ? "Redactat per IA" : "Plantilla"}
+          {r.font === "llm" ? t("rc_badge_ai") : t("rc_badge_template")}
         </span>
       )}
       {r.titol && <h3 className="font-medium">{r.titol}</h3>}
