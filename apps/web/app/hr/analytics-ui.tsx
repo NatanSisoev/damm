@@ -8,7 +8,7 @@ import { Card, Empty } from "./ui";
 import { FoldList } from "./ui-server";
 import { RecommendationBody } from "./recommendation-card";
 import { approveRecommendationAction, discardRecommendationAction, followUpAction, setAlarmStatusAction } from "./actions";
-import type { ManagerGap } from "@damm/db/hr";
+import type { DomainInitiative, DomainInitiatives, ManagerGap } from "@damm/db/hr";
 import type { Headline, HeadlineWhere, Heatmap, HeatCell, NarrativeView, ReachGap, SegmentTrend, ThemesByDomain } from "./analytics";
 import { segHref } from "./analytics";
 import { getTL } from "@/lib/i18n/server";
@@ -408,6 +408,57 @@ export async function ReachCard({ gaps, fold }: { gaps: ReachGap[]; fold?: boole
             );
           })}
         </ul>
+      )}
+    </Card>
+  );
+}
+
+// ---------- initiatives by domain (R-DOM-5, N-14) ----------
+function IniScore({ t, lang, it }: { t: HrResultsT; lang: Lang; it: DomainInitiative }) {
+  const fmt = (r: { mitjana: number | null } | null) => (r && r.mitjana !== null ? numD(r.mitjana, lang, 1) : null);
+  const b = fmt(it.before);
+  const a = fmt(it.after);
+  if (!it.anchor) return null;
+  const delta = it.before?.mitjana != null && it.after?.mitjana != null ? it.after.mitjana - it.before.mitjana : null;
+  return (
+    <p className="mt-1 text-[13px] text-muted">
+      {t("ini_before")}: {b ? `${b} (${it.before!.periode})` : t("ini_no_before")} · {t("ini_after")}: {a ? `${a} (${it.after!.periode})` : t("ini_no_after")}
+      {delta !== null && <strong className="ml-1 text-ink">{t("ini_pts", { d: signed(delta, lang) })}</strong>}
+    </p>
+  );
+}
+
+export async function InitiativesCard({ groups, fold }: { groups: DomainInitiatives[]; fold?: boolean }) {
+  const { t, lang } = await getTL(hrResultsDict);
+  const kindKey = { recommendation: "ini_k_recommendation", followup: "ini_k_followup", need: "ini_k_need", probe: "ini_k_probe" } as const;
+  return (
+    <Card fold={fold} title={t("ini_title")} meta={t("ini_note", { min: MIN_GROUP_SIZE })}>
+      {groups.length === 0 ? (
+        <Empty>{t("ini_empty")}</Empty>
+      ) : (
+        <div className="space-y-5">
+          {groups.map((g) => (
+            <section key={g.domini}>
+              <h3 className="text-[14px] font-semibold">{domainLabel(g.domini, lang)}</h3>
+              <ul className="mt-1 divide-y divide-line">
+                {g.items.map((it) => {
+                  const scope = it.scope ? collectiveLabel(it.scope, lang) : t("ini_company");
+                  const title = it.kind === "probe" ? t("ini_probe", { scope }) : it.title;
+                  return (
+                    <li key={`${it.kind}-${it.id}`} className="py-3">
+                      <p className="text-[14px]">{title}</p>
+                      <p className="mt-0.5 text-[12px] text-subtle">
+                        {t(kindKey[it.kind])} · {t(`ini_st_${it.status}` as HrResultsKey)} · {scope}
+                        {it.anchor ? ` · ${t("ini_since", { date: it.anchor })}` : ""}
+                      </p>
+                      <IniScore t={t} lang={lang} it={it} />
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          ))}
+        </div>
       )}
     </Card>
   );

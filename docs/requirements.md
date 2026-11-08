@@ -252,7 +252,7 @@ G-§6.
 | R-DOM-2 | 6 dimensions: Benestar, Lideratge, Desenvolupament, Cultura i pertinença, Entorn i relacions, Condicions i organització | D-S5 | done |
 | R-DOM-3 | "Not every reality needs the same questions": a different item subset per collective and domain | D-S5 | done (seed) |
 | R-DOM-4 | Formats suited to each reality (little screen time on the plant, mobile in sales) | D-S2 | partial (types exist; selection is in the engine) |
-| R-DOM-5 | Link the company initiatives (conciliació, formació, igualtat, seguretat i salut, comunicació i lideratge) to domains so a result answers "is this initiative working?" | D-S3, D-S4 | missing (a mapping table and a filter would do) |
+| R-DOM-5 | Link the company initiatives (conciliació, formació, igualtat, seguretat i salut, comunicació i lideratge) to domains so a result answers "is this initiative working?" | D-S3, D-S4 | done: Panell card "Iniciatives per domini" (`InitiativesCard`, `getDomainInitiatives` in `packages/db/src/hr-initiatives.ts`) lists per domain the approved recommendations (with their Damm initiative), follow-up surveys, HR needs and sampling probes, with status and the domain score before and after (from `getTrends`, so n >= 10 and suppression hold); correlation, not cause |
 
 ## 9. Delivery checklist
 
@@ -306,7 +306,7 @@ Bonus items named by the guide (G-§4 "Bonus") and the deck (D-S18), then our ow
 | N-11 | Decision audit log and AI provenance | ours | Traceability, R-PRIV-10 | blocked | Task 21 |
 | N-12 | Installable PWA plus daily push reminder | ours | Reminders R-FLOW-5d, participation | partial | Installable: manifest, icons (Paper identity, ink `#17211a`), offline page, service worker with push and notification click. Subscribe and send on publish built; a daily reminder and the tunnel (9) are open. |
 | N-13 | Participation by channel chart | G-§6.2 | Uses the `canal` field we already store | open: `canal` is not in the analytics view | Needs `canal` added to `v_resposta_analitica` (schema change), then one aggregate by `canal` with suppression. |
-| N-14 | Initiative ↔ domain mapping | D-S3 | Turns results into "is our policy working?" | missing | R-DOM-5 |
+| N-14 | Initiative ↔ domain mapping | D-S3 | Turns results into "is our policy working?" | done | R-DOM-5 |
 | N-15 | Retention and purge job | G-§8 | Closes R-PRIV-8 | done | See R-PRIV-8. |
 | N-16 | Accuracy of the theme classifier against `resposta_seed` | G-§6.2 | A number that proves analysis quality | done | `pnpm --filter @damm/engine run comments:eval`: 91.2 % top-1, 97.4 % recall, 84.8 % precision (engine.md section 12, with the template-data caveat). |
 | N-17 | Demo reset and presenter mode | ours | Demo reliability | deferred | Task 15, after 8 Nov 09:00 |

@@ -9,6 +9,7 @@ import {
   listCollectius,
   getParticipation,
   getManagerGap,
+  getDomainInitiatives,
   getAnswersPerDay,
   CHANGE_MIN_DELTA,
   CHANGE_MIN_N,
@@ -27,7 +28,7 @@ import { Radar, type RadarSeries } from "./radar";
 import { RepTable, TrendTable } from "./tables";
 import { InsightCards } from "./insight-cards";
 import { getHeadlines, getHeatmap, getNarrative, getProposals, getReachGaps, getSegmentTrend } from "./analytics";
-import { HeadlineStrip, HeatmapCard, NarrativeCard, ProposalsCard, ManagerGapCard, ReachCard, SegmentTrendCard } from "./analytics-ui";
+import { HeadlineStrip, HeatmapCard, NarrativeCard, ProposalsCard, ManagerGapCard, ReachCard, SegmentTrendCard, InitiativesCard } from "./analytics-ui";
 import { PRESETS, bucketFor, fmtDay, previousWindow, resolveRange } from "./range";
 import { refreshDashboardAction } from "./actions";
 import { RefreshButton } from "./refresh-button";
@@ -300,6 +301,7 @@ export default async function HrDashboard({ searchParams }: { searchParams: Prom
         {/* Everything else: collapsed by default */}
         <NarrativeCard fold narrative={getNarrative(col?.nom ?? "All", lang)} title={t("dash_narr", { scope: col ? collectiveLabel(col.nom, lang) : t("dash_scope_all") })} />
         <HeadlineStrip fold headlines={getHeadlines()} />
+        <InitiativesCard fold groups={getDomainInitiatives(lang)} />
         <ReachCard fold gaps={getReachGaps(4)} />
         <ManagerGapCard fold gap={getManagerGap()} />
         <Card fold title={tr("rs_engine")} meta={<span className="num">{insights.length}</span>}>
