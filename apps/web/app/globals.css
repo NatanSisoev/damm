@@ -78,8 +78,52 @@
   --foreground: var(--text);
 }
 
+/* Dark tokens, twice (CSS cannot share a declaration list across a media query and an attribute selector): keep the two blocks identical. */
+/* 1) Forced dark via the theme toggle (cookie -> data-theme on <html>). */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+    --paper: #0f0f0e;
+    --ink: #ececea;
+    --muted: #9b9b96;
+    --rule: #262625;
+    --red: #ff7a6e;
+    --on-red: #0f0f0e;
+    --red-hover: #ff9288;
+    --focus: var(--ink);
+
+    --surface: #161615;
+    --surface-muted: #1d1d1c;
+    --border-strong: #333332;
+    --control-border: #7f7f7a;
+
+    --accent-hover: #cfcfcc;
+    --accent-soft: rgb(236 236 234 / 0.07);
+
+    --chart-2: #7f7f7a;
+
+    --div-neg: #e0745a;
+    --div-pos: #5fa3cf;
+    --div-mid: #262625;
+
+    --co-1: #3987e5;
+    --co-2: #d95926;
+    --co-3: #199e70;
+    --co-4: #c98500;
+    --co-5: #d55181;
+
+    --dom-1: #3987e5;
+    --dom-2: #d95926;
+    --dom-3: #199e70;
+    --dom-4: #c98500;
+    --dom-5: #d55181;
+    --dom-6: #008300;
+    --dom-muted: #666662;
+}
+
+/* 2) OS dark, unless light was forced. */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
     --paper: #0f0f0e;
     --ink: #ececea;
     --muted: #9b9b96;
@@ -117,6 +161,30 @@
     --dom-6: #008300;
     --dom-muted: #666662;
   }
+}
+
+:root { color-scheme: light dark; }
+:root[data-theme="light"] { color-scheme: light; }
+
+/* Wordmark: both variants are rendered, the theme picks one (no flash, follows the toggle). */
+:root .wm-dark { display: none; }
+:root[data-theme="dark"] .wm-light { display: none; }
+:root[data-theme="dark"] .wm-dark { display: block; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .wm-light { display: none; }
+  :root:not([data-theme="light"]) .wm-dark { display: block; }
+}
+
+/* Theme toggle: shows the icon of the mode it switches to. */
+.theme-toggle { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; color: inherit; cursor: pointer; border: 1px solid var(--border); background: transparent; }
+.theme-toggle:hover { background: var(--accent-soft); }
+.theme-toggle:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.theme-toggle .ti-sun { display: none; }
+:root[data-theme="dark"] .theme-toggle .ti-sun { display: block; }
+:root[data-theme="dark"] .theme-toggle .ti-moon { display: none; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .theme-toggle .ti-sun { display: block; }
+  :root:not([data-theme="light"]) .theme-toggle .ti-moon { display: none; }
 }
 
 @theme inline {

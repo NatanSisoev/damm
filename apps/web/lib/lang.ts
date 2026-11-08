@@ -1,7 +1,8 @@
-// UI language for the current request: `damm_lang` cookie, else Accept-Language, else Catalan.
+// UI language for the current request: `damm_lang` cookie, else Catalan.
+// The browser or OS language is deliberately ignored: Catalan is the default until the person picks another.
 // Only the language choice is stored (cookie, and compte.lang for signed-in employees).
-import { cookies, headers } from "next/headers";
-import { DEFAULT_LANG, isLang, negotiateLang, type Lang } from "@damm/shared";
+import { cookies } from "next/headers";
+import { DEFAULT_LANG, isLang, type Lang } from "@damm/shared";
 
 export const LANG_COOKIE = "damm_lang";
 const MAX_AGE_S = 60 * 60 * 24 * 365;
@@ -9,11 +10,7 @@ const MAX_AGE_S = 60 * 60 * 24 * 365;
 export async function getLang(): Promise<Lang> {
   const c = (await cookies()).get(LANG_COOKIE)?.value;
   if (isLang(c)) return c;
-  try {
-    return negotiateLang((await headers()).get("accept-language")) ?? DEFAULT_LANG;
-  } catch {
-    return DEFAULT_LANG;
-  }
+  return DEFAULT_LANG;
 }
 
 export async function setLangCookie(lang: Lang): Promise<void> {

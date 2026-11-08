@@ -255,3 +255,21 @@ main:focus { outline: none; }
 @keyframes gen-spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .gen-spinner { animation-duration: 2s; } }
 .rec-hint { margin-bottom: 8px; font-size: 13px; color: var(--muted, inherit); }
+
+/* Modals: native dialog, Paper identity. */
+.hr-modal { width: min(30rem, calc(100vw - 2rem)); max-height: min(85dvh, 46rem); margin: auto; padding: 0; border: 1px solid var(--line-strong); border-radius: 2px; background: var(--surface); color: var(--text); }
+.hr-modal-wide { width: min(40rem, calc(100vw - 2rem)); }
+.hr-modal[open] { display: flex; flex-direction: column; animation: hr-modal-in var(--t-base) var(--ease); }
+.hr-modal::backdrop { background: rgb(20 18 16 / 0.45); }
+.hr-modal-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 16px 12px 0 20px; }
+.hr-modal-title { padding-top: 6px; font-size: 17px; font-weight: 600; line-height: 1.3; }
+.hr-modal-x { flex: none; width: 44px; height: 44px; font-size: 22px; line-height: 1; color: var(--muted); border-radius: 2px; }
+.hr-modal-x:hover { color: var(--text); }
+.hr-modal-body { padding: 16px 20px; overflow-y: auto; font-size: 14px; line-height: 1.5; }
+.hr-modal-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; padding: 12px 20px; border-top: 1px solid var(--line); }
+html:has(.hr-modal[open]) { overflow: hidden; }
+@keyframes hr-modal-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .hr-modal[open] { animation: none; } }
+
+/* Theme toggle row in the sidebar footer and drawer. */
+.hr-theme-row { display: flex; margin-top: 8px; }

@@ -1,5 +1,8 @@
 import Link from "next/link";
 import { SubmitButton } from "@/app/hr/submit-button";
+import { ConfirmButton } from "../../confirm-button";
+import { RouteModal } from "../../modal";
+import { ProposalBody } from "../../recommendations/proposal-body";
 import { alarmReason } from "@/lib/alarm-reason";
 import { Comments, People } from "../../glyphs";
 import { notFound } from "next/navigation";
@@ -116,8 +119,8 @@ function recTitle(r: { titol?: string | null; text: string }): string {
 }
 
 /** One proposal with the decision it is waiting for, so the whole step happens on the alarm page. */
-function RecRow({ r, signalId, t, lang }: { r: SignalRecommendation; signalId: number; t: HrResultsT; lang: Lang }) {
-  const status = recommendationStatus(r.estat, lang);
+/** The decisions on one recommendation: on its row in the Actuar card and in its detail modal. */
+function RecActions({ r, signalId, t }: { r: SignalRecommendation; signalId: number; t: HrResultsT }) {
   const hidden = (
     <>
       <input type="hidden" name="id" value={r.id} />
@@ -125,23 +128,32 @@ function RecRow({ r, signalId, t, lang }: { r: SignalRecommendation; signalId: n
     </>
   );
   return (
+    <>
+      {r.estat === "proposada" && (
+        <>
+          <form action={approveRecFromSignalAction}>{hidden}<SubmitButton className="btn btn-primary">{t("sd_rec_approve")}</SubmitButton></form>
+          <form action={discardRecFromSignalAction}>{hidden}<ConfirmButton className="btn" message={t("sd_rec_discard_confirm")}>{t("sd_rec_discard")}</ConfirmButton></form>
+        </>
+      )}
+      {r.estat === "aprovada" && !r.seguimentNecessitatId && (
+        <form action={followUpFromSignalAction}>{hidden}<SubmitButton className="btn btn-primary" busyLabel={t("sd_rec_followup_busy")}>{t("sd_rec_followup")}</SubmitButton></form>
+      )}
+      {r.estat === "aprovada" && r.seguimentNecessitatId && <Link href="/hr/needs" className="btn">{t("sd_rec_review")}</Link>}
+    </>
+  );
+}
+
+function RecRow({ r, signalId, t, lang }: { r: SignalRecommendation; signalId: number; t: HrResultsT; lang: Lang }) {
+  const status = recommendationStatus(r.estat, lang);
+  return (
     <li className={`py-3 first:pt-0 last:pb-0 ${r.estat === "descartada" ? "opacity-60" : ""}`}>
       <div className="flex items-start gap-3">
         <p className="min-w-0 flex-1 text-[13px] font-medium">{recTitle(r)}</p>
         <span className={`badge shrink-0 ${status.cls}`}>{status.label}</span>
       </div>
       <div className="mt-2 flex flex-wrap items-center gap-2">
-        {r.estat === "proposada" && (
-          <>
-            <form action={approveRecFromSignalAction}>{hidden}<SubmitButton className="btn btn-primary">{t("sd_rec_approve")}</SubmitButton></form>
-            <form action={discardRecFromSignalAction}>{hidden}<SubmitButton className="btn">{t("sd_rec_discard")}</SubmitButton></form>
-          </>
-        )}
-        {r.estat === "aprovada" && !r.seguimentNecessitatId && (
-          <form action={followUpFromSignalAction}>{hidden}<SubmitButton className="btn btn-primary" busyLabel={t("sd_rec_followup_busy")}>{t("sd_rec_followup")}</SubmitButton></form>
-        )}
-        {r.estat === "aprovada" && r.seguimentNecessitatId && <Link href="/hr/needs" className="btn">{t("sd_rec_review")}</Link>}
-        <Link href={`/hr/recommendations/${r.id}`} className="ml-auto text-xs text-accent-ink hover:underline">{t("sd_rec_detail")} ›</Link>
+        <RecActions r={r} signalId={signalId} t={t} />
+        <Link href={`/hr/signals/${signalId}?rec=${r.id}`} scroll={false} className="ml-auto text-xs text-accent-ink hover:underline">{t("sd_rec_detail")} ›</Link>
       </div>
     </li>
   );
@@ -207,11 +219,11 @@ function ProbeCard({ t, probes, signal, error }: { t: HrResultsT; probes: ProbeV
   );
 }
 
-export default async function SignalPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ probeError?: string }> }) {
+export default async function SignalPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ probeError?: string; rec?: string }> }) {
   const { id } = await params;
   const { t, lang } = await getTL(hrResultsDict);
   const ts = await getT(signalsDict);
-  const { probeError } = await searchParams;
+  const { probeError, rec } = await searchParams;
   let detail = Number.isInteger(Number(id)) ? getSignalDetail(Number(id), lang) : null;
   if (!detail) notFound();
   // First view by HR: an open signal becomes acknowledged (forward only).
@@ -223,6 +235,7 @@ export default async function SignalPage({ params, searchParams }: { params: Pro
   const related = trend.filter((r) => r.related);
   const shownTrend = related.length > 0 ? related : trend;
   const probes = hrListProbes(signal.id);
+  const openRec = recommendations.find((r) => String(r.id) === rec);
   const commentsHref = (key: string) => `/hr/comments?tema=${encodeURIComponent(key)}&per=${signal.periode}${signal.collectiuId != null ? `&col=${signal.collectiuId}` : ""}`;
   const emergentTheme = signal.tipus === "emergent" ? themes.find((th) => th.emergent) : undefined;
   const active = activeTarget(timeline, followUps.length > 0);
@@ -436,6 +449,22 @@ export default async function SignalPage({ params, searchParams }: { params: Pro
         </div>
       </div>
       <LimitsNote view="signal" className="mt-4" />
+      {openRec && (
+        <RouteModal
+          wide
+          closeHref={`/hr/signals/${signal.id}`}
+          title={recTitle(openRec)}
+          footer={
+            <>
+              <Link href={`/hr/recommendations/${openRec.id}`} className="mr-auto text-xs text-accent-ink hover:underline">{t("sd_rec_full")} ›</Link>
+              <RecActions r={openRec} signalId={signal.id} t={t} />
+            </>
+          }
+        >
+          <span className={`badge mb-3 ${recommendationStatus(openRec.estat, lang).cls}`}>{recommendationStatus(openRec.estat, lang).label}</span>
+          <ProposalBody r={openRec} />
+        </RouteModal>
+      )}
     </>
   );
 }
