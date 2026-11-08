@@ -13,6 +13,9 @@ import { SignalBadges, SignalText } from "../signal-labels";
 import { compareSignals } from "@/lib/signal-text";
 import { recommendationStatus } from "../labels";
 import { RecommendationBody } from "../recommendation-card";
+import { pageTitle } from "@/lib/i18n/titles";
+
+export const generateMetadata = pageTitle("hr_recs");
 
 
 export default async function RecommendationsPage() {

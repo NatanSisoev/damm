@@ -2,14 +2,14 @@
 import type { DateWindow, WindowBucket } from "@damm/db/hr";
 
 export const PRESETS = [
-  { key: "today", label: "Avui" },
-  { key: "week", label: "Aquesta setmana" },
-  { key: "lastweek", label: "Setmana passada" },
-  { key: "30d", label: "30 dies" },
-  { key: "month", label: "Aquest mes" },
-  { key: "lastmonth", label: "Mes passat" },
-  { key: "year", label: "Aquest any" },
-  { key: "all", label: "Tot" },
+  { key: "today" },
+  { key: "week" },
+  { key: "lastweek" },
+  { key: "30d" },
+  { key: "month" },
+  { key: "lastmonth" },
+  { key: "year" },
+  { key: "all" },
 ] as const;
 export type PresetKey = (typeof PRESETS)[number]["key"] | "custom";
 

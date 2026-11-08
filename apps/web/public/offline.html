@@ -20,9 +20,23 @@
 <body>
 <main>
   <p class="mark">Escolta activa</p>
-  <h1>Sense connexió</h1>
-  <p>No hem pogut carregar l'app. Comprova la connexió i torna-ho a provar. Les respostes que ja has enviat estan guardades.</p>
-  <button type="button" onclick="location.reload()">Torna-ho a provar</button>
+  <h1 data-k="h">Sense connexió</h1>
+  <p data-k="p">No hem pogut carregar l'app. Comprova la connexió i torna-ho a provar. Les respostes que ja has enviat estan guardades.</p>
+  <button type="button" data-k="b" onclick="location.reload()">Torna-ho a provar</button>
 </main>
+<script>
+  // Static page served from the service worker cache: pick the language from the damm_lang cookie, else the browser.
+  var T = {
+    ca: { t: "Sense connexió", h: "Sense connexió", p: "No hem pogut carregar l'app. Comprova la connexió i torna-ho a provar. Les respostes que ja has enviat estan guardades.", b: "Torna-ho a provar" },
+    es: { t: "Sin conexión", h: "Sin conexión", p: "No hemos podido cargar la app. Comprueba la conexión e inténtalo de nuevo. Las respuestas que ya has enviado están guardadas.", b: "Inténtalo de nuevo" },
+    en: { t: "No connection", h: "No connection", p: "We could not load the app. Check your connection and try again. The answers you have already sent are saved.", b: "Try again" }
+  };
+  var m = document.cookie.match(/(?:^|; )damm_lang=(ca|es|en)/);
+  var l = m ? m[1] : (navigator.language || "ca").slice(0, 2).toLowerCase();
+  var d = T[l] || T.ca;
+  document.documentElement.lang = T[l] ? l : "ca";
+  document.title = d.t;
+  document.querySelectorAll("[data-k]").forEach(function (e) { e.textContent = d[e.getAttribute("data-k")]; });
+</script>
 </body>
 </html>

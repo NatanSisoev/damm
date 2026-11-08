@@ -13,6 +13,9 @@ import { poolDict } from "@/lib/i18n/hr-pool";
 import { collectiveLabel, domainLabel, shiftLabel } from "@/lib/i18n/names";
 import { numD } from "@/lib/i18n/num";
 import { needStatus } from "../../labels";
+import { pageTitle } from "@/lib/i18n/titles";
+
+export const generateMetadata = pageTitle("hr_question");
 
 export const dynamic = "force-dynamic";
 

@@ -5,6 +5,9 @@ import { getT } from "@/lib/i18n/server";
 import { getCompteId } from "@/lib/session";
 import { CompanyLabel, EmployeeFrame, PageHead } from "../(employee)/components/frame";
 import { LoginForm } from "./login-form";
+import { pageTitle } from "@/lib/i18n/titles";
+
+export const generateMetadata = pageTitle("login");
 
 export const dynamic = "force-dynamic";
 

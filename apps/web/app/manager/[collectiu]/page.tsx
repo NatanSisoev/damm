@@ -29,6 +29,9 @@ import { managerDict } from "@/lib/i18n/manager";
 import { collectiveLabel } from "@/lib/i18n/names";
 import { num1L } from "@/lib/i18n/num";
 import { AggregateNote } from "../note";
+import { pageTitle } from "@/lib/i18n/titles";
+
+export const generateMetadata = pageTitle("manager");
 
 export default async function ManagerCollectivePage({ params }: { params: Promise<{ collectiu: string }> }) {
   const { collectiu: raw } = await params;

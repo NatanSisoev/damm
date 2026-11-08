@@ -385,7 +385,7 @@ function Summary({ brain, c }: { brain: Brain; c: BrainCollective }) {
               {c.domains.map((d) => (
                 <tr key={d.domainId} className="border-t border-line align-middle">
                   <td className="py-2 pr-3 font-medium">{domainLabel(d.name, lang)}<span className="block text-xs font-normal text-subtle">{t("n_questions", { n: d.questions })}</span></td>
-                  <td className="num py-2 pr-3">{d.stats ? fmt(d.stats.score, 1) : <SuppressedBadge />}</td>
+                  <td className="num py-2 pr-3">{d.stats ? fmt(d.stats.score, 1) : <SuppressedBadge label={t("suppressed")} />}</td>
                   <td className="num py-2 pr-3">{d.stats ? `${fmt(d.stats.confidence, 0)} %` : "—"}</td>
                   <td className="num py-2 pr-3">{d.stats ? `${fmt(d.stats.consensus, 0)} %` : "—"}</td>
                   <td className="py-2 pr-3 w-36">{d.stats ? <Bar value={d.stats.infoGain} max={maxGain} /> : "—"}</td>

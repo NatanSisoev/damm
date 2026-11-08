@@ -10,6 +10,9 @@ import { hrDict, collectiveLabel } from "@/lib/i18n/hr";
 import { rich } from "@/lib/i18n/rich";
 import { CopyButton } from "./copy-button";
 import { baseUrl, joinUrl, qrSvg } from "./qr";
+import { pageTitle } from "@/lib/i18n/titles";
+
+export const generateMetadata = pageTitle("hr_publish");
 
 export default async function PublishPage() {
   const { t, lang } = await getTL(hrDict);

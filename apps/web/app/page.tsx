@@ -9,6 +9,9 @@ import { ActionsList } from "./(employee)/components/actions-list";
 import { AnswerFlow } from "./(employee)/components/answer-flow";
 import { PushToggle } from "./(employee)/components/push-toggle";
 import { EmployeeShell } from "./(employee)/components/shell";
+import { pageTitle } from "@/lib/i18n/titles";
+
+export const generateMetadata = pageTitle("home");
 
 export const dynamic = "force-dynamic";
 

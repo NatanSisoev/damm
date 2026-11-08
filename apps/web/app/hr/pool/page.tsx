@@ -11,6 +11,9 @@ import { collectiveLabel, domainLabel } from "@/lib/i18n/names";
 import { numD } from "@/lib/i18n/num";
 import type { TFn } from "@/lib/i18n/core";
 import type { Lang } from "@damm/shared";
+import { pageTitle } from "@/lib/i18n/titles";
+
+export const generateMetadata = pageTitle("hr_pool");
 
 export const dynamic = "force-dynamic";
 

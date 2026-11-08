@@ -3,6 +3,9 @@ import { employeeDict } from "@/lib/i18n/employee";
 import { getT } from "@/lib/i18n/server";
 import { getCompteId } from "@/lib/session";
 import { EmployeeShell } from "../(employee)/components/shell";
+import { pageTitle } from "@/lib/i18n/titles";
+
+export const generateMetadata = pageTitle("privacy");
 
 export const dynamic = "force-dynamic";
 

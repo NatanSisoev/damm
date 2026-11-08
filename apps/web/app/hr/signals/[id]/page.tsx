@@ -25,6 +25,9 @@ import { collectiveLabel, domainLabel } from "@/lib/i18n/names";
 import { numD } from "@/lib/i18n/num";
 import { signalsDict } from "@/lib/i18n/hr-signals";
 import { rich } from "@/lib/i18n/rich";
+import { pageTitle } from "@/lib/i18n/titles";
+
+export const generateMetadata = pageTitle("hr_alarm");
 
 const NEXT: Partial<Record<SignalTimelineStep["key"], { href: string; label: HrResultsKey }>> = {
   recomanacio: { href: "#recomanacions", label: "sd_next_rec" },

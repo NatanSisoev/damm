@@ -69,6 +69,7 @@ export const brainDict = defineDict({
     // Summary
     attn_title: "Com es reparteix l'atenció",
     attn_meta: "Prioritat = pes × impuls × (guany d'informació + mínim) × (1 + impuls per canvis bruscos)",
+    suppressed: "Suprimit",
     suppressed_note: "Aquest col·lectiu té menys de {n} comptes, així que les estadístiques queden amagades i el motor reparteix l'atenció només amb els pesos.",
     th_domain: "Àmbit",
     th_score: "Puntuació",
@@ -253,6 +254,7 @@ export const brainDict = defineDict({
 
     attn_title: "Cómo se reparte la atención",
     attn_meta: "Prioridad = peso × impulso × (ganancia de información + mínimo) × (1 + impulso por cambios bruscos)",
+    suppressed: "Suprimido",
     suppressed_note: "Este colectivo tiene menos de {n} cuentas, así que las estadísticas quedan ocultas y el motor reparte la atención solo con los pesos.",
     th_domain: "Ámbito",
     th_score: "Puntuación",
@@ -434,6 +436,7 @@ export const brainDict = defineDict({
 
     attn_title: "How attention is shared out",
     attn_meta: "Priority = weight × boost × (information gain + minimum) × (1 + boost for sudden changes)",
+    suppressed: "Suppressed",
     suppressed_note: "This collective has fewer than {n} accounts, so the statistics are hidden and the engine shares attention using the weights only.",
     th_domain: "Domain",
     th_score: "Score",

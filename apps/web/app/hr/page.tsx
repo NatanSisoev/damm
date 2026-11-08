@@ -33,6 +33,9 @@ import { refreshDashboardAction } from "./actions";
 import { RefreshButton } from "./refresh-button";
 import { RangeSelect } from "./range-select";
 import { NavSelect } from "./nav-select";
+import { pageTitle } from "@/lib/i18n/titles";
+
+export const generateMetadata = pageTitle("hr_home");
 
 export const dynamic = "force-dynamic";
 

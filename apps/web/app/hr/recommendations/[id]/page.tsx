@@ -14,6 +14,9 @@ import { numD } from "@/lib/i18n/num";
 import { SignalBadges } from "../../signal-labels";
 import { TrendChart } from "../../trend-chart";
 import { approveFromDetailAction, discardFromDetailAction, followUpFromDetailAction } from "../actions";
+import { pageTitle } from "@/lib/i18n/titles";
+
+export const generateMetadata = pageTitle("hr_rec");
 
 const day = (s: string) => s.slice(0, 10);
 

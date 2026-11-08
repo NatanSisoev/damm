@@ -19,7 +19,7 @@ const hanken = Hanken_Grotesk({
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getT(signalsDict);
   return {
-    title: "Escolta activa",
+    title: { default: "Escolta activa", template: "%s · Escolta activa" },
     description: t("app_description"),
     applicationName: "Escolta activa",
     icons: { apple: "/icons/apple-touch-icon.png" },

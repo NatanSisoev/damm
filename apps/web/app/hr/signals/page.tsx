@@ -22,6 +22,9 @@ import { ALARM_NEXT } from "./transitions";
 import { NON_ACTIONABLE, alarmHint } from "./alarm-text";
 import { signalDetail, signalDrop, signalSegment } from "@/lib/signal-text";
 import { generateRecommendationsAction, proposeFollowUpAction } from "./actions";
+import { pageTitle } from "@/lib/i18n/titles";
+
+export const generateMetadata = pageTitle("hr_alarms");
 
 const TABS = [
   { key: "obertes", label: "sg_tab_open", statuses: ["open"] },

@@ -10,6 +10,9 @@ import { getTL } from "@/lib/i18n/server";
 import { hrDict, collectiveLabel } from "@/lib/i18n/hr";
 import { rich } from "@/lib/i18n/rich";
 import { buildTeamsCard } from "../../teams-card";
+import { pageTitle } from "@/lib/i18n/titles";
+
+export const generateMetadata = pageTitle("hr_teams");
 
 type Block = { type: string; text?: string; weight?: string; size?: string; isSubtle?: boolean };
 
