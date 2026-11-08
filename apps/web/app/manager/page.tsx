@@ -5,6 +5,9 @@ import { AggregateNote } from "./note";
 import { getTL } from "@/lib/i18n/server";
 import { managerDict } from "@/lib/i18n/manager";
 import { collectiveLabel } from "@/lib/i18n/names";
+import { pageTitle } from "@/lib/i18n/titles";
+
+export const generateMetadata = pageTitle("manager");
 
 export default async function ManagerIndexPage() {
   const { t, lang } = await getTL(managerDict);

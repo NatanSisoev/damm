@@ -38,7 +38,16 @@ export interface DemoOptions {
   seed?: string;
   days?: number;
   start?: string;
+  /** Per-stratum participation override, keyed "collectiuId:tornId" (see sim/world.ts). */
+  participation?: Record<string, number>;
+  /** Comment pools; an account uses pools[idx % pools.length] (default: the English pool in ./comments.ts). */
+  commentPools?: CommentPool[];
   log?: (msg: string) => void;
+}
+
+export interface CommentPool {
+  COMMENTS: typeof COMMENTS;
+  THEME_COMMENTS: typeof THEME_COMMENTS;
 }
 
 export interface DemoSummary {
@@ -70,7 +79,7 @@ export async function buildDemo(opts: DemoOptions = {}): Promise<DemoSummary> {
   db.exec("PRAGMA journal_mode = WAL");
   db.exec(readFileSync(resolve(REPO, "packages/db/schema.sql"), "utf8"));
 
-  const world = createWorld({ seed, start: opts.start ?? "2026-08-01", days: opts.days ?? 92, participationScale: 1.6 });
+  const world = createWorld({ seed, start: opts.start ?? "2026-08-01", days: opts.days ?? 92, participationScale: 1.6, participation: opts.participation });
   const rng = createRng(`demo|${seed}`);
 
   // --- reference data, population, accounts ------------------------------------------------
@@ -142,10 +151,12 @@ export async function buildDemo(opts: DemoOptions = {}): Promise<DemoSummary> {
 
   const comment = (r: Rng, p: Person, q: QuestionDef, level: number, t: number): string => {
     const day = world.dates[t]!;
-    const themes = THEME_COMMENTS.filter((th) => th.collectiuId === p.collectiuId && th.domainId === q.domainId && day >= th.from);
+    const pools = opts.commentPools?.length ? opts.commentPools : [{ COMMENTS, THEME_COMMENTS }];
+    const pool = pools[p.idx % pools.length]!;
+    const themes = pool.THEME_COMMENTS.filter((th) => th.collectiuId === p.collectiuId && th.domainId === q.domainId && day >= th.from);
     if (themes.length && level < 0.55 && r() < 0.7) return pick(r, pick(r, themes)!.texts)!;
     const tone = level < 0.45 ? "negative" : level > 0.68 ? "positive" : "neutral";
-    return pick(r, COMMENTS[q.domainId]![tone])!;
+    return pick(r, pool.COMMENTS[q.domainId]![tone])!;
   };
 
   const answerFor = (r: Rng, p: Person, item: BatchItem, t: number) => {

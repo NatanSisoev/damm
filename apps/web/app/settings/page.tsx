@@ -10,6 +10,9 @@ import { PushToggle } from "../(employee)/components/push-toggle";
 import { EmployeeShell } from "../(employee)/components/shell";
 import { logoutAction } from "./actions";
 import { ChangePasswordPanel, DeleteAccountPanel, RecoveryPanel } from "./account-panels";
+import { pageTitle } from "@/lib/i18n/titles";
+
+export const generateMetadata = pageTitle("settings");
 
 export const dynamic = "force-dynamic";
 

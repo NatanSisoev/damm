@@ -1,4 +1,7 @@
 import type { PoolWeek } from "@/lib/hr-engine";
+import { getTL } from "@/lib/i18n/server";
+import { poolDict } from "@/lib/i18n/hr-pool";
+import { numD } from "@/lib/i18n/num";
 
 const W = 860;
 const L = 34;
@@ -14,7 +17,9 @@ const fmt = (iso: string) => {
 };
 
 /** Mean score with a ±1 SD band, the running mean, and the daily or weekly volume underneath. Scores are shown on 0–10. */
-export function EvolutionChart({ buckets, grain }: { buckets: PoolWeek[]; grain: "week" | "day" }) {
+export async function EvolutionChart({ buckets, grain }: { buckets: PoolWeek[]; grain: "week" | "day" }) {
+  const { t, lang } = await getTL(poolDict);
+  const f1 = (v: number) => numD(v * 10, lang, 1);
   const n = buckets.length;
   const step = IW / n;
   const x = (i: number) => L + step * i + step / 2;
@@ -56,14 +61,14 @@ export function EvolutionChart({ buckets, grain }: { buckets: PoolWeek[]; grain:
 
   return (
     <div>
-      <ul className="mb-3 flex flex-wrap gap-x-5 gap-y-1 text-xs text-subtle" aria-label="Llegenda">
-        <li className="flex items-center gap-2"><span className="inline-block h-0.5 w-5" style={{ background: "var(--co-4)" }} />Puntuació mitjana</li>
-        <li className="flex items-center gap-2"><span className="inline-block h-3 w-5" style={{ background: "var(--co-4)", opacity: 0.2 }} />±1 desviació típica</li>
-        <li className="flex items-center gap-2"><span className="inline-block w-5 border-t-2 border-dashed" style={{ borderColor: "currentColor" }} />Mitjana acumulada</li>
-        <li className="flex items-center gap-2"><span className="inline-block h-3 w-3" style={{ background: "var(--co-2)" }} />Respostes</li>
-        <li className="flex items-center gap-2"><span className="inline-block h-3 w-3 border" style={{ borderColor: "currentColor", opacity: 0.6 }} />Demanades</li>
+      <ul className="mb-3 flex flex-wrap gap-x-5 gap-y-1 text-xs text-subtle" aria-label={t("c_legend")}>
+        <li className="flex items-center gap-2"><span className="inline-block h-0.5 w-5" style={{ background: "var(--co-4)" }} />{t("c_mean")}</li>
+        <li className="flex items-center gap-2"><span className="inline-block h-3 w-5" style={{ background: "var(--co-4)", opacity: 0.2 }} />{t("c_sd")}</li>
+        <li className="flex items-center gap-2"><span className="inline-block w-5 border-t-2 border-dashed" style={{ borderColor: "currentColor" }} />{t("c_cum")}</li>
+        <li className="flex items-center gap-2"><span className="inline-block h-3 w-3" style={{ background: "var(--co-2)" }} />{t("c_resp")}</li>
+        <li className="flex items-center gap-2"><span className="inline-block h-3 w-3 border" style={{ borderColor: "currentColor", opacity: 0.6 }} />{t("c_asked")}</li>
       </ul>
-      <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet" role="img" aria-label="Evolució de la puntuació i del volum de respostes" className="w-full">
+      <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet" role="img" aria-label={t("c_aria")} className="w-full">
         {/* score panel */}
         {[0, 2.5, 5, 7.5, 10].map((v) => (
           <g key={v}>
@@ -71,10 +76,10 @@ export function EvolutionChart({ buckets, grain }: { buckets: PoolWeek[]; grain:
             <text x={L - 8} y={yS(v / 10) + 4} textAnchor="end" fontSize="10" fill="currentColor" fillOpacity="0.6">{v}</text>
           </g>
         ))}
-        <text x={L} y={TOP.y - 14} fontSize="11" fontWeight="600" fill="currentColor" fillOpacity="0.7">Puntuació (0–10)</text>
+        <text x={L} y={TOP.y - 14} fontSize="11" fontWeight="600" fill="currentColor" fillOpacity="0.7">{t("c_score_axis")}</text>
         {!hasScore && (
           <text x={W / 2} y={TOP.y + TOP.h / 2} textAnchor="middle" fontSize="12" fill="currentColor" fillOpacity="0.6">
-            Cap {grain === "day" ? "dia" : "setmana"} té prou respostes (10) per mostrar-ne la puntuació
+            {t(grain === "day" ? "c_none_day" : "c_none_week", { n: 10 })}
           </text>
         )}
         {bands.map((b, i) => b.length > 1 && <path key={i} d={band(b)} fill="var(--co-4)" fillOpacity="0.18" />)}
@@ -84,7 +89,7 @@ export function EvolutionChart({ buckets, grain }: { buckets: PoolWeek[]; grain:
 
         {/* volume panel */}
         <line x1={L} x2={W - R} y1={BOT.y + BOT.h} y2={BOT.y + BOT.h} stroke="currentColor" strokeOpacity="0.35" />
-        <text x={L} y={BOT.y - 14} fontSize="11" fontWeight="600" fill="currentColor" fillOpacity="0.7">Respostes per {grain === "day" ? "dia" : "setmana"}</text>
+        <text x={L} y={BOT.y - 14} fontSize="11" fontWeight="600" fill="currentColor" fillOpacity="0.7">{t(grain === "day" ? "c_vol_day" : "c_vol_week")}</text>
         <text x={L - 8} y={BOT.y + 8} textAnchor="end" fontSize="10" fill="currentColor" fillOpacity="0.6">{maxN}</text>
         <text x={L - 8} y={BOT.y + BOT.h + 4} textAnchor="end" fontSize="10" fill="currentColor" fillOpacity="0.6">0</text>
         {buckets.map((b, i) => (
@@ -99,9 +104,9 @@ export function EvolutionChart({ buckets, grain }: { buckets: PoolWeek[]; grain:
         {buckets.map((b, i) => (
           <rect key={b.week} x={x(i) - step / 2} y={TOP.y} width={step} height={BOT.y + BOT.h - TOP.y} fill="transparent">
             <title>
-              {`${grain === "day" ? "Dia" : "Setmana del"} ${b.week}\n${b.responses} respostes · ${b.asked} demanades${
-                b.avgScore === null ? "\nPuntuació suprimida (menys de 10 respostes)" : `\nPuntuació ${(b.avgScore * 10).toFixed(1)}${b.sd === null ? "" : ` ± ${(b.sd * 10).toFixed(1)}`}`
-              }${b.cumMean === null ? "" : `\nMitjana acumulada ${(b.cumMean * 10).toFixed(1)}`}`}
+              {`${t(grain === "day" ? "c_tip_day" : "c_tip_week", { d: b.week })}\n${t("c_tip_counts", { r: b.responses, a: b.asked })}${
+                b.avgScore === null ? `\n${t("c_tip_suppressed", { n: 10 })}` : `\n${t("c_tip_score", { s: `${f1(b.avgScore)}${b.sd === null ? "" : ` ± ${f1(b.sd)}`}` })}`
+              }${b.cumMean === null ? "" : `\n${t("c_tip_cum", { s: f1(b.cumMean) })}`}`}
             </title>
           </rect>
         ))}

@@ -136,7 +136,7 @@ test("no monitoring item repeats within item_cooldown_days while a fresh item ex
       const fresh = qs.filter(
         (x) =>
           x.domini_id === item.domini_id && (x.collectiu_id === null || x.collectiu_id === coll.get(acct)) && x.necessitat_id === null &&
-          !x.is_followup && !banned.includes(x.tipus) && !usedToday.has(x.id) && (lastSeen.get(`${acct}|${x.id}`) ?? "0000-00-00") < start,
+          !x.is_followup && x.tipus === item.tipus && !banned.includes(x.tipus) && !usedToday.has(x.id) && (lastSeen.get(`${acct}|${x.id}`) ?? "0000-00-00") < start,
       );
       assert.equal(fresh.length, 0, `${name} ${acct} ${day}: question ${r.pregunta_id} repeated (last ${seen}) although ${fresh.map((f) => f.id)} were fresh`);
     }

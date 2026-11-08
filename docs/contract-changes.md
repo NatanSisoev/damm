@@ -19,6 +19,15 @@ What changed and why.
 
 ---
 
+## C23 · 2026-11-08 · Jan · Daily batch: exactly the cap, one answer type, no free text (supersedes C15 and C18)
+
+`getDailyBatch` (`@damm/engine`) no longer appends published-need questions past the cap. A day is exactly `questionsPerDay` (3) items, all of one answer type. The type is decided first: the top published need's type, else a due follow-up's type, else Thompson sampling over the types that can fill the day; the rest is filled with same-type monitoring items by domain priority. A day is shorter than 3 only when no more items of that type exist; types are never mixed. Needs keep top priority, inside the 3 slots (`maxNeedsPerDay` still 1). `open` questions are never batch items (`BATCH_EXCLUDED_TYPES`): open HR need questions are skipped in the batch (not converted). Commenting is an optional extra on any answered question: `POST /api/responses` already accepts `comentari` with `valorNum`, stored redacted in `resposta.comentari`, and the answer UI now offers it under non-text questions. `missing_comment` still applies to a legacy `open` row. `store.publishedNeedsMissing` is removed. `GET /api/pool/next` text falls back to the user's language, then Catalan, then the stored text. No schema or API shape change.
+
+- [x] Jan: pool route comment, optional comment field in the answer UI, docs. (done 2026-11-08)
+- [ ] Natan: nothing to apply; C15 and C18 top-up behaviour is withdrawn. Keep the health check "daily batches within limits" strict.
+
+---
+
 ## C22 · 2026-11-08 · Jan · Data retention constants and purge (R-PRIV-8)
 
 `packages/shared` gains `RETENTION` (`rawResponseMonths: 24`, `inactiveAccountMonths: 24`, `pushSubscriptionMonths: 12`). `@damm/db` gains `purgeExpired(db, { dryRun })` (`packages/db/src/retention.ts`): deletes `resposta` rows with `periode` older than the window plus their `comentari_tema` and `resposta_seed` rows, accounts with no recent answer (their `assignment` and `person_domain_state` rows cascade), and old push subscriptions. Aggregate tables (`agregat`, `tema`, `senyal`, `insight`, `recomanacio`, `domain_importance`) are never touched. `POST /api/jobs/run` calls it as its last step (`?dryRun=1` only counts); also `pnpm --filter @damm/db run purge [-- --dry-run]`. No schema change.
@@ -377,3 +386,29 @@ The employee app now shows scale10 questions as 1 to 10 (two rows of 5). It neve
 Action items:
 - [x] Jan: answer UI, HR type label. (done 2026-11-08)
 - [ ] Natan: in `packages/engine` set `SCALES.scale10` to `{ min: 1, max: 10 }` and score scale10 as `(v - 1) / 9` in `normalize.ts` (keep accepting 0 for old rows, clamped to 0), and generate 1..10 in the demo/sim answers.
+
+## 2026-11-08: HR comment browser, `/hr/comments` (Jan)
+
+Additive, no schema or `@damm/shared` change. New HR repository API in `@damm/db/hr` (`packages/db/src/hr-comments.ts`): `getCommentThemes(lang?)` and `searchComments(filters, page, lang?)`. They read only `tema`, `comentari_tema` and `v_resposta_analitica`.
+
+- Counts are comments, not distinct people (the view has no account id). Cells under 10 are hidden, with complementary suppression; themes under 10 are counted, never named. A filter combination under 10 returns no text and no count. Order is a fixed shuffle, so it carries no time signal.
+- Theme text goes through one function, `overlayThemeText`. After merging the `traduccio` work, replace its body with `overlayTranslations(db, "tema", rows, { etiqueta: "etiqueta", resum: "resum" }, lang)` from `./hr-i18n`.
+
+Action items:
+- [x] Jan: page, nav entry, dictionaries. (done 2026-11-08)
+- [x] Jan: after merging `jan/demo-db`, swap the `overlayThemeText` body as above. (done 2026-11-08, merge e50c0b1 and the commit that follows it)
+
+## 2026-11-08: Demo DB build, `traduccio` overlay for generated text (N-6, R-FLOW-5) (Jan)
+
+Additive and backward compatible. Catalan stays canonical in the source column; a missing row falls back to Catalan.
+
+- `traduccio(entitat, entitat_id, camp, lang, text)` (new table, PK on the first four): es/en overrides for generated HR text. Entities: `tema` (etiqueta, resum), `recomanacio` (text, titol, iniciativa, responsable_suggerit, termini_suggerit, justificacio, limits), `necessitat` (text_nl, titol, intro), `senyal` (descripcio). Read through `overlayTranslations` in `packages/db/src/hr-i18n.ts`; the HR repository and the HR/manager pages pass the request language. A DB without the table works (fallback).
+- Narrative insights may carry `detail.i18n.{es,en}.{summary,highlights[]}`; `getNarrative(collective, lang)` in `apps/web/app/hr/analytics.ts` applies it.
+- Engine hooks, no behaviour change when unused: `buildDemo` options `participation` (per `collectiuId:tornId` account share) and `commentPools` (comment language per account); `sim/world.ts` takes the participation override.
+- Engine health check: the "daily batches" check stays strict (at most the daily cap per person per day, needs included, C23). The looser variant from the demo-db branch was dropped.
+- `pnpm demo-db` builds the one demo DB (`data/demo.db`): 3 months (Aug-Oct 2026), 638 accounts in 4 collectives, 6 domains, every segment n >= 10, nothing suppressed, ca/es/en content. See `AGENTS.md`.
+
+Action items:
+- [ ] Natan: review the two engine hooks (`sim/world.ts`, `demo/build-demo.ts`); keep them or move them where you prefer.
+- [ ] Natan (optional): when the engine writes themes, recommendations or signal text, also write es/en rows to `traduccio` (or store keys instead of sentences).
+- [x] Jan: schema, overlay, HR/manager pages, build script. (done 2026-11-08)

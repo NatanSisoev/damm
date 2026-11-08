@@ -27,6 +27,7 @@ const icons = {
   pool: svg(<><rect x="4" y="4" width="16" height="4" /><rect x="4" y="10" width="16" height="4" /><rect x="4" y="16" width="16" height="4" /></>),
   method: svg(<><circle cx="12" cy="12" r="9" /><path d="M9.5 9.5a2.5 2.5 0 114 2c-.9.6-1.5 1-1.5 2M12 17h.01" /></>),
   brain: svg(<><circle cx="12" cy="12" r="3" /><path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M18.4 5.6l-2.8 2.8M8.4 15.6l-2.8 2.8" /></>),
+  comments: svg(<><path d="M4 5h16v11H9l-5 4z" /><path d="M8 9h8M8 12h5" /></>),
   manager: svg(<><circle cx="9" cy="8" r="3.5" /><path d="M2.5 20c.5-3.5 3-5.5 6.5-5.5s6 2 6.5 5.5M16 5a3.5 3.5 0 010 6.5M18 14.5c2 .6 3.3 2.3 3.5 5.5" /></>),
 };
 
@@ -39,6 +40,7 @@ const main: Item[] = [
 
 const footer: Item[] = [
   { href: "/hr/publish", label: "nav_publish", icon: icons.publish },
+  { href: "/hr/comments", label: "nav_comments", icon: icons.comments },
   { href: "/hr/brain", label: "nav_brain", icon: icons.brain },
   { href: "/hr/methodology", label: "nav_method", icon: icons.method },
   { href: "/manager", label: "nav_manager", icon: icons.manager },

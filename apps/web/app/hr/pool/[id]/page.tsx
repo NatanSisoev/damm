@@ -8,16 +8,25 @@ import { setQuestionActiveAction } from "../../actions";
 import { Card, Empty, PageHeader, Stat } from "../../ui";
 import { questionTypeLabel } from "../../labels";
 import { REASON, STATE } from "../labels";
+import { getTL } from "@/lib/i18n/server";
+import { poolDict } from "@/lib/i18n/hr-pool";
+import { collectiveLabel, domainLabel, shiftLabel } from "@/lib/i18n/names";
+import { numD } from "@/lib/i18n/num";
+import { needStatus } from "../../labels";
+import { pageTitle } from "@/lib/i18n/titles";
+
+export const generateMetadata = pageTitle("hr_question");
 
 export const dynamic = "force-dynamic";
 
 const MIN = 10;
 const pct = (x: number | null) => (x === null ? "—" : `${Math.round(x * 100)}%`);
-const num = (x: number) => x.toLocaleString("ca-ES");
-const score10 = (x: number | null) => (x === null ? "Suprimit" : (x * 10).toFixed(1));
 
 export default async function QuestionPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ g?: string }> }) {
   const { id } = await params;
+  const { t, lang } = await getTL(poolDict);
+  const num = (x: number) => numD(x, lang, 0);
+  const score10 = (x: number | null) => (x === null ? t("d_suppressed") : numD(x * 10, lang, 1));
   const grain = (await searchParams).g === "day" ? "day" : "week";
   const d = Number.isInteger(Number(id)) ? hrPoolQuestion(Number(id), grain) : null;
   if (!d) notFound();
@@ -26,65 +35,65 @@ export default async function QuestionPage({ params, searchParams }: { params: P
 
   return (
     <div className="mx-auto max-w-6xl">
-      <p className="mb-3 text-sm"><Link href="/hr/pool">← Banc de preguntes</Link></p>
+      <p className="mb-3 text-sm"><Link href="/hr/pool">{t("back")}</Link></p>
       <PageHeader
         title={q.text}
         subtitle={
           <span className="flex flex-wrap items-center gap-1.5">
-            <span className={`badge ${st.cls}`}>{st.label}</span>
-            <span className="badge">{questionTypeLabel(q.type)}</span>
-            <span className="badge">{q.domain}</span>
-            <span className="badge">{q.collective}</span>
+            <span className={`badge ${st.cls}`}>{t(st.key)}</span>
+            <span className="badge">{questionTypeLabel(q.type, lang)}</span>
+            <span className="badge">{domainLabel(q.domain, lang)}</span>
+            <span className="badge">{collectiveLabel(q.collective, lang)}</span>
             {q.facet && <span className="badge">{q.facet}</span>}
-            {q.needId !== null && <span className="badge badge-accent">Necessitat {q.needId}</span>}
-            {q.isFollowup && <span className="badge">Seguiment</span>}
-            {q.aiGenerated && <span className="badge">IA</span>}
-            <span className="text-xs text-subtle">{REASON[q.reason]}</span>
+            {q.needId !== null && <span className="badge badge-accent">{t("need_n", { n: q.needId })}</span>}
+            {q.isFollowup && <span className="badge">{t("badge_followup")}</span>}
+            {q.aiGenerated && <span className="badge">{t("badge_ai")}</span>}
+            <span className="text-xs text-subtle">{t(REASON[q.reason])}</span>
           </span>
         }
       />
 
       <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-4">
-        <Stat label="Demanada" value={num(q.asked)} hint={`${q.asked7d} els últims 7 dies`} />
-        <Stat label="Respostes" value={num(q.responses)} hint={`${q.responses7d} els últims 7 dies`} />
-        <Stat label="Taxa de resposta" value={pct(q.answerRate)} hint={`${num(q.answeredAssigned)} de ${num(q.asked)} assignacions`} />
-        <Stat label="Confiança" value={q.confidence === null ? "—" : Math.round(q.confidence)} hint={q.confidence === null ? (q.type === "open" || q.type === "ranking" ? "No aplica a aquest format" : `Suprimit (<${MIN} persones)`) : "Fiabilitat de la puntuació (0–100)"} />
-        <Stat label="Consens" value={q.consensus === null ? "—" : Math.round(q.consensus)} hint={q.consensus === null ? undefined : "100 = tothom respon igual"} />
-        <Stat label="Abast" value={`${num(q.reachedAccounts)} / ${num(q.eligibleAccounts)}`} hint="Persones que l'han respost" />
-        <Stat label="Puntuació mitjana" value={q.avgScore === null ? "—" : `${score10(q.avgScore)} / 10`} hint={q.avgScore === null ? `Suprimit (<${MIN} respostes)` : "0 pitjor, 10 millor"} />
+        <Stat label={t("d_asked")} value={num(q.asked)} hint={t("stat_last7", { n: q.asked7d })} />
+        <Stat label={t("d_responses")} value={num(q.responses)} hint={t("stat_last7", { n: q.responses7d })} />
+        <Stat label={t("d_rate")} value={pct(q.answerRate)} hint={t("d_assignments", { a: num(q.answeredAssigned), b: num(q.asked) })} />
+        <Stat label={t("d_confidence")} value={q.confidence === null ? "—" : Math.round(q.confidence)} hint={q.confidence === null ? (q.type === "open" || q.type === "ranking" ? t("d_conf_na") : t("d_suppressed_people", { n: MIN })) : t("d_conf_hint")} />
+        <Stat label={t("d_consensus")} value={q.consensus === null ? "—" : Math.round(q.consensus)} hint={q.consensus === null ? undefined : t("d_consensus_hint")} />
+        <Stat label={t("d_reach")} value={`${num(q.reachedAccounts)} / ${num(q.eligibleAccounts)}`} hint={t("d_reach_hint")} />
+        <Stat label={t("d_avg")} value={q.avgScore === null ? "—" : `${score10(q.avgScore)} / 10`} hint={q.avgScore === null ? t("d_suppressed_resp", { n: MIN }) : t("d_avg_hint")} />
         <Stat
-          label="Pròxim lot"
+          label={t("d_next")}
           value={q.nextBatchDay ?? "—"}
-          hint={q.state === "live" && q.askedPerDay14 > 0 ? `~${q.askedPerDay14} assignacions/dia` : q.pendingAccounts !== null ? `${num(q.pendingAccounts)} pendents` : undefined}
+          hint={q.state === "live" && q.askedPerDay14 > 0 ? t("d_assign_day", { n: q.askedPerDay14 }) : q.pendingAccounts !== null ? t("pending_n", { n: num(q.pendingAccounts) }) : undefined}
         />
       </div>
 
       <Card
-        title="Evolució"
+        title={t("d_evolution")}
         meta={
-          <nav aria-label="Granularitat" className="hr-seg">
-            <Link href={`/hr/pool/${q.id}`} aria-current={grain === "week" ? "page" : undefined}>Setmanes</Link>
-            <Link href={`/hr/pool/${q.id}?g=day`} aria-current={grain === "day" ? "page" : undefined}>Dies</Link>
+          <nav aria-label={t("d_granularity")} className="hr-seg">
+            <Link href={`/hr/pool/${q.id}`} aria-current={grain === "week" ? "page" : undefined}>{t("d_weeks")}</Link>
+            <Link href={`/hr/pool/${q.id}?g=day`} aria-current={grain === "day" ? "page" : undefined}>{t("d_days")}</Link>
           </nav>
         }
         className="mb-6"
       >
-        {d.weekly.length === 0 ? <Empty>Encara no hi ha activitat.</Empty> : <EvolutionChart buckets={d.weekly} grain={grain} />}
+        {d.weekly.length === 0 ? <Empty>{t("d_no_activity")}</Empty> : <EvolutionChart buckets={d.weekly} grain={grain} />}
       </Card>
 
       <div className="mb-6 grid gap-6 lg:grid-cols-2">
-        <Card title="Distribució de les respostes" meta={d.distribution?.note}>
+        <Card title={t("d_distribution")} meta={d.distribution?.note}>
           {d.distribution ? (
             <Bars bars={d.distribution.bars} />
           ) : (
-            <Empty>{q.type === "open" ? "Pregunta oberta: no hi ha distribució. Els comentaris es llegeixen agrupats per temes a Resultats." : `Suprimit: menys de ${MIN} respostes.`}</Empty>
+            <Empty>{q.type === "open" ? t("d_open_no_dist") : t("d_suppressed_lt", { n: MIN })}</Empty>
           )}
         </Card>
-        <Card title="Per període" flush>
+        <Card title={t("d_by_period")} flush>
           <table className="table">
-            <thead><tr><th>Període</th><th className="text-right">Respostes</th><th className="text-right">Puntuació</th></tr></thead>
+            <thead><tr><th>{t("d_period")}</th><th className="text-right">{t("d_responses")}</th><th className="text-right">{t("d_score")}</th></tr></thead>
             <tbody>
-              {d.periods.length === 0 && <tr><td colSpan={3} className="text-subtle">Sense respostes.</td></tr>}
+              {d.periods.length === 0 && <tr><td colSpan={3} className="text-subtle">{t("d_no_responses")}</td></tr>}
               {d.periods.map((p) => (
                 <tr key={p.periode}><td>{p.periode}</td><td className="num text-right">{num(p.responses)}</td><td className="num text-right">{score10(p.avgScore)}</td></tr>
               ))}
@@ -93,60 +102,60 @@ export default async function QuestionPage({ params, searchParams }: { params: P
         </Card>
       </div>
 
-      <Card title="Per col·lectiu i torn" meta={`Els grups de menys de ${MIN} respostes tenen la puntuació suprimida`} className="mb-6" flush>
+      <Card title={t("d_by_segment")} meta={t("d_by_segment_meta", { n: MIN })} className="mb-6" flush>
         <table className="table">
-          <thead><tr><th>Col·lectiu</th><th>Torn</th><th className="text-right">Respostes</th><th className="text-right">Puntuació</th></tr></thead>
+          <thead><tr><th>{t("f_collective")}</th><th>{t("d_shift")}</th><th className="text-right">{t("d_responses")}</th><th className="text-right">{t("d_score")}</th></tr></thead>
           <tbody>
-            {d.segments.length === 0 && <tr><td colSpan={4} className="text-subtle">Sense respostes.</td></tr>}
+            {d.segments.length === 0 && <tr><td colSpan={4} className="text-subtle">{t("d_no_responses")}</td></tr>}
             {d.segments.map((s, i) => (
-              <tr key={i}><td>{s.collective}</td><td>{s.shift ?? "—"}</td><td className="num text-right">{num(s.responses)}</td><td className="num text-right">{score10(s.avgScore)}</td></tr>
+              <tr key={i}><td>{collectiveLabel(s.collective, lang)}</td><td>{s.shift ? shiftLabel(s.shift, lang) : "—"}</td><td className="num text-right">{num(s.responses)}</td><td className="num text-right">{score10(s.avgScore)}</td></tr>
             ))}
           </tbody>
         </table>
       </Card>
 
       <div className="mb-6 grid gap-6 lg:grid-cols-2">
-        <Card title="Configuració">
+        <Card title={t("d_config")}>
           <Dl
             rows={[
-              ["Format", `${questionTypeLabel(q.type)} (${q.type})`],
-              ["Estat a la base de dades", q.dbStatus],
-              ["Prioritat", String(q.priority)],
-              ["Ordre dins la necessitat", String(q.order)],
-              ["Polaritat", q.polarity === 1 ? "Positiva" : "Negativa (la puntuació s'inverteix)"],
-              ["Faceta", q.facet ?? "—"],
-              ["Origen", q.aiGenerated ? "Proposada per la IA" : "Escrita per una persona"],
-              ["Motiu de la IA", q.aiReason ?? "—"],
-              ["Aprovada per", q.approvedBy ? `${q.approvedBy}${q.approvedAt ? ` · ${q.approvedAt.slice(0, 16)}` : ""}` : "—"],
-              ["Necessitat", q.needId === null ? "Monitoratge continu" : `${q.needTitle ?? ""} (${q.needStatus})`],
-              ["Biaix après de l'ítem", d.itemBias ? `${d.itemBias.bias.toFixed(3)} (n=${d.itemBias.n})` : "—"],
+              [t("d_format"), `${questionTypeLabel(q.type, lang)} (${q.type})`],
+              [t("d_db_status"), t(`qs_${q.dbStatus}` as "qs_draft")],
+              [t("d_priority"), String(q.priority)],
+              [t("d_order"), String(q.order)],
+              [t("d_polarity"), q.polarity === 1 ? t("d_positive") : t("d_negative")],
+              [t("d_facet"), q.facet ?? "—"],
+              [t("d_origin"), q.aiGenerated ? t("src_ai") : t("src_human")],
+              [t("d_ai_reason"), q.aiReason ?? "—"],
+              [t("d_approved_by"), q.approvedBy ? `${q.approvedBy}${q.approvedAt ? ` · ${q.approvedAt.slice(0, 16)}` : ""}` : "—"],
+              [t("d_need"), q.needId === null ? t("continuous") : `${q.needTitle ?? ""} (${needStatus(q.needStatus ?? "", lang).label})`],
+              [t("d_bias"), d.itemBias ? `${numD(d.itemBias.bias, lang, 3)} (n=${d.itemBias.n})` : "—"],
             ]}
           />
           {q.options && (
             <div className="mt-4">
-              <p className="label mb-1">Opcions</p>
+              <p className="label mb-1">{t("d_options")}</p>
               <ol className="list-decimal pl-5 text-[13px]">
                 {q.options.map((o, i) => (
                   <li key={i}>
                     {o.label}
-                    {typeof o.score === "number" && <span className="text-subtle"> · valor {o.score}</span>}
+                    {typeof o.score === "number" && <span className="text-subtle">{t("d_option_value", { n: o.score })}</span>}
                   </li>
                 ))}
               </ol>
             </div>
           )}
         </Card>
-        <Card title="Entrega">
+        <Card title={t("d_delivery")}>
           <Dl
             rows={[
-              ["Primer lot", q.firstAskedDay ?? "—"],
-              ["Última vegada demanada", q.lastAskedDay ?? "—"],
-              ["Última resposta", q.lastAnsweredAt ? q.lastAnsweredAt.slice(0, 16) : "—"],
-              ["Als lots d'avui", String(q.inTodayBatches)],
-              ["Assignada com a", `monitoratge ${q.askedByReason.monitor} · necessitat ${q.askedByReason.need} · seguiment ${q.askedByReason.followup}`],
-              ["Ritme (14 dies)", `${q.askedPerDay14} per dia`],
-              ["Temps de resposta", q.avgAnswerMs === null ? "—" : `${(q.avgAnswerMs / 1000).toFixed(1)} s${q.carelessShare !== null ? ` · ${pct(q.carelessShare)} massa ràpides` : ""}`],
-              ["Comentaris", q.comments === null ? "—" : String(q.comments)],
+              [t("d_first"), q.firstAskedDay ?? "—"],
+              [t("d_last_asked"), q.lastAskedDay ?? "—"],
+              [t("d_last_answer"), q.lastAnsweredAt ? q.lastAnsweredAt.slice(0, 16) : "—"],
+              [t("d_today_batches"), String(q.inTodayBatches)],
+              [t("d_assigned_as"), t("d_assigned_as_value", { m: q.askedByReason.monitor, n: q.askedByReason.need, f: q.askedByReason.followup })],
+              [t("d_pace"), t("d_pace_value", { n: q.askedPerDay14 })],
+              [t("d_answer_time"), q.avgAnswerMs === null ? "—" : `${numD(q.avgAnswerMs / 1000, lang, 1)} s${q.carelessShare !== null ? t("d_too_fast", { pct: pct(q.carelessShare) }) : ""}`],
+              [t("d_comments"), q.comments === null ? "—" : String(q.comments)],
             ]}
           />
           {(q.dbStatus === "aprovada" || q.dbStatus === "retirada") && (
@@ -154,11 +163,11 @@ export default async function QuestionPage({ params, searchParams }: { params: P
               <input type="hidden" name="id" value={q.id} />
               <input type="hidden" name="active" value={q.dbStatus === "retirada" ? "1" : "0"} />
               {q.dbStatus === "aprovada" ? (
-                <ConfirmButton message="Retirar aquesta pregunta del banc? Deixarà de sortir als lots; l'historial es conserva." className="btn btn-ghost border border-line-strong px-3 py-1.5">
-                  Retira del banc
+                <ConfirmButton message={t("d_retire_confirm")} className="btn btn-ghost border border-line-strong px-3 py-1.5">
+                  {t("d_retire")}
                 </ConfirmButton>
               ) : (
-                <button type="submit" className="btn btn-ghost border border-line-strong px-3 py-1.5">Torna-la al banc</button>
+                <button type="submit" className="btn btn-ghost border border-line-strong px-3 py-1.5">{t("d_restore")}</button>
               )}
             </form>
           )}

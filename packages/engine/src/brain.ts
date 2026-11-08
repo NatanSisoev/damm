@@ -313,10 +313,8 @@ export function simulateBrain(db: SqlDatabase, input: SimulateInput): SimResult 
         cfg, rng: createRng(`${seed}|${p}|${day}`), day, questions, lastSeen, answered,
         dueFollowups: [], domains, formatPref, formatStats,
       });
-      // Same top-up as the live engine: published needs not yet answered are served beyond the daily cap.
-      const inBatch = new Set(picks.map((x) => x.question.id));
+      // Same as the live engine (C23): needs compete inside the daily cap, nothing is added on top.
       const batch: { question: QuestionDef; reason: AssignmentReason }[] = [...picks];
-      for (const q of needQs) if (!answered.has(q.id) && !inBatch.has(q.id)) batch.push({ question: q, reason: "need" });
       for (const { question: q, reason } of batch) {
         const prev = lastSeen.get(q.id);
         if (prev) {

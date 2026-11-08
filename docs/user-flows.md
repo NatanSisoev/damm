@@ -14,7 +14,7 @@ How to read this:
 | Tag | Meaning |
 |---|---|
 | **DB-seed** | Dev DB from `pnpm --filter @damm/seed run seed` (`data/app.db`). About 1,200 synthetic employees, about 700 responses, about 500 comments. Join codes `DAMM-FAB`, `DAMM-LOG`, `DAMM-COM`, `DAMM-OFI`. Logística/nit has 6 accounts by design (below 10). |
-| **DB-demo** | `DB_PATH=data/demo.db`, built by `pnpm --filter @damm/engine run demo` (about 4 min). Three months of synthetic answers, planted alarms and insights (stories S-90). Join codes are `DEMO-<first three letters of the collective>` (the deployed DB has `DEMO-FAB`: accents are stripped at startup); read the real values from the `joincode` table before testing. |
+| **DB-demo** | `data/app.db` (default `DB_PATH`), built by `pnpm demo-db` (trilingual, about 90 s). Three months of synthetic answers, planted alarms and insights (stories S-90). Join codes are `DEMO-<first three letters of the collective>` (the deployed DB has `DEMO-FAB`: accents are stripped at startup); read the real values from the `joincode` table before testing. |
 | **GATE-ON** | `HR_ACCESS_CODE` is set in `.env`. `/hr`, `/manager` and their subpaths redirect to `/hr-login?next=<path>` without the cookie `hr_access`. |
 | **GATE-OFF** | `HR_ACCESS_CODE` is empty. The gate is off and `/hr` opens directly. |
 | **LLM-ON** | `LLM_API_KEY` and `LLM_BASE_URL` set. Model `ornith`. |
@@ -24,7 +24,7 @@ How to read this:
 
 Time: "today" for the employee flow is the Europe/Madrid calendar day (`madridDay`). `resposta.data` is stored in UTC. The current date at writing is 2026-11-07.
 
-Wiring status: the engine package (`@damm/engine`) **is wired into the routes**. `apps/web/lib/engine.ts` builds one engine (`createEngine({db, redact})`); `GET /api/pool/next` calls the engine's `getDailyBatch` (which adds published-need questions on top, C18) and `POST /api/responses` calls `submitAnswers`. A scheduler runs the engine job every 10 minutes (`instrumentation.ts`). The old stub in `packages/db/src/employee-repository.ts` is no longer on the answer path. Flows below describe the engine behaviour as **Current**. Known mismatches between docs and code are called out where they occur (batch size is 3 per day by default while the app copy says "Dues preguntes"; a closed need still serves its questions, F-HR-9 B1).
+Wiring status: the engine package (`@damm/engine`) **is wired into the routes**. `apps/web/lib/engine.ts` builds one engine (`createEngine({db, redact})`); `GET /api/pool/next` calls the engine's `getDailyBatch` (exactly the daily cap, one answer type, no free text, C23) and `POST /api/responses` calls `submitAnswers`. A scheduler runs the engine job every 10 minutes (`instrumentation.ts`). The old stub in `packages/db/src/employee-repository.ts` is no longer on the answer path. Flows below describe the engine behaviour as **Current**. Known mismatches between docs and code are called out where they occur (batch size is 3 per day by default while the app copy says "Dues preguntes"; a closed need still serves its questions, F-HR-9 B1).
 
 ## 1. Personas
 
@@ -136,7 +136,7 @@ DB effect per answer: one `resposta` row with `compte_id`, `pregunta_id`, `valor
 **Current (engine wired):**
 
 - `GET /api/pool/next` calls `getEngine().getDailyBatch(compteId)` (`apps/web/lib/engine.ts`) and returns `{ preguntes: [{ id, dominiId, text, tipus, options }] }`. The engine's batch for a Madrid day is fixed once built (rows in the `assignment` table, inserted with `INSERT OR IGNORE`): reloading or opening a second tab gives the same questions.
-- **Published needs go past the daily cap.** On every call, `getDailyBatch` (`@damm/engine`, C18) appends every approved question of a `publicada` need for the account's collective that the account never answered and is not already in today's batch, as extra `reason='need'` rows. So an employee who logs in or taps the push after a publish sees that need's questions on `/` straight away, even after answering the day's 3; nothing already answered repeats. `submitAnswers` accepts them because they are today's rows.
+- **Published needs go inside the daily cap (C23).** `getDailyBatch` no longer appends anything past 3. A published need for the account's collective takes the top slot (one per day) and decides the day's answer type; the other slots are same-type monitoring items. A need published later joins the next day's batch, or today's if the account has not opened the app yet. Open-text need questions are skipped in the batch. An optional comment can be added to any answer.
 - Order of the batch: one due follow-up, then one approved HR need (`prioritat` descending, `maxNeedsPerDay` = 1), then monitoring questions (domains drawn in proportion to their priority with a boost for outliers, one item per domain, facet rotation, Thompson-sampled format).
 - **Batch size is 3 per day by default** (`questionsPerDay` in `packages/engine/src/config.ts`, overridable via `engine_config.questions_per_day`; no override in the seed or demo). The app copy still says "Dues preguntes breus al dia" on `/join`: a doc and UI mismatch, not a test failure of the engine.
 - **No strict "same question 4 days in a row" rule.** There is a soft cooldown of 28 days per item (`itemCooldownDays`): the picker prefers items not seen in the last 28 days and falls back to any item so a slot is never left empty. An HR need's questions are asked once per person (an already-answered question is not offered again).
@@ -347,6 +347,8 @@ Preconditions: GATE-ON logged in, DB with `senyal` and `recomanacio` rows (seed 
 | 4 | Change the signal status | `senyal.status` changes. |
 | 5 | On a recommendation press "Aprova" or "Descarta" | `recomanacio.estat` goes `proposada` → `aprovada` or `descartada`. Nothing is executed. |
 
+HR comment browser, `/hr/comments` (nav tab "Comentaris"): a themes table with comment counts per period, per collective and per domain; any cell under 10 shows as hidden (with complementary suppression), and themes under 10 comments are counted but not named. Below it, a comment search with filters (theme, period, collective, domain, text). A filter combination with fewer than 10 comments returns no text and no count. Comments are redacted, ordered by a fixed shuffle (no time signal), 25 per page. Counts are comments, not distinct people. Covers: R-FLOW-7c.
+
 Engine alarms have their own page, `/hr/signals` ("Alarmes", nav tab with a count badge): PageHeader title "Alarmes", subtitle "Senyals que detecta el motor a partir dels agregats. Cap és individual; cada una és revisada per una persona.", button "Recalcula ara"; card "Alarmes" with a count, empty text "Cap alarma activa."; each item has type and severity badges, a "Només l'equip de persones" badge when the audience is HR only, "{periode} · n={n}", the description, status transition buttons and a link "Veure detall →" to `/hr/signals/<id>`. Alarm types: `sharp_drop`, `sustained_decline`, `changepoint_cluster`, `polarisation`, `feble`, `low_confidence`, `improvement`. Statuses: open, acknowledged, action_linked, resolved. A 7-day cooldown stops the same alarm being re-raised. The detail page `/hr/signals/<id>` has the title of the signal type, the description, a button "← Recomanacions", "Estat del senyal:" status buttons and the card "Del senyal a l'acció" (4-step timeline, each step "Fet" or "Pendent"). Managers only see alarms of audience `hr_manager`.
 
 Branches: `/hr/signals/abc` or an unknown id gives 404. A decided recommendation cannot be decided again (SQL guard on `estat = 'proposada'`). A signal with a hidden group shows `Suprimit`, never a number under 10.
@@ -461,13 +463,13 @@ Also available as `POST /api/jobs/run` (HR-gated like `/hr`; 409 while a run is 
 ### F-JOB-2 Daily batch from the engine (wired)
 
 Covers: R-FLOW-5c, R-FLOW-5f, R-TENSION-1.
-`getDailyBatch` gives the same batch all day (stored in `assignment`); order follow-up, HR need (`prioritat`, one per day), monitoring (domains ∝ priority with an outlier boost, 28-day soft item cooldown, Thompson-sampled format); 3 questions a day by default (`questionsPerDay`). `submitAnswers` rejection reasons `not_in_todays_batch`, `already_answered`, `invalid_value`, `missing_comment`. Status: wired into `GET /api/pool/next` and `POST /api/responses` via `apps/web/lib/engine.ts` (the engine tops the day up with published-need questions past the cap, see F-EMP-5); a scheduler runs the engine job every 10 minutes (`instrumentation.ts`). Testable from the API and the UI as in F-EMP-5. The "4 days in a row" statement of the older docs is not a rule in the code (see F-EMP-5).
+`getDailyBatch` gives the same batch all day (stored in `assignment`); order follow-up, HR need (`prioritat`, one per day), monitoring (domains ∝ priority with an outlier boost, 28-day soft item cooldown, Thompson-sampled format); exactly 3 questions a day by default (`questionsPerDay`), all of one answer type, never `open` (C23). `submitAnswers` rejection reasons `not_in_todays_batch`, `already_answered`, `invalid_value`, `missing_comment`. Status: wired into `GET /api/pool/next` and `POST /api/responses` via `apps/web/lib/engine.ts` (exactly the cap, C23); a scheduler runs the engine job every 10 minutes (`instrumentation.ts`). Testable from the API and the UI as in F-EMP-5. The "4 days in a row" statement of the older docs is not a rule in the code (see F-EMP-5).
 
 ### F-JOB-3 Seed and demo builds
 
 Covers: R-DATA-1 to R-DATA-9.
 - Seed: `pnpm --filter @damm/seed run seed` is fresh and deterministic; about 1,200 synthetic employees, about 700 responses over Aug, Sep, Oct 2026, about 500 comments; planted bias: low night-shift response, October emerging theme (shift system communication and breaks), Logística weak signal (safety equipment, heat), manager positivity, one sub-threshold group (Logística/nit, 6).
-- Demo: `pnpm --filter @damm/engine run demo` builds `data/demo.db` with three months and planted stories (S-90). About 4 minutes.
+- Demo: `pnpm demo-db` builds `data/app.db` with three months and planted stories (S-90). About 90 s.
 - Comments: `pnpm --filter @damm/seed run comments` (template mode) or `-- --llm`. Committed JSON so nobody needs the key to seed.
 
 ### F-JOB-4 Daily push send (expected gap)

@@ -32,6 +32,13 @@ self.addEventListener("fetch", (event) => {
 
 // Push: shows a notification from the payload ({ title, body, url }). The server sends one when HR
 // publishes a need (apps/web/lib/push.ts); the payload never names the person.
+// Fallback text when the payload has none (the server normally sends it in the account language).
+const FALLBACK_BODY = { ca: "Tens preguntes noves", es: "Tienes preguntas nuevas", en: "New questions" };
+function fallbackBody() {
+  const l = String((self.navigator && self.navigator.language) || "ca").slice(0, 2).toLowerCase();
+  return FALLBACK_BODY[l] || FALLBACK_BODY.ca;
+}
+
 self.addEventListener("push", (event) => {
   let data = {};
   try {
@@ -41,7 +48,7 @@ self.addEventListener("push", (event) => {
   }
   event.waitUntil(
     self.registration.showNotification(data.title || "Escolta activa", {
-      body: data.body || "Tens preguntes noves · Tienes preguntas nuevas · New questions",
+      body: data.body || fallbackBody(),
       icon: "/icons/icon-192.png",
       badge: "/icons/icon-192.png",
       data: { url: data.url || "/" },

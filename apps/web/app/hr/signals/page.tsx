@@ -9,10 +9,11 @@ import { Card, Empty, PageHeader } from "../ui";
 import { FoldList } from "../ui-server";
 import { countPendingRecommendations } from "@damm/db/hr";
 import { statusLabel, signalTypeLabel } from "../signal-labels";
-import { getTL } from "@/lib/i18n/server";
+import { getT, getTL } from "@/lib/i18n/server";
 import { hrResultsDict, type HrResultsT } from "@/lib/i18n/hr-results";
 import { hrLookup } from "@/lib/i18n/hr";
-import { domainLabel } from "@/lib/i18n/names";
+import { signalsDict } from "@/lib/i18n/hr-signals";
+import { collectiveLabel, domainLabel, shiftLabel } from "@/lib/i18n/names";
 import type { Lang } from "@damm/shared";
 
 import { Sparkline } from "../trend";
@@ -21,6 +22,9 @@ import { ALARM_NEXT } from "./transitions";
 import { NON_ACTIONABLE, alarmHint } from "./alarm-text";
 import { signalDetail, signalDrop, signalSegment } from "@/lib/signal-text";
 import { generateRecommendationsAction, proposeFollowUpAction } from "./actions";
+import { pageTitle } from "@/lib/i18n/titles";
+
+export const generateMetadata = pageTitle("hr_alarms");
 
 const TABS = [
   { key: "obertes", label: "sg_tab_open", statuses: ["open"] },
@@ -35,11 +39,11 @@ type Row = AlarmView & { segment: string; domain: string | null; drop: number; d
 type Params = { estat?: string; tipus?: string; gravetat?: string; collectiu?: string; domini?: string; torn?: string; periode?: string; audiencia?: string; ordre?: string; q?: string };
 
 const SORTS = [
-  { key: "gravetat", label: "Gravetat" },
-  { key: "caiguda", label: "Mida del canvi" },
-  { key: "mostra", label: "Mida del grup (n)" },
-  { key: "recent", label: "Més recents" },
-  { key: "grup", label: "Grup (A–Z)" },
+  { key: "gravetat", label: "sort_severity" },
+  { key: "caiguda", label: "sort_drop" },
+  { key: "mostra", label: "sort_n" },
+  { key: "recent", label: "sort_recent" },
+  { key: "grup", label: "sort_group" },
 ] as const;
 
 export default async function AlarmsPage({ searchParams }: { searchParams: Promise<Params> }) {
@@ -47,13 +51,14 @@ export default async function AlarmsPage({ searchParams }: { searchParams: Promi
   const sp = await searchParams;
   const { estat } = sp;
   const { t, lang } = await getTL(hrResultsDict);
+  const ts = await getT(signalsDict);
   const tab = TABS.find((x) => x.key === estat) ?? TABS[0];
 
 
   const trends = getTrends();
   const domains = new Map(listDomains().map((d) => [d.id, d.nom]));
   const torns = new Map(listTorns().map((x) => [x.id, x.nom]));
-  const recs = listRecommendations();
+  const recs = listRecommendations(lang);
 
   const colNames = new Map(listCollectius().map((c) => [c.id, c.nom]));
 
@@ -92,7 +97,7 @@ export default async function AlarmsPage({ searchParams }: { searchParams: Promi
     (!f.torn || String(r.tornId) === f.torn) &&
     (!f.periode || r.periode === f.periode) &&
     (!f.audiencia || r.audience === f.audiencia) &&
-    (!f.q || `${r.segment} ${r.domain ?? ""} ${r.detail} ${signalTypeLabel(r.type)}`.toLowerCase().includes(f.q)),
+    (!f.q || `${r.segment} ${r.domain ?? ""} ${r.detail} ${signalTypeLabel(r.type, lang)}`.toLowerCase().includes(f.q)),
   );
   const activeFilters = Object.values(f).filter(Boolean).length;
   const tabHref = (key: string) => {
@@ -122,7 +127,7 @@ export default async function AlarmsPage({ searchParams }: { searchParams: Promi
     sort === "caiguda" ? (a: Row, b: Row) => b.drop - a.drop || bySeverity(a, b)
     : sort === "mostra" ? (a: Row, b: Row) => b.n - a.n || bySeverity(a, b)
     : sort === "recent" ? (a: Row, b: Row) => b.createdAt.localeCompare(a.createdAt) || bySeverity(a, b)
-    : sort === "grup" ? (a: Row, b: Row) => a.segment.localeCompare(b.segment, "ca") || bySeverity(a, b)
+    : sort === "grup" ? (a: Row, b: Row) => a.segment.localeCompare(b.segment, lang) || bySeverity(a, b)
     : bySeverity;
   actionable.sort(order);
 
@@ -148,7 +153,7 @@ export default async function AlarmsPage({ searchParams }: { searchParams: Promi
         actions={
           <div className="flex flex-wrap gap-2">
             <Link href="/hr/recommendations" className="btn">
-              Suggeriments{pendingRecs > 0 && <span className="badge num">{pendingRecs}</span>}
+              {ts("suggestions")}{pendingRecs > 0 && <span className="badge num">{pendingRecs}</span>}
             </Link>
             <form action={recomputeAction}>
               <button className="btn" type="submit">{t("sg_recalc")}</button>
@@ -180,28 +185,28 @@ export default async function AlarmsPage({ searchParams }: { searchParams: Promi
       </div>
 
       {all.length > 0 && (
-        <form method="get" action="/hr/signals" className="alarm-filters mb-5" aria-label="Filtres d'alarmes">
+        <form method="get" action="/hr/signals" className="alarm-filters mb-5" aria-label={ts("filters_aria")}>
           {tab.key !== "obertes" && <input type="hidden" name="estat" value={tab.key} />}
-          <Select name="tipus" label="Tipus" value={f.tipus} options={opts.tipus.map((v) => [v, signalTypeLabel(v)])} />
-          <Select name="gravetat" label="Gravetat" value={f.gravetat} options={[["critical", "Crítica"], ["warning", "Avís"], ["info", "Info"]]} />
-          <Select name="collectiu" label="Col·lectiu" value={f.collectiu} options={[...opts.collectiu.map((v) => [String(v), colNames.get(v) ?? `#${v}`] as [string, string]), ["tots", "Tota l'empresa"]]} />
-          <Select name="domini" label="Domini" value={f.domini} options={opts.domini.map((v) => [String(v), domains.get(v) ?? `#${v}`])} />
-          <Select name="torn" label="Torn" value={f.torn} options={opts.torn.map((v) => [String(v), torns.get(v) ?? `#${v}`])} />
-          <Select name="periode" label="Període" value={f.periode} options={opts.periode.map((v) => [v, v])} />
-          <Select name="audiencia" label="Visibilitat" value={f.audiencia} options={[["hr_manager", "També el responsable"], ["hr", "Només persones"]]} />
+          <Select all={ts("f_all")} name="tipus" label={ts("f_type")} value={f.tipus} options={opts.tipus.map((v) => [v, signalTypeLabel(v, lang)])} />
+          <Select all={ts("f_all")} name="gravetat" label={ts("f_severity")} value={f.gravetat} options={[["critical", ts("sev_critical")], ["warning", ts("sev_warning")], ["info", ts("sev_info")]]} />
+          <Select all={ts("f_all")} name="collectiu" label={ts("f_collective")} value={f.collectiu} options={[...opts.collectiu.map((v) => [String(v), colNames.has(v) ? collectiveLabel(colNames.get(v)!, lang) : `#${v}`] as [string, string]), ["tots", ts("f_whole_company")]]} />
+          <Select all={ts("f_all")} name="domini" label={ts("f_domain")} value={f.domini} options={opts.domini.map((v) => [String(v), domains.has(v) ? domainLabel(domains.get(v)!, lang) : `#${v}`])} />
+          <Select all={ts("f_all")} name="torn" label={ts("f_shift")} value={f.torn} options={opts.torn.map((v) => [String(v), torns.has(v) ? shiftLabel(torns.get(v)!, lang) : `#${v}`])} />
+          <Select all={ts("f_all")} name="periode" label={ts("f_period")} value={f.periode} options={opts.periode.map((v) => [v, v])} />
+          <Select all={ts("f_all")} name="audiencia" label={ts("f_visibility")} value={f.audiencia} options={[["hr_manager", ts("vis_manager")], ["hr", ts("vis_hr")]]} />
           <label className="alarm-filter">
-            <span>Cerca</span>
-            <input className="input" type="search" name="q" defaultValue={sp.q ?? ""} placeholder="Grup, domini, text…" />
+            <span>{ts("f_search")}</span>
+            <input className="input" type="search" name="q" defaultValue={sp.q ?? ""} placeholder={ts("f_search_ph")} />
           </label>
           <label className="alarm-filter">
-            <span>Ordena per</span>
+            <span>{ts("f_sort")}</span>
             <select className="input" name="ordre" defaultValue={sort}>
-              {SORTS.map((o) => <option key={o.key} value={o.key}>{o.label}</option>)}
+              {SORTS.map((o) => <option key={o.key} value={o.key}>{ts(o.label)}</option>)}
             </select>
           </label>
           <div className="alarm-filter-actions">
-            <button className="btn btn-primary" type="submit">Aplica</button>
-            {(activeFilters > 0 || sort !== "gravetat") && <Link className="btn" href={tab.key === "obertes" ? "/hr/signals" : `/hr/signals?estat=${tab.key}`}>Neteja</Link>}
+            <button className="btn btn-primary" type="submit">{ts("f_apply")}</button>
+            {(activeFilters > 0 || sort !== "gravetat") && <Link className="btn" href={tab.key === "obertes" ? "/hr/signals" : `/hr/signals?estat=${tab.key}`}>{ts("f_clear")}</Link>}
           </div>
         </form>
       )}
@@ -209,7 +214,7 @@ export default async function AlarmsPage({ searchParams }: { searchParams: Promi
       {all.length === 0 ? (
         <Empty>{t("sg_empty")}</Empty>
       ) : rows.length === 0 ? (
-        <Empty>Cap alarma amb aquests filtres. Prova de treure&apos;n algun.</Empty>
+        <Empty>{ts("empty_filtered")}</Empty>
       ) : (
         <div className="space-y-6">
           <FoldList as="div" visible={4} className="space-y-6" items={grouped.map(([segment, items]) => (
@@ -272,12 +277,12 @@ export default async function AlarmsPage({ searchParams }: { searchParams: Promi
   );
 }
 
-function Select({ name, label, value, options }: { name: string; label: string; value: string; options: [string, string][] }) {
+function Select({ all, name, label, value, options }: { all: string; name: string; label: string; value: string; options: [string, string][] }) {
   return (
     <label className="alarm-filter">
       <span>{label}</span>
       <select className="input" name={name} defaultValue={value}>
-        <option value="">Tots</option>
+        <option value="">{all}</option>
         {options.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
       </select>
     </label>

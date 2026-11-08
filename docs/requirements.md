@@ -94,7 +94,7 @@ G-§4 is the authoritative list ("Tots els equips han de cobrir aquest recorregu
 The guide says "Publicar a Typeform". AGENTS.md decides to ignore Typeform: the app is the channel. The equivalent requirement is below. **Explain this choice on the pitch** (we own the anonymity boundary end to end).
 | ID | Requirement | Status | Evidence / gap |
 |----|-------------|--------|----------------|
-| R-FLOW-4a | Publishing makes the approved questions live | done | `publishNecessitat` sets `publicada`; `notifyNeedPublished` (`apps/web/lib/push.ts`) sends web push to the need's collective and returns only a device count (`<10` under 10). Button "Publica i envia la notificació" on `/hr/needs`, redesigned in the HR UI audit (4bc0db3): filter tabs with counts, fact cards (collective, dates, participation n/population, per-question answers `<10` suppressed), confirm before closing. An employee in the collective who opens `/` (login or push tap) gets the published need's unanswered questions at once, past the daily cap (the engine's `getDailyBatch` tops up published needs itself, C18). |
+| R-FLOW-4a | Publishing makes the approved questions live | done | `publishNecessitat` sets `publicada`; `notifyNeedPublished` (`apps/web/lib/push.ts`) sends web push to the need's collective and returns only a device count (`<10` under 10). Button "Publica i envia la notificació" on `/hr/needs`, redesigned in the HR UI audit (4bc0db3): filter tabs with counts, fact cards (collective, dates, participation n/population, per-question answers `<10` suppressed), confirm before closing. An employee in the collective who opens `/` (login or push tap) gets the published need's unanswered questions at once, inside the daily cap of 3 (one answer type per day, no free-text items, C23). |
 | R-FLOW-4b | A shareable **link** | done | `/hr/publish`, onboarding join URL per collective (not per need: a need reaches people by push) |
 | R-FLOW-4c | A **QR** | done | Server-side SVG plus a printable A4 poster |
 | R-FLOW-4d | Publish via **API** / M365 integration (D-S13) | done | `/hr/publish/[codi]/teams`: Adaptive Card preview, copyable JSON, optional send to `TEAMS_WEBHOOK_URL`. The webhook send is not yet tested against a real Teams channel. |
@@ -124,7 +124,7 @@ The guide says "Publicar a Typeform". AGENTS.md decides to ignore Typeform: the 
 |----|-------------|--------|----------------|
 | R-FLOW-7a | Participation | done | HR home KPI, results |
 | R-FLOW-7b | Representativeness | done | Against the 1,200 population. HR-X-1 fallback when the job writes no company-level rows (C11, Natan's emission still open). |
-| R-FLOW-7c | Main themes | done | Results / signals |
+| R-FLOW-7c | Main themes | done | Results / signals. Comment browser `/hr/comments` (HR only): themes table with comment counts per period, collective and domain (cells under 10 hidden, themes under 10 counted but not named), plus a filtered search over redacted comments (a filter combination under 10 returns nothing). Reads only `tema`, `comentari_tema` and `v_resposta_analitica`. |
 | R-FLOW-7d | Evolution | done | Trends |
 | R-FLOW-7e | **Alerts** | done | Signals on the home page and the signal list. HR UI audit (c1c7422): signal detail timeline steps link to recommendations and follow-up, back link goes to the alarm list. |
 | R-FLOW-7f | **Sample size** on every figure | done | n plus a precision band (task 17). HR UI audit (c1c7422): headline strip flags the smaller n; empty theme and narrative cards explain why and link to `/hr/methodology`. |

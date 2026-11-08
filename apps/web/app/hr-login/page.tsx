@@ -3,6 +3,9 @@ import { HrScope } from "../hr/theme";
 import { LangSwitcher } from "@/components/lang-switcher";
 import { getT } from "@/lib/i18n/server";
 import { hrDict } from "@/lib/i18n/hr";
+import { pageTitle } from "@/lib/i18n/titles";
+
+export const generateMetadata = pageTitle("hr_login");
 
 export default async function HrLoginPage({ searchParams }: { searchParams: Promise<{ next?: string; error?: string }> }) {
   const { next, error } = await searchParams;

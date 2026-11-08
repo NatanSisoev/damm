@@ -6,6 +6,9 @@ import { employeeDict } from "@/lib/i18n/employee";
 import { getT } from "@/lib/i18n/server";
 import { EmployeeFrame, PageHead } from "../(employee)/components/frame";
 import { OnboardingForm } from "./onboarding-form";
+import { pageTitle } from "@/lib/i18n/titles";
+
+export const generateMetadata = pageTitle("onboarding");
 
 export const dynamic = "force-dynamic";
 

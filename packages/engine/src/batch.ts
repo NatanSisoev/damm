@@ -55,50 +55,88 @@ export function domainPriority(d: DomainSignal, maxGain: number, cfg: EngineConf
   return d.weight * (d.probeBoost ?? 1) * (gain + cfg.domainFloor) * (1 + cfg.outlierBoost * excess);
 }
 
+/** Types that never go in the daily batch: free text is an optional comment on other questions, not an item. */
+export const BATCH_EXCLUDED_TYPES: QuestionType[] = ["open"];
+
+/**
+ * Daily batch: at most `questionsPerDay` questions, all of ONE answer type.
+ * 1. The day's type is fixed first: the top-priority published HR need decides it (needs come first),
+ *    else a due follow-up, else Thompson sampling over the types that can fill the day.
+ * 2. Slots are then filled with same-type items: the follow-up (if its type matches), the need(s),
+ *    and monitoring items by domain priority. Fewer than the cap only when the pool truly has no more
+ *    items of that type; the types are never mixed. Nothing is added on top of the cap.
+ */
 export function selectBatch(input: BatchInput): BatchPick[] {
   const { cfg, rng, day } = input;
   const picks: BatchPick[] = [];
   const used = new Set<number>();
   const slots = cfg.questionsPerDay;
   const cooldownStart = addDays(day, -cfg.itemCooldownDays);
-  const allowed = (q: QuestionDef) => !used.has(q.id) && input.formatPref(q.type) > 0;
+  const base = (q: QuestionDef) => !used.has(q.id) && !BATCH_EXCLUDED_TYPES.includes(q.type) && input.formatPref(q.type) > 0;
   const add = (q: QuestionDef, reason: AssignmentReason) => {
     picks.push({ question: q, reason });
     used.add(q.id);
   };
 
-  // 1. One due follow-up: prefer follow-up wordings in the domain, else a fresh monitoring item there.
+  // HR needs: highest priority first, each asked once per person.
+  const needs = input.questions
+    .filter((q) => q.needId !== null && !q.isFollowup && !input.answered.has(q.id) && base(q))
+    .sort((a, b) => b.priority - a.priority || a.id - b.id);
+  const monitoring = input.questions.filter((q) => q.needId === null && !q.isFollowup && base(q));
+
+  // Follow-up candidate: one due domain, follow-up wordings first, else a fresh monitoring item there.
+  const followupCandidates: QuestionDef[] = [];
   for (const domainId of input.dueFollowups) {
-    if (picks.length >= Math.min(1, slots)) break;
-    const inDomain = input.questions.filter((q) => q.domainId === domainId && q.needId === null && allowed(q));
-    const fu = inDomain.filter((q) => q.isFollowup);
-    const q = fu.length ? pickFresh(fu, input, rng) : pickInDomain(inDomain.filter((x) => !x.isFollowup), input, cooldownStart);
-    if (q) add(q, "followup");
+    const inDomain = monitoring.filter((q) => q.domainId === domainId);
+    const fu = input.questions.filter((q) => q.domainId === domainId && q.needId === null && q.isFollowup && base(q));
+    const q = fu.length ? pickFresh(fu, input, rng) : pickInDomain(inDomain, input, cooldownStart);
+    if (q) followupCandidates.push(q);
   }
 
-  // 2. HR needs: highest priority first, each asked once per person.
-  const needs = input.questions
-    .filter((q) => q.needId !== null && !q.isFollowup && !input.answered.has(q.id) && allowed(q))
-    .sort((a, b) => b.priority - a.priority || a.id - b.id);
-  for (const q of needs.slice(0, cfg.maxNeedsPerDay)) if (picks.length < slots) add(q, "need");
+  // Day type.
+  const typeCount = new Map<QuestionType, number>();
+  for (const q of monitoring) typeCount.set(q.type, (typeCount.get(q.type) ?? 0) + 1);
+  let dayType: QuestionType | undefined = needs[0]?.type ?? followupCandidates[0]?.type;
+  if (!dayType) {
+    const types = [...typeCount.keys()].sort();
+    const full = types.filter((t) => (typeCount.get(t) ?? 0) >= slots);
+    const among = full.length ? full : types.filter((t) => (typeCount.get(t) ?? 0) === Math.max(0, ...typeCount.values()));
+    dayType = chooseFormat(rng, among.map((t) => ({ type: t, ...input.formatStats(t), pref: input.formatPref(t) })));
+  }
+  if (!dayType) return picks;
+  const same = (q: QuestionDef) => q.type === dayType;
 
-  // 3. Monitoring: domains drawn ∝ priority without replacement, one item per domain.
+  // 1. One due follow-up of the day's type (otherwise it stays due for another day).
+  const fu = followupCandidates.find(same);
+  if (fu && slots > 0 && (needs.length === 0 || needs[0]!.type === dayType)) add(fu, "followup");
+
+  // 2. HR needs of the day's type.
+  let taken = 0;
+  for (const q of needs.filter(same)) {
+    if (taken >= cfg.maxNeedsPerDay || picks.length >= slots) break;
+    if (!used.has(q.id)) {
+      add(q, "need");
+      taken++;
+    }
+  }
+
+  // 3. Monitoring of the day's type: domains drawn ∝ priority without replacement, one item per domain.
   const maxGain = Math.max(0, ...input.domains.map((d) => d.infoGain));
   const order = weightedSampleWithoutReplacement(
     rng,
     input.domains.map((d) => ({ key: d.domainId, weight: domainPriority(d, maxGain, cfg) })),
     input.domains.length,
   );
-  const monitoring = input.questions.filter((q) => q.needId === null && !q.isFollowup);
+  const mon = monitoring.filter(same);
   for (const domainId of order) {
     if (picks.length >= slots) break;
-    const q = pickInDomain(monitoring.filter((x) => x.domainId === domainId && allowed(x)), input, cooldownStart);
+    const q = pickInDomain(mon.filter((x) => x.domainId === domainId && !used.has(x.id)), input, cooldownStart);
     if (q) add(q, "monitor");
   }
-  // Pool too small for one-per-domain: fill with any remaining monitoring item, oldest seen first.
-  for (const q of [...monitoring].sort((a, b) => seen(input, a).localeCompare(seen(input, b)))) {
+  // Fewer same-type domains than slots: fill with any remaining same-type item, oldest seen first.
+  for (const q of [...mon].sort((a, b) => seen(input, a).localeCompare(seen(input, b)) || a.id - b.id)) {
     if (picks.length >= slots) break;
-    if (allowed(q)) add(q, "monitor");
+    if (!used.has(q.id)) add(q, "monitor");
   }
   return picks;
 }

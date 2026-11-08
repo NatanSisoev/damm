@@ -8,6 +8,9 @@ import { hrDict, collectiveLabel } from "@/lib/i18n/hr";
 import { Wordmark } from "../../../../wordmark";
 import { joinUrl, qrSvg } from "../../qr";
 import { PrintButton } from "./print-button";
+import { pageTitle } from "@/lib/i18n/titles";
+
+export const generateMetadata = pageTitle("hr_poster");
 
 export default async function PosterPage({ params }: PageProps<"/hr/publish/[codi]/poster">) {
   const { codi } = await params;

@@ -18,8 +18,8 @@ import {
 } from "@damm/db/hr";
 import { hrAlarms, hrInsights } from "@/lib/hr-engine";
 import { InsightCards } from "../../hr/insight-cards";
-import { Radar, type RadarSeries } from "../../hr/results/radar";
-import { RepTable, TrendTable } from "../../hr/results/tables";
+import { Radar, type RadarSeries } from "../../hr/radar";
+import { RepTable, TrendTable } from "../../hr/tables";
 import { Card, Empty, PageHeader } from "../../hr/ui";
 import { SuppressedBadge } from "../../hr/ui-server";
 import { SignalBadges } from "../../hr/signal-labels";
@@ -29,6 +29,9 @@ import { managerDict } from "@/lib/i18n/manager";
 import { collectiveLabel } from "@/lib/i18n/names";
 import { num1L } from "@/lib/i18n/num";
 import { AggregateNote } from "../note";
+import { pageTitle } from "@/lib/i18n/titles";
+
+export const generateMetadata = pageTitle("manager");
 
 export default async function ManagerCollectivePage({ params }: { params: Promise<{ collectiu: string }> }) {
   const { collectiu: raw } = await params;
@@ -43,9 +46,9 @@ export default async function ManagerCollectivePage({ params }: { params: Promis
   const rep = getRepresentativeness();
   const repRows = rep.collectius.filter((r) => r.collectiu === collectiu.nom);
   const shiftRows = rep.torns.filter((r) => r.collectiu === collectiu.nom);
-  const themes = listThemes({ collectiuId: collectiu.id }).filter((th) => !th.suprimit);
+  const themes = listThemes({ collectiuId: collectiu.id, lang }).filter((th) => !th.suprimit);
   const signals = listManagerSignals(collectiu.id);
-  const recs = listManagerRecommendations(collectiu.id);
+  const recs = listManagerRecommendations(collectiu.id, lang);
   // Viewer comes from the route's collective, never from a request parameter; managers only get their own hr_manager alarms.
   const viewer = { role: "manager" as const, collectiuId: collectiu.id };
   const insights = hrInsights(viewer, { kind: ["top_mover", "polarisation", "importance_gap", "trajectory_mix", "followup_confirmation", "segment_gap"] }).slice(0, 8);

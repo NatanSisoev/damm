@@ -10,6 +10,8 @@ import {
 import { createDraftedFollowUp } from "./follow-up";
 import { changeAlarmStatus, hrSetQuestionActive, type AlarmStatus } from "@/lib/hr-engine";
 import { notifyNeedPublished } from "@/lib/push";
+import { getT } from "@/lib/i18n/server";
+import { panelDict } from "@/lib/i18n/hr-panel";
 
 const HR_USER = "hr-demo"; // no auth in the prototype; approval is still an explicit human action
 
@@ -17,12 +19,13 @@ export type NeedFormState = { error: string; field?: "text_nl" | "durada" } | nu
 
 /** Creates a need and its AI drafts. Returns an error state (never fails silently); redirects on success. */
 export async function createNeedAction(_prev: NeedFormState, formData: FormData): Promise<NeedFormState> {
+  const t = await getT(panelDict);
   const textNl = String(formData.get("text_nl") ?? "").trim();
-  if (!textNl) return { error: "Escriu l'objectiu de la consulta abans de generar els esborranys.", field: "text_nl" };
-  if (textNl.length < 15) return { error: "L'objectiu és massa curt perquè la IA el pugui treballar. Explica què vols entendre i de qui.", field: "text_nl" };
+  if (!textNl) return { error: t("need_err_empty"), field: "text_nl" };
+  if (textNl.length < 15) return { error: t("need_err_short"), field: "text_nl" };
   const c = Number(formData.get("collectiu"));
   const d = Number(formData.get("durada"));
-  if (!Number.isFinite(d) || d < 30) return { error: "La durada màxima ha de ser d'almenys 30 segons.", field: "durada" };
+  if (!Number.isFinite(d) || d < 30) return { error: t("need_err_duration"), field: "durada" };
   const context = String(formData.get("context") ?? "").trim();
   const exclusions = String(formData.get("exclusions") ?? "").trim();
   const collectiuId = c > 0 ? c : null;
@@ -35,7 +38,7 @@ export async function createNeedAction(_prev: NeedFormState, formData: FormData)
     saveDraftSurvey(id, survey);
   } catch (err) {
     console.error("createNeedAction", err);
-    return { error: "No s'han pogut generar els esborranys (la IA o la base de dades no han respost). No s'ha desat res: torna-ho a provar." };
+    return { error: t("need_err_failed") };
   }
   redirect("/hr/review");
 }

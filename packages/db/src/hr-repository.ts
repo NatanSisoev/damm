@@ -1,8 +1,9 @@
 // HR-side data access. The only repository HR routes may import.
 // Reads aggregate outputs and the analytics view; never `resposta` or `compte`.
-import type { Agregat, Recomanacio, Senyal } from "@damm/shared";
+import type { Agregat, Lang, Recomanacio, Senyal } from "@damm/shared";
 import { MIN_GROUP_SIZE } from "@damm/shared";
 import { getDb } from "./connection";
+import { overlayTranslations, RECOMMENDATION_FIELDS } from "./hr-i18n";
 import type { SignalRecommendation } from "./hr-signals";
 import { classifyChange, complementarySuppression, precisionBand, type Change, type HideReason, type PrecisionBand } from "./hr-rigour";
 
@@ -325,10 +326,12 @@ export const RECOMMENDATION_COLUMNS = `id, text, estat, seguiment_necessitat_id 
 
 type RecommendationRow = Recomanacio & Omit<SignalRecommendation, "id" | "text" | "estat" | "seguimentNecessitatId">;
 
-export function listRecommendations(): RecommendationRow[] {
-  return getDb()
+export function listRecommendations(lang?: Lang): RecommendationRow[] {
+  const db = getDb();
+  const rows = db
     .prepare(`SELECT senyal_id AS senyalId, ${RECOMMENDATION_COLUMNS} FROM recomanacio ORDER BY id`)
     .all() as RecommendationRow[];
+  return overlayTranslations(db, "recomanacio", rows, RECOMMENDATION_FIELDS, lang);
 }
 
 /** Recommendations still waiting for a human decision (badge in the HR sidebar). */
@@ -365,8 +368,9 @@ export function listManagerSignals(collectiuId: number): ManagerSignal[] {
 }
 
 /** Recommendations a human at HR approved, tied to a signal a manager may see for this collective. Never proposed or discarded ones. */
-export function listManagerRecommendations(collectiuId: number): { id: number; text: string; seguiment: boolean }[] {
-  return (getDb()
+export function listManagerRecommendations(collectiuId: number, lang?: Lang): { id: number; text: string; seguiment: boolean }[] {
+  const db = getDb();
+  const rows = (db
     .prepare(
       `SELECT r.id, r.text, r.seguiment_necessitat_id AS seg FROM recomanacio r
        JOIN senyal s ON s.id = r.senyal_id
@@ -375,6 +379,7 @@ export function listManagerRecommendations(collectiuId: number): { id: number; t
     )
     .all(collectiuId, MIN_GROUP_SIZE) as { id: number; text: string; seg: number | null }[])
     .map((r) => ({ id: r.id, text: r.text, seguiment: r.seg !== null }));
+  return overlayTranslations(db, "recomanacio", rows, { text: "text" }, lang);
 }
 
 /** Non-personal approver label: control characters and "@" stripped (no emails), max 60 chars, "HR" when empty. */
@@ -475,7 +480,7 @@ export interface NeedCard {
  * Esborrany = still has draft questions (or none yet); Llesta = open with approved questions and no drafts left;
  * Publicada / Tancada follow necessitat.estat. Reads only needs, questions and publications: no responses, no accounts.
  */
-export function listNeedCards(): NeedCard[] {
+export function listNeedCards(lang?: Lang): NeedCard[] {
   const db = getDb();
   const needs = db
     .prepare(
@@ -498,6 +503,8 @@ export function listNeedCards(): NeedCard[] {
      FROM publicacio pu JOIN joincode j ON j.codi = pu.codi_join JOIN collectiu c ON c.id = j.collectiu_id
      WHERE pu.necessitat_id = ? ORDER BY pu.id`,
   );
+  overlayTranslations(db, "necessitat", needs as unknown as { id: number; textNl: string; titol: string | null; intro: string | null }[],
+    { text_nl: "textNl", titol: "titol", intro: "intro" }, lang);
   return needs.map(({ estat, ...n }) => {
     const ap = (approved.all(n.id) as Omit<NeedCard["approved"][number], "answers">[]).map((q) => {
       const c = (answerCount.get(q.id) as { n: number }).n;
@@ -653,7 +660,8 @@ function readablePeriods(db: ReturnType<typeof getDb>): string[] {
 /**
  * Respondent counts per (collective, shift) for one period.
  * Prefers the all-domains rows (domini_id NULL). The engine writes per-domain rows only, so otherwise the largest
- * per-domain n of the segment is used: a lower bound of the distinct respondents, never an over-count.
+ * per-domain n of the segment is used. That is the number of people who answered at least one item of that domain, so it
+ * is a lower bound of the distinct respondents of the segment, never an over-count.
  */
 function segmentCounts(db: ReturnType<typeof getDb>, periode: string): { c: number; t: number | null; n: number; suprimit: number }[] {
   const all = db
@@ -879,9 +887,10 @@ export interface ThemeRow {
  * Without `collectiuId` only the company-wide rows (collectiu_id IS NULL) are returned; pass a collective id for its rows.
  * Suppressed rows (suprimit = 1 or n below the minimum group size) carry no label, summary, n or share.
  */
-export function listThemes(opts: { collectiuId?: number | null } = {}): ThemeRow[] {
+export function listThemes(opts: { collectiuId?: number | null; lang?: Lang } = {}): ThemeRow[] {
   const col = opts.collectiuId ?? null;
-  return (getDb()
+  const db = getDb();
+  const rows = (db
     .prepare(
       `SELECT id, etiqueta, resum, periode, n, emergent, suprimit, collectiu_id, share, font FROM tema
        WHERE collectiu_id IS ? AND periode <= ? ORDER BY periode DESC, emergent DESC, n DESC`,
@@ -894,6 +903,7 @@ export function listThemes(opts: { collectiuId?: number | null } = {}): ThemeRow
       collectiuId: r.collectiu_id ?? null, share: hidden ? null : r.share ?? null, font: r.font,
     };
   });
+  return overlayTranslations(db, "tema", rows, { etiqueta: "etiqueta", resum: "resum" }, opts.lang);
 }
 
 // --- CSV export (aggregates only; same suppression as the results page) ----------------
@@ -1067,6 +1077,50 @@ export function populationOf(collectiuId: number | null): number {
   return r.c;
 }
 
+export interface Participation {
+  /** Distinct people (lower bound), capped at the population; null when no readable period overlaps or the count is under the minimum group size. */
+  respondents: number | null;
+  population: number;
+  /** Whole percent, 0..100, null when respondents is null. */
+  pct: number | null;
+}
+
+/**
+ * People (not answers) who took part in a date window, from the job-written `agregat` table. For each period the window overlaps
+ * (up to the reading period), the segment's torn-less row is read: the all-domains row when present, else the largest per-domain n
+ * (people who answered at least that domain). Periods under the minimum group size are ignored. The result is the maximum across
+ * the overlapped periods (never a sum: the same person answers every month), capped at the population, so it is a lower bound of
+ * distinct people and can never exceed the denominator. `collectiuId` null means the whole company.
+ */
+export function getParticipation(w: { from: string; to: string }, collectiuId: number | null): Participation {
+  const db = getDb();
+  const population = populationOf(collectiuId);
+  const cap = readingPeriod(db);
+  const lo = w.from.slice(0, 7);
+  const hi = w.to.slice(0, 7);
+  const periods = cap ? (db.prepare("SELECT DISTINCT periode FROM agregat WHERE periode >= ? AND periode <= ? AND periode <= ?").all(lo, hi, cap) as { periode: string }[]).map((r) => r.periode) : [];
+  const rows = db.prepare("SELECT domini_id AS d, n FROM agregat WHERE periode = ? AND collectiu_id IS ? AND torn_id IS NULL");
+  const scopeCount = (periode: string, c: number | null): number | null => {
+    const r = rows.all(periode, c) as { d: number | null; n: number }[];
+    if (!r.length) return null;
+    const whole = r.find((x) => x.d === null);
+    return whole ? whole.n : Math.max(...r.map((x) => x.n));
+  };
+  let best: number | null = null;
+  for (const p of periods) {
+    let n = scopeCount(p, collectiuId);
+    if (n === null && collectiuId === null) {
+      // No company-wide rows: add up the collectives, but only when all of them are readable.
+      const parts = listCollectius().map((c) => scopeCount(p, c.id));
+      n = parts.length && parts.every((x) => x !== null && x >= MIN_GROUP_SIZE) ? parts.reduce<number>((a, x) => a + (x as number), 0) : null;
+    }
+    if (n !== null && n >= MIN_GROUP_SIZE && (best === null || n > best)) best = n;
+  }
+  const respondents = best === null ? null : Math.min(best, population);
+  const pct = respondents !== null && population > 0 ? Math.min(100, Math.round((respondents / population) * 100)) : null;
+  return { respondents, population, pct };
+}
+
 const BUCKET_SQL: Record<WindowBucket, string> = {
   day: "substr(v.data,1,10)",
   week: "date(substr(v.data,1,10),'weekday 0','-6 days')",
@@ -1077,8 +1131,8 @@ const bucketLabel = (b: WindowBucket, key: string) => (b === "day" || b === "wee
 
 /**
  * Same shape and rigour as getTrends (n < 10 hides, complementary suppression of collectives under "Tots"), but for an arbitrary
- * date window, read from the analytics view (no account ids). `n` is the largest per-question response count of the cell: a lower bound
- * of the distinct respondents, never an over-count. With `collectiuId` set, "Tots" is that collective alone. Means are on the 1-5 scale (1 + 4 x score).
+ * date window, read from the analytics view (no account ids). `n` is the largest per-question ANSWER count of the cell, not a count of
+ * people (questions repeat, so it can exceed the population): use getParticipation for people. With `collectiuId` set, "Tots" is that collective alone. Means are on the 1-5 scale (1 + 4 x score).
  */
 export function getWindowTrends(w: DateWindow, collectiuId: number | null = null): Trends {
   const db = getDb();
