@@ -53,7 +53,6 @@ export default async function CommentsPage({ searchParams }: { searchParams: Pro
               <tr>
                 <th>{t("th_theme")}</th>
                 <th className="num">{t("th_total")}</th>
-                {themes.periodes.map((p) => <th key={p} className="num">{p}</th>)}
                 <th>{t("th_collectives")}</th>
                 <th>{t("th_domains")}</th>
               </tr>
@@ -62,16 +61,12 @@ export default async function CommentsPage({ searchParams }: { searchParams: Pro
               {themes.themes.map((th) => (
                 <tr key={th.key}>
                   <td>
-                    <Link href={href({ tema: th.key, p: undefined })} className="underline" aria-label={t("view_theme", { name: th.etiqueta })}>
+                    <Link href={href({ tema: th.key, p: undefined })} className="hover:text-ink" aria-label={t("view_theme", { name: th.etiqueta })}>
                       {th.etiqueta}
                     </Link>{" "}
                     {th.emergent && <span className="badge">{t("emergent")}</span>}
                   </td>
                   <td className="num">{n0(th.n)}</td>
-                  {themes.periodes.map((p) => {
-                    const c = th.periods.find((x) => x.periode === p);
-                    return <td key={p} className="num">{c ? cell(c.n) : cell(null)}</td>;
-                  })}
                   <td>
                     {th.collectives.map((c) => (
                       <span key={c.label} className="badge mr-1">{collectiveLabel(c.label, lang)} {cell(c.n)}</span>
