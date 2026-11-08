@@ -29,6 +29,28 @@ const LANGS: Lang[] = ["ca", "es", "en"];
 /** Participation override per "collectiuId:tornId": more night-shift accounts so every segment reaches n >= 10. */
 const PARTICIPATION = { "1:3": 0.28, "2:3": 0.5 };
 
+/** Synthetic decision trail: HR approves AI drafts, edits one, adopts a recommendation, publishes the need, acknowledges an alarm. */
+function seedDecisions(d: DatabaseSync): void {
+  const ins = d.prepare(
+    "INSERT INTO decisio (created_at, entity, entity_id, necessitat_id, action, from_state, to_state, font, actor, subject, text_original, text_final) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+  );
+  const need = d.prepare("SELECT id, titol, text_nl FROM necessitat ORDER BY id LIMIT 1").get() as { id: number; titol: string | null; text_nl: string } | undefined;
+  if (need) {
+    const qs = d.prepare("SELECT id, text FROM pregunta WHERE necessitat_id = ? ORDER BY id").all(need.id) as { id: number; text: string }[];
+    const label = need.titol ?? need.text_nl.slice(0, 80);
+    qs.forEach((q, i) => {
+      const at = `2026-10-0${3 + i} 09:${10 + i * 7}:00`;
+      if (i === 0) ins.run(at, "pregunta", q.id, need.id, "edit", "esborrany", "esborrany", "hr_edit", "hr-demo", q.text, "Com valores el sistema de torns actual?", q.text);
+      ins.run(`2026-10-0${3 + i} 09:${30 + i * 5}:00`, "pregunta", q.id, need.id, "approve", "esborrany", "aprovada", "ai_draft", "hr-demo", q.text, null, null);
+    });
+    ins.run("2026-10-04 10:05:00", "necessitat", need.id, need.id, "publish", "aprovada", "publicada", "hr_need", "hr-demo", label, null, null);
+  }
+  const rec = d.prepare("SELECT id, COALESCE(titol, text) AS s FROM recomanacio WHERE aprovada_el IS NOT NULL ORDER BY id LIMIT 1").get() as { id: number; s: string } | undefined;
+  if (rec) ins.run("2026-10-21 11:20:00", "recomanacio", rec.id, null, "approve", "proposta", "aprovada", "ai_recommendation", "hr-demo", rec.s.slice(0, 200), null, null);
+  const sig = d.prepare("SELECT id, descripcio FROM senyal ORDER BY id LIMIT 1").get() as { id: number; descripcio: string } | undefined;
+  if (sig) ins.run("2026-10-22 08:45:00", "senyal", sig.id, null, "status", "nova", "reconeguda", "engine_alarm", "hr-demo", sig.descripcio.slice(0, 200), null, null);
+}
+
 /** One company-wide and one per-collective narrative for the latest period, from the aggregates. Catalan in the
  *  canonical fields, es/en in detail.i18n (read by apps/web/app/hr/analytics.ts getNarrative). */
 function addNarratives(d: DatabaseSync): void {
@@ -190,6 +212,8 @@ try {
       if (r.limits) put.run("recomanacio", r.id, "limits", l, REC_SIMPLE.limits(r.limits, l, misses));
     }
   }
+  // 6b. A few synthetic HR decisions so the traceability page is not empty (R-PRIV-10, N-11). HR labels only, no employee data.
+  seedDecisions(db);
   // 7. Narrative summaries (the engine writes these with an LLM; the demo DB gets deterministic trilingual ones).
   addNarratives(db);
   db.exec("COMMIT");

@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { MIN_GROUP_SIZE, type Lang } from "@damm/shared";
-import { listCollectius, listDomains, listNeedCards, listNeedDrafts, type NeedCard, type NeedState } from "@damm/db/hr";
+import { listCollectius, listDecisions, listDomains, listNeedCards, listNeedDrafts, type NeedCard, type NeedState } from "@damm/db/hr";
 import { ConfirmButton } from "../confirm-button";
 import { closeNeedAction, publishAction, remindNeedAction } from "../actions";
 import { LOW_PARTICIPATION_PCT, participationOf } from "../participation";
@@ -10,6 +10,9 @@ import { needStatus, questionTypeLabel } from "../labels";
 import { getTL } from "@/lib/i18n/server";
 import { LOCALES, type TFn } from "@/lib/i18n/core";
 import { hrDict, collectiveLabel, domainLabel, type HrKey } from "@/lib/i18n/hr";
+import { trailDict } from "@/lib/i18n/hr-trail";
+import { makeT } from "@/lib/i18n/core";
+import { DecisionList } from "../trail";
 import { DraftReview } from "./draft-review";
 import { NeedForm } from "./need-form";
 import { pageTitle } from "@/lib/i18n/titles";
@@ -216,6 +219,7 @@ function NeedItem({ n, draft, domainIdx, t, lang, regenError }: { n: NeedCard; d
           n.duradaMaxS != null && <p className="text-xs text-subtle">{t("need_max_duration", { n: n.duradaMaxS })}</p>
         )}
 
+        <NeedTrail needId={n.id} lang={lang} />
         <div className="hr-actions flex flex-wrap items-center justify-end gap-2 border-t border-line pt-4">
           {n.state === "esborrany" && n.approved.length === 0 && n.nDraft === 0 && <p className="mr-auto text-sm text-subtle">{t("need_no_questions")}</p>}
           {live && (
@@ -239,6 +243,23 @@ function NeedItem({ n, draft, domainIdx, t, lang, regenError }: { n: NeedCard; d
         </div>
       </div>
     </Card>
+  );
+}
+
+/** The need's decision trail, folded: who approved, edited, discarded or published what, and where each proposal came from. */
+function NeedTrail({ needId, lang }: { needId: number; lang: Lang }) {
+  const t = makeT(trailDict, lang);
+  const rows = listDecisions({ necessitatId: needId, limit: 30 });
+  return (
+    <details className="border-t border-line pt-3">
+      <summary className="cursor-pointer text-sm font-semibold">
+        {t("tr_trail_for_need")} <span className="num ml-1 font-normal text-subtle">{t("tr_trail_count", { n: rows.length })}</span>
+      </summary>
+      <div className="mt-2">
+        {rows.length === 0 ? <p className="py-2 text-sm text-subtle">{t("tr_trail_empty")}</p> : <DecisionList rows={rows} lang={lang} />}
+        <Link href="/hr/traceability" className="text-xs underline">{t("tr_see_all")}</Link>
+      </div>
+    </details>
   );
 }
 

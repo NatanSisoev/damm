@@ -19,6 +19,14 @@ What changed and why.
 
 ---
 
+## 2026-11-08: decision trail, table `decisio` (Jan)
+
+`packages/db/schema.sql`: new table `decisio` (id, created_at, entity, entity_id, necessitat_id, action, from_state, to_state, font, actor, subject, text_original, text_final) with two indexes, created idempotently by `getDb()` (`ensureDecisionTable`). One row per human decision on AI output: approve, reject, edit or regenerate a drafted question, approve or dismiss a recommendation, publish or close a need, alarm status changes, retire or restore of a bank question. `actor` is an HR label (`hr-demo`), never an employee; there is no `compte_id`. Provenance is stored per decision in `decisio.font` (`ai_draft`, `ai_redraft`, `ai_followup`, `ai_recommendation`, `hr_edit`, `engine_alarm`, `engine_pool`, `hr_need`); no `font` columns were added to `pregunta` or `recomanacio`. `@damm/db/hr` exports `recordDecision`, `listDecisions`, `decisionSummary`, `alarmInfo`, `questionInfo`; the repository functions take an optional `actor`. UI: `/hr/traceability` and a folded trail on each need. `pnpm demo-db` seeds a few synthetic decisions.
+
+Action items:
+- [x] Jan: schema, migration, repository writes, HR actions, UI, demo seed. (done 2026-11-08)
+- [ ] Natan: after sync, run `pnpm demo-db`. Engine functions that change an alarm or a bank question state are recorded from `apps/web/app/hr/actions.ts`; if you add another human-triggered state change in the engine, call `recordDecision` from the web action.
+
 ## 2026-11-08: conditional follow-up questions, `pregunta.followup_of` / `followup_when` (Jan)
 
 `packages/db`: two nullable columns on `pregunta`, created idempotently by `getDb()` (`ensureFollowupColumns`): `followup_of` (parent question id) and `followup_when` (`'low'` = scale5/scale10 raw value <= 2, `'no'` = yes_no answered no). The link lives on the **child** open question. Children are never part of the daily batch, a campaign set or the pool list (the engine filters `followup_of IS NULL`) and do not count toward the ~2/day cap. `packages/shared`: `FollowupWhen`, `Pregunta.followupOf/followupWhen`, `PoolFollowup`, `PostResponsesResult`. `POST /api/responses` now answers 200 with `{ followups: PoolFollowup[] }` (translated, `parentId` set) when a stored answer triggers one, and still 204 otherwise. A follow-up answer goes to `resposta` as an open answer with the comment redacted as usual. `@damm/db/hr`: `DraftInput.followup`, `getDraftFollowup`, `removeDraftFollowup`; approving or discarding a draft question cascades to its draft follow-up. `@damm/ai`: `draftQuestionSchema.followup` (optional). Engine: `loadBankFollowups` links 5 bank questions in the demo DB.

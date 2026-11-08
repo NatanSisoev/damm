@@ -223,7 +223,7 @@ G-§8 principles, D-S16 trust pillars and D-S17 golden rules, merged. All Must.
 | R-PRIV-7 | Human control: HR validates surveys and recommendations before acting | G-§8, D-S16, D-S17 | done | |
 | R-PRIV-8 | **Minimisation and expiry**: keep only what is needed, for as long as needed | G-§8 | done | Minimisation (no email or phone, redacted comments only) plus a retention rule: `RETENTION` in `packages/shared/src/index.ts` (raw responses and redacted comments 24 months, inactive accounts 24 months, push subscriptions deleted on logout and after 12 months). `purgeExpired` in `packages/db/src/retention.ts` deletes raw rows past the window and keeps all aggregate tables; run it as `pnpm --filter @damm/db run purge [-- --dry-run]` or as the last step of `POST /api/jobs/run` (`?dryRun=1` counts only). Shown in plain words on `/hr/methodology` section 7 and `/privacitat`. The 24-month window keeps the Aug-Oct 2026 seed until Aug 2028. Caveat: the comment job rebuilds `tema` from the comments that remain, so themes of purged periods disappear at its next run (open item for Natan, C19). |
 | R-PRIV-9 | Equity: check coverage and results per collective | D-S16 | done | |
-| R-PRIV-10 | **Traceability**: record sources, criteria and decisions | D-S16 | blocked | Task 21 needs the `decisio` table and `font` fields (Natan) |
+| R-PRIV-10 | **Traceability**: record sources, criteria and decisions | D-S16 | done | `decisio` table (who, what, when, source `font`), written by every HR action on AI output; trail on `/hr/traceability` and per need. No employee data |
 | R-PRIV-11 | Synthetic data only | D-S17, G-§6 | done | |
 | R-PRIV-12 | Zero secrets | D-S17, G-§7 | partial | See R-X-4 |
 | R-PRIV-13 | Credentials salted and hashed; recovery by one-time code | A | done | scrypt. `/settings`: change password (current one required), regenerate the recovery code (shown once), delete account (deletes `compte` and the push subscription; answers move to an anonymous tombstone account, excluded from HR counts). |
@@ -279,7 +279,7 @@ G-§9 wording, D-S18 weights. Use this to decide what to build next: weight × g
 | 20% | Fit to the problem and value for people | Full cycle, closing the loop to employees, anonymity people believe | Push on real devices (needs public HTTPS) |
 | 15% | Prototype quality and usability | Polished HR and mobile flows, no dead ends | Push on real devices, conditional questions (R-FLOW-2e) |
 | 15% | Useful, justified use of AI | Real drafts, clustering, summaries, recommendations, each with a human gate | LLM key needed in the environment; draft quality (see `docs/ai-drafting-eval.md`) |
-| 15% | Privacy, anonymity, responsible use | n≥10, complementary suppression, redaction, lint guard, transparency | Traceability (R-PRIV-10, the only one still blocked) |
+| 15% | Privacy, anonymity, responsible use | n≥10, complementary suppression, redaction, lint guard, transparency | Traceability trail (R-PRIV-10) |
 | 10% | Representativeness and inclusion of all collectives | Gap vs population, night shift, no-computer path | Explicit warning (R-SC-B3), kiosk (N-3) |
 | 10% | Analysis and insight quality | Signals with effect size and n, change rule, emerging vs previous period, limits explained | Summary quality on real comments; channel breakdown (N-13) |
 | 10% | Future M365 integrations | Teams card and webhook, a credible Graph/Entra roadmap | Real webhook test, plus a roadmap slide |
@@ -303,7 +303,7 @@ Bonus items named by the guide (G-§4 "Bonus") and the deck (D-S18), then our ow
 | N-8 | Manager segment in HR results (social desirability, R-BIAS-5) | ours | Shows we detect a seeded bias | done (dashboard card; manager view `/manager/[collectiu]` audited, empty-state themes explained in c1c7422; the gap card compares managers with the rest per domain) | "Option B". `getManagerGap` in `packages/db/src/hr-repository.ts`; each side needs n≥10. |
 | N-9 | Methodology page "Com calculem" | ours | Explainability, scenario C6 | done | `apps/web/app/hr/methodology/page.tsx`, linked from results and the HR nav (ca/es/en) |
 | N-10 | Question-quality checker | ours | Wording bias, R-BIAS-4 | done | Per-question warnings in the draft review, see R-FLOW-3e |
-| N-11 | Decision audit log and AI provenance | ours | Traceability, R-PRIV-10 | blocked | Task 21 |
+| N-11 | Decision audit log and AI provenance | ours | Traceability, R-PRIV-10 | done | Task 21: `/hr/traceability` |
 | N-12 | Installable PWA plus daily push reminder | ours | Reminders R-FLOW-5d, participation | partial | Installable: manifest, icons (Paper identity, ink `#17211a`), offline page, service worker with push and notification click. Subscribe and send on publish built; a daily reminder and the tunnel (9) are open. |
 | N-13 | Participation by channel chart | G-§6.2 | Uses the `canal` field we already store | open: `canal` is not in the analytics view | Needs `canal` added to `v_resposta_analitica` (schema change), then one aggregate by `canal` with suppression. |
 | N-14 | Initiative ↔ domain mapping | D-S3 | Turns results into "is our policy working?" | done | R-DOM-5 |
@@ -315,5 +315,5 @@ Bonus items named by the guide (G-§4 "Bonus") and the deck (D-S18), then our ow
 ## Gaps that need a contract change
 
 Natan owns nothing open any more. What is left:
-- Traceability (R-PRIV-10, N-11): the `decisio` table and `font` fields. This is the only requirement still blocked.
+- Traceability (R-PRIV-10, N-11): done (`decisio` table, 2026-11-08). Provenance lives in `decisio.font`, no `font` columns on `pregunta` or `recomanacio`. No requirement is blocked now.
 - Channel breakdown (R-DATA-7, N-13): `canal` must be added to `v_resposta_analitica`.

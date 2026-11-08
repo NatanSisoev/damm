@@ -13,13 +13,13 @@ function refresh(id: number) {
 
 export async function approveFromDetailAction(formData: FormData) {
   const id = Number(formData.get("id"));
-  approveRecommendation(id);
+  approveRecommendation(id, "hr-demo");
   refresh(id);
 }
 
 export async function discardFromDetailAction(formData: FormData) {
   const id = Number(formData.get("id"));
-  discardRecommendation(id);
+  discardRecommendation(id, "hr-demo");
   refresh(id);
 }
 
