@@ -1,6 +1,6 @@
 # Deploy (Railway)
 
-Status: project and service are created and configured, but the **first GitHub deploy is blocked** until the Railway GitHub app has access to `NatanSisoev/damm` (see "GitHub access"). Nothing below has been verified on a live deploy yet.
+Status: live. The `web` service deploys from GitHub (`NatanSisoev/damm`, branch `jan/deploy`).
 
 ## Where things are
 
@@ -21,7 +21,15 @@ Railway deploys from GitHub only (never `railway up`). The repo is Natan's perso
 
 ## How deploys trigger
 
-Every push to the deploy branch redeploys. For now the branch is `jan/deploy`. At checkpoint CP3 switch it to `main`: Railway dashboard > `web` > Settings > Source > Branch, set `main`, then `railway redeploy --from-source -y`. If a push did not trigger a deploy, run `railway redeploy --from-source -y` (a plain `railway redeploy` reuses the old commit).
+Railway's `web` service builds from the dedicated release branch `jan/deploy`, and every push to it redeploys. Nobody develops on it: it only ever holds a version of `main` that is ready to go live.
+
+To release, fast-forward it to `main` after the PR merges, then push (no merge commit, never a force-push):
+
+```bash
+git fetch origin && git switch jan/deploy && git merge --ff-only origin/main && git push origin jan/deploy
+```
+
+If `--ff-only` fails, `jan/deploy` has commits that are not in `main`: get them into `main` through `jan/dev` first. If a push did not trigger a deploy, run `railway redeploy --from-source -y` (a plain `railway redeploy` reuses the old commit). If the release changes the schema or the demo data, reseed (see below).
 
 ## Build and start
 
