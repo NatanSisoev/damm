@@ -510,3 +510,14 @@ Backward compatible; old databases are rebuilt on first use by `ensurePushPerDev
 
 Action items:
 - [x] Jan: schema, migration, repository, settings action and push toggle. (done 2026-11-08)
+
+## 2026-11-08: `canal` in the analytics view, channel participation (N-13, R-DATA-7) (Jan)
+
+Backward compatible; old databases get the view rebuilt on first use by `ensureAnalyticsViewCanal` in `packages/db/src/connection.ts`.
+
+- `v_resposta_analitica` now exposes `canal` (`app` | `mobil_qr`) as its last column. It still has no `compte_id`.
+- `getChannelParticipation()` in `@damm/db/hr`: answers per channel per collective for the reading period, cells under `MIN_GROUP_SIZE` hidden (total and shares hidden while any non-empty cell is).
+- Demo pipeline: `packages/engine/demo/canal.ts` assigns a deterministic channel per account and day (about 38% QR in Fàbriques, 32% Logística, 10% Comercial, 5% Oficines); one extra argument in the `submitAnswers` call of `demo/build-demo.ts`.
+
+Action items:
+- [x] Jan: view, migration, repository function, `/hr` card, demo channel mix. (done 2026-11-08)

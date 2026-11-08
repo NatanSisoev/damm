@@ -240,7 +240,7 @@ G-§6.
 | R-DATA-4 | Deliberate biases the solution then detects: low-response groups, emerging themes, changes between periods | done | October theme, Logística weak signal, manager bias |
 | R-DATA-5 | Response id random, never linked to a person | done | |
 | R-DATA-6 | Broad categories, not small teams; no identifiable centres | done | 4 collectives, centre *type* only |
-| R-DATA-7 | **Channel** field to analyse participation by channel (Mòbil-QR / Correu / Teams) | partial | `canal` is stored (`app`, `mobil_qr`). Not shown anywhere yet: `canal` is not in `v_resposta_analitica`, so the HR side cannot read it without a schema change (N-13); no Teams value. |
+| R-DATA-7 | **Channel** field to analyse participation by channel (Mòbil-QR / Correu / Teams) | done (app, QR) | `canal` is stored (`app`, `mobil_qr`), is in `v_resposta_analitica`, and `getChannelParticipation()` in `packages/db/src/hr-repository.ts` feeds the "Answer channel" card on `/hr` (`ChannelTable` in `apps/web/app/hr/tables.tsx`). The demo DB mixes channels per collective (`packages/engine/demo/canal.ts`). No Correu/Teams value. |
 | R-DATA-8 | Realistic open comments with noise and typos | done | About 500, generated once and committed |
 | R-DATA-9 | Optional hidden true theme label to validate the classification | done | `resposta_seed`. Add a precision figure to the pitch once real clustering runs. |
 
@@ -305,15 +305,15 @@ Bonus items named by the guide (G-§4 "Bonus") and the deck (D-S18), then our ow
 | N-10 | Question-quality checker | ours | Wording bias, R-BIAS-4 | done | Per-question warnings in the draft review, see R-FLOW-3e |
 | N-11 | Decision audit log and AI provenance | ours | Traceability, R-PRIV-10 | done | Task 21: `/hr/traceability` |
 | N-12 | Installable PWA plus daily push reminder | ours | Reminders R-FLOW-5d, participation | partial | HR side: alarm push on `/hr/settings` (R-FLOW-7e). Installable: manifest, icons (Paper identity, ink `#17211a`), offline page, service worker with push and notification click. Subscribe and send on publish built; a daily reminder and the tunnel (9) are open. |
-| N-13 | Participation by channel chart | G-§6.2 | Uses the `canal` field we already store | open: `canal` is not in the analytics view | Needs `canal` added to `v_resposta_analitica` (schema change), then one aggregate by `canal` with suppression. |
+| N-13 | Participation by channel chart | G-§6.2 | Uses the `canal` field we already store | done: `canal` in `v_resposta_analitica`; `getChannelParticipation()` (reading period, per collective, cells under 10 shown as "<10", total hidden while a cell is) | Card "Answer channel" on `/hr`, next to representativeness. |
 | N-14 | Initiative ↔ domain mapping | D-S3 | Turns results into "is our policy working?" | done | R-DOM-5 |
 | N-15 | Retention and purge job | G-§8 | Closes R-PRIV-8 | done | See R-PRIV-8. |
 | N-16 | Accuracy of the theme classifier against `resposta_seed` | G-§6.2 | A number that proves analysis quality | done | `pnpm --filter @damm/engine run comments:eval`: 91.2 % top-1, 97.4 % recall, 84.8 % precision (engine.md section 12, with the template-data caveat). |
 | N-17 | Demo reset and presenter mode | ours | Demo reliability | done: reset button on `/hr/settings` (confirm dialog) restores every table except accounts and push subscriptions from the pristine snapshot `<DB_PATH>.pristine`, on the live connection (`packages/db/src/demo-reset.ts`); off unless `DEMO_RESET_ENABLED=1`; presenter mode not built | `docs/deploy.md` |
+| N-19 | Live phone trigger: one answer makes a real engine alarm and a push | ours | Demo wow | done: primed segment Comercial · Desenvolupament (sustained decline, Nov minus Sep -0.16, one 1/5 answer tips it to -0.20) with a published need served first; `DEMO_LIVE_JOB=1` runs the engine job debounced and single flight after a stored answer, then pushes HR (`apps/web/lib/demo-live-job.ts`); reset via N-17; staged `DEMO_TRIPWIRE` stays as plan B; rehearsed on a scratch DB, job 1.1 to 2.7 s | `docs/demo-script.md` |
 | N-18 | Question reordering and conditional logic in review | G-§4 | Closes R-FLOW-3c and R-FLOW-2e | done | Reordering via the `ordre` up/down buttons in the review; conditional follow-up (R-FLOW-2e) visible in the draft review with a remove button and served by the engine. |
 
 ## Gaps that need a contract change
 
 Natan owns nothing open any more. What is left:
 - Traceability (R-PRIV-10, N-11): done (`decisio` table, 2026-11-08). Provenance lives in `decisio.font`, no `font` columns on `pregunta` or `recomanacio`. No requirement is blocked now.
-- Channel breakdown (R-DATA-7, N-13): `canal` must be added to `v_resposta_analitica`.

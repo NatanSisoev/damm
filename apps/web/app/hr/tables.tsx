@@ -9,6 +9,7 @@ import { ChangeBadge, Sparkline } from "./trend";
 import {
   REP_GAP_FLAG,
   type RepRow,
+  type ChannelRow,
   type TrendRow,
 } from "@damm/db/hr";
 
@@ -125,3 +126,41 @@ export async function TrendTable({ periodes, rows }: { periodes: string[]; rows:
   );
 }
 
+
+/** Share of answers per channel and collective. Cells under the minimum group size show "<10". */
+export async function ChannelTable({ rows }: { rows: ChannelRow[] }) {
+  const { t, lang } = await getTL(hrResultsDict);
+  const pct = (v: number) => `${numD(v * 100, lang, 0)}%`;
+  return (
+    <table className="table min-w-[28rem]">
+      <thead>
+        <tr>
+          <th>{t("tb_coll")}</th>
+          <th>{t("ch_app")}</th>
+          <th>{t("ch_qr")}</th>
+          <th className="text-right">{t("ch_total")}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((r) => (
+          <tr key={r.collectiu}>
+            <td className="font-semibold">{collectiveLabel(r.collectiu, lang)}</td>
+            {r.cells.map((c) => (
+              <td key={c.canal}>
+                {c.n === null ? (
+                  <SuppressedBadge />
+                ) : (
+                  <div className="flex items-center gap-3">
+                    {c.share !== null && <Bar value={c.share} tone={c.canal === "app" ? "muted" : "chart"} />}
+                    <span className="num text-xs whitespace-nowrap text-muted">{c.share !== null ? `${pct(c.share)} · ` : ""}{numD(c.n, lang, 0)}</span>
+                  </div>
+                )}
+              </td>
+            ))}
+            <td className="text-right num">{r.total === null ? <SuppressedBadge /> : numD(r.total, lang, 0)}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}

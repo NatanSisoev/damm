@@ -21,6 +21,7 @@ export function getDb(): Db {
     ensureAlarmArchiveColumn(cached);
     ensureFollowupColumns(cached);
     ensureDecisionTable(cached);
+    ensureAnalyticsViewCanal(cached);
   }
   return cached;
 }
@@ -107,4 +108,16 @@ function ensureDecisionTable(db: Db): void {
   );
   CREATE INDEX IF NOT EXISTS idx_decisio_entity ON decisio(entity, entity_id);
   CREATE INDEX IF NOT EXISTS idx_decisio_need ON decisio(necessitat_id, created_at);`);
+}
+
+/** Databases built before `canal` joined the analytics view get the view rebuilt from its stored definition plus the column (schema.sql has the new one). Idempotent. */
+function ensureAnalyticsViewCanal(db: Db): void {
+  const row = db.prepare("SELECT sql FROM sqlite_master WHERE type = 'view' AND name = 'v_resposta_analitica'").get() as { sql: string } | undefined;
+  if (!row || /\bcanal\b/.test(row.sql)) return;
+  const next = row.sql.replace(/r\.data\b/, "r.data, r.canal");
+  if (next === row.sql) return;
+  db.transaction(() => {
+    db.exec("DROP VIEW v_resposta_analitica");
+    db.exec(next);
+  })();
 }

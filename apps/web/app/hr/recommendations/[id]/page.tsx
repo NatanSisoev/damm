@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { SubmitButton } from "@/app/hr/submit-button";
 import { Comments, People } from "../../glyphs";
 import type { ReactNode } from "react";
 import { notFound } from "next/navigation";
@@ -111,12 +112,12 @@ export default async function RecommendationPage({ params }: { params: Promise<{
               <div className="mt-4 flex flex-wrap justify-end gap-2 border-t border-line pt-4">
                 {r.estat === "proposada" && (
                   <>
-                    <form action={discardFromDetailAction}><input type="hidden" name="id" value={r.id} /><button className="btn">{t("rd_discard")}</button></form>
-                    <form action={approveFromDetailAction}><input type="hidden" name="id" value={r.id} /><button className="btn btn-primary">{t("rd_approve")}</button></form>
+                    <form action={discardFromDetailAction}><input type="hidden" name="id" value={r.id} /><SubmitButton className="btn">{t("rd_discard")}</SubmitButton></form>
+                    <form action={approveFromDetailAction}><input type="hidden" name="id" value={r.id} /><SubmitButton className="btn btn-primary">{t("rd_approve")}</SubmitButton></form>
                   </>
                 )}
                 {r.estat === "aprovada" && (
-                  <form action={followUpFromDetailAction}><input type="hidden" name="id" value={r.id} /><button className="btn btn-primary">{t("rd_create_followup")}</button></form>
+                  <form action={followUpFromDetailAction}><input type="hidden" name="id" value={r.id} /><SubmitButton className="btn btn-primary">{t("rd_create_followup")}</SubmitButton></form>
                 )}
               </div>
             )}

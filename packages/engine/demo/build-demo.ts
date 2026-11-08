@@ -29,6 +29,7 @@ import { toQuestion } from "../src/store.ts";
 import { createWorld, normal, type Person } from "../sim/world.ts";
 import { loadBankFollowups, loadQuestionBank } from "../fixtures/load-question-bank.ts";
 import { COMMENTS, THEME_COMMENTS } from "./comments.ts";
+import { demoChannel } from "./canal.ts";
 
 const REPO = resolve(import.meta.dirname, "../../..");
 const DAY_MS = 86_400_000;
@@ -67,6 +68,25 @@ const clamp = (x: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, x
 
 /** Very small PII scrubber for the demo (emails, phone numbers). The real app injects the AI module's redactor. */
 const redact = (s: string) => s.replace(/[\w.+-]+@[\w-]+\.[\w.]+/g, "[email]").replace(/\+?\d[\d\s-]{7,}\d/g, "[phone]");
+
+/**
+ * The primed segment for the live phone trigger. The lifts are latent-level offsets (0..1 scale, per month) added to the
+ * simulated truth of Comercial · Desenvolupament. Its scores read Sep 5.54, Oct 5.53, Nov 5.38 (full demo-db pipeline): no
+ * alarm yet (Nov - Sep = -0.16, above the -0.2 sustained-decline trigger), but one 1/5 answer takes Nov to 5.34
+ * (-0.20, strictly decreasing) and the engine opens a warning; a 3/5 (Nov 5.38) or 5/5 (5.42) answer does not. Aug sits below Sep so no alarm opened earlier in the replay. The values
+ * were found empirically and are exact only for this seed and date: re-check with packages/engine/demo/live-check.ts
+ * after any change to the demo build or the simulation.
+ */
+export const LIVE_TRIGGER = {
+  collectiuId: 3,
+  domainId: 3,
+  augLift: -0.146,
+  sepLift: -0.104,
+  octLift: -0.128,
+  novLift: -0.145,
+  needText: "We want to know how much room people in Comercial have to grow in their role.",
+  questionText: "How much room do you have to grow in your current role?",
+};
 
 export async function buildDemo(opts: DemoOptions = {}): Promise<DemoSummary> {
   const log = opts.log ?? (() => {});
@@ -146,6 +166,14 @@ export async function buildDemo(opts: DemoOptions = {}): Promise<DemoSummary> {
     if (d === 5 && p.collectiuId === 4 && t >= t0("2026-10-01")) x += p.idx % 2 === 0 ? 0.24 : -0.24;
     // "Listen again" story: Logística is low on Condicions i organització until HR adopts a recommendation on 15 Sep, then improves.
     if (d === 6 && p.collectiuId === 2) x += t < t0("2026-09-15") ? -0.08 : t >= t0("2026-09-20") ? 0.08 : 0;
+    // Live-trigger story (primed segment): Comercial · Desenvolupament slides slowly Sep > Oct > Nov and sits just above the
+    // sustained-decline trigger (Nov - Sep > -0.2), so one low answer in the live pitch is the last straw. See docs/demo-script.md.
+    if (d === LIVE_TRIGGER.domainId && p.collectiuId === LIVE_TRIGGER.collectiuId) {
+      if (t < t0("2026-09-01")) x += LIVE_TRIGGER.augLift;
+      else if (t < t0("2026-10-01")) x += LIVE_TRIGGER.sepLift;
+      else if (t < t0("2026-11-01")) x += LIVE_TRIGGER.octLift;
+      else x += LIVE_TRIGGER.novLift;
+    }
     return x;
   };
   const truth = (p: Person, d: number, t: number) => clamp(world.level(p.idx, d, t) + extra(p, d, t), 0.02, 0.98);
@@ -230,7 +258,7 @@ export async function buildDemo(opts: DemoOptions = {}): Promise<DemoSummary> {
         const q = questions.get(it.questionId)!;
         return createRng(`skip|${seed}|${acct}|${t}|${q.id}`)() < answerRate(q);
       });
-      const res = engine.submitAnswers(acct, answered.map((it) => answerFor(r, p, it, t)));
+      const res = engine.submitAnswers(acct, answered.map((it) => answerFor(r, p, it, t)), { channel: demoChannel(seed, acct, p.collectiuId, t) });
       answers += res.accepted.length;
     }
     // The real job runs on a schedule, so it also ran at the end of each month: alarms and emergent themes opened then
@@ -242,6 +270,25 @@ export async function buildDemo(opts: DemoOptions = {}): Promise<DemoSummary> {
     }
     if (t % 15 === 0) log(`day ${t + 1}/${world.days} (${world.dates[t]}): ${answers} answers so far`);
   }
+
+  // --- live trigger: the approved need whose question the pitch phone is served first ----------------------
+  // Inserted after the simulated days so no simulated account answered it (its first answer is the live one).
+  transaction(db, () => {
+    const n = run(
+      db,
+      "INSERT INTO necessitat (text_nl, collectiu_id, estat, creat) VALUES (?, ?, 'publicada', '2026-11-08 08:00:00')",
+      LIVE_TRIGGER.needText,
+      LIVE_TRIGGER.collectiuId,
+    );
+    run(
+      db,
+      "INSERT INTO pregunta (domini_id, collectiu_id, text, tipus, facet, polarity, necessitat_id, estat, prioritat, aprovada_per, aprovada_el) VALUES (?, ?, ?, 'scale5', 'growth_room', 1, ?, 'aprovada', 10, 'HR demo', '2026-11-08 08:05:00')",
+      LIVE_TRIGGER.domainId,
+      LIVE_TRIGGER.collectiuId,
+      LIVE_TRIGGER.questionText,
+      Number(n.lastInsertRowid),
+    );
+  });
 
   // --- listen again: one adoption and one context event ---------------------------------------
   // HR adopted a recommendation for the Logística alarm on 15 Sep (the alarm is HR-owned, so the engine leaves it alone),

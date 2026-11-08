@@ -244,3 +244,8 @@
 .hr-role-toggle button[aria-pressed="true"] { color: var(--text); background: var(--accent-soft); }
 .hr-shell[data-role="manager"] main form,
 .hr-shell[data-role="manager"] main .hr-act { display: none; }
+
+/* Skip link: hidden until focused by keyboard. */
+.hr-skip { position: absolute; left: 8px; top: -48px; z-index: 100; padding: 8px 14px; background: var(--ink); color: var(--paper); font-size: 14px; border-radius: 4px; }
+.hr-skip:focus { top: 8px; }
+main:focus { outline: none; }

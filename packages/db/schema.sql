@@ -149,7 +149,7 @@ CREATE INDEX idx_resposta_compte   ON resposta(compte_id, data);
 -- Analytics view: no compte_id. HR side and analysis read this, never `resposta`.
 CREATE VIEW v_resposta_analitica AS
 SELECT r.id, r.pregunta_id, p.domini_id, c.collectiu_id, c.centre_tipus_id, c.torn_id,
-       c.es_manager, r.valor_num, r.score, r.comentari, r.periode, r.data
+       c.es_manager, r.valor_num, r.score, r.comentari, r.periode, r.data, r.canal
 FROM resposta r
 JOIN compte c   ON c.id = r.compte_id
 JOIN pregunta p ON p.id = r.pregunta_id;

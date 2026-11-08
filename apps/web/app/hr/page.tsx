@@ -3,14 +3,15 @@ import { cookies } from "next/headers";
 import { VIEW_ROLE_COOKIE, parseRole } from "@/lib/view-role";
 import { MIN_GROUP_SIZE } from "@damm/shared";
 import {
-  getDataBounds,
-  getRepresentativeness,
-  getWindowTrends,
+  getDataBounds as rawDataBounds,
+  getRepresentativeness as rawRepresentativeness,
+  getWindowTrends as rawWindowTrends,
+  getChannelParticipation as rawChannelParticipation,
   listCollectius,
-  getParticipation,
-  getManagerGap,
-  getDomainInitiatives,
-  getAnswersPerDay,
+  getParticipation as rawParticipation,
+  getManagerGap as rawManagerGap,
+  getDomainInitiatives as rawDomainInitiatives,
+  getAnswersPerDay as rawAnswersPerDay,
   CHANGE_MIN_DELTA,
   CHANGE_MIN_N,
   PRECISION_MODERADA_MIN_N,
@@ -25,9 +26,10 @@ import { numD } from "@/lib/i18n/num";
 import { Card, Empty, PageHeader, Stat } from "./ui";
 import { TrendChart } from "./trend-chart";
 import { Radar, type RadarSeries } from "./radar";
-import { RepTable, TrendTable } from "./tables";
+import { ChannelTable, RepTable, TrendTable } from "./tables";
 import { InsightCards } from "./insight-cards";
-import { getHeadlines, getHeatmap, getNarrative, getProposals, getReachGaps, getSegmentTrend } from "./analytics";
+import { getHeadlines as rawHeadlines, getHeatmap, getNarrative as rawNarrative, getProposals as rawProposals, getReachGaps as rawReachGaps, getSegmentTrend as rawSegmentTrend } from "./analytics";
+import { memo } from "@/lib/hr-memo";
 import { HeadlineStrip, HeatmapCard, NarrativeCard, ProposalsCard, ManagerGapCard, ReachCard, SegmentTrendCard, InitiativesCard } from "./analytics-ui";
 import { PRESETS, bucketFor, fmtDay, previousWindow, resolveRange } from "./range";
 import { refreshDashboardAction } from "./actions";
@@ -38,6 +40,21 @@ import { pageTitle } from "@/lib/i18n/titles";
 export const generateMetadata = pageTitle("hr_home");
 
 export const dynamic = "force-dynamic";
+
+// The same view scans run several times per render (and again on every filter click): reuse them for a few seconds.
+const getDataBounds = () => memo("bounds", null, rawDataBounds);
+const getRepresentativeness = () => memo("rep", null, rawRepresentativeness);
+const getChannelParticipation = () => memo("channels", null, rawChannelParticipation);
+const getWindowTrends = (w: Parameters<typeof rawWindowTrends>[0], c: number | null) => memo("trends", [w, c], () => rawWindowTrends(w, c));
+const getParticipation = (w: { from: string; to: string }, c: number | null) => memo("part", [w, c], () => rawParticipation(w, c));
+const getManagerGap = () => memo("mgap", null, rawManagerGap);
+const getDomainInitiatives = (lang: Parameters<typeof rawDomainInitiatives>[0]) => memo("init", lang, () => rawDomainInitiatives(lang));
+const getAnswersPerDay = (w: { from: string; to: string }, c: number | null) => memo("apd", [w, c], () => rawAnswersPerDay(w, c));
+const getHeadlines = () => memo("headlines", null, rawHeadlines);
+const getNarrative = (c: string, lang: Parameters<typeof rawNarrative>[1]) => memo("narr", [c, lang], () => rawNarrative(c, lang));
+const getProposals = () => memo("proposals", null, () => rawProposals());
+const getReachGaps = (n: number) => memo("reach", n, () => rawReachGaps(n));
+const getSegmentTrend = (seg: string | undefined, dom: string | undefined) => memo("segtrend", [seg, dom], () => rawSegmentTrend(seg, dom));
 
 
 type Params = { r?: string; from?: string; to?: string; c?: string; dom?: string; hide?: string; actualitzat?: string };
@@ -75,6 +92,7 @@ export default async function HrDashboard({ searchParams }: { searchParams: Prom
   const everyone = col ? getWindowTrends({ ...win, bucket: "all" }, null) : whole;
 
   const rep = getRepresentativeness();
+  const channels = getChannelParticipation();
   const heatmap = { ...getHeatmap(everyone), periode: `${fmtDay(range.from)} – ${fmtDay(range.to)}` };
 
   const overall = whole.series[0];
@@ -297,6 +315,12 @@ export default async function HrDashboard({ searchParams }: { searchParams: Prom
             </>
           )}
         </Card>
+
+        {channels.periode && (
+          <Card title={tr("rs_channel")} meta={<span>{tr("rs_channel_meta", { period: channels.periode, min: MIN_GROUP_SIZE })}</span>} flush>
+            <ChannelTable rows={channels.rows} />
+          </Card>
+        )}
 
         {/* Everything else: collapsed by default */}
         <NarrativeCard fold narrative={getNarrative(col?.nom ?? "All", lang)} title={t("dash_narr", { scope: col ? collectiveLabel(col.nom, lang) : t("dash_scope_all") })} />
