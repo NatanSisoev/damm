@@ -32,7 +32,7 @@ const TABS = [
 
 const SEV_RANK: Record<string, number> = { critical: 0, warning: 1, info: 2 };
 
-type Row = AlarmView & { segment: string; domain: string | null; drop: number; detail: string };
+type Row = AlarmView & { segment: string; group: string; shift: string | null; domain: string | null; drop: number; detail: string };
 
 type Params = { estat?: string; tipus?: string; gravetat?: string; collectiu?: string; domini?: string; torn?: string; periode?: string; audiencia?: string; ordre?: string; q?: string };
 
@@ -67,7 +67,7 @@ export default async function AlarmsPage({ searchParams }: { searchParams: Promi
     const col = a.collectiuId ? colNames.get(a.collectiuId) ?? null : null;
     const shift = a.tornId ? torns.get(a.tornId) ?? null : null;
     const like = { tipus: a.type, descripcio: a.description };
-    return { ...a, segment: signalSegment({ collectiu: col, torn: shift }, lang), domain: a.domainId ? domains.get(a.domainId) ?? null : null, drop: signalDrop(like), detail: signalDetail(like, lang) };
+    return { ...a, segment: signalSegment({ collectiu: col, torn: shift }, lang), group: signalSegment({ collectiu: col, torn: null }, lang), shift, domain: a.domainId ? domains.get(a.domainId) ?? null : null, drop: signalDrop(like), detail: signalDetail(like, lang) };
   };
   const tabRows = inTab.map(toRow);
 
@@ -123,12 +123,13 @@ export default async function AlarmsPage({ searchParams }: { searchParams: Promi
     sort === "caiguda" ? (a: Row, b: Row) => b.drop - a.drop || bySeverity(a, b)
     : sort === "mostra" ? (a: Row, b: Row) => b.n - a.n || bySeverity(a, b)
     : sort === "recent" ? (a: Row, b: Row) => b.createdAt.localeCompare(a.createdAt) || bySeverity(a, b)
-    : sort === "grup" ? (a: Row, b: Row) => a.segment.localeCompare(b.segment, lang) || bySeverity(a, b)
+    : sort === "grup" ? (a: Row, b: Row) => a.group.localeCompare(b.group, lang) || a.segment.localeCompare(b.segment, lang) || bySeverity(a, b)
     : bySeverity;
   actionable.sort(order);
 
+  // One group per collective (or the whole company); the shift is shown on each alarm.
   const groups = new Map<string, Row[]>();
-  for (const r of actionable) groups.set(r.segment, [...(groups.get(r.segment) ?? []), r]);
+  for (const r of actionable) groups.set(r.group, [...(groups.get(r.group) ?? []), r]);
   const grouped = [...groups.entries()].sort((a, b) => order(a[1][0], b[1][0]));
   good.sort(order);
 
@@ -288,7 +289,10 @@ function AlarmItem({ t, lang, r, rec, drafted }: { t: HrResultsT; lang: Lang; r:
             {r.status !== "open" && <span className="badge">{statusLabel(r.status, lang)}</span>}
             {r.audience === "hr_manager" && <span className="badge" title={t("sg_vis_title")}>{t("sg_vis")}</span>}
           </div>
-          <p className="text-[14px] font-semibold">{r.domain ? domainLabel(r.domain, lang) : t("sg_general")}</p>
+          <p className="text-[14px] font-semibold">
+            {r.domain ? domainLabel(r.domain, lang) : t("sg_general")}
+            {r.shift && <span className="font-normal text-muted"> · {t("sig_shift", { shift: shiftLabel(r.shift, lang) })}</span>}
+          </p>
           <p className="text-[13px] text-muted">{r.detail}</p>
           <p className="mt-0.5 text-xs text-subtle">
             <span className="num">{r.periode} · <People n={r.n} scoped={r.collectiuId !== null || r.tornId !== null} /></span>
