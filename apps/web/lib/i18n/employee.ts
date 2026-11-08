@@ -27,7 +27,7 @@ export const employeeDict = defineDict({
 
     // join
     join_title: "Escoltem la teva veu",
-    join_lede: "Dues preguntes breus al dia. Sense nom ni correu.",
+    join_lede: "Preguntes breus cada dia. Sense nom ni correu.",
     join_deleted: "Compte esborrat. Les respostes que vas donar es conserven com a dades anònimes.",
     join_code_label: "Codi d'invitació",
     join_code_hint: "Està al cartell o al missatge del teu equip. Si tens el QR, escaneja'l directament.",
@@ -258,7 +258,7 @@ export const employeeDict = defineDict({
     password_sr_suffix: " la contraseña",
 
     join_title: "Escuchamos tu voz",
-    join_lede: "Dos preguntas breves al día. Sin nombre ni correo.",
+    join_lede: "Preguntas breves cada día. Sin nombre ni correo.",
     join_deleted: "Cuenta eliminada. Las respuestas que diste se conservan como datos anónimos.",
     join_code_label: "Código de invitación",
     join_code_hint: "Está en el cartel o en el mensaje de tu equipo. Si tienes el QR, escanéalo directamente.",
@@ -479,7 +479,7 @@ export const employeeDict = defineDict({
     password_sr_suffix: " password",
 
     join_title: "We listen to your voice",
-    join_lede: "Two short questions a day. No name or email.",
+    join_lede: "Short questions every day. No name or email.",
     join_deleted: "Account deleted. The answers you gave are kept as anonymous data.",
     join_code_label: "Invitation code",
     join_code_hint: "It's on the poster or in your team's message. If you have the QR code, scan it directly.",

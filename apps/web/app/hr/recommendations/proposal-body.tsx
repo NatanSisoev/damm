@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import type { SignalRecommendation } from "@damm/db/hr";
 import { getTL } from "@/lib/i18n/server";
 import { panelDict } from "@/lib/i18n/hr-panel";
+import { tidyRationale } from "@/lib/rationale-text";
 
 function Fact({ label, children }: { label: string; children: ReactNode }) {
   return (
@@ -14,7 +15,7 @@ function Fact({ label, children }: { label: string; children: ReactNode }) {
 
 /** What the AI proposes and why: shared by the recommendation page and the modal on the alarm. */
 export async function ProposalBody({ r }: { r: Pick<SignalRecommendation, "text" | "iniciativa" | "responsableSuggerit" | "terminiSuggerit" | "font" | "justificacio" | "limits"> }) {
-  const { t } = await getTL(panelDict);
+  const { t, lang } = await getTL(panelDict);
   return (
     <>
       <p className="proposal-main text-[15px]">{r.text}</p>
@@ -28,7 +29,7 @@ export async function ProposalBody({ r }: { r: Pick<SignalRecommendation, "text"
       {r.justificacio && (
         <div className="mt-4 border-t border-line pt-4">
           <h3 className="text-xs font-semibold text-subtle">{t("rd_why")}</h3>
-          <p className="mt-1 text-[13px] text-muted">{r.justificacio}</p>
+          <p className="mt-1 text-[13px] text-muted">{tidyRationale(r.justificacio, lang)}</p>
         </div>
       )}
       {r.limits && (
