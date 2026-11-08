@@ -235,7 +235,7 @@ G-§6.
 | ID | Requirement | Status | Evidence / gap |
 |----|-------------|--------|----------------|
 | R-DATA-1 | 300 to 1,000 responses | done | About 700 |
-| R-DATA-2 | At least two periods | done | Aug, Sep, Oct 2026 |
+| R-DATA-2 | At least two periods | done | Aug, Sep, Oct 2026, plus a partial Nov (1-7 Nov) in the demo DB |
 | R-DATA-3 | Several collectives with **uneven** participation | done | Night shift ×0.6, one sub-threshold group |
 | R-DATA-4 | Deliberate biases the solution then detects: low-response groups, emerging themes, changes between periods | done | October theme, Logística weak signal, manager bias |
 | R-DATA-5 | Response id random, never linked to a person | done | |
