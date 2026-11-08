@@ -1,6 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { getT } from "@/lib/i18n/server";
+import { brainDict } from "@/lib/i18n/hr-brain";
 import { QUESTION_TYPES, type QuestionType } from "@damm/shared";
 import {
   ConfigError, hrBrain, hrClearDomainWeight, hrClearFormatPreference, hrResetConfig, hrSetConfig, hrSetDomainWeight, hrSetFormatPreference, hrSimulate,
@@ -22,7 +24,11 @@ export interface SimRequest {
   seed: string;
 }
 
-const fail = (e: unknown) => ({ ok: false as const, error: e instanceof ConfigError || e instanceof RangeError ? e.message : "No s'ha pogut fer. Torna-ho a provar." });
+// Engine validation messages (ConfigError) come from the engine as they are; anything else gets a translated generic line.
+const fail = async (e: unknown) => ({
+  ok: false as const,
+  error: e instanceof ConfigError || e instanceof RangeError ? e.message : (await getT(brainDict))("err_generic"),
+});
 
 // "Prova": runs the saved settings and the draft settings side by side. Nothing is stored.
 export async function simulateAction(req: SimRequest): Promise<SimOutcome> {
@@ -35,7 +41,7 @@ export async function simulateAction(req: SimRequest): Promise<SimOutcome> {
     };
   } catch (e) {
     console.error("simulateAction", e);
-    return fail(e);
+    return await fail(e);
   }
 }
 
@@ -45,7 +51,7 @@ export async function saveConfigAction(patch: Record<string, unknown>): Promise<
     revalidatePath("/hr/brain");
     return { ok: true, brain: hrBrain() };
   } catch (e) {
-    return fail(e);
+    return await fail(e);
   }
 }
 
@@ -55,7 +61,7 @@ export async function resetConfigAction(keys?: string[]): Promise<BrainResult> {
     revalidatePath("/hr/brain");
     return { ok: true, brain: hrBrain() };
   } catch (e) {
-    return fail(e);
+    return await fail(e);
   }
 }
 
@@ -71,14 +77,14 @@ export async function saveWeightsAction(
       else hrSetDomainWeight(collectiuId, Number(d), w);
     }
     for (const [t, w] of Object.entries(formatPreferences)) {
-      if (!QUESTION_TYPES.includes(t as QuestionType)) throw new RangeError(`tipus desconegut: ${t}`);
+      if (!QUESTION_TYPES.includes(t as QuestionType)) throw new RangeError((await getT(brainDict))("err_unknown_type", { type: t }));
       if (w === null || w === undefined) hrClearFormatPreference(collectiuId, t as QuestionType);
       else hrSetFormatPreference(collectiuId, t as QuestionType, w);
     }
     revalidatePath("/hr/brain");
     return { ok: true, brain: hrBrain() };
   } catch (e) {
-    return fail(e);
+    return await fail(e);
   }
 }
 
@@ -86,6 +92,6 @@ export async function refreshBrainAction(): Promise<BrainResult> {
   try {
     return { ok: true, brain: hrBrain() };
   } catch (e) {
-    return fail(e);
+    return await fail(e);
   }
 }

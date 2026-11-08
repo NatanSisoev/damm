@@ -4,6 +4,8 @@ import "./globals.css";
 import { ServiceWorkerRegister } from "./(employee)/components/sw-register";
 import { LangProvider } from "@/lib/i18n/client";
 import { getLang } from "@/lib/lang";
+import { getT } from "@/lib/i18n/server";
+import { signalsDict } from "@/lib/i18n/hr-signals";
 
 // One font for the whole app (docs/visual-identity.md): Hanken Grotesk 400, 500, 700, 800.
 const hanken = Hanken_Grotesk({
@@ -13,13 +15,17 @@ const hanken = Hanken_Grotesk({
   display: "swap",
 });
 
-export const metadata: Metadata = {
-  title: "Escolta activa",
-  description: "Plataforma d'escolta activa (dades sintètiques)",
-  applicationName: "Escolta activa",
-  icons: { apple: "/icons/apple-touch-icon.png" },
-  appleWebApp: { capable: true, title: "Escolta", statusBarStyle: "default" },
-};
+// The product name stays "Escolta activa" in every language; only the description is translated.
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getT(signalsDict);
+  return {
+    title: "Escolta activa",
+    description: t("app_description"),
+    applicationName: "Escolta activa",
+    icons: { apple: "/icons/apple-touch-icon.png" },
+    appleWebApp: { capable: true, title: "Escolta", statusBarStyle: "default" },
+  };
+}
 
 // Paper ink: same as the manifest theme_color and the icon background.
 export const viewport: Viewport = {

@@ -5,57 +5,65 @@ import { FoldAll, GroupBody } from "./group-body";
 import { Empty, PageHeader, Stat } from "../ui";
 import { questionTypeLabel } from "../labels";
 import { REASON, STATE } from "./labels";
+import { getTL } from "@/lib/i18n/server";
+import { poolDict, type PoolKey } from "@/lib/i18n/hr-pool";
+import { collectiveLabel, domainLabel } from "@/lib/i18n/names";
+import { numD } from "@/lib/i18n/num";
+import type { TFn } from "@/lib/i18n/core";
+import type { Lang } from "@damm/shared";
 
 export const dynamic = "force-dynamic";
 
 const GROUPS = [
-  { key: "none", label: "Sense agrupar" },
-  { key: "domain", label: "Domini" },
-  { key: "type", label: "Format" },
-  { key: "facet", label: "Faceta" },
-  { key: "collective", label: "Col·lectiu" },
-  { key: "need", label: "Necessitat" },
-  { key: "state", label: "Estat" },
-  { key: "source", label: "Origen" },
-] as const;
+  { key: "none", label: "g_none" },
+  { key: "domain", label: "g_domain" },
+  { key: "type", label: "g_type" },
+  { key: "facet", label: "g_facet" },
+  { key: "collective", label: "g_collective" },
+  { key: "need", label: "g_need" },
+  { key: "state", label: "g_state" },
+  { key: "source", label: "g_source" },
+] as const satisfies ReadonlyArray<{ key: string; label: PoolKey }>;
 type GroupKey = (typeof GROUPS)[number]["key"];
 
 const SORTS = [
-  { key: "id", label: "Ordre (#)" },
-  { key: "asked", label: "Vegades demanada" },
-  { key: "responses", label: "Respostes" },
-  { key: "rate", label: "Taxa de resposta" },
-  { key: "last", label: "Última vegada" },
-  { key: "confidence", label: "Confiança" },
-  { key: "consensus", label: "Consens" },
-  { key: "priority", label: "Prioritat" },
-  { key: "pending", label: "Pendents de respondre" },
-] as const;
+  { key: "id", label: "s_id" },
+  { key: "asked", label: "s_asked" },
+  { key: "responses", label: "s_responses" },
+  { key: "rate", label: "s_rate" },
+  { key: "last", label: "s_last" },
+  { key: "confidence", label: "s_confidence" },
+  { key: "consensus", label: "s_consensus" },
+  { key: "priority", label: "s_priority" },
+  { key: "pending", label: "s_pending" },
+] as const satisfies ReadonlyArray<{ key: string; label: PoolKey }>;
 type SortKey = (typeof SORTS)[number]["key"];
 
 type Params = { page?: string; per?: string; q?: string; estat?: string; tipus?: string; domini?: string; col?: string; origen?: string; group?: string; sort?: string; dir?: string };
 
 const pct = (x: number | null) => (x === null ? "—" : `${Math.round(x * 100)}%`);
-const num = (x: number) => x.toLocaleString("ca-ES");
 const day = (s: string | null) => (s ? s.slice(0, 10) : "—");
 
-function ago(today: string, d: string | null): string {
-  if (!d) return "mai";
+type T = TFn<PoolKey>;
+
+function ago(t: T, today: string, d: string | null): string {
+  if (!d) return t("never");
   const n = Math.round((Date.parse(`${today}T00:00:00Z`) - Date.parse(`${d.slice(0, 10)}T00:00:00Z`)) / 86_400_000);
-  if (n <= 0) return "avui";
-  if (n === 1) return "ahir";
-  return `fa ${n} dies`;
+  if (n <= 0) return t("today");
+  if (n === 1) return t("yesterday");
+  return t("days_ago", { n });
 }
 
-function groupOf(q: PoolQuestion, by: GroupKey): string {
+function groupOf(q: PoolQuestion, by: GroupKey, t: T, lang: Lang): string {
+  const dom = domainLabel(q.domain, lang);
   switch (by) {
-    case "domain": return q.domain;
-    case "type": return questionTypeLabel(q.type);
-    case "facet": return q.facet ? `${q.domain} · ${q.facet}` : `${q.domain} · (sense faceta)`;
-    case "collective": return q.collective;
-    case "need": return q.needId === null ? "Monitoratge continu" : `Necessitat ${q.needId}: ${q.needTitle ?? ""}`;
-    case "state": return STATE[q.state].label;
-    case "source": return q.aiGenerated ? "Proposada per la IA" : "Escrita per una persona";
+    case "domain": return dom;
+    case "type": return questionTypeLabel(q.type, lang);
+    case "facet": return q.facet ? `${dom} · ${q.facet}` : `${dom} · ${t("no_facet")}`;
+    case "collective": return collectiveLabel(q.collective, lang);
+    case "need": return q.needId === null ? t("continuous") : t("need_n_title", { n: q.needId, title: q.needTitle ?? "" });
+    case "state": return t(STATE[q.state].key);
+    case "source": return q.aiGenerated ? t("src_ai") : t("src_human");
     default: return "";
   }
 }
@@ -82,6 +90,8 @@ function href(p: Params, over: Partial<Params>): string {
 
 export default async function PoolPage({ searchParams }: { searchParams: Promise<Params> }) {
   const p = await searchParams;
+  const { t, lang } = await getTL(poolDict);
+  const num = (x: number) => numD(x, lang, 0);
   const pool = hrPool();
   const { summary: s } = pool;
 
@@ -110,7 +120,7 @@ export default async function PoolPage({ searchParams }: { searchParams: Promise
 
   const groups = new Map<string, PoolQuestion[]>();
   for (const q of qs) {
-    const k = groupOf(q, group);
+    const k = groupOf(q, group, t, lang);
     (groups.get(k) ?? groups.set(k, []).get(k)!).push(q);
   }
   // Pagination follows the displayed order (groups first), so a group can span pages; its header totals cover the whole group.
@@ -125,74 +135,74 @@ export default async function PoolPage({ searchParams }: { searchParams: Promise
   return (
     <div className="mx-auto max-w-[88rem]">
       <PageHeader
-        title="Banc de preguntes"
-        subtitle="Totes les preguntes que el motor pot fer, amb quantes vegades s'han demanat i respost, quan va ser l'última i quan tornaran a entrar en un lot. Només hi ha recomptes i agregats: mai respostes individuals."
+        title={t("title")}
+        subtitle={t("subtitle")}
       />
 
       <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
-        <Stat label="Preguntes" value={num(s.counts.total)} hint={`${s.counts.live} en circulació · ${s.counts.waiting} en espera · ${s.counts.inactive} fora`} />
-        <Stat label="Demanades" value={num(s.asked)} hint={`${num(s.asked7d)} els últims 7 dies`} />
-        <Stat label="Respostes" value={num(s.responses)} hint={`${num(s.responses7d)} els últims 7 dies`} />
-        <Stat label="Taxa de resposta" value={pct(s.answerRate)} hint="Assignacions respostes / assignades" />
-        <Stat label="Lot diari" value={`${s.questionsPerDay} preguntes`} hint={`Una pregunta no es repeteix en ${s.itemCooldownDays} dies`} />
-        <Stat label="Comptes" value={num(s.accounts)} hint={`Avui: ${s.today} (${s.timezone})`} />
+        <Stat label={t("stat_questions")} value={num(s.counts.total)} hint={t("stat_questions_hint", { live: s.counts.live, waiting: s.counts.waiting, inactive: s.counts.inactive })} />
+        <Stat label={t("stat_asked")} value={num(s.asked)} hint={t("stat_last7", { n: num(s.asked7d) })} />
+        <Stat label={t("stat_responses")} value={num(s.responses)} hint={t("stat_last7", { n: num(s.responses7d) })} />
+        <Stat label={t("stat_rate")} value={pct(s.answerRate)} hint={t("stat_rate_hint")} />
+        <Stat label={t("stat_batch")} value={t("stat_batch_value", { n: s.questionsPerDay })} hint={t("stat_batch_hint", { n: s.itemCooldownDays })} />
+        <Stat label={t("stat_accounts")} value={num(s.accounts)} hint={t("stat_accounts_hint", { day: s.today, tz: s.timezone })} />
       </div>
 
       <form method="get" action="/hr/pool" className="card mb-4">
         {p.per && <input type="hidden" name="per" value={p.per} />}
         <div className="card-body grid grid-cols-2 items-end gap-3 md:grid-cols-4 xl:grid-cols-8">
           <div className="col-span-2">
-            <label htmlFor="q" className="label">Cerca</label>
-            <input id="q" name="q" defaultValue={p.q ?? ""} placeholder="Text, faceta, # o necessitat" className="input w-full" />
+            <label htmlFor="q" className="label">{t("f_search")}</label>
+            <input id="q" name="q" defaultValue={p.q ?? ""} placeholder={t("f_search_ph")} className="input w-full" />
           </div>
-          <Select id="estat" label="Estat" value={p.estat} options={[["live", "En circulació"], ["waiting", "En espera"], ["inactive", "Fora del banc"]]} />
-          <Select id="tipus" label="Format" value={p.tipus} options={QUESTION_TYPES.map((t) => [t, questionTypeLabel(t)])} />
-          <Select id="domini" label="Domini" value={p.domini} options={domains.map(([id, nom]) => [String(id), nom])} />
-          <Select id="col" label="Col·lectiu" value={p.col} options={collectives.map((c) => [c, c])} />
-          <Select id="origen" label="Origen" value={p.origen} options={[["monitor", "Monitoratge continu"], ["need", "Necessitat d'RH"], ["followup", "Seguiment"]]} />
-          <Select id="group" label="Agrupa per" value={group} options={GROUPS.map((g) => [g.key, g.label])} blank={false} />
-          <Select id="sort" label="Ordena per" value={sort === "id" ? undefined : sort} options={SORTS.filter((x) => x.key !== "id").map((x) => [x.key, x.label])} />
-          <Select id="dir" label="Sentit" value={p.dir} options={[["asc", "Ascendent"], ["desc", "Descendent"]]} />
+          <Select id="estat" label={t("f_state")} allLabel={t("f_all")} value={p.estat} options={[["live", t("st_live")], ["waiting", t("st_waiting")], ["inactive", t("st_inactive")]]} />
+          <Select id="tipus" label={t("f_type")} allLabel={t("f_all")} value={p.tipus} options={QUESTION_TYPES.map((qt) => [qt, questionTypeLabel(qt, lang)])} />
+          <Select id="domini" label={t("f_domain")} allLabel={t("f_all")} value={p.domini} options={domains.map(([id, nom]) => [String(id), domainLabel(nom, lang)])} />
+          <Select id="col" label={t("f_collective")} allLabel={t("f_all")} value={p.col} options={collectives.map((c) => [c, collectiveLabel(c, lang)])} />
+          <Select id="origen" label={t("f_origin")} allLabel={t("f_all")} value={p.origen} options={[["monitor", t("continuous")], ["need", t("src_hr_need")], ["followup", t("src_followup")]]} />
+          <Select id="group" label={t("f_group")} allLabel="—" value={group} options={GROUPS.map((g) => [g.key, t(g.label)])} blank={false} />
+          <Select id="sort" label={t("f_sort")} allLabel="—" value={sort === "id" ? undefined : sort} options={SORTS.filter((x) => x.key !== "id").map((x) => [x.key, t(x.label)])} />
+          <Select id="dir" label={t("f_dir")} allLabel="—" value={p.dir} options={[["asc", t("f_asc")], ["desc", t("f_desc")]]} />
           <div className="flex gap-2">
-            <button type="submit" className="btn btn-primary">Aplica</button>
-            <Link href="/hr/pool" className="btn btn-ghost">Neteja</Link>
+            <button type="submit" className="btn btn-primary">{t("apply")}</button>
+            <Link href="/hr/pool" className="btn btn-ghost">{t("clear")}</Link>
           </div>
         </div>
       </form>
 
       <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
       <p className="text-xs text-subtle" aria-live="polite">
-        {filtered ? `${qs.length} de ${pool.questions.length} preguntes` : `${qs.length} preguntes`}
-        {group !== "none" && ` · ${groups.size} grups per ${GROUPS.find((g) => g.key === group)!.label.toLowerCase()}`}
+        {filtered ? t("count_filtered", { n: qs.length, total: pool.questions.length }) : t("count_all", { n: qs.length })}
+        {group !== "none" && t("count_groups", { n: groups.size, by: t(GROUPS.find((g) => g.key === group)!.label).toLowerCase() })}
       </p>
       {group !== "none" && <FoldAll />}
       </div>
 
       {qs.length === 0 ? (
-        <Empty>Cap pregunta coincideix amb els filtres.</Empty>
+        <Empty>{t("none_match")}</Empty>
       ) : (
         <div className="card overflow-x-auto">
           <table className="table min-w-[70rem]">
             <thead>
               <tr>
-                <th>Pregunta</th>
-                <th>Estat</th>
-                <th>Domini · col·lectiu</th>
-                <SortTh p={p} k="asked" cur={sort} dir={dir}>Demanada</SortTh>
-                <SortTh p={p} k="responses" cur={sort} dir={dir}>Respostes</SortTh>
-                <SortTh p={p} k="rate" cur={sort} dir={dir}>Taxa</SortTh>
-                <SortTh p={p} k="confidence" cur={sort} dir={dir}>Confiança</SortTh>
-                <SortTh p={p} k="consensus" cur={sort} dir={dir}>Consens</SortTh>
-                <th className="text-right">7 dies</th>
-                <SortTh p={p} k="last" cur={sort} dir={dir} left>Última vegada</SortTh>
-                <th>Pròxim lot</th>
+                <th>{t("th_question")}</th>
+                <th>{t("th_state")}</th>
+                <th>{t("th_domain_col")}</th>
+                <SortTh p={p} k="asked" cur={sort} dir={dir}>{t("th_asked")}</SortTh>
+                <SortTh p={p} k="responses" cur={sort} dir={dir}>{t("th_responses")}</SortTh>
+                <SortTh p={p} k="rate" cur={sort} dir={dir}>{t("th_rate")}</SortTh>
+                <SortTh p={p} k="confidence" cur={sort} dir={dir}>{t("th_confidence")}</SortTh>
+                <SortTh p={p} k="consensus" cur={sort} dir={dir}>{t("th_consensus")}</SortTh>
+                <th className="text-right">{t("th_7d")}</th>
+                <SortTh p={p} k="last" cur={sort} dir={dir} left>{t("th_last")}</SortTh>
+                <th>{t("th_next")}</th>
               </tr>
             </thead>
             {[...groups.entries()].filter(([, list]) => list.some((q) => shown.has(q.id))).map(([name, list]) => (
               group === "none" ? (
                 <tbody key="all">
                   {list.filter((q) => shown.has(q.id)).map((q) => (
-                    <QuestionRows key={q.id} q={q} today={s.today} />
+                    <QuestionRows key={q.id} q={q} today={s.today} t={t} lang={lang} num={num} />
                   ))}
                 </tbody>
               ) : (
@@ -203,13 +213,18 @@ export default async function PoolPage({ searchParams }: { searchParams: Promise
                     <span className="pool-group-head">
                       <span className="font-semibold">{name}</span>
                       <span className="num text-subtle font-normal">
-                        {list.length} {list.length === 1 ? "pregunta" : "preguntes"} · {num(list.reduce((n, q) => n + q.asked, 0))} demanades · {num(list.reduce((n, q) => n + q.responses, 0))} respostes · {pct(list.reduce((n, q) => n + q.asked, 0) > 0 ? list.reduce((n, q) => n + q.answeredAssigned, 0) / list.reduce((n, q) => n + q.asked, 0) : null)}
+                        {t("group_summary", {
+                          questions: t(list.length === 1 ? "question_one" : "question_other", { n: list.length }),
+                          asked: num(list.reduce((n, q) => n + q.asked, 0)),
+                          responses: num(list.reduce((n, q) => n + q.responses, 0)),
+                          rate: pct(list.reduce((n, q) => n + q.asked, 0) > 0 ? list.reduce((n, q) => n + q.answeredAssigned, 0) / list.reduce((n, q) => n + q.asked, 0) : null),
+                        })}
                       </span>
                     </span>
                   }
                 >
                   {list.filter((q) => shown.has(q.id)).map((q) => (
-                    <QuestionRows key={q.id} q={q} today={s.today} />
+                    <QuestionRows key={q.id} q={q} today={s.today} t={t} lang={lang} num={num} />
                   ))}
                 </GroupBody>
               )
@@ -218,19 +233,19 @@ export default async function PoolPage({ searchParams }: { searchParams: Promise
         </div>
       )}
       {qs.length > 0 && (
-        <nav aria-label="Pàgines" className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm">
+        <nav aria-label={t("pages_aria")} className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm">
           <p className="text-subtle num">
-            {(page - 1) * per + 1}–{Math.min(page * per, ordered.length)} de {ordered.length}
+            {t("range_of", { from: (page - 1) * per + 1, to: Math.min(page * per, ordered.length), total: ordered.length })}
           </p>
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs text-subtle">Per pàgina</span>
+            <span className="text-xs text-subtle">{t("per_page")}</span>
             {PER.map((n) => (
               <Link key={n} href={href(p, { per: n === 50 ? undefined : String(n), page: undefined })} aria-current={n === per ? "true" : undefined} className={`px-2 py-1 ${n === per ? "font-bold underline" : ""}`}>{n}</Link>
             ))}
             <span className="mx-2" />
-            {page > 1 ? <Link href={href(p, { page: String(page - 1) })} rel="prev" className="btn btn-ghost border border-line-strong px-3 py-1.5">← Anterior</Link> : <span className="px-3 py-1.5 text-subtle">← Anterior</span>}
-            <span className="num px-2">Pàgina {page} de {pages}</span>
-            {page < pages ? <Link href={href(p, { page: String(page + 1) })} rel="next" className="btn btn-ghost border border-line-strong px-3 py-1.5">Següent →</Link> : <span className="px-3 py-1.5 text-subtle">Següent →</span>}
+            {page > 1 ? <Link href={href(p, { page: String(page - 1) })} rel="prev" className="btn btn-ghost border border-line-strong px-3 py-1.5">{t("prev")}</Link> : <span className="px-3 py-1.5 text-subtle">{t("prev")}</span>}
+            <span className="num px-2">{t("page_of", { page, pages })}</span>
+            {page < pages ? <Link href={href(p, { page: String(page + 1) })} rel="next" className="btn btn-ghost border border-line-strong px-3 py-1.5">{t("next")}</Link> : <span className="px-3 py-1.5 text-subtle">{t("next")}</span>}
           </div>
         </nav>
       )}
@@ -238,12 +253,12 @@ export default async function PoolPage({ searchParams }: { searchParams: Promise
   );
 }
 
-function Select({ id, label, value, options, blank = true }: { id: string; label: string; value?: string; options: ReadonlyArray<readonly [string, string]>; blank?: boolean }) {
+function Select({ id, label, allLabel, value, options, blank = true }: { id: string; label: string; allLabel: string; value?: string; options: ReadonlyArray<readonly [string, string]>; blank?: boolean }) {
   return (
     <div>
       <label htmlFor={id} className="label">{label}</label>
       <select id={id} name={id} defaultValue={value ?? ""} className="input w-full">
-        {blank && <option value="">{id === "group" || id === "sort" || id === "dir" ? "—" : "Tots"}</option>}
+        {blank && <option value="">{allLabel}</option>}
         {options.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
       </select>
     </div>
@@ -263,7 +278,7 @@ function SortTh({ p, k, cur, dir, children, left }: { p: Params; k: SortKey; cur
   );
 }
 
-function QuestionRows({ q, today }: { q: PoolQuestion; today: string }) {
+function QuestionRows({ q, today, t, lang, num }: { q: PoolQuestion; today: string; t: T; lang: Lang; num: (x: number) => string }) {
   const st = STATE[q.state];
   return (
     <>
@@ -273,39 +288,39 @@ function QuestionRows({ q, today }: { q: PoolQuestion; today: string }) {
             <Link href={`/hr/pool/${q.id}`} className="pool-link">{q.text}</Link>
           </div>
           <div className="flex flex-wrap gap-1.5" style={{ marginTop: 10 }}>
-            <span className="badge">{questionTypeLabel(q.type)}</span>
-            {q.facet && <span className="badge" title="Faceta: allò que la pregunta mesura realment">{q.facet}</span>}
-            {q.needId !== null && <span className="badge badge-accent" title={q.needTitle ?? undefined}>Necessitat {q.needId}</span>}
-            {q.isFollowup && <span className="badge">Seguiment</span>}
-            {q.polarity === -1 && <span className="badge" title="Redactada en negatiu: la puntuació s'inverteix">Negativa</span>}
-            {q.aiGenerated && <span className="badge" title="Proposada per la IA i aprovada per una persona">IA</span>}
+            <span className="badge">{questionTypeLabel(q.type, lang)}</span>
+            {q.facet && <span className="badge" title={t("badge_facet_title")}>{q.facet}</span>}
+            {q.needId !== null && <span className="badge badge-accent" title={q.needTitle ?? undefined}>{t("need_n", { n: q.needId })}</span>}
+            {q.isFollowup && <span className="badge">{t("badge_followup")}</span>}
+            {q.polarity === -1 && <span className="badge" title={t("badge_negative_title")}>{t("badge_negative")}</span>}
+            {q.aiGenerated && <span className="badge" title={t("badge_ai_title")}>{t("badge_ai")}</span>}
           </div>
         </td>
         <td>
-          <span className={`badge ${st.cls}`}>{st.label}</span>
-          <div className="mt-1 max-w-[12rem] text-xs text-subtle">{REASON[q.reason]}</div>
+          <span className={`badge ${st.cls}`}>{t(st.key)}</span>
+          <div className="mt-1 max-w-[12rem] text-xs text-subtle">{t(REASON[q.reason])}</div>
         </td>
         <td className="text-[13px]">
-          {q.domain}
-          <div className="text-xs text-subtle">{q.collective}</div>
+          {domainLabel(q.domain, lang)}
+          <div className="text-xs text-subtle">{collectiveLabel(q.collective, lang)}</div>
         </td>
         <td className="num text-right">{num(q.asked)}</td>
         <td className="num text-right">{num(q.responses)}</td>
         <td className="num text-right">{pct(q.answerRate)}</td>
-        <td className="num text-right" title="Fiabilitat de la puntuació segons quanta gent ha respost i com de dispersa és (0–100)">{q.confidence === null ? "—" : Math.round(q.confidence)}</td>
-        <td className="num text-right" title="Com de semblants són les respostes (0–100)">{q.consensus === null ? "—" : Math.round(q.consensus)}</td>
+        <td className="num text-right" title={t("confidence_title")}>{q.confidence === null ? "—" : Math.round(q.confidence)}</td>
+        <td className="num text-right" title={t("consensus_title")}>{q.consensus === null ? "—" : Math.round(q.consensus)}</td>
         <td className="num text-right">
           {q.asked7d}
-          <div className="text-xs text-subtle">{q.responses7d} resp.</div>
+          <div className="text-xs text-subtle">{t("resp_short", { n: q.responses7d })}</div>
         </td>
         <td className="whitespace-nowrap text-[13px]">
           {day(q.lastAskedDay)}
-          <div className="text-xs text-subtle">{ago(today, q.lastAskedDay)}</div>
+          <div className="text-xs text-subtle">{ago(t, today, q.lastAskedDay)}</div>
         </td>
         <td className="whitespace-nowrap text-[13px]">
           {q.nextBatchDay ?? "—"}
-          {q.state === "live" && q.askedPerDay14 > 0 && <div className="text-xs text-subtle">~{q.askedPerDay14}/dia</div>}
-          {q.pendingAccounts !== null && q.state !== "inactive" && <div className="text-xs text-subtle">{num(q.pendingAccounts)} pendents</div>}
+          {q.state === "live" && q.askedPerDay14 > 0 && <div className="text-xs text-subtle">{t("per_day", { n: q.askedPerDay14 })}</div>}
+          {q.pendingAccounts !== null && q.state !== "inactive" && <div className="text-xs text-subtle">{t("pending_n", { n: num(q.pendingAccounts) })}</div>}
         </td>
       </tr>
     </>

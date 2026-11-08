@@ -1,17 +1,24 @@
 import { hrBrain } from "@/lib/hr-engine";
+import type { Metadata } from "next";
+import { getT } from "@/lib/i18n/server";
+import { brainDict } from "@/lib/i18n/hr-brain";
 import { PageHeader } from "../ui";
 import { BrainConsole } from "./brain-console";
 
-export const metadata = { title: "Cervell · Com decideix el motor" };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getT(brainDict);
+  return { title: t("meta_title") };
+}
 export const dynamic = "force-dynamic";
 
-export default function BrainPage() {
+export default async function BrainPage() {
+  const t = await getT(brainDict);
   const brain = hrBrain();
   return (
     <>
       <PageHeader
-        title="Cervell"
-        subtitle="Com decideix el motor què pregunta, a qui i quan. Mira els números en què es basa, canvia'n els paràmetres i prova'n l'efecte abans de desar res."
+        title={t("title")}
+        subtitle={t("subtitle")}
       />
       <BrainConsole initial={brain} />
     </>
