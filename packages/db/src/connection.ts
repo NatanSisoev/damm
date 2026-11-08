@@ -19,6 +19,7 @@ export function getDb(): Db {
     ensureQueryDeliveryColumns(cached);
     ensureHrPushTable(cached);
     ensureAlarmArchiveColumn(cached);
+    ensureFollowupColumns(cached);
   }
   return cached;
 }
@@ -76,4 +77,12 @@ function ensureHrPushTable(db: Db): void {
 function ensureAlarmArchiveColumn(db: Db): void {
   const cols = db.prepare("PRAGMA table_info(senyal)").all() as { name: string }[];
   if (cols.length && !cols.some((c) => c.name === "archived_at")) db.exec("ALTER TABLE senyal ADD COLUMN archived_at TEXT");
+}
+
+/** Conditional follow-up link on pregunta (child points at its parent). Idempotent. */
+function ensureFollowupColumns(db: Db): void {
+  const cols = db.prepare("PRAGMA table_info(pregunta)").all() as { name: string }[];
+  if (!cols.length) return;
+  if (!cols.some((c) => c.name === "followup_of")) db.exec("ALTER TABLE pregunta ADD COLUMN followup_of INTEGER REFERENCES pregunta(id)");
+  if (!cols.some((c) => c.name === "followup_when")) db.exec("ALTER TABLE pregunta ADD COLUMN followup_when TEXT");
 }

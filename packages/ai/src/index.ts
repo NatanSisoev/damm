@@ -27,12 +27,13 @@ Objectiu: Saber si els nous uniformes de representació són còmodes.
 const SYSTEM = `Ets un expert en enquestes breus d'escolta activa per a una empresa cervesera (dades sintètiques). Respon NOMÉS amb un objecte JSON, sense text addicional.
 LLENGUA: tot el text (títol, introducció, preguntes, motius, etiquetes) en CATALÀ correcte, encara que la necessitat arribi en castellà o anglès. Mai castellà ni anglès, ni barreges ("treballes", no "trabajas" ni "treballas"). Escriu un català estàndard i correcte: contraccions ben fetes (a l'equip, de l'entorn, per l'esforç; mai "al equip"), paraules senceres (aportació, mesura, valoració), "teva" i no "teua", sense formes valencianes ni calcs del castellà, sense la paraula "tevens". Tradueix també els termes de la necessitat al títol i a la introducció (torns, no "turnos"; horari, no "horario"; equip, no "equipo"), i no copiïs frases en castellà o anglès.
 GÈNERE: redacció neutra, sense marca de gènere. Mai satisfet/satisfeta, motivat/motivada, valorat/valorada, orgullós/orgullosa, ni barres (a/o). Usa "et sents part de...", "tens ganes de...", "et sents a gust...", "se't escolta...", "reps el reconeixement que...".
-FORMAT: {"title": string, "intro": string, "questions": [{"text": string, "type": "scale5"|"scale10"|"yes_no"|"open", "low"?: string, "high"?: string, "domain": string, "reason": string}]}
+FORMAT: {"title": string, "intro": string, "questions": [{"text": string, "type": "scale5"|"scale10"|"yes_no"|"open", "low"?: string, "high"?: string, "followup"?: string, "domain": string, "reason": string}]}
 - "title": nom curt del tema (2 a 6 paraules), sense repetir paraules. "intro": 1 o 2 frases curtes que diuen que és anònima i que només es veuen resultats de grup.
 - "domain" és exactament un d'aquests: ${DOMINIS.join(" | ")}.
 - scale5 = escala d'1 a 5; scale10 = 0 a 10 (només per a "recomanaries..." o un indicador global, i com a molt una); yes_no = sí/no; open = text lliure.
 - Cada scale5/scale10 duu "low" i "high": les etiquetes dels extrems, d'1 a 3 paraules, diferents i que encaixen amb el verb de la pregunta: acord ("Estàs d'acord que...", "Creus que...") = Gens d'acord/Totalment d'acord; freqüència ("Amb quina freqüència...") = Mai/Sempre; grau ("Fins a quin punt...", "Quant...", "En quina mesura...") = Gens/Molt; valoració ("Com valores...") = Molt malament/Molt bé; probabilitat ("Recomanaries...") = Gens probable/Molt probable. No barregis tipus (cap "Gens..Sempre"). Les yes_no i open no en porten.
 - Una pregunta scale5/scale10 s'ha de poder respondre amb una valoració: formula-la com "Fins a quin punt...", "Amb quina freqüència...", "Quant...", "Tens prou... ?", mai com "Què...", "Per què...", "Quin...". Una yes_no s'ha de poder respondre sí o no.
+- "followup" (opcional, només en scale5/scale10/yes_no, en 1 o 2 preguntes com a màxim): pregunta oberta curta que es farà NOMÉS si la resposta és baixa (1-2) o "no", per exemple "Què ho faria millor?". Neutral, sense dades personals. Les open no en porten.
 - Cada pregunta tracta UNA sola idea (sense "i" que n'uneixi dues) i no es repeteix amb cap altra: cobreix aspectes diferents de la necessitat.
 - Neutrals, sense induir la resposta ni paraules carregades ("fantàstic", "no creus que..."). Parla de situacions i condicions, no de persones concretes.
 - ANONIMAT: mai demanis edat, gènere, antiguitat, torn exacte, equip o departament concret, nom del cap, salut ni res que identifiqui algú. Si la necessitat ho demana, pregunta per l'experiència o la situació, no per qui és la persona.
@@ -113,8 +114,8 @@ function polish(q: DraftQuestion): DraftQuestion {
     const a = anchorsClash(text, q.low, q.high) || words0(q.low!) > 4 || words0(q.high!) > 4 || q.low === q.high ? anchorsFor(text) : { low: q.low!, high: q.high! };
     return { ...q, text, low: a.low, high: a.high };
   }
-  const { low: _l, high: _h, ...rest } = q;
-  void _l; void _h;
+  const { low: _l, high: _h, followup: _f, ...rest } = q;
+  void _l; void _h; void _f;
   return { ...rest, text };
 }
 

@@ -5,7 +5,7 @@ import { hrDict } from "@/lib/i18n/hr";
 import { draftReviewDict } from "@/lib/i18n/hr-draft-review";
 import { domainLabel } from "@/lib/i18n/names";
 import {
-  approveQuestionAction, discardQuestionAction, editNeedHeaderAction, editQuestionAction, moveDraftAction,
+  approveQuestionAction, discardQuestionAction, removeFollowupAction, editNeedHeaderAction, editQuestionAction, moveDraftAction,
   regenerateQuestionAction,
 } from "../actions";
 
@@ -76,6 +76,17 @@ export async function DraftReview({ g, regenError = null }: { g: NeedDraftGroup;
                 </div>
               );
             })()}
+            {q.followup && (
+              <div className="flex flex-wrap items-center gap-2 rounded-lg border border-line px-3 py-2 text-sm">
+                <span className="badge">{t("followup_badge")}</span>
+                <span className="min-w-0 flex-1">{q.followup.text}</span>
+                <span className="text-xs text-subtle">{t(q.tipus === "yes_no" ? "followup_when_no" : "followup_when_low")}</span>
+                <form action={removeFollowupAction}>
+                  <input type="hidden" name="id" value={q.id} />
+                  <button className="btn btn-ghost">{t("followup_remove")}</button>
+                </form>
+              </div>
+            )}
             <div className="flex flex-wrap items-center justify-end gap-2">
               <form action={editQuestionAction} className="w-full min-w-0 space-y-2">
                 <input type="hidden" name="id" value={q.id} />

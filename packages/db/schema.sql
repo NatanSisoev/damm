@@ -107,6 +107,8 @@ CREATE TABLE pregunta (
   polarity       INTEGER NOT NULL DEFAULT 1 CHECK (polarity IN (1,-1)), -- -1 = negatively worded, score is flipped
   options_json   TEXT,                              -- pair/choice: [{"label","score","i18n"?}]; ranking: [{"label","domain_id","i18n"?}]; i18n = {"ca","es","en"} label, optional
   is_followup    INTEGER NOT NULL DEFAULT 0 CHECK (is_followup IN (0,1)), -- worded as a follow-up ("has anything changed?")
+  followup_of    INTEGER REFERENCES pregunta(id), -- conditional follow-up: this open question is served only after an answer to the parent that meets followup_when
+  followup_when  TEXT,                            -- 'low' (scale5/scale10 raw answer <= 2) or 'no' (yes_no answered no); NULL when not a conditional follow-up
   necessitat_id  INTEGER REFERENCES necessitat(id), -- NULL = continuous monitoring pool
   estat          TEXT NOT NULL DEFAULT 'draft' CHECK (estat IN ('draft','aprovada','retirada')),
   prioritat      INTEGER NOT NULL DEFAULT 0,        -- approved HR needs get the highest value

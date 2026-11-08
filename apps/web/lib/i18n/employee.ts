@@ -107,6 +107,8 @@ export const employeeDict = defineDict({
     err_send_server: "No hem pogut connectar amb el servidor. La teva resposta continua aquí: torna-ho a provar.",
 
     // answer inputs
+    followup_badge: "Una pregunta més",
+    followup_skip: "Ara no, continuar",
     open_label: "La teva resposta",
     open_placeholder: "Escriu amb les teves paraules…",
     open_note: "Anònim. No hi posis dades personals (noms, telèfons, correus).",
@@ -320,6 +322,8 @@ export const employeeDict = defineDict({
       "Sin conexión. Tu respuesta sigue aquí: vuelve a intentarlo cuando tengas conexión de nuevo.",
     err_send_server: "No hemos podido conectar con el servidor. Tu respuesta sigue aquí: vuelve a intentarlo.",
 
+    followup_badge: "Una pregunta más",
+    followup_skip: "Ahora no, continuar",
     open_label: "Tu respuesta",
     open_placeholder: "Escribe con tus palabras…",
     open_note: "Anónimo. No pongas datos personales (nombres, teléfonos, correos).",
@@ -527,6 +531,8 @@ export const employeeDict = defineDict({
     err_send_offline: "No connection. Your answer is still here: try again once you're back online.",
     err_send_server: "We couldn't reach the server. Your answer is still here: try again.",
 
+    followup_badge: "One more question",
+    followup_skip: "Not now, continue",
     open_label: "Your answer",
     open_placeholder: "Write in your own words…",
     open_note: "Anonymous. Don't include personal data (names, phone numbers, emails).",

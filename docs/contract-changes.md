@@ -19,6 +19,14 @@ What changed and why.
 
 ---
 
+## 2026-11-08: conditional follow-up questions, `pregunta.followup_of` / `followup_when` (Jan)
+
+`packages/db`: two nullable columns on `pregunta`, created idempotently by `getDb()` (`ensureFollowupColumns`): `followup_of` (parent question id) and `followup_when` (`'low'` = scale5/scale10 raw value <= 2, `'no'` = yes_no answered no). The link lives on the **child** open question. Children are never part of the daily batch, a campaign set or the pool list (the engine filters `followup_of IS NULL`) and do not count toward the ~2/day cap. `packages/shared`: `FollowupWhen`, `Pregunta.followupOf/followupWhen`, `PoolFollowup`, `PostResponsesResult`. `POST /api/responses` now answers 200 with `{ followups: PoolFollowup[] }` (translated, `parentId` set) when a stored answer triggers one, and still 204 otherwise. A follow-up answer goes to `resposta` as an open answer with the comment redacted as usual. `@damm/db/hr`: `DraftInput.followup`, `getDraftFollowup`, `removeDraftFollowup`; approving or discarding a draft question cascades to its draft follow-up. `@damm/ai`: `draftQuestionSchema.followup` (optional). Engine: `loadBankFollowups` links 5 bank questions in the demo DB.
+
+Action items:
+- [x] Jan: schema, connection, shared types, engine, API, employee UI, AI drafting, HR draft review. (done 2026-11-08)
+- [ ] Natan: after sync, run `pnpm demo-db` (calls `loadBankFollowups`). If you add a query that lists `pregunta` for serving, add `followup_of IS NULL` (use `notChild` from `store.ts`). Reload-recovery of a pending follow-up through `GET /api/pool/next` is not implemented (it is skippable).
+
 ## 2026-11-08: index `idx_assignment_pregunta` (Jan)
 
 `packages/db`: new index `CREATE INDEX IF NOT EXISTS idx_assignment_pregunta ON assignment(pregunta_id, day)` in `schema.sql`, and created idempotently by `listPool` (`packages/engine/src/pool.ts`) for existing databases. It speeds up the HR pool inspector (`listPool`, which groups assignments by question). No table or column change, no API change.

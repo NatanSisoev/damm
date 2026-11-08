@@ -49,6 +49,8 @@ export interface DraftInput {
   reason: string;
   /** Spanish / English wording proposed by the AI or edited by HR. Catalan `text` is canonical. */
   i18n?: { es?: { text: string }; en?: { text: string } };
+  /** Catalan wording of a suggested open follow-up (scale5/scale10/yes_no only); stored as a draft child HR can remove. */
+  followup?: string;
 }
 
 /** `pregunta.text_i18n` JSON for a Catalan text plus optional es/en; null when there is nothing to add (readers fall back to `text`). */
@@ -67,6 +69,13 @@ function insertDraft(necessitatId: number, collectiuId: number | null, q: DraftI
     `INSERT INTO pregunta (domini_id, collectiu_id, text, text_i18n, tipus, necessitat_id, generada_per_ia, motiu, ordre)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   ).run(dom.id, collectiuId, q.text, textI18nJson(q.text, q.i18n?.es?.text, q.i18n?.en?.text), tipus, necessitatId, byIa ? 1 : 0, q.reason, ordre);
+  const parentId = Number((db.prepare("SELECT last_insert_rowid() AS id").get() as { id: number }).id);
+  if (q.followup?.trim() && (tipus === "scale5" || tipus === "scale10" || tipus === "yes_no")) {
+    db.prepare(
+      `INSERT INTO pregunta (domini_id, collectiu_id, text, tipus, necessitat_id, generada_per_ia, motiu, ordre, followup_of, followup_when)
+       VALUES (?, ?, ?, 'open', ?, ?, ?, 0, ?, ?)`,
+    ).run(dom.id, collectiuId, q.followup.trim(), necessitatId, byIa ? 1 : 0, q.reason, parentId, tipus === "yes_no" ? "no" : "low");
+  }
 }
 
 /** Store an AI (or fallback) survey as draft questions of a need. Nothing is approved here. */
@@ -101,7 +110,7 @@ export interface NeedDraftGroup {
   collectiu: string | null;
   /** Topics the need says must not be asked about (free text), for the wording check. */
   exclusions: string | null;
-  questions: (DraftQuestion & { motiu: string | null; ordre: number; tipusAi: string })[];
+  questions: (DraftQuestion & { motiu: string | null; ordre: number; tipusAi: string; followup: { id: number; text: string } | null })[];
 }
 
 /** Draft questions grouped by need, in review order. */
@@ -118,7 +127,7 @@ export function listNeedDrafts(): NeedDraftGroup[] {
   const qs = db.prepare(
     `SELECT p.id, d.nom AS domini, p.tipus, p.text, p.text_i18n AS ti, p.necessitat_id AS necessitatId, p.generada_per_ia AS ia, p.motiu, p.ordre
      FROM pregunta p JOIN domini d ON d.id = p.domini_id
-     WHERE p.estat = 'draft' AND p.necessitat_id = ? ORDER BY p.ordre, p.id`,
+     WHERE p.estat = 'draft' AND p.necessitat_id = ? AND p.followup_of IS NULL ORDER BY p.ordre, p.id`,
   );
   return needs.map((n) => ({
     ...n,
@@ -126,6 +135,7 @@ export function listNeedDrafts(): NeedDraftGroup[] {
       id: r.id, domini: r.domini, tipus: r.tipus, text: r.text, necessitatId: r.necessitatId,
       generadaPerIa: !!r.ia, motiu: r.motiu, ordre: r.ordre, tipusAi: TIPUS_TO_AI[r.tipus] ?? r.tipus,
       textEs: parseTr(r.ti)?.es ?? null, textEn: parseTr(r.ti)?.en ?? null,
+      followup: getDraftFollowup(r.id),
     })),
   }));
 }
@@ -141,7 +151,7 @@ export function moveDraft(id: number, dir: "up" | "down"): void {
   const q = db.prepare("SELECT necessitat_id AS n FROM pregunta WHERE id = ? AND estat = 'draft'").get(id) as { n: number | null } | undefined;
   if (!q?.n) return;
   db.transaction(() => {
-    const ids = (db.prepare("SELECT id FROM pregunta WHERE necessitat_id = ? AND estat = 'draft' ORDER BY ordre, id").all(q.n) as { id: number }[]).map((r) => r.id);
+    const ids = (db.prepare("SELECT id FROM pregunta WHERE necessitat_id = ? AND estat = 'draft' AND followup_of IS NULL ORDER BY ordre, id").all(q.n) as { id: number }[]).map((r) => r.id);
     const i = ids.indexOf(id);
     const j = dir === "up" ? i - 1 : i + 1;
     if (i < 0 || j < 0 || j >= ids.length) return;
@@ -167,7 +177,7 @@ export function getRedraftContext(id: number) {
   const others = (db
     .prepare(
       `SELECT p.text, p.tipus, d.nom AS domini, p.motiu FROM pregunta p JOIN domini d ON d.id = p.domini_id
-       WHERE p.necessitat_id = ? AND p.estat = 'draft' AND p.id <> ? ORDER BY p.ordre, p.id`,
+       WHERE p.necessitat_id = ? AND p.estat = 'draft' AND p.followup_of IS NULL AND p.id <> ? ORDER BY p.ordre, p.id`,
     )
     .all(row.nid, id) as any[]).map((o) => ({ text: o.text, type: TIPUS_TO_AI[o.tipus] ?? o.tipus, domain: o.domini, reason: o.motiu ?? "" }));
   return {
@@ -205,7 +215,7 @@ export function listDrafts(): DraftQuestion[] {
     .prepare(
       `SELECT p.id, d.nom AS domini, p.tipus, p.text, p.necessitat_id AS necessitatId, p.generada_per_ia AS ia
        FROM pregunta p JOIN domini d ON d.id = p.domini_id
-       WHERE p.estat = 'draft' ORDER BY p.id`,
+       WHERE p.estat = 'draft' AND p.followup_of IS NULL ORDER BY p.id`,
     )
     .all()
     .map((r: any) => ({ ...r, generadaPerIa: !!r.ia }));
@@ -245,10 +255,27 @@ export function approveQuestion(id: number, approvedBy: string): void {
        aprovada_per = ?, aprovada_el = datetime('now') WHERE id = ? AND estat = 'draft'`,
     )
     .run(approvedBy, id);
+  // A suggested follow-up still in draft is approved with its parent (HR can remove it before, see removeDraftFollowup).
+  getDb()
+    .prepare(
+      `UPDATE pregunta SET estat = 'aprovada', aprovada_per = ?, aprovada_el = datetime('now')
+       WHERE followup_of = ? AND estat = 'draft' AND EXISTS (SELECT 1 FROM pregunta p WHERE p.id = ? AND p.estat = 'aprovada')`,
+    )
+    .run(approvedBy, id, id);
+}
+
+/** The suggested follow-up (a draft child) of a draft question, if any. */
+export function getDraftFollowup(parentId: number): { id: number; text: string } | null {
+  return (getDb().prepare("SELECT id, text FROM pregunta WHERE followup_of = ? AND estat = 'draft' LIMIT 1").get(parentId) as { id: number; text: string } | undefined) ?? null;
+}
+
+/** HR removes the AI-suggested follow-up of a draft question (AI proposes, HR decides). */
+export function removeDraftFollowup(parentId: number): void {
+  getDb().prepare("UPDATE pregunta SET estat = 'retirada' WHERE followup_of = ? AND estat = 'draft'").run(parentId);
 }
 
 export function discardQuestion(id: number): void {
-  getDb().prepare("UPDATE pregunta SET estat = 'retirada' WHERE id = ? AND estat = 'draft'").run(id);
+  getDb().prepare("UPDATE pregunta SET estat = 'retirada' WHERE (id = ? OR followup_of = ?) AND estat = 'draft'").run(id, id);
 }
 
 export function listApprovedUnpublishedNeeds(): { id: number; textNl: string; approved: number }[] {
@@ -537,7 +564,7 @@ export function listNeedCards(lang?: Lang): NeedCard[] {
     .prepare(
       `SELECT n.id, n.text_nl AS textNl, n.titol, n.intro, n.durada_max_s AS duradaMaxS, n.question_count AS questionCount, n.delivery, n.draft_font AS draftFont,
               n.creat, n.estat, c.nom AS collectiu,
-              (SELECT COUNT(*) FROM pregunta p WHERE p.necessitat_id = n.id AND p.estat = 'draft') AS nDraft
+              (SELECT COUNT(*) FROM pregunta p WHERE p.necessitat_id = n.id AND p.estat = 'draft' AND p.followup_of IS NULL) AS nDraft
        FROM necessitat n LEFT JOIN collectiu c ON c.id = n.collectiu_id
        ORDER BY n.id DESC`,
     )

@@ -84,6 +84,9 @@ export interface Necessitat {
   estat: NecessitatEstat;
 }
 
+/** When a conditional follow-up is served: 'low' = scale5/scale10 raw answer <= 2, 'no' = yes/no answered no. */
+export type FollowupWhen = "low" | "no";
+
 export interface Pregunta {
   id: number;
   dominiId: number;
@@ -99,6 +102,8 @@ export interface Pregunta {
   polarity?: 1 | -1;
   options?: ScoredOption[] | RankingOption[] | null; // from options_json
   isFollowup?: boolean;
+  followupOf?: number | null; // conditional follow-up: parent question id
+  followupWhen?: FollowupWhen | null;
 }
 
 // --- API: GET /api/pool/next -------------------------------------------------
@@ -125,6 +130,12 @@ export interface RespostaInput {
   valueJson?: number[] | null; // ranking: option indices, best first
   answerMs?: number | null; // time from display to answer
   comentari?: string | null; // redacted server-side before insert
+}
+/** Returned by POST /api/responses when an answer triggers a conditional follow-up (served right after it, skippable, outside the daily cap). */
+export type PoolFollowup = PoolQuestion & { parentId: number };
+/** 204 with no body normally; 200 with this body when an accepted answer triggers conditional follow-ups. */
+export interface PostResponsesResult {
+  followups: PoolFollowup[];
 }
 export interface PostResponsesRequest {
   respostes: RespostaInput[];

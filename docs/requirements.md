@@ -77,7 +77,7 @@ G-§4 is the authoritative list ("Tots els equips han de cobrir aquest recorregu
 | R-FLOW-2b | Proposes an **introduction** | done | `draftSurvey`; editable in review |
 | R-FLOW-2c | **3 to 6 questions** | done | LLM drafts from the need, context and exclusions; template fallback flagged "Plantilla de reserva". Quality eval in progress (`need-ai-quality` branch). |
 | R-FLOW-2d | **Answer type** per question | done | The AI picks among `scale5`, `scale10`, `yes_no`, `ranking`, `open` (C2 English types); scale questions carry their own end labels. |
-| R-FLOW-2e | **Conditional logic** | missing | Not in the schema or the UI. Minimal version: "if score ≤ 2, ask the open follow-up". |
+| R-FLOW-2e | **Conditional logic** | done (minimal) | `pregunta.followup_of/followup_when`; engine `submitAnswers` returns the linked open follow-up when a scale answer is ≤ 2 or a yes/no is "no"; AI drafts may carry one and HR can remove it in `/hr/review`. | No general rule builder; pending follow-up is not recovered after a reload. |
 | R-FLOW-2f | **Estimated time** | done | `estimateSeconds` per question and per draft; review warns when it exceeds the optional per-person time limit (`durada_max_s`). |
 | R-FLOW-2g | Adapted to the collective in **tone, length and channel** | partial | The prompt takes the collective and a warm tone; channel adaptation not done. |
 
@@ -297,7 +297,7 @@ Bonus items named by the guide (G-§4 "Bonus") and the deck (D-S18), then our ow
 | N-2 | **Representativeness indicator** | G bonus | Already built; name it as the bonus in the pitch | done | |
 | N-3 | **Experience for people without a computer** | G bonus, D-S18 | Plant and logistics, scenario B | partial | QR plus mobile done. Add a **kiosk mode**: shared tablet, no account, one answer per session with a rate limit, own `canal` value. |
 | N-4 | **Actionable wellbeing recommendations** | G bonus, D-S18 | Value for people | done (engine side) | Proposals name a Damm initiative, a suggested owner and timeframe, and cite n and confidence. UI done (51458d3). |
-| N-5 | **Dynamic follow-up questions** | G bonus | Ties to R-FLOW-2e | missing | A low score triggers an open "why?" question in the same session. |
+| N-5 | **Dynamic follow-up questions** | G bonus | Ties to R-FLOW-2e | done | A low score (≤ 2) or a "no" shows the open "why?" right after, inline and skippable, outside the daily cap; ca/es/en. 5 bank questions linked in the demo DB. |
 | N-6 | **Multi-language** | G bonus | Catalan, Spanish, English at minimum; plant staff | done (UI + questions) | Employee PWA, HR portal and manager view in ca/es/en (typed dictionaries in `apps/web/lib/i18n`, cookie `damm_lang`, `compte.lang`, switcher in onboarding, settings, HR nav and manager). Questions carry `text_i18n` and option `i18n`; AI drafts es/en and HR edits them in the review screen. Push follows the subscriber's language. Gaps: DB-sourced analysis text (themes, signals, recommendations) stays in the language it was written; engine bank still English until Natan adopts `docs/i18n/`. See `docs/i18n/README.md`. |
 | N-7 | **Full cycle in one platform** | D-S18 | Already our architecture | done | Say it explicitly. |
 | N-8 | Manager segment in HR results (social desirability, R-BIAS-5) | ours | Shows we detect a seeded bias | missing (manager view `/manager/[collectiu]` audited, empty-state themes explained in c1c7422; the manager-bias segment itself is still open) | "Option B". Needs a db query on `es_manager` (Natan's area: flag). Only above n≥10. |
@@ -310,7 +310,7 @@ Bonus items named by the guide (G-§4 "Bonus") and the deck (D-S18), then our ow
 | N-15 | Retention and purge job | G-§8 | Closes R-PRIV-8 | done | See R-PRIV-8. |
 | N-16 | Accuracy of the theme classifier against `resposta_seed` | G-§6.2 | A number that proves analysis quality | done | `pnpm --filter @damm/engine run comments:eval`: 91.2 % top-1, 97.4 % recall, 84.8 % precision (engine.md section 12, with the template-data caveat). |
 | N-17 | Demo reset and presenter mode | ours | Demo reliability | deferred | Task 15, after 8 Nov 09:00 |
-| N-18 | Question reordering and conditional logic in review | G-§4 | Closes R-FLOW-3c and R-FLOW-2e | missing | Needs an `ordre` field (shared contract). |
+| N-18 | Question reordering and conditional logic in review | G-§4 | Closes R-FLOW-3c and R-FLOW-2e | partial | Conditional follow-up is visible in the draft review with a remove button; reordering exists via the `ordre` up/down buttons. |
 
 ## Gaps that need Natan or a contract change
 
