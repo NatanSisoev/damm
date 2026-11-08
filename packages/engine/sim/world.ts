@@ -188,12 +188,17 @@ const COLLECTIVES: Omit<Collective, "base">[] = [
   { id: 4, name: "Oficines", centreTipusId: 3, strata: [{ collectiuId: 4, tornId: null, size: 200, participation: 0.35 }] },
 ];
 
-// Base level per collective × domain (0..1). Plausible, invented values.
+// Base level per collective x domain (0..1), order: Benestar, Lideratge, Desenvolupament, Cultura i pertinença,
+// Entorn i relacions, Condicions i organització. Plausible, invented values; each collective has its own profile (shape, not size):
+//   Fàbriques: shifts and physical load (low Benestar, Condicions), strong belonging
+//   Logística: heat and safety (low Benestar, Entorn), strong culture
+//   Comercial: autonomy and growth (high Lideratge, Desenvolupament), targets and travel (low Condicions)
+//   Oficines: stable conditions and good relations (high Condicions, Entorn), weaker belonging and development
 const BASE: Record<number, number[]> = {
-  1: [0.58, 0.6, 0.52, 0.62, 0.66, 0.55],
-  2: [0.55, 0.58, 0.5, 0.6, 0.64, 0.57],
-  3: [0.64, 0.62, 0.6, 0.66, 0.68, 0.62],
-  4: [0.66, 0.64, 0.62, 0.68, 0.7, 0.66],
+  1: [0.56, 0.6, 0.59, 0.65, 0.64, 0.6],
+  2: [0.52, 0.57, 0.56, 0.67, 0.56, 0.62],
+  3: [0.62, 0.67, 0.66, 0.6, 0.64, 0.5],
+  4: [0.64, 0.62, 0.55, 0.56, 0.7, 0.67],
 };
 
 // Three facets per domain; each facet has two wordings of different types.

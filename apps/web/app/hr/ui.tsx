@@ -1,10 +1,17 @@
 import type { ReactNode } from "react";
 
-export function PageHeader({ title, subtitle, actions }: { title: string; subtitle?: ReactNode; actions?: ReactNode }) {
+export function PageHeader({ title, subtitle, actions, aside }: { title: string; subtitle?: ReactNode; actions?: ReactNode; aside?: ReactNode }) {
   return (
     <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
       <div className="space-y-1">
-        <h1 className="page-title">{title}</h1>
+        {aside ? (
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+            <h1 className="page-title">{title}</h1>
+            {aside}
+          </div>
+        ) : (
+          <h1 className="page-title">{title}</h1>
+        )}
         {subtitle && <p className="max-w-2xl text-subtle">{subtitle}</p>}
       </div>
       {actions}
