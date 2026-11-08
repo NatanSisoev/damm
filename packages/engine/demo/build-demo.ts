@@ -71,9 +71,9 @@ const redact = (s: string) => s.replace(/[\w.+-]+@[\w-]+\.[\w.]+/g, "[email]").r
 
 /**
  * The primed segment for the live phone trigger. The lifts are latent-level offsets (0..1 scale, per month) added to the
- * simulated truth of Comercial · Desenvolupament. Its scores read Sep 5.54, Oct 5.53, Nov 5.38 (full demo-db pipeline): no
- * alarm yet (Nov - Sep = -0.16, above the -0.2 sustained-decline trigger), but one 1/5 answer takes Nov to 5.34
- * (-0.20, strictly decreasing) and the engine opens a warning; a 3/5 (Nov 5.38) or 5/5 (5.42) answer does not. Aug sits below Sep so no alarm opened earlier in the replay. The values
+ * simulated truth of Comercial · Desenvolupament. Its scores read Sep 5.60, Oct 5.52, Nov 5.41 (full demo-db pipeline): no
+ * alarm yet (Nov - Sep = -0.19, above the -0.2 sustained-decline trigger), but one 1/5 answer takes Nov to 5.37
+ * (-0.23, strictly decreasing) and the engine opens a warning; a 3/5 (Nov 5.41) or 5/5 (5.45) answer does not. Aug sits below Sep so no alarm opened earlier in the replay. The values
  * were found empirically and are exact only for this seed and date: re-check with packages/engine/demo/live-check.ts
  * after any change to the demo build or the simulation.
  */
@@ -83,7 +83,7 @@ export const LIVE_TRIGGER = {
   augLift: -0.146,
   sepLift: -0.104,
   octLift: -0.128,
-  novLift: -0.145,
+  novLift: -0.147,
   needText: "We want to know how much room people in Comercial have to grow in their role.",
   questionText: "How much room do you have to grow in your current role?",
 };
