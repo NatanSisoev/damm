@@ -608,7 +608,7 @@ export function listNeedCards(lang?: Lang): NeedCard[] {
     )
     .all() as (Omit<NeedCard, "state" | "approved" | "publications" | "publicat" | "responses" | "population"> & { estat: string })[];
   const approved = db.prepare(
-    `SELECT p.id, d.nom AS domini, p.tipus, p.text FROM pregunta p JOIN domini d ON d.id = p.domini_id
+    `SELECT p.id, d.nom AS domini, p.tipus, p.text, p.text_i18n AS ti FROM pregunta p JOIN domini d ON d.id = p.domini_id
      WHERE p.necessitat_id = ? AND p.estat = 'aprovada' ORDER BY p.ordre, p.id`,
   );
   const answerCount = db.prepare("SELECT COUNT(*) AS n FROM v_resposta_analitica WHERE pregunta_id = ?");
@@ -622,9 +622,11 @@ export function listNeedCards(lang?: Lang): NeedCard[] {
   overlayTranslations(db, "necessitat", needs as unknown as { id: number; textNl: string; titol: string | null; intro: string | null }[],
     { text_nl: "textNl", titol: "titol", intro: "intro" }, lang);
   return needs.map(({ estat, ...n }) => {
-    const ap = (approved.all(n.id) as Omit<NeedCard["approved"][number], "answers">[]).map((q) => {
+    const ap = (approved.all(n.id) as (Omit<NeedCard["approved"][number], "answers"> & { ti: string | null })[]).map(({ ti, ...q }) => {
       const c = (answerCount.get(q.id) as { n: number }).n;
-      return { ...q, answers: c >= MIN_GROUP_SIZE ? c : null };
+      // Show the question in the HR user's language; Catalan text when there is no translation.
+      const text = lang && lang !== "ca" ? (parseTr(ti)?.[lang] || q.text) : q.text;
+      return { ...q, text, answers: c >= MIN_GROUP_SIZE ? c : null };
     });
     const most = Math.max(0, ...ap.map((q) => (answerCount.get(q.id) as { n: number }).n));
     const pubList = pubs.all(n.id) as NeedCard["publications"];
