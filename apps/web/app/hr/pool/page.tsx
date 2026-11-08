@@ -168,8 +168,6 @@ export default async function PoolPage({ searchParams }: { searchParams: Promise
         <Stat label={t("stat_accounts")} value={num(s.accounts)} hint={t("stat_accounts_hint", { day: s.today, tz: s.timezone })} />
       </div>}
 
-      {overview && <DomainGrid questions={pool.questions} t={t} lang={lang} num={num} />}
-
       <form method="get" action="/hr/pool" className="card mb-4">
         {p.per && <input type="hidden" name="per" value={p.per} />}
         <div className="card-body">
@@ -191,6 +189,8 @@ export default async function PoolPage({ searchParams }: { searchParams: Promise
         </div>
         </div>
       </form>
+
+      {overview && <DomainGrid questions={pool.questions} t={t} lang={lang} num={num} />}
 
       {!overview && <>
       <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
