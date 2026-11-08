@@ -255,7 +255,7 @@ Preconditions: GATE-ON and logged in, LLM-ON (LLM-OFF is branch B1).
 |---|---|---|
 | 1 | `/hr/needs` → press "+ Nova consulta" (header button; with no needs the empty state has "Crea la primera consulta"), which opens `/hr/needs/new` ("Nova consulta", with "Torna a les consultes" back to the list). Optionally press an example (for instance "B · Logística des del mòbil"). | Fields "Objectiu", "Context", "Què no s'ha de preguntar", "Col·lectiu" (all or one), "Preguntes per persona" (2 to 6, default 3) and "Com es lliura" (Diària or Campanya puntual). |
 | 2 | Fill an objective of 15+ characters, a number of questions (default 3) and a delivery mode, press "Genera els esborranys". | Button "Generant…" and text "La IA està redactant les preguntes…". |
-| 3 | Wait | Redirect to `/hr/needs/new?draft=<id>` ("Revisa les preguntes", back link "Torna a les consultes"). The AI-proposed questions are reviewed there (edit, regenerate, discard, approve), with badge "Proposta de la IA". When no draft is left, the page says so and offers "Ves a les consultes" and "Escriu una altra consulta". The same draft also shows as an "Esborrany" card on `/hr/needs`, where it can be reviewed too. |
+| 3 | Wait | Redirect to `/hr/needs/new?draft=<id>` ("Revisa les preguntes", back link "Torna a les consultes"). The AI-proposed questions are reviewed there (edit, regenerate, discard, approve), with badge "Proposta de la IA". When no draft is left, the page says so and offers "Ves a les consultes" and "Escriu una altra consulta". The review is always on this one-query page: the "Esborrany" card on `/hr/needs` has no inline review, only a "Revisa les preguntes (N)" button that opens `/hr/needs/new?draft=<id>`. |
 
 DB effect: one `necessitat` row (`estat = 'oberta'`, `text_nl`, `collectiu_id` or NULL, `question_count`, `delivery`, `context`, `exclusions`) and its `pregunta` rows with `estat = 'draft'`, `generada_per_ia` = 1, ordered by `ordre`. Nothing is `aprovada`. The need row is written only after drafting succeeds, so a failure leaves no orphan.
 
@@ -276,7 +276,7 @@ Invariants: AI proposes, nothing is live. The LLM is called here, never in a res
 ### F-HR-3 Review and approve drafts
 
 Covers: R-FLOW-3a to 3d, R-FLOW-2f, R-X-3, R-PRIV-10.
-Preconditions: F-HR-2 done, a need in "Esborrany".
+Preconditions: F-HR-2 done, a need in "Esborrany". The review happens on `/hr/needs/new?draft=<id>` (one query, nothing else on screen, back link "Torna a les consultes"), reached from the redirect after creating or from "Revisa les preguntes (N)" on the need card in `/hr/needs`. Every action below keeps the user on that page; the last approval or discard shows "Ja no queden preguntes per revisar…" with a link back to the list.
 
 | # | Action | Expected result |
 |---|---|---|
@@ -362,7 +362,7 @@ Preconditions: an **approved** recommendation with no follow-up yet.
 
 | # | Action | Expected result |
 |---|---|---|
-| 1 | Press "Crea l'enquesta de seguiment" | Redirect to `/hr/needs`. A new need in "Esborrany", AI drafted, linked via `recomanacio.seguiment_necessitat_id`. Nothing approved. |
+| 1 | Press "Crea l'enquesta de seguiment" | Stays on the page; the card then links to the review ("Revisa i publica →" opens `/hr/needs/new?draft=<id>` while drafts remain, else `/hr/needs`). A new need in "Esborrany", AI drafted, linked via `recomanacio.seguiment_necessitat_id`. Nothing approved. |
 | 2 | Back on `/hr/recommendations` | Badge "Seguiment creat". The button is gone. |
 | 3 | Continue with F-HR-3 and F-HR-4 | Questions enter the pool on approval; the collective is notified on publish. |
 | 4 | Employee side | The collective's employees see the action in "Has dit, hem fet" with the badge "Enquesta de seguiment en marxa" (F-EMP-8). |

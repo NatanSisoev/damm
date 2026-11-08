@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1160 350" width="1160" height="350" role="img" aria-labelledby="t d"><title id="t">The Give a Damm loop</title><desc id="d">Four stages: Ask, Listen, Understand, Act. Ask: need in plain words, AI drafts in Catalan, Spanish and English, human approves. Listen: publish with web push, answer on the phone, engine picks the next questions. Understand: scores with confidence, alarms and weak signals, comment themes. Act: AI-proposed actions, human approves, follow-up query, then listen again to compare before and after.</desc>
+<style>text{font-family:"Hanken Grotesk",-apple-system,"Segoe UI",Helvetica,Arial,sans-serif;fill:#141414}.h{font-size:13px;font-weight:600;letter-spacing:1.4px}.i{font-size:16px;font-weight:500}.m{font-size:13px;fill:#6a6a66}.r{fill:#c8201a}</style>
+<rect width="1160" height="350" fill="#fafaf8"/>
+<rect x="40" y="40" width="240" height="230" rx="2" fill="#fff" stroke="#141414" stroke-width="1.5"/>
+<text class="h" x="60" y="74">ASK</text><line x1="60" x2="260" y1="88" y2="88" stroke="#e6e6e2"/>
+<text class="i" x="60" y="122">Need in plain words</text>
+<text class="i" x="60" y="162">AI drafts (ca/es/en)</text>
+<text class="i" x="60" y="202">Human approves</text>
+<path d="M286 155H312M305 149L313 155L305 161" fill="none" stroke="#141414" stroke-width="1.5"/>
+<rect x="320" y="40" width="240" height="230" rx="2" fill="#fff" stroke="#141414" stroke-width="1.5"/>
+<text class="h" x="340" y="74">LISTEN</text><line x1="340" x2="540" y1="88" y2="88" stroke="#e6e6e2"/>
+<text class="i" x="340" y="122">Publish + web push</text>
+<text class="i" x="340" y="162">Answer on the phone</text>
+<text class="i" x="340" y="202">Engine picks the next Qs</text>
+<path d="M566 155H592M585 149L593 155L585 161" fill="none" stroke="#141414" stroke-width="1.5"/>
+<rect x="600" y="40" width="240" height="230" rx="2" fill="#fff" stroke="#141414" stroke-width="1.5"/>
+<text class="h" x="620" y="74">UNDERSTAND</text><line x1="620" x2="820" y1="88" y2="88" stroke="#e6e6e2"/>
+<text class="i" x="620" y="122">Scores with confidence</text>
+<text class="i" x="620" y="162">Alarms and weak signals</text>
+<text class="i" x="620" y="202">Comment themes</text>
+<path d="M846 155H872M865 149L873 155L865 161" fill="none" stroke="#141414" stroke-width="1.5"/>
+<rect x="880" y="40" width="240" height="230" rx="2" fill="#fff" stroke="#141414" stroke-width="1.5"/>
+<text class="h" x="900" y="74">ACT</text><line x1="900" x2="1100" y1="88" y2="88" stroke="#e6e6e2"/>
+<text class="i" x="900" y="122">AI-proposed actions</text>
+<text class="i" x="900" y="162">Human approves</text>
+<text class="i" x="900" y="202">Follow-up query</text>
+
+<text class="i" x="900" y="240" font-size="15">Listen again:</text><text class="m" x="900" y="258">before vs after</text>
+<path d="M1000.0 270V310H440.0V272" fill="none" stroke="#c8201a" stroke-width="1.5"/><path d="M434.0 282L440.0 271L446.0 282" fill="none" stroke="#c8201a" stroke-width="1.5"/>
+<text class="m r" x="720.0" y="332" text-anchor="middle" style="fill:#c8201a">Listen again</text>
+</svg>

@@ -11,7 +11,7 @@ export const generateMetadata = pageTitle("hr_needs_new");
 
 export const dynamic = "force-dynamic";
 
-/** Writing a new query gets its own page: one task, no list around it. Submitting runs createNeedAction, which lands on the draft review. */
+/** One task per page, no list around it. Without ?draft= it is the form for a new query; with ?draft=<need id> it is the review of that one query's questions (the list links here too). */
 export default async function NewNeedPage({ searchParams }: { searchParams: Promise<{ draft?: string; regenError?: string }> }) {
   const { draft, regenError } = await searchParams;
   const { t } = await getTL(hrDict);
@@ -29,7 +29,7 @@ export default async function NewNeedPage({ searchParams }: { searchParams: Prom
         {group ? (
           <section className="card mb-6">
             <div className="card-body">
-              <DraftReview g={group} regenError={Number(regenError) || null} onNewPage />
+              <DraftReview g={group} regenError={Number(regenError) || null} />
             </div>
           </section>
         ) : (
