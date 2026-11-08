@@ -117,7 +117,7 @@ export default async function RecommendationPage({ params }: { params: Promise<{
                   </>
                 )}
                 {r.estat === "aprovada" && (
-                  <form action={followUpFromDetailAction}><input type="hidden" name="id" value={r.id} /><SubmitButton className="btn btn-primary">{t("rd_create_followup")}</SubmitButton></form>
+                  <form action={followUpFromDetailAction}><input type="hidden" name="id" value={r.id} /><SubmitButton className="btn btn-primary" busyLabel={t("rd_followup_busy")}>{t("rd_create_followup")}</SubmitButton></form>
                 )}
               </div>
             )}

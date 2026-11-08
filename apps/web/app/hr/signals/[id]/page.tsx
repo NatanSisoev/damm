@@ -3,8 +3,8 @@ import { SubmitButton } from "@/app/hr/submit-button";
 import { alarmReason } from "@/lib/alarm-reason";
 import { Comments, People } from "../../glyphs";
 import { notFound } from "next/navigation";
-import { MIN_GROUP_SIZE } from "@damm/shared";
-import { advanceSignalStatus, getSignalDetail, type SignalTimelineStep } from "@damm/db/hr";
+import { MIN_GROUP_SIZE, type Lang } from "@damm/shared";
+import { advanceSignalStatus, getSignalDetail, type SignalRecommendation, type SignalTimelineStep } from "@damm/db/hr";
 
 import { hrListProbes, type ProbeView } from "@/lib/hr-engine";
 import { Card, Empty, PageHeader } from "../../ui";
@@ -14,7 +14,7 @@ import { setSignalStatusAction } from "../../actions";
 import "../alarms.css";
 import { generateRecommendationsAction } from "../actions";
 import { GenerateButton } from "../generate-button";
-import { startProbeAction, stopProbeAction } from "./actions";
+import { approveRecFromSignalAction, discardRecFromSignalAction, followUpFromSignalAction, startProbeAction, stopProbeAction } from "./actions";
 
 import { recommendationStatus } from "../../labels";
 import { ChangeBadge, Sparkline } from "../../trend";
@@ -115,6 +115,38 @@ function recTitle(r: { titol?: string | null; text: string }): string {
   return first.length > 90 ? `${first.slice(0, 88)}…` : first;
 }
 
+/** One proposal with the decision it is waiting for, so the whole step happens on the alarm page. */
+function RecRow({ r, signalId, t, lang }: { r: SignalRecommendation; signalId: number; t: HrResultsT; lang: Lang }) {
+  const status = recommendationStatus(r.estat, lang);
+  const hidden = (
+    <>
+      <input type="hidden" name="id" value={r.id} />
+      <input type="hidden" name="signal" value={signalId} />
+    </>
+  );
+  return (
+    <li className={`py-3 first:pt-0 last:pb-0 ${r.estat === "descartada" ? "opacity-60" : ""}`}>
+      <div className="flex items-start gap-3">
+        <p className="min-w-0 flex-1 text-[13px] font-medium">{recTitle(r)}</p>
+        <span className={`badge shrink-0 ${status.cls}`}>{status.label}</span>
+      </div>
+      <div className="mt-2 flex flex-wrap items-center gap-2">
+        {r.estat === "proposada" && (
+          <>
+            <form action={approveRecFromSignalAction}>{hidden}<SubmitButton className="btn btn-primary">{t("sd_rec_approve")}</SubmitButton></form>
+            <form action={discardRecFromSignalAction}>{hidden}<SubmitButton className="btn">{t("sd_rec_discard")}</SubmitButton></form>
+          </>
+        )}
+        {r.estat === "aprovada" && !r.seguimentNecessitatId && (
+          <form action={followUpFromSignalAction}>{hidden}<SubmitButton className="btn btn-primary" busyLabel={t("sd_rec_followup_busy")}>{t("sd_rec_followup")}</SubmitButton></form>
+        )}
+        {r.estat === "aprovada" && r.seguimentNecessitatId && <Link href="/hr/needs" className="btn">{t("sd_rec_review")}</Link>}
+        <Link href={`/hr/recommendations/${r.id}`} className="ml-auto text-xs text-accent-ink hover:underline">{t("sd_rec_detail")} ›</Link>
+      </div>
+    </li>
+  );
+}
+
 const pct = (v: number) => `${Math.round(v <= 1 ? v * 100 : v)}%`;
 
 function ProbeCard({ t, probes, signal, error }: { t: HrResultsT; probes: ProbeView[]; signal: { id: number; collectiuId: number | null; tornId: number | null; dominiId: number | null; collectiu: string | null; domini: string | null }; error?: string }) {
@@ -197,6 +229,12 @@ export default async function SignalPage({ params, searchParams }: { params: Pro
   // The card where the active step is done gets a red edge and a "next step" tag.
   const stepCard = (anchor: string) => (active?.href === `#${anchor}` ? "loop-target" : "");
   const stepTag = (anchor: string) => (active?.href === `#${anchor}` ? <span className="loop-target-tag">{t("sd_next_step")}</span> : null);
+
+  const recHint = recommendations.some((r) => r.estat === "proposada")
+    ? t("sd_rec_hint_decide")
+    : recommendations.some((r) => r.estat === "aprovada" && !r.seguimentNecessitatId)
+      ? t("sd_rec_hint_follow")
+      : null;
 
   return (
     <>
@@ -321,17 +359,14 @@ export default async function SignalPage({ params, searchParams }: { params: Pro
                 <Empty>{ts("no_recs_domain")}</Empty>
               )
             ) : (
-              <ul className="divide-y divide-line">
-                {recommendations.map((r) => (
-                  <li key={r.id} className={r.estat === "descartada" ? "opacity-60" : ""}>
-                    <Link href={`/hr/recommendations/${r.id}`} className="group flex items-center gap-3 py-2.5">
-                      <span className="min-w-0 flex-1 truncate text-[13px] font-medium group-hover:underline">{recTitle(r)}</span>
-                      <span className={`badge shrink-0 ${recommendationStatus(r.estat, lang).cls}`}>{recommendationStatus(r.estat, lang).label}</span>
-                      <span aria-hidden className="text-subtle">›</span>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
+              <>
+                {recHint && <p className="rec-hint">{recHint}</p>}
+                <ul className="divide-y divide-line">
+                  {recommendations.map((r) => (
+                    <RecRow key={r.id} r={r} signalId={signal.id} t={t} lang={lang} />
+                  ))}
+                </ul>
+              </>
             )}
           </Card>
 

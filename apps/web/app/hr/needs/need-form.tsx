@@ -127,7 +127,7 @@ export function NeedForm({ collectius }: { collectius: Collectiu[] }) {
       )}
       <div className="flex items-center justify-end gap-3 border-t border-line pt-4">
         <span className="text-xs text-subtle">{pending ? t("nf_drafting") : t("nf_after")}</span>
-        <button className="btn btn-primary" disabled={pending}>{pending ? t("nf_generating") : state && !state.field ? t("nf_retry") : t("nf_generate")}</button>
+        <button className="btn btn-primary" disabled={pending} aria-busy={pending || undefined}>{pending ? <span className="inline-flex items-center gap-2"><span className="gen-spinner" aria-hidden />{t("nf_generating")}</span> : state && !state.field ? t("nf_retry") : t("nf_generate")}</button>
       </div>
     </form>
   );
