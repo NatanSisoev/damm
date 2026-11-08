@@ -3,7 +3,6 @@ import Link from "next/link";
 import { MIN_GROUP_SIZE } from "@damm/shared";
 import { getT } from "@/lib/i18n/server";
 import { hrDict } from "@/lib/i18n/hr";
-import { LangSwitcher } from "@/components/lang-switcher";
 import { Wordmark } from "../wordmark";
 import { HrSidebar, type NavBadges } from "./nav";
 import type { ViewRole } from "@/lib/view-role";
@@ -42,7 +41,6 @@ export async function HrShell({ children, subtitle, manager = false, badges, rol
               <span className="border-l border-line pl-3 text-[11px] text-subtle">{subtitle}</span>
             </Link>
             <nav aria-label={t("sections")} className="ml-auto flex items-center gap-4">
-              <LangSwitcher />
               <Link href="/hr" className="hr-tab">{t("manager_to_portal")}</Link>
             </nav>
           </div>
@@ -67,10 +65,6 @@ export async function HrShell({ children, subtitle, manager = false, badges, rol
         }
       />
       <div className="hr-content flex min-w-0 flex-col">
-        {/* Desktop: language chooser top right (below 1024px it sits in the top bar) */}
-        <div className="hr-lang-top hidden justify-end px-4 pt-4 md:px-8 lg:flex">
-          <LangSwitcher />
-        </div>
         <main className="min-w-0 flex-1 px-4 py-6 md:px-8 md:py-8">
           <div className="mx-auto max-w-6xl">{children}</div>
         </main>

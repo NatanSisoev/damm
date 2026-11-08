@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { useT } from "@/lib/i18n/client";
 import { hrDict, type HrKey } from "@/lib/i18n/hr";
-import { LangSwitcher } from "@/components/lang-switcher";
 import type { ViewRole } from "@/lib/view-role";
 import { setViewRoleAction } from "./view-role-action";
 
@@ -216,7 +215,6 @@ export function HrSidebar({ badges, subtitle, logo, role = "hr" }: { badges?: Na
         </button>
         <span className="flex items-center gap-3">{logo}</span>
         <span className="text-[12px] text-subtle">{subtitle}</span>
-        <LangSwitcher className="ml-auto" />
       </div>
       {open && (
         <div className="hr-drawer-wrap">
