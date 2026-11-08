@@ -29,6 +29,7 @@ import { toQuestion } from "../src/store.ts";
 import { createWorld, normal, type Person } from "../sim/world.ts";
 import { loadBankFollowups, loadQuestionBank } from "../fixtures/load-question-bank.ts";
 import { COMMENTS, THEME_COMMENTS } from "./comments.ts";
+import { demoChannel } from "./canal.ts";
 
 const REPO = resolve(import.meta.dirname, "../../..");
 const DAY_MS = 86_400_000;
@@ -230,7 +231,7 @@ export async function buildDemo(opts: DemoOptions = {}): Promise<DemoSummary> {
         const q = questions.get(it.questionId)!;
         return createRng(`skip|${seed}|${acct}|${t}|${q.id}`)() < answerRate(q);
       });
-      const res = engine.submitAnswers(acct, answered.map((it) => answerFor(r, p, it, t)));
+      const res = engine.submitAnswers(acct, answered.map((it) => answerFor(r, p, it, t)), { channel: demoChannel(seed, acct, p.collectiuId, t) });
       answers += res.accepted.length;
     }
     // The real job runs on a schedule, so it also ran at the end of each month: alarms and emergent themes opened then
