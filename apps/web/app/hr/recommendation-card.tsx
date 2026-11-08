@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { getTL } from "@/lib/i18n/server";
-import { tidyRationale } from "@/lib/rationale-text";
+import { tidyRationale, tidyShift } from "@/lib/rationale-text";
 import { hrDict } from "@/lib/i18n/hr";
 
 interface RecommendationBody {
@@ -30,7 +30,7 @@ export async function RecommendationBody({ r }: { r: RecommendationBody }): Prom
         </span>
       )}
       {r.titol && <h3 className="font-semibold">{r.titol}</h3>}
-      <p>{r.text}</p>
+      <p>{lang === "ca" ? tidyShift(r.text) : r.text}</p>
       {r.iniciativa && <p className="text-[13px]"><span className="font-semibold">{t("rc_initiative")}</span> {r.iniciativa}</p>}
       {(r.responsableSuggerit || r.terminiSuggerit) && (
         <p className="text-[13px] text-muted">

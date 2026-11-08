@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import type { SignalRecommendation } from "@damm/db/hr";
 import { getTL } from "@/lib/i18n/server";
 import { panelDict } from "@/lib/i18n/hr-panel";
-import { tidyRationale } from "@/lib/rationale-text";
+import { tidyRationale, tidyShift } from "@/lib/rationale-text";
 
 function Fact({ label, children }: { label: string; children: ReactNode }) {
   return (
@@ -18,7 +18,7 @@ export async function ProposalBody({ r }: { r: Pick<SignalRecommendation, "text"
   const { t, lang } = await getTL(panelDict);
   return (
     <>
-      <p className="proposal-main text-[15px]">{r.text}</p>
+      <p className="proposal-main text-[15px]">{lang === "ca" ? tidyShift(r.text) : r.text}</p>
       <dl className="proposal-facts mt-4 grid gap-4 sm:grid-cols-2">
         {r.iniciativa && <Fact label={t("rd_f_initiative")}>{r.iniciativa}</Fact>}
         {r.responsableSuggerit && <Fact label={t("rd_f_owner")}>{r.responsableSuggerit}</Fact>}

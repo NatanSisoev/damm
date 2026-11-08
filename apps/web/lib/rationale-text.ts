@@ -8,10 +8,15 @@ const CHANGE: Record<Lang, [RegExp, string]> = {
   en: [/\bchange (?=[-+−]?\d)/, "change vs the previous period "],
 };
 
+/** Stored Catalan text carries the raw shift key "mati" ("torn mati", "el més baix és mati"); show "matí". */
+export function tidyShift(text: string): string {
+  return text.replace(/\bmati\b/g, "matí");
+}
+
 export function tidyRationale(text: string, lang: Lang): string {
   let s = text.trim();
   if (lang !== "en") s = s.replace(/(\d)\.(\d)/g, "$1,$2");
-  if (lang === "ca") s = s.replace(/\btorn mati\b/g, "torn matí");
+  if (lang === "ca") s = tidyShift(s);
   const [re, to] = CHANGE[lang];
   s = s.replace(re, to);
   return s.charAt(0).toUpperCase() + s.slice(1);

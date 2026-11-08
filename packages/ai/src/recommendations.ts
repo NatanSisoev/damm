@@ -266,7 +266,7 @@ export function templateRecommendations(ctx: RecommendationContext): Recommendat
     let action = fill(lv.action, ctx);
     if (hasGap && i === 0) {
       const low = ctx.insights.find((x) => x.lowestShift)?.lowestShift;
-      action += ` Comença pel torn ${low}, que és on la puntuació és més baixa.`;
+      action += ` Comença pel torn ${low === "mati" ? "matí" : low}, que és on la puntuació és més baixa.`;
     }
     if (i === 0 && ctx.alarmType !== "improvement") action += FOLLOW_UP;
     return {
