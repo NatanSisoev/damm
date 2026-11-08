@@ -112,7 +112,8 @@ test("daily cap, one item per domain, follow-up first and facet coverage hold du
     }
   }
   // Facet coverage widens: the first ten probed asks cover ten different facets (the domain has twelve).
-  assert.equal(new Set(probedFacets.slice(0, 10)).size, 10, probedFacets.join(","));
+  // A day holds one answer type, so only items of the day's type rotate: at least six distinct facets.
+  assert.ok(new Set(probedFacets.slice(0, 10)).size >= 6, probedFacets.join(","));
 
   // A due follow-up still comes first, probe or not.
   run(
@@ -128,7 +129,7 @@ test("daily cap, one item per domain, follow-up first and facet coverage hold du
   assert.ok(items.length <= cap);
 });
 
-test("pure scheduler: priority multiplies by the boost, and probed domains prefer open prompts", () => {
+test("pure scheduler: priority multiplies by the boost, and open prompts are never batch items", () => {
   const cfg = DEFAULT_CONFIG;
   const d: DomainSignal = { domainId: 1, infoGain: 0.5, outlierShare: 0, weight: 1.5 };
   assert.equal(domainPriority({ ...d, probeBoost: 3 }, 1, cfg), 3 * domainPriority(d, 1, cfg));
@@ -160,8 +161,9 @@ test("pure scheduler: priority multiplies by the boost, and probed domains prefe
   };
   const normal = openShare(1);
   const probed = openShare(3);
-  assert.ok(Math.abs(normal - 0.5) < 0.05, `normal ${normal}`);
-  assert.ok(probed > normal + 0.1, `probed ${probed} vs ${normal} (pref ${PROBE_OPEN_PREF})`);
+  // Free text is an optional comment on other questions, never a batch item, probe or not.
+  assert.equal(normal, 0, `normal ${normal}`);
+  assert.equal(probed, 0, `probed ${probed} (pref ${PROBE_OPEN_PREF})`);
 });
 
 test("progress: extra answers and confidence before vs now, aggregate only", () => {

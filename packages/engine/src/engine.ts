@@ -139,11 +139,6 @@ export function createEngine(opts: EngineOptions): Engine {
           run(db, "INSERT OR IGNORE INTO assignment (compte_id, pregunta_id, day, slot, reason) VALUES (?,?,?,?,?)", accountId, p.question.id, day, slot, p.reason),
         );
       }
-      // Published needs past the daily cap: appended after the batch's slots, so a need published
-      // later shows up the same day. Only unanswered questions not already in the day's batch.
-      const missing = store.publishedNeedsMissing(db, accountId, acc.collectiuId, day);
-      let slot = store.assignmentsFor(db, accountId, day).reduce((m, r) => Math.max(m, r.slot + 1), 0);
-      for (const q of missing) run(db, "INSERT OR IGNORE INTO assignment (compte_id, pregunta_id, day, slot, reason) VALUES (?,?,?,?,'need')", accountId, q.id, day, slot++);
     });
     rows = store.assignmentsFor(db, accountId, day);
     const qs = store.questionsByIds(db, rows.map((r) => r.pregunta_id));

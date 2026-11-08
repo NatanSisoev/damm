@@ -47,25 +47,6 @@ export const approvedQuestionsFor = (db: SqlDatabase, collectiuId: number) =>
     collectiuId,
   ).map(toQuestion);
 
-const Q_COLS_P = Q_COLS.split(", ").map((c) => `p.${c}`).join(", ");
-
-/** Unanswered questions of published needs for the account's collective, not yet in `day`'s batch. */
-export const publishedNeedsMissing = (db: SqlDatabase, accountId: string, collectiuId: number, day: string) =>
-  all<PreguntaRow>(
-    db,
-    `SELECT ${Q_COLS_P} FROM pregunta p JOIN necessitat n ON n.id = p.necessitat_id
-      WHERE p.estat = 'aprovada' AND p.is_followup = 0 AND n.estat = 'publicada'
-        AND (n.collectiu_id IS NULL OR n.collectiu_id = ?) AND (p.collectiu_id IS NULL OR p.collectiu_id = ?)
-        AND NOT EXISTS (SELECT 1 FROM resposta r WHERE r.compte_id = ? AND r.pregunta_id = p.id)
-        AND NOT EXISTS (SELECT 1 FROM assignment a WHERE a.compte_id = ? AND a.day = ? AND a.pregunta_id = p.id)
-      ORDER BY p.prioritat DESC, p.id`,
-    collectiuId,
-    collectiuId,
-    accountId,
-    accountId,
-    day,
-  ).map(toQuestion);
-
 export const allQuestions = (db: SqlDatabase) =>
   new Map(all<PreguntaRow>(db, `SELECT ${Q_COLS} FROM pregunta`).map((r) => [r.id, toQuestion(r)]));
 
