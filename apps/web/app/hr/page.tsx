@@ -141,7 +141,22 @@ export default async function HrDashboard({ searchParams }: { searchParams: Prom
     <>
       <PageHeader
         title={t("dash_title")}
-        subtitle={t("dash_sub")}
+        subtitle={<>{t("dash_sub")}<span className="mt-1 block text-xs"><span className="num">{fmtDay(range.from)} – {fmtDay(range.to)}</span>
+            {" · "}{t(bucketKey(bucket))}
+            {prevWin && <> · {t("dash_vs", { range: `${fmtDay(prevWin.from)} – ${fmtDay(prevWin.to)}` })}</>}
+            {range.anchored && <> · {t("dash_anchor", { date: fmtDay(range.anchor) })}</>}</span></>}
+        aside={<div aria-label={t("dash_filters")} role="group">
+            <RangeSelect
+              options={PRESETS.map((p) => ({ key: p.key, label: t(`pr_${p.key}`), href: href({ r: p.key, from: undefined, to: undefined }) }))}
+              value={range.key}
+              custom={range.key === "custom"}
+              base={href({ r: undefined, from: undefined, to: undefined })}
+              from={range.from}
+              to={range.to}
+              min={bounds.min ?? undefined}
+              max={range.anchor}
+            />
+        </div>}
         actions={
           <div className="flex flex-wrap items-center gap-2">
             <form action={refreshDashboardAction}>
@@ -157,29 +172,6 @@ export default async function HrDashboard({ searchParams }: { searchParams: Prom
         <p role="status" className="mb-4 border border-line bg-surface-muted px-4 py-2 text-[13px]">{t(NOTICE_KEY[q.actualitzat as keyof typeof NOTICE_KEY])}</p>
       )}
 
-      {/* Filters */}
-      <section aria-label={t("dash_filters")} className="card mb-6">
-        <div className="card-body space-y-3">
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-            <RangeSelect
-              options={PRESETS.map((p) => ({ key: p.key, label: t(`pr_${p.key}`), href: href({ r: p.key, from: undefined, to: undefined }) }))}
-              value={range.key}
-              custom={range.key === "custom"}
-              base={href({ r: undefined, from: undefined, to: undefined })}
-              from={range.from}
-              to={range.to}
-              min={bounds.min ?? undefined}
-              max={range.anchor}
-            />
-          </div>
-          <p className="text-xs text-subtle">
-            <span className="num">{fmtDay(range.from)} – {fmtDay(range.to)}</span>
-            {" · "}{t(bucketKey(bucket))}
-            {prevWin && <> · {t("dash_vs", { range: `${fmtDay(prevWin.from)} – ${fmtDay(prevWin.to)}` })}</>}
-            {range.anchored && <> · {t("dash_anchor", { date: fmtDay(range.anchor) })}</>}
-          </p>
-        </div>
-      </section>
 
       {!hasData && (
         <div className="mb-6">
