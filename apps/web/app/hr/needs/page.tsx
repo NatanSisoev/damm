@@ -15,7 +15,6 @@ import { hrDict, collectiveLabel, domainLabel, type HrKey } from "@/lib/i18n/hr"
 import { trailDict } from "@/lib/i18n/hr-trail";
 import { makeT } from "@/lib/i18n/core";
 import { DecisionList } from "../trail";
-import { DraftReview } from "./draft-review";
 import { RouteModal } from "../modal";
 import { pageTitle } from "@/lib/i18n/titles";
 
@@ -54,12 +53,13 @@ function StateBadge({ state, lang }: { state: NeedState; lang: Lang }) {
 
 const fmtDate = (d: string | null, lang: Lang) => (d ? new Date(d.replace(" ", "T") + "Z").toLocaleDateString(LOCALES[lang], { day: "numeric", month: "short", year: "numeric" }) : null);
 
-export default async function NeedsPage({ searchParams }: { searchParams: Promise<{ estat?: string; publicada?: string; recordatori?: string; avis?: string; nova?: string; historial?: string; regenError?: string }> }) {
-  const { estat, publicada, recordatori, avis, nova, historial, regenError } = await searchParams;
+export default async function NeedsPage({ searchParams }: { searchParams: Promise<{ estat?: string; publicada?: string; recordatori?: string; avis?: string; nova?: string; historial?: string }> }) {
+  const { estat, publicada, recordatori, avis, nova, historial } = await searchParams;
   const { t, lang } = await getTL(hrDict);
   const filter: Filter = isFilter(estat) ? estat : "totes";
   const all = listNeedCards(lang);
-  const drafts = new Map(listNeedDrafts().map((g) => [g.id, g]));
+  // Reviewing a query's questions happens on its own page (/hr/needs/new?draft=<id>), never inline in this list.
+  const draftCounts = new Map(listNeedDrafts().map((g) => [g.id, g.questions.length]));
   const domainIdx = new Map(listDomains().map((d, i) => [d.nom, i + 1]));
   const counts = Object.fromEntries(STATES.map((s) => [s.key, all.filter((n) => n.state === s.key).length])) as Record<NeedState, number>;
   const shown = filter === "totes" ? all : all.filter((n) => n.state === filter);
@@ -120,7 +120,7 @@ export default async function NeedsPage({ searchParams }: { searchParams: Promis
       {all.length > 0 && shown.length > 0 && (
         <div className="space-y-4">
           {shown.map((n) => (
-            <NeedItem key={n.id} n={n} draft={drafts.get(n.id)} domainIdx={domainIdx} t={t} lang={lang} regenError={Number(regenError) || null} />
+            <NeedItem key={n.id} n={n} toReview={draftCounts.get(n.id) ?? 0} domainIdx={domainIdx} t={t} lang={lang} />
           ))}
         </div>
       )}
@@ -163,7 +163,7 @@ function Fact({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 
-function NeedItem({ n, draft, domainIdx, t, lang, regenError }: { n: NeedCard; draft?: ReturnType<typeof listNeedDrafts>[number]; domainIdx: Map<string, number>; t: TFn<HrKey>; lang: Lang; regenError: number | null }) {
+function NeedItem({ n, toReview, domainIdx, t, lang }: { n: NeedCard; toReview: number; domainIdx: Map<string, number>; t: TFn<HrKey>; lang: Lang }) {
   const state = STATES.find((s) => s.key === n.state)!;
   const live = n.state === "publicada" || n.state === "tancada";
   const pct = n.responses != null && n.population > 0 ? Math.min(100, Math.round((n.responses / n.population) * 100)) : null;
@@ -210,8 +210,6 @@ function NeedItem({ n, draft, domainIdx, t, lang, regenError }: { n: NeedCard; d
         {n.titol && <p className="text-sm text-subtle">{t("need_text_prefix", { text: n.textNl })}</p>}
         <p className="text-xs text-subtle">{t(state.hint)}</p>
 
-        {draft && <DraftReview g={draft} regenError={regenError} />}
-
         {n.approved.length > 0 && (
           <div>
             <h3 className="mb-2 text-sm font-semibold">
@@ -245,6 +243,9 @@ function NeedItem({ n, draft, domainIdx, t, lang, regenError }: { n: NeedCard; d
         <NeedTrail needId={n.id} lang={lang} />
         <div className="hr-actions flex flex-wrap items-center justify-end gap-2 border-t border-line pt-4">
           {n.state === "esborrany" && n.approved.length === 0 && n.nDraft === 0 && <p className="mr-auto text-sm text-subtle">{t("need_no_questions")}</p>}
+          {toReview > 0 && (
+            <Link href={`/hr/needs/new?draft=${n.id}`} className="btn btn-primary">{t("needs_new_review_title")} <span className="num ml-1 opacity-80">({toReview})</span></Link>
+          )}
           {live && (
             <Link href="/hr/results" className="btn btn-ghost">{t("need_see_results")}</Link>
           )}

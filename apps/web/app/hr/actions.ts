@@ -59,10 +59,8 @@ export async function regenerateQuestionAction(formData: FormData) {
   const id = Number(formData.get("id"));
   const ctx = getRedraftContext(id);
   const r = ctx ? await redraftQuestion(ctx.need, ctx.current as never, ctx.others as never) : null;
-  // The preview lives on the new-query page right after creating; the list also shows drafts. Come back to where the click happened.
-  const back = String(formData.get("back") ?? "");
-  const base = back === "/hr/needs/new" ? `/hr/needs/new?draft=${Number(formData.get("need")) || ""}&` : "/hr/needs?";
-  if (!r) redirect(`${base}regenError=${id}`);
+  // Drafts are only reviewed on the single-query review page, so a failure comes back there.
+  if (!r) redirect(`/hr/needs/new?draft=${Number(formData.get("need")) || ""}&regenError=${id}`);
   replaceDraft(id, r.question, r.source === "llm", HR_USER);
   revalidatePath("/hr/review");
   revalidatePath("/hr/needs");

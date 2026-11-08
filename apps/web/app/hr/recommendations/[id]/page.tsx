@@ -157,7 +157,7 @@ export default async function RecommendationPage({ params }: { params: Promise<{
               <div>
                 <div className="mb-2 flex flex-wrap items-center gap-2">
                   <span className={`badge ${followUp.published ? "badge-good" : "badge-warn"}`}>{followUp.published ? t("rd_published") : t("rd_unpublished")}</span>
-                  <Link href="/hr/needs" className="ml-auto text-xs text-accent-ink hover:underline">{t("rd_review_publish")}</Link>
+                  <Link href={followUp.questions.some((q) => q.estat === "draft") ? `/hr/needs/new?draft=${followUp.necessitatId}` : "/hr/needs"} className="ml-auto text-xs text-accent-ink hover:underline">{t("rd_review_publish")}</Link>
                 </div>
                 <p className="text-[13px] font-semibold">{followUp.textNl}</p>
                 {followUp.questions.length > 0 && (

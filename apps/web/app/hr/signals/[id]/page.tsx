@@ -423,7 +423,7 @@ export default async function SignalPage({ params, searchParams }: { params: Pro
                   <li key={f.necessitatId} className="rounded-lg border border-line p-4">
                     <div className="mb-2 flex flex-wrap items-center gap-2">
                       <span className={`badge ${f.published ? "badge-good" : "badge-warn"}`}>{f.published ? t("sd_published") : t("sd_unpublished")}</span>
-                      <Link href="/hr/needs" className="ml-auto text-xs text-accent-ink hover:underline">{t("sd_review_pub")}</Link>
+                      <Link href={f.questions.some((q) => q.estat === "draft") ? `/hr/needs/new?draft=${f.necessitatId}` : "/hr/needs"} className="ml-auto text-xs text-accent-ink hover:underline">{t("sd_review_pub")}</Link>
                     </div>
                     <p className="text-[13px] font-semibold">{f.textNl}</p>
                     {f.questions.length > 0 ? (
