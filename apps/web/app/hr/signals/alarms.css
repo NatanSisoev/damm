@@ -11,3 +11,12 @@
 .gen-icon { width: 14px; height: 14px; flex: none; }
 .gen-spinner { width: 13px; height: 13px; flex: none; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: gen-spin .7s linear infinite; }
 @keyframes gen-spin { to { transform: rotate(360deg); } }
+
+/* Signal loop: the active step and the card where it is done (red as signal), later steps locked */
+.loop-num-active { border-color: var(--red); color: var(--red); background: transparent; }
+.loop-step-locked { opacity: .45; cursor: not-allowed; }
+.loop-target { border-color: var(--red); box-shadow: inset 2px 0 0 var(--red); scroll-margin-top: 24px; }
+.loop-target:target { animation: loop-flash 1.4s ease-out; }
+.loop-target-tag { margin-left: 8px; padding: 1px 6px; border: 1px solid var(--red); border-radius: 2px; color: var(--red); font-size: 10px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; vertical-align: 2px; }
+@keyframes loop-flash { 0%, 30% { box-shadow: inset 2px 0 0 var(--red), 0 0 0 4px rgb(from var(--red) r g b / .18); } 100% { box-shadow: inset 2px 0 0 var(--red), 0 0 0 0 transparent; } }
+@media (prefers-reduced-motion: reduce) { .loop-target:target { animation: none; } }

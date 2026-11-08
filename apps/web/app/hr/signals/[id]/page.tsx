@@ -52,45 +52,50 @@ function timelineText(s: SignalTimelineStep, t: HrResultsT): { label: string; de
   return { label, detail };
 }
 
-function Timeline({ steps, t, hasFollowUps }: { steps: SignalTimelineStep[]; t: HrResultsT; hasFollowUps: boolean }) {
+/** Where the first unfinished step is done on this page (no follow-up card yet: the recommendations, where a follow-up starts). */
+function activeTarget(steps: SignalTimelineStep[], hasFollowUps: boolean): { index: number; href: string; label: HrResultsKey } | null {
+  const index = steps.findIndex((s) => s.state !== "done");
+  const step = index >= 0 ? NEXT[steps[index].key] : undefined;
+  if (!step) return null;
+  return { index, label: step.label, href: !hasFollowUps && step.href === "#seguiment" ? "#recomanacions" : step.href };
+}
+
+function Timeline({ steps, t, active }: { steps: SignalTimelineStep[]; t: HrResultsT; active: ReturnType<typeof activeTarget> }) {
   return (
     <ol className="grid gap-4 sm:grid-cols-4">
       {steps.map((s, i) => {
         const tx = timelineText(s, t);
-        const step = s.state !== "done" ? NEXT[s.key] : undefined;
-        // No follow-up card without follow-ups: those steps point at the recommendations, where a follow-up starts.
-        const next = step && !hasFollowUps && step.href === "#seguiment" ? { ...step, href: "#recomanacions" } : step;
+        const done = s.state === "done";
+        const isActive = active?.index === i;
+        // Steps after the active one wait for it: greyed out, not clickable.
+        const locked = !done && !isActive;
         const body = (
           <>
             <span
               className={`num mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full border text-xs font-semibold ${
-                s.state === "done"
-                  ? "border-good bg-good-soft text-good"
-                  : next
-                    ? "border-line-strong bg-surface-muted text-subtle group-hover:border-ink group-hover:text-ink"
-                    : "border-line-strong bg-surface-muted text-subtle"
+                done ? "border-good bg-good-soft text-good" : isActive ? "loop-num-active" : "border-line-strong bg-surface-muted text-subtle"
               }`}
               aria-hidden
             >
-              {s.state === "done" ? "✓" : i + 1}
+              {done ? "✓" : i + 1}
             </span>
             <div>
-              <div className={`text-[13px] font-semibold ${next ? "group-hover:underline" : ""}`}>
+              <div className={`text-[13px] font-semibold ${isActive ? "group-hover:underline" : ""}`}>
                 {tx.label}
-                {next && <span aria-hidden className="ml-1 text-subtle">›</span>}
+                {isActive && <span aria-hidden className="ml-1 text-subtle">›</span>}
               </div>
               <div className="text-xs text-subtle">
-                {s.state === "done" ? t("sd_done") : t("sd_pending")} · {tx.detail}
+                {done ? t("sd_done") : isActive ? t("sd_next_step") : t("sd_pending")} · {tx.detail}
               </div>
             </div>
           </>
         );
         return (
-        <li key={s.key} className="sm:border-l sm:border-line sm:pl-4 sm:first:border-l-0 sm:first:pl-0">
-          {next ? (
-            <Link href={next.href} title={t(next.label)} className="group flex items-start gap-3">{body}</Link>
+        <li key={s.key} className={`sm:border-l sm:border-line sm:pl-4 sm:first:border-l-0 sm:first:pl-0 ${locked ? "loop-step-locked" : ""}`}>
+          {isActive && active ? (
+            <Link href={active.href} title={t(active.label)} className="group flex items-start gap-3" aria-current="step">{body}</Link>
           ) : (
-            <div className="flex items-start gap-3">{body}</div>
+            <div className="flex items-start gap-3" title={locked ? t("sd_locked") : undefined} aria-disabled={locked || undefined}>{body}</div>
           )}
         </li>
         );
@@ -180,6 +185,10 @@ export default async function SignalPage({ params, searchParams }: { params: Pro
   const probes = hrListProbes(signal.id);
   const commentsHref = (key: string) => `/hr/comments?tema=${encodeURIComponent(key)}&per=${signal.periode}${signal.collectiuId != null ? `&col=${signal.collectiuId}` : ""}`;
   const emergentTheme = signal.tipus === "emergent" ? themes.find((th) => th.emergent) : undefined;
+  const active = activeTarget(timeline, followUps.length > 0);
+  // The card where the active step is done gets a red edge and a "next step" tag.
+  const stepCard = (anchor: string) => (active?.href === `#${anchor}` ? "loop-target" : "");
+  const stepTag = (anchor: string) => (active?.href === `#${anchor}` ? <span className="loop-target-tag">{t("sd_next_step")}</span> : null);
 
   return (
     <>
@@ -211,7 +220,7 @@ export default async function SignalPage({ params, searchParams }: { params: Pro
       </div>
 
       <Card className="mb-6">
-        <Timeline steps={timeline} t={t} hasFollowUps={followUps.length > 0} />
+        <Timeline steps={timeline} t={t} active={active} />
       </Card>
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
@@ -277,7 +286,7 @@ export default async function SignalPage({ params, searchParams }: { params: Pro
         </div>
 
         <div className="space-y-6">
-          <Card id="recomanacions" title={t("sd_tl_recomanacio")} meta={<span className="num">{recommendations.length}</span>}>
+          <Card id="recomanacions" className={stepCard("recomanacions")} title={<>{t("sd_tl_recomanacio")}{stepTag("recomanacions")}</>} meta={<span className="num">{recommendations.length}</span>}>
             {recommendations.length === 0 ? (
               signal.dominiId != null ? (
                 <form action={generateRecommendationsAction}>
@@ -336,7 +345,7 @@ export default async function SignalPage({ params, searchParams }: { params: Pro
           <ProbeCard t={t} probes={probes} signal={signal} error={probeError} />
 
           {followUps.length > 0 && (
-          <Card id="seguiment" title={t("sd_follow")}>
+          <Card id="seguiment" className={stepCard("seguiment")} title={<>{t("sd_follow")}{stepTag("seguiment")}</>}>
               <ul className="space-y-4">
                 {followUps.map((f) => (
                   <li key={f.necessitatId} className="rounded-lg border border-line p-4">
