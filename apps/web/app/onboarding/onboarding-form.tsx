@@ -4,12 +4,13 @@ import Link from "next/link";
 import { useActionState } from "react";
 import { useT } from "@/lib/i18n/client";
 import { employeeDict } from "@/lib/i18n/employee";
+import { ShiftPicker, type ShiftChoice } from "../(employee)/components/shift-picker";
 import { PasswordField } from "../(employee)/components/password-field";
 import { TextField } from "../(employee)/components/text-field";
 import { registerAction, type OnboardingState } from "./actions";
 import { RecoveryCodeScreen } from "./recovery-code";
 
-export function OnboardingForm({ codi }: { codi: string }) {
+export function OnboardingForm({ codi, shifts = [] }: { codi: string; shifts?: ShiftChoice[] }) {
   const t = useT(employeeDict);
   const [state, action, pending] = useActionState<OnboardingState, FormData>(registerAction, {});
   if (state.recoveryCode) return <RecoveryCodeScreen code={state.recoveryCode} title={t("onb_created")} />;
@@ -22,6 +23,7 @@ export function OnboardingForm({ codi }: { codi: string }) {
       <TextField name="username" label={t("username_label")} autoComplete="username" hint={t("onb_username_hint")} />
       <PasswordField name="password" label={t("password_label")} autoComplete="new-password" showHint minLength={8} />
       <PasswordField name="password2" label={t("onb_password_repeat")} autoComplete="new-password" minLength={8} />
+      {shifts.length > 0 && <ShiftPicker options={shifts} />}
       {state.error && (
         <p role="alert" className="font-semibold text-warn">
           {state.error}

@@ -5,7 +5,7 @@ import { randomBytes, randomUUID, scrypt, timingSafeEqual } from "node:crypto";
 import { DEFAULT_LANG, isLang, parseTranslations, type Lang, type Translations } from "@damm/shared";
 import { getDb } from "./employee-db";
 import { redactPii } from "./pii";
-import { lookupJoinCode } from "./join-repository";
+import { listShiftsForCollective, lookupJoinCode, type ShiftOption } from "./join-repository";
 
 const KEYLEN = 64;
 const USERNAME_RE = /^[a-z0-9._-]{3,30}$/;
@@ -150,6 +150,8 @@ export async function registerAccount(input: {
   username: string;
   password: string;
   lang?: Lang;
+  /** Optional shift name ("mati", "tarda", "nit"); ignored unless the collective has that shift. */
+  torn?: string;
 }): Promise<{ ok: true; compteId: string; recoveryCode: string } | { ok: false; error: RegisterError }> {
   const db = getDb();
   const username = normalizeUsername(input.username);
@@ -165,12 +167,13 @@ export async function registerAccount(input: {
   const passwordHash = (await hashSecret(input.password, salt)).toString("hex");
   const recoveryHash = (await hashSecret(normalizeRecoveryCode(recoveryCode), salt)).toString("hex");
   const compteId = randomUUID();
+  const tornId = input.torn ? (listShiftsForCollective(jc.collectiu_id).find((s) => s.nom === input.torn)?.id ?? null) : null;
 
   try {
     db.prepare(
-      `INSERT INTO compte (id, collectiu_id, username, password_hash, salt, recovery_hash, lang)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    ).run(compteId, jc.collectiu_id, username, passwordHash, salt, recoveryHash, isLang(input.lang) ? input.lang : DEFAULT_LANG);
+      `INSERT INTO compte (id, collectiu_id, torn_id, username, password_hash, salt, recovery_hash, lang)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    ).run(compteId, jc.collectiu_id, tornId, username, passwordHash, salt, recoveryHash, isLang(input.lang) ? input.lang : DEFAULT_LANG);
   } catch (e) {
     if ((e as { code?: string }).code === "SQLITE_CONSTRAINT_UNIQUE") return { ok: false, error: "username_ocupat" };
     throw e;
@@ -478,4 +481,23 @@ export function getNecessitatDelivery(necessitatId: number): "daily" | "campaign
 /** The push service said the subscription is gone (404/410). */
 export function deletePushSubscriptionByEndpoint(endpoint: string): void {
   pushDb().prepare("DELETE FROM push_subscripcio WHERE endpoint = ?").run(endpoint);
+}
+
+/** The shifts this account can pick from (its collective's), and the one it chose (null = not said). */
+export function getShiftChoice(compteId: string): { options: ShiftOption[]; current: string | null } {
+  const r = getDb().prepare("SELECT collectiu_id, torn_id FROM compte WHERE id = ?").get(compteId) as
+    | { collectiu_id: number; torn_id: number | null }
+    | undefined;
+  if (!r) return { options: [], current: null };
+  const options = listShiftsForCollective(r.collectiu_id);
+  return { options, current: options.find((o) => o.id === r.torn_id)?.nom ?? null };
+}
+
+/** Sets or clears (torn = null) the account's shift; unknown names for its collective are ignored. */
+export function setCompteShift(compteId: string, torn: string | null): void {
+  const r = getDb().prepare("SELECT collectiu_id FROM compte WHERE id = ?").get(compteId) as { collectiu_id: number } | undefined;
+  if (!r) return;
+  const id = torn ? (listShiftsForCollective(r.collectiu_id).find((o) => o.nom === torn)?.id ?? undefined) : null;
+  if (id === undefined) return;
+  getDb().prepare("UPDATE compte SET torn_id = ? WHERE id = ?").run(id, compteId);
 }

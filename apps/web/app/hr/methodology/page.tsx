@@ -7,6 +7,7 @@ import {
   CHANGE_MIN_N,
   PRECISION_MODERADA_MIN_N,
   PRECISION_SOLIDA_MIN_N,
+  UNDER_REPRESENTED_RATIO,
 } from "@damm/db/hr";
 import { getT, getTL } from "@/lib/i18n/server";
 import { LOCALES } from "@/lib/i18n/core";
@@ -58,6 +59,7 @@ export default async function MethodologyPage() {
           </ul>
           <Formula>{t("meth_s1_formula")}</Formula>
           <p>{bold(t("meth_s1_p2", { pp: GAP_FLAG_PP }))}</p>
+          <p>{bold(t("meth_s1_p3", { pct: Math.round(UNDER_REPRESENTED_RATIO * 100), min: MIN_GROUP_SIZE }))}</p>
         </Section>
 
         <Section title={t("meth_s2")}>

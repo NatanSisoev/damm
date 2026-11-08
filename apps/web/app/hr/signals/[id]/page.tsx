@@ -8,6 +8,7 @@ import { advanceSignalStatus, getSignalDetail, type SignalTimelineStep } from "@
 
 import { hrListProbes, type ProbeView } from "@/lib/hr-engine";
 import { Card, Empty, PageHeader } from "../../ui";
+import { LimitsNote } from "../../limits-note";
 import { SuppressedBadge } from "../../ui-server";
 import { setSignalStatusAction } from "../../actions";
 import "../alarms.css";
@@ -399,6 +400,7 @@ export default async function SignalPage({ params, searchParams }: { params: Pro
           )}
         </div>
       </div>
+      <LimitsNote view="signal" className="mt-4" />
     </>
   );
 }

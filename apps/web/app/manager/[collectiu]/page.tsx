@@ -21,6 +21,7 @@ import { InsightCards } from "../../hr/insight-cards";
 import { Radar, type RadarSeries } from "../../hr/radar";
 import { RepTable, TrendTable } from "../../hr/tables";
 import { Card, Empty, PageHeader } from "../../hr/ui";
+import { LimitsNote } from "../../hr/limits-note";
 import { SuppressedBadge } from "../../hr/ui-server";
 import { SignalBadges } from "../../hr/signal-labels";
 import { compareSignals, signalHeadline } from "@/lib/signal-text";
@@ -191,6 +192,7 @@ export default async function ManagerCollectivePage({ params }: { params: Promis
           </Card>
         </div>
       </div>
+      <LimitsNote view="manager" className="mt-4" />
     </>
   );
 }

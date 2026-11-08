@@ -26,8 +26,12 @@ const out = values.out ?? "data/app.db";
 rmSync(`${out}.pristine`, { force: true }); // a rebuilt DB invalidates the demo-reset snapshot (N-17)
 const LANGS: Lang[] = ["ca", "es", "en"];
 
-/** Participation override per "collectiuId:tornId": more night-shift accounts so every segment reaches n >= 10. */
-const PARTICIPATION = { "1:3": 0.28, "2:3": 0.5 };
+/**
+ * Participation override per "collectiuId:tornId", applied before the demo's 1.6 scale. Story for the representativeness
+ * warning: night shifts answer clearly less than day shifts (Fàbriques nit about 30% of its people vs 48-56% on days,
+ * Logística nit about 22%), while every segment still reaches n >= 10.
+ */
+const PARTICIPATION = { "1:3": 0.19, "2:3": 0.14 };
 
 /** Synthetic decision trail: HR approves AI drafts, edits one, adopts a recommendation, publishes the need, acknowledges an alarm. */
 function seedDecisions(d: DatabaseSync): void {

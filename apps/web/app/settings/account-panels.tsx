@@ -4,11 +4,13 @@ import { useActionState, useState } from "react";
 import { useT } from "@/lib/i18n/client";
 import { employeeDict } from "@/lib/i18n/employee";
 import { PasswordField } from "../(employee)/components/password-field";
+import { ShiftPicker, type ShiftChoice } from "../(employee)/components/shift-picker";
 import { RecoveryCodeScreen } from "../onboarding/recovery-code";
 import {
   changePasswordAction,
   deleteAccountAction,
   regenerateRecoveryAction,
+  setShiftAction,
   type SettingsState,
 } from "./actions";
 
@@ -119,6 +121,31 @@ export function DeleteAccountPanel() {
           </form>
         )}
       </div>
+    </section>
+  );
+}
+
+/** Optional shift, only for collectives that have shifts. Empty choice clears it. */
+export function ShiftPanel({ options, current }: { options: ShiftChoice[]; current: string }) {
+  const t = useT(employeeDict);
+  const [state, action, pending] = useActionState<SettingsState, FormData>(setShiftAction, {});
+  return (
+    <section className="card mt-4" aria-labelledby="torn-title">
+      <form action={action} className="card-body space-y-4">
+        <h2 id="torn-title" className="section-title">
+          {t("settings_shift")}
+        </h2>
+        <ShiftPicker options={options} current={current} />
+        <p className="text-sm text-muted">{t("settings_shift_hint")}</p>
+        {state.ok && (
+          <p role="status" className="font-semibold text-good">
+            {state.ok}
+          </p>
+        )}
+        <button disabled={pending} className="btn h-12 w-full justify-center text-base disabled:opacity-50">
+          {t("settings_shift_save")}
+        </button>
+      </form>
     </section>
   );
 }

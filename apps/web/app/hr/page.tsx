@@ -34,6 +34,8 @@ import { HeadlineStrip, HeatmapCard, NarrativeCard, ProposalsCard, ManagerGapCar
 import { PRESETS, bucketFor, fmtDay, previousWindow, resolveRange } from "./range";
 import { refreshDashboardAction } from "./actions";
 import { RefreshButton } from "./refresh-button";
+import { RepBanner } from "./rep-banner";
+import { LimitsNote } from "./limits-note";
 import { RangeSelect } from "./range-select";
 import { pageTitle } from "@/lib/i18n/titles";
 
@@ -192,6 +194,8 @@ export default async function HrDashboard({ searchParams }: { searchParams: Prom
       )}
 
 
+      <RepBanner rep={rep} />
+
       {!hasData && (
         <div className="mb-6">
           <Empty>{col ? t("dash_empty_col", { col: collectiveLabel(col.nom, lang), min: MIN_GROUP_SIZE }) : t("dash_empty", { min: MIN_GROUP_SIZE })}</Empty>
@@ -298,6 +302,7 @@ export default async function HrDashboard({ searchParams }: { searchParams: Prom
             <Empty>{t(col ? "dash_evo_empty_col" : "dash_evo_empty", { min: MIN_GROUP_SIZE })}</Empty>
           )}
         </Card>
+        <LimitsNote view="trend" />
 
         <Card title={t("dash_rep")} meta={<Link href="/hr/methodology" className="underline">{tr("rs_rep_how")}</Link>} flush={rep.collectius.length > 0}>
           {rep.collectius.length === 0 ? (
@@ -333,6 +338,7 @@ export default async function HrDashboard({ searchParams }: { searchParams: Prom
         </Card>
         {role === "hr" && <ProposalsCard fold proposals={getProposals()} />}
         <p className="text-xs text-subtle">{t("dash_limit")}</p>
+        <LimitsNote view="results" />
       </div>
     </>
   );

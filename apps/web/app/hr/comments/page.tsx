@@ -7,6 +7,7 @@ import { collectiveLabel, domainLabel } from "@/lib/i18n/names";
 import { numD } from "@/lib/i18n/num";
 import { hrCommentsDict } from "@/lib/i18n/hr-comments";
 import { Card, Empty, PageHeader } from "../ui";
+import { LimitsNote } from "../limits-note";
 import { AutoSubmitForm } from "../signals/auto-submit-form";
 import "../signals/alarms.css";
 
@@ -164,6 +165,7 @@ export default async function CommentsPage({ searchParams }: { searchParams: Pro
           </>
         )}
       </Card>
+      <LimitsNote view="themes" />
     </div>
   );
 }

@@ -1,7 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { changePassword, deleteAccount, deletePushSubscription, regenerateRecoveryCode, savePushSubscription } from "@damm/db/employee";
+import { changePassword, deleteAccount, setCompteShift, deletePushSubscription, regenerateRecoveryCode, savePushSubscription } from "@damm/db/employee";
 import { clientIp } from "@/lib/client-ip";
 import { employeeDict } from "@/lib/i18n/employee";
 import { getT } from "@/lib/i18n/server";
@@ -75,4 +75,12 @@ export async function deletePushSubscriptionAction(endpoint?: string): Promise<{
   if (!compteId) return { ok: false };
   deletePushSubscription(compteId, typeof endpoint === "string" && endpoint ? endpoint : undefined);
   return { ok: true };
+}
+
+export async function setShiftAction(_prev: SettingsState, formData: FormData): Promise<SettingsState> {
+  const compteId = await getCompteId();
+  if (!compteId) redirect("/login");
+  const t = await getT(employeeDict);
+  setCompteShift(compteId, String(formData.get("torn") ?? "") || null);
+  return { ok: t("settings_shift_saved") };
 }

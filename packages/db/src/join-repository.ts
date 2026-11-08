@@ -33,3 +33,30 @@ export function lookupJoinCode(input: string): JoinCodeInfo | null {
   const row = matches.length > 1 ? (matches.find((r) => r.codi.toUpperCase() === input.trim().toUpperCase()) ?? null) : (matches[0] ?? null);
   return row ? { codi: row.codi, empresa: row.empresa, collectiu: row.collectiu, actiu: row.actiu === 1 } : null;
 }
+
+export interface ShiftOption {
+  id: number;
+  /** Stable name ("mati", "tarda", "nit"); localise it with the shift label helper. */
+  nom: string;
+}
+
+/**
+ * Shifts that exist for a collective, derived from its population (collectives without shifts return []).
+ * Reads the synthetic population only for the shift list; never accounts or responses.
+ */
+export function listShiftsForCollective(collectiuId: number): ShiftOption[] {
+  return getDb()
+    .prepare(
+      `SELECT DISTINCT t.id, t.nom FROM empleat_sintetic e JOIN torn t ON t.id = e.torn_id
+       WHERE e.collectiu_id = ? ORDER BY t.id`,
+    )
+    .all(collectiuId) as unknown as ShiftOption[];
+}
+
+/** Shifts for the collective behind a join code (for the optional onboarding step). */
+export function listShiftsForJoinCode(codi: string): ShiftOption[] {
+  const row = getDb()
+    .prepare("SELECT j.collectiu_id AS id FROM joincode j WHERE j.codi = ?")
+    .get(codi) as { id: number } | undefined;
+  return row ? listShiftsForCollective(row.id) : [];
+}

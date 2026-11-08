@@ -126,6 +126,11 @@ export function translateResum(ca: string, lang: Lang, misses: Misses): string {
 
 // Placeholders: {C} collective, {T} shift. Segments are substituted before lookup and restored after.
 const REC_TEXT: Record<string, Tri> = {
+  "Fer una avaluació ergonòmica dels llocs de càrrega manual, oferir formació breu de postures i garantir pauses recuperadores després dels esforços llargs.": {
+    ca: "",
+    es: "Hacer una evaluación ergonómica de los puestos de carga manual, ofrecer formación breve de posturas y garantizar pausas de recuperación después de los esfuerzos largos.",
+    en: "Run an ergonomic assessment of the manual-handling workstations, offer short posture training and guarantee recovery breaks after long efforts.",
+  },
   "Fer un taller de 90 minuts sobre col·laboració i resolució de conflictes entre equips que treballen units.": {
     ca: "",
     es: "Hacer un taller de 90 minutos sobre colaboración y resolución de conflictos entre equipos que trabajan juntos.",
@@ -229,6 +234,7 @@ const REC_TEXT: Record<string, Tri> = {
 };
 
 const REC_TITLE: Record<string, Tri> = {
+  "Programa d'ergonomia i descans per a {C}": { ca: "", es: "Programa de ergonomía y descanso para {C}", en: "Ergonomics and rest programme for {C}" },
   "Ergonomia i rotació de llocs a {C}": { ca: "", es: "Ergonomía y rotación de puestos en {C}", en: "Ergonomics and job rotation in {C}" },
   "Pausa de microdescans a {C}, torn {T}": { ca: "", es: "Pausa de microdescansos en {C}, turno {T}", en: "Micro-break pause in {C}, {T} shift" },
   "Dinàmiques de col·laboració": { ca: "", es: "Dinámicas de colaboración", en: "Collaboration dynamics" },
