@@ -36,7 +36,6 @@ export const generateMetadata = pageTitle("hr_home");
 
 export const dynamic = "force-dynamic";
 
-const MAX_CMP = 3;
 
 type Params = { r?: string; from?: string; to?: string; c?: string; dom?: string; cmp?: string; actualitzat?: string };
 
@@ -78,12 +77,12 @@ export default async function HrDashboard({ searchParams }: { searchParams: Prom
   const axes = overall ? overall.rows.map((r) => r.domini) : [];
   const vals = (sc: typeof overall) => (sc ? sc.rows.map((r) => r.cells[0]?.mitjana ?? null) : []);
   const label = col ? collectiveLabel(col.nom, lang) : tr("rs_all");
-  // Comparison: the company and the collectives other than the one shown, up to MAX_CMP. Each entity keeps its own colour token.
+  // Comparison: the company and the collectives other than the one shown, one at a time. Each entity keeps its own colour token.
   const COMPANY = "Tots";
   const shownKey = col?.nom ?? COMPANY;
   const entities = [{ key: COMPANY, id: null as number | null, color: "var(--co-1)", label: tr("rs_all") }, ...collectius.map((c, i) => ({ key: c.nom, id: c.id as number | null, color: `var(--co-${i + 2})`, label: collectiveLabel(c.nom, lang) }))];
   const options = entities.filter((e) => e.key !== shownKey);
-  const selected = [...new Set((q.cmp ?? "").split(",").filter(Boolean))].filter((k) => options.some((o) => o.key === k)).slice(0, MAX_CMP);
+  const selected = [...new Set((q.cmp ?? "").split(",").filter(Boolean))].filter((k) => options.some((o) => o.key === k)).slice(0, 1);
   const comparing = selected.length > 0;
   const shownColor = entities.find((e) => e.key === shownKey)?.color ?? "var(--co-1)";
   const cmpSeries: RadarSeries[] = selected.flatMap((k) => {
@@ -91,10 +90,6 @@ export default async function HrDashboard({ searchParams }: { searchParams: Prom
     const sc = (e.id === null ? everyone : getWindowTrends({ ...win, bucket: "all" }, e.id)).series[0];
     return sc ? [{ label: e.label, values: vals(sc), color: e.color }] : [];
   });
-  const cmpHref = (key: string) => {
-    const next = selected.includes(key) ? selected.filter((k) => k !== key) : [...selected, key];
-    return href({ cmp: next.length ? next.join(",") : undefined });
-  };
   const radarSeries: RadarSeries[] = overall
     ? [
         { label: comparing ? label : `${label} · ${t("dash_now")}`, values: vals(overall), color: shownColor },
@@ -213,23 +208,12 @@ export default async function HrDashboard({ searchParams }: { searchParams: Prom
         {/* 1. Profile by domain */}
         <Card title={tr("rs_profile")} meta={<span className="num">{prevWin ? t("dash_prof_vs") : t("dash_prof_full")}</span>}>
           {hasData && options.length > 0 && (
-            <div role="group" aria-label={t("cmp_label")} className="mb-4 flex flex-wrap items-center gap-2">
-              <span className="text-[13px] text-subtle">{t("cmp_label")}</span>
-              {options.map((o) => {
-                const on = selected.includes(o.key);
-                const full = !on && selected.length >= MAX_CMP;
-                const inner = (
-                  <>
-                    <span className="hr-chip-dot" style={{ background: o.color }} aria-hidden />
-                    {o.label}
-                  </>
-                );
-                return full ? (
-                  <span key={o.key} className="hr-chip" aria-disabled="true" title={t("cmp_max", { n: MAX_CMP })}>{inner}</span>
-                ) : (
-                  <Link key={o.key} href={cmpHref(o.key)} scroll={false} className="hr-chip" aria-pressed={on}>{inner}</Link>
-                );
-              })}
+            <div className="mb-4">
+              <NavSelect
+                label={t("cmp_label")}
+                value={selected[0] ?? "none"}
+                options={[{ key: "none", label: t("cmp_none"), href: href({ cmp: undefined }) }, ...options.map((o) => ({ key: o.key, label: o.label, href: href({ cmp: o.key }) }))]}
+              />
             </div>
           )}
           {radarSeries.length && hasData ? <Radar axes={axes} series={radarSeries} /> : <Empty>{tr("rs_nodata")}</Empty>}
