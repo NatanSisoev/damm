@@ -5,7 +5,7 @@
 import webpush from "web-push";
 import { MIN_GROUP_SIZE, type Lang } from "@damm/shared";
 import { employeeDict } from "@/lib/i18n/employee";
-import { deletePushSubscriptionByEndpoint, listPushTargetsForNecessitat } from "@damm/db/employee";
+import { deletePushSubscriptionByEndpoint, getNecessitatDelivery, listPushTargetsForNecessitat } from "@damm/db/employee";
 
 export type PushOutcome =
   | { status: "off" } // VAPID keys not configured: publishing still works, nobody is notified
@@ -46,18 +46,20 @@ function vapidSubject(): string {
 }
 
 // One payload per language; each device gets the language stored on its account.
-function payloadFor(lang: Lang): string {
+// A campaign query gets its own text: it is an extra one-off set on top of the daily questions.
+function payloadFor(lang: Lang, campaign: boolean): string {
   const d = employeeDict[lang] ?? employeeDict.ca;
-  return JSON.stringify({ title: d.push_payload_title, body: d.push_payload_body, url: "/" });
+  return JSON.stringify({ title: d.push_payload_title, body: campaign ? d.push_campaign_body : d.push_payload_body, url: "/" });
 }
 
 /** Notifies every subscribed device in the need's collective (all collectives if it has none). */
 export async function notifyNeedPublished(necessitatId: number): Promise<PushOutcome> {
   if (!pushEnabled()) return { status: "off" };
   const targets = listPushTargetsForNecessitat(necessitatId);
+  const campaign = getNecessitatDelivery(necessitatId) === "campaign";
   const results = await Promise.allSettled(
     targets.map((t) =>
-      webpush.sendNotification({ endpoint: t.endpoint, keys: { p256dh: t.p256dh, auth: t.auth } }, payloadFor(t.lang), { TTL: 60 * 60 * 24 }),
+      webpush.sendNotification({ endpoint: t.endpoint, keys: { p256dh: t.p256dh, auth: t.auth } }, payloadFor(t.lang, campaign), { TTL: 60 * 60 * 24 }),
     ),
   );
   let delivered = 0;

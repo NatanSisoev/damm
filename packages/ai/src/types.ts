@@ -24,7 +24,7 @@ export const draftQuestionSchema = z.object({
 export const draftSurveySchema = z.object({
   title: z.string().trim().min(3).max(120),
   intro: z.string().trim().min(10).max(400),
-  questions: z.array(draftQuestionSchema).min(3).max(6),
+  questions: z.array(draftQuestionSchema).min(2).max(6),
 });
 
 export type DraftQuestion = z.infer<typeof draftQuestionSchema>;
@@ -35,6 +35,9 @@ export interface NeedInput {
   context?: string | null;
   exclusions?: string | null;
   collective?: string | null; // collective name, or null for all
+  /** Exact number of questions per person (2 to 6). When set, the draft has exactly this many. */
+  questionCount?: number | null;
+  /** Legacy seconds budget (follow-ups). Ignored when questionCount is set. */
   maxSeconds?: number | null;
 }
 

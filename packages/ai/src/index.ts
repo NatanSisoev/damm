@@ -3,7 +3,7 @@ import { DOMINIS } from "@damm/shared";
 import { violatesExclusions } from "./exclusions";
 import { fallbackQuestions, fallbackReplacement, fallbackSurvey, isShortTone } from "./fallback";
 import { chatJson, LlmUnavailable } from "./llm";
-import { anchorsClash, anchorsFor, findProblems, jaccard, maxOpen, trimToBudget } from "./quality";
+import { anchorsClash, anchorsFor, findProblems, jaccard, maxOpen, trimToBudget, trimToCount } from "./quality";
 import { withTranslations } from "./translate";
 import { draftQuestionSchema, draftSurveySchema, estimateSeconds, type DraftQuestion, type DraftSurvey, type NeedInput } from "./types";
 
@@ -43,13 +43,14 @@ FORMAT: {"title": string, "intro": string, "questions": [{"text": string, "type"
 
 ${EXAMPLES}`;
 
-function toneRules(collective?: string | null): string {
+function toneRules(collective?: string | null, counted = false): string {
   return isShortTone(collective)
-    ? "To: molt proper i càlid, tutejant. Frases curtes (màxim 12 paraules), vocabulari simple, 4 preguntes, com a màxim una oberta, preferència per escales i sí/no. Pensat per respondre al mòbil dret a la planta o al magatzem."
-    : "To: cordial i professional, tutejant. Frases clares (màxim 20 paraules), 4 a 6 preguntes, com a màxim dues obertes.";
+    ? `To: molt proper i càlid, tutejant. Frases curtes (màxim 12 paraules), vocabulari simple, ${counted ? "" : "4 preguntes, "}com a màxim una oberta, preferència per escales i sí/no. Pensat per respondre al mòbil dret a la planta o al magatzem.`
+    : `To: cordial i professional, tutejant. Frases clares (màxim 20 paraules), ${counted ? "" : "4 a 6 preguntes, "}com a màxim dues obertes.`;
 }
 
 function budgetRules(need: NeedInput): string | null {
+  if (need.questionCount) return `Nombre de preguntes: EXACTAMENT ${need.questionCount}, ni una més ni una menys. Cada persona respon totes les preguntes, així que cada una ha de ser necessària.`;
   const t = need.maxSeconds;
   if (!t) return null;
   const closed = Math.floor(t / 8);
@@ -65,7 +66,7 @@ function userPrompt(need: NeedInput): string {
     `Col·lectiu: ${need.collective ?? "tots els col·lectius (to general)"}`,
     budgetRules(need),
     need.exclusions?.trim() ? `NO s'ha de preguntar: ${need.exclusions.trim()}` : "NO s'ha de preguntar: (res indicat)",
-    toneRules(need.collective),
+    toneRules(need.collective, !!need.questionCount),
   ].filter(Boolean).join("\n");
 }
 
@@ -145,13 +146,15 @@ function finish(survey: Draft, need: NeedInput, source: "llm" | "fallback", note
     let seen = 0;
     questions = questions.filter((q) => q.type !== "open" || ++seen <= maxOpen(need.collective));
   }
-  const trimmed = trimToBudget(questions, need.maxSeconds);
-  if (trimmed.length < questions.length) notes.push(`S'han tret ${questions.length - trimmed.length} pregunta(es) per ajustar-se a ${need.maxSeconds} s.`);
+  const counted = !!need.questionCount;
+  const trimmed = counted ? trimToCount(questions, need.questionCount) : trimToBudget(questions, need.maxSeconds);
+  if (trimmed.length < questions.length) notes.push(counted ? `S'han tret ${questions.length - trimmed.length} pregunta(es) per quedar-nos en ${need.questionCount}.` : `S'han tret ${questions.length - trimmed.length} pregunta(es) per ajustar-se a ${need.maxSeconds} s.`);
   questions = trimmed;
-  if (questions.length < 3) {
-    const extra = fallbackQuestions(need, questions.map((q) => q.text)).filter((e) => e.type !== "open" || !need.maxSeconds || estimateSeconds([...questions, e].map((x) => x.type)) <= need.maxSeconds).slice(0, 3 - questions.length);
+  const minQuestions = counted ? need.questionCount! : 3;
+  if (questions.length < minQuestions) {
+    const extra = fallbackQuestions(need, questions.map((q) => q.text)).filter((e) => counted || e.type !== "open" || !need.maxSeconds || estimateSeconds([...questions, e].map((x) => x.type)) <= need.maxSeconds).slice(0, minQuestions - questions.length);
     questions = [...questions, ...extra];
-    notes.push("S'han afegit preguntes de plantilla per arribar al mínim de 3.");
+    notes.push(counted ? `S'han afegit preguntes de plantilla per arribar a ${need.questionCount}.` : "S'han afegit preguntes de plantilla per arribar al mínim de 3.");
   }
   return { title: toCatalan(survey.title), intro: fixCount(toCatalan(survey.intro), questions.length), questions, source, notes };
 }
@@ -179,7 +182,7 @@ const SINGLE_SYSTEM = SYSTEM.replace(/FORMAT:.*\n/, `FORMAT: {"text": string, "t
 
 /** Propose a different wording for one question, keeping the rest of the survey in mind. */
 export async function redraftQuestion(need: NeedInput, current: DraftQuestion, others: DraftQuestion[]): Promise<{ question: DraftQuestion; source: "llm" | "fallback" } | null> {
-  const user = `${userPrompt({ ...need, maxSeconds: null })}\nPreguntes ja incloses (no les repeteixis ni t'hi assemblis): ${others.map((o) => `"${o.text}"`).join("; ") || "cap"}\nPregunta a substituir: "${current.text}" (tipus ${current.type}, domini ${current.domain}).\nProposa UNA pregunta nova que serveixi per al mateix propòsit però des d'un angle diferent, amb paraules i estructura diferents (no la comencis amb "${current.text.split(/\s+/).slice(0, 3).join(" ")}" ni amb el mateix verb), ${current.type === "open" ? "oberta" : "del mateix tipus"} i que no es solapi amb les altres.`;
+  const user = `${userPrompt({ ...need, maxSeconds: null, questionCount: null })}\nPreguntes ja incloses (no les repeteixis ni t'hi assemblis): ${others.map((o) => `"${o.text}"`).join("; ") || "cap"}\nPregunta a substituir: "${current.text}" (tipus ${current.type}, domini ${current.domain}).\nProposa UNA pregunta nova que serveixi per al mateix propòsit però des d'un angle diferent, amb paraules i estructura diferents (no la comencis amb "${current.text.split(/\s+/).slice(0, 3).join(" ")}" ni amb el mateix verb), ${current.type === "open" ? "oberta" : "del mateix tipus"} i que no es solapi amb les altres.`;
   const bad = (q: DraftQuestion) => {
     const survey = { title: "Títol", intro: "Introducció de prova", questions: [q, ...others.slice(0, 5)] };
     // Only problems of the new question (index 1) or about it matter; the others were already accepted.

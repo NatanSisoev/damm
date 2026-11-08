@@ -1,6 +1,7 @@
 import { estimateSeconds, questionWarnings, wordLimit } from "@damm/ai";
 import type { NeedDraftGroup } from "@damm/db/hr";
 import { getTL } from "@/lib/i18n/server";
+import { hrDict } from "@/lib/i18n/hr";
 import { draftReviewDict } from "@/lib/i18n/hr-draft-review";
 import { domainLabel } from "@/lib/i18n/names";
 import {
@@ -11,9 +12,13 @@ import {
 /** Draft review for one need: title and intro, then each proposed question with its actions. */
 export async function DraftReview({ g }: { g: NeedDraftGroup }) {
   const { t, lang } = await getTL(draftReviewDict);
+  const { t: th } = await getTL(hrDict);
   const typeLabel = (tipus: string) => (t(`type_${tipus}` as never) === `type_${tipus}` ? tipus : t(`type_${tipus}` as never));
   const secs = estimateSeconds(g.questions.map((q) => q.tipusAi));
-  const over = g.duradaMaxS != null && secs > g.duradaMaxS;
+  // A query with a question count shows "N questions per person" and its delivery mode; the seconds budget
+  // only applies to older queries and follow-ups that still carry one.
+  const counted = g.questionCount != null;
+  const over = !counted && g.duradaMaxS != null && secs > g.duradaMaxS;
   return (
     <div>
       <div className="flex flex-wrap items-center gap-2">
@@ -22,9 +27,16 @@ export async function DraftReview({ g }: { g: NeedDraftGroup }) {
         ) : (
           <span className="badge badge-accent">{t("ai_badge")}</span>
         )}
-        <span className={`badge num ${over ? "badge-warn" : ""}`}>
-          ~{secs} s{g.duradaMaxS != null ? ` / ${g.duradaMaxS} s` : ""}
-        </span>
+        {counted ? (
+          <>
+            <span className="badge num">{th("need_question_count", { n: g.questionCount! })}</span>
+            <span className={`badge ${g.delivery === "campaign" ? "badge-accent" : ""}`}>{th(g.delivery === "campaign" ? "need_delivery_campaign" : "need_delivery_daily")}</span>
+          </>
+        ) : (
+          <span className={`badge num ${over ? "badge-warn" : ""}`}>
+            ~{secs} s{g.duradaMaxS != null ? ` / ${g.duradaMaxS} s` : ""}
+          </span>
+        )}
         <span className="num text-xs text-subtle">{t("to_review", { n: g.questions.length })}</span>
       </div>
       {over && (

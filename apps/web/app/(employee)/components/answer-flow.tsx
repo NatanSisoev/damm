@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { MIN_GROUP_SIZE, type PoolNextResponse, type PostResponsesRequest } from "@damm/shared";
+import { MIN_GROUP_SIZE, type PoolCampaign, type PoolNextResponse, type PostResponsesRequest } from "@damm/shared";
 import { useT } from "@/lib/i18n/client";
 import { employeeDict } from "@/lib/i18n/employee";
 import { PrivacyNote } from "./frame";
@@ -14,7 +14,8 @@ import {
   type PoolQuestion,
 } from "./question-renderer";
 
-type Phase = "loading" | "answering" | "done" | "error";
+type Phase = "loading" | "campaign_intro" | "answering" | "done" | "error";
+type Section = "daily" | "campaign";
 
 // In-progress answers live on this device only (never sent anywhere until the person submits).
 // Keyed by account and question id; every access is guarded because storage can be blocked.
@@ -70,6 +71,11 @@ export function AnswerFlow({ compteId }: { compteId: string }) {
   const [phase, setPhase] = useState<Phase>("loading");
   const [questions, setQuestions] = useState<PoolQuestion[]>([]);
   const [index, setIndex] = useState(0);
+  // The extra one-off query set (campaign) is shown after the daily questions, clearly labelled.
+  const [campaign, setCampaign] = useState<PoolCampaign | null>(null);
+  const [section, setSection] = useState<Section>("daily");
+  const [campaignDone, setCampaignDone] = useState(false);
+  const [dailyCount, setDailyCount] = useState(0);
   const [draft, setDraft] = useState<AnswerDraft>(EMPTY_DRAFT);
   const [sending, setSending] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -88,11 +94,16 @@ export function AnswerFlow({ compteId }: { compteId: string }) {
         if (!res.ok) throw new Error(String(res.status));
         const body = (await res.json()) as PoolNextResponse;
         if (!live) return;
-        pruneDrafts(compteId, body.preguntes.map((p) => p.id));
+        const extra = body.campaign && body.campaign.preguntes.length ? body.campaign : null;
+        pruneDrafts(compteId, [...body.preguntes, ...(extra?.preguntes ?? [])].map((p) => p.id));
+        setCampaign(extra);
+        setCampaignDone(false);
+        setSection("daily");
+        setDailyCount(body.preguntes.length);
         setQuestions(body.preguntes);
         setIndex(0);
         setDraft(body.preguntes[0] ? loadDraft(compteId, body.preguntes[0].id) : EMPTY_DRAFT);
-        setPhase(body.preguntes.length ? "answering" : "done");
+        setPhase(body.preguntes.length ? "answering" : extra ? "campaign_intro" : "done");
       })
       .catch(() => {
         if (!live) return;
@@ -161,7 +172,11 @@ export function AnswerFlow({ compteId }: { compteId: string }) {
       const nextQ = questions[index + 1];
       setDraft(nextQ ? loadDraft(compteId, nextQ.id) : EMPTY_DRAFT);
       if (nextQ) setIndex(index + 1);
-      else setPhase("done");
+      else if (section === "daily" && campaign) setPhase("campaign_intro");
+      else {
+        if (section === "campaign") setCampaignDone(true);
+        setPhase("done");
+      }
     } catch {
       setMessage(
         navigator.onLine === false
@@ -200,18 +215,52 @@ export function AnswerFlow({ compteId }: { compteId: string }) {
       </div>
     );
   }
+  function startCampaign() {
+    if (!campaign) return;
+    setSection("campaign");
+    setQuestions(campaign.preguntes);
+    setIndex(0);
+    setDraft(campaign.preguntes[0] ? loadDraft(compteId, campaign.preguntes[0].id) : EMPTY_DRAFT);
+    setPhase("answering");
+  }
+
+  if (phase === "campaign_intro" && campaign) {
+    return (
+      <div className="flex flex-1 flex-col">
+        <section className="border-b border-line pb-6 pt-4">
+          <p className="eyebrow">{t("campaign_eyebrow")}</p>
+          <h2 className="page-title mt-2">{campaign.title || t("campaign_title_fallback")}</h2>
+          {campaign.intro && <p className="mt-3 max-w-sm">{campaign.intro}</p>}
+          <p className="mt-3 max-w-sm text-muted">{t("campaign_lede", { n: campaign.preguntes.length })}</p>
+        </section>
+        <div className="mt-4">
+          <PrivacyNote>{t("privacy_note_short", { min: MIN_GROUP_SIZE })}</PrivacyNote>
+        </div>
+        <div className="mt-auto flex flex-col gap-2 pt-8">
+          <button type="button" onClick={startCampaign} className="btn btn-primary h-14 w-full justify-center text-base">
+            {t("campaign_start")}
+          </button>
+          <button type="button" onClick={() => setPhase("done")} className="btn h-11 w-full justify-center">
+            {t("campaign_later")}
+          </button>
+        </div>
+      </div>
+    );
+  }
   if (phase === "done" || !q) {
     return (
       <div>
         <section className="border-b border-line pb-6 pt-4">
           <h2 className="page-title">{t("thanks")}</h2>
           <p className="mt-3 max-w-sm text-muted">
-            {answeredAny || questions.length
-              ? questions.length === 1
+            {dailyCount > 0 || (answeredAny && !campaignDone)
+              ? dailyCount === 1
                 ? t("done_one")
-                : t("done_many", { n: questions.length })
+                : t("done_many", { n: dailyCount })
               : t("done_none")}
           </p>
+          {campaignDone && <p className="mt-3 max-w-sm text-muted">{t("campaign_done")}</p>}
+          {!campaignDone && campaign && <p className="mt-3 max-w-sm text-muted">{t("campaign_later_note")}</p>}
         </section>
         <div className="mt-4">
           <PrivacyNote>{t("privacy_note_short", { min: MIN_GROUP_SIZE })}</PrivacyNote>
@@ -228,7 +277,7 @@ export function AnswerFlow({ compteId }: { compteId: string }) {
           <span className="num">
             {t("question_of", { i: index + 1, n: questions.length })}
           </span>
-          <span className="eyebrow">{t("anonymous")}</span>
+          <span className="eyebrow">{section === "campaign" ? `${t("campaign_badge")} · ${t("anonymous")}` : t("anonymous")}</span>
         </div>
         <div className="h-1.5 overflow-hidden  bg-surface-muted">
           <div

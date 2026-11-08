@@ -16,6 +16,7 @@ export function getDb(): Db {
     cached.pragma("foreign_keys = ON");
     cached.pragma("journal_mode = WAL");
     ensureApprovalColumn(cached);
+    ensureQueryDeliveryColumns(cached);
   }
   return cached;
 }
@@ -47,4 +48,12 @@ function ensureDismissedStatus(db: Db): void {
 function ensureApprovalColumn(db: Db): void {
   const cols = db.prepare("PRAGMA table_info(recomanacio)").all() as { name: string }[];
   if (cols.length && !cols.some((c) => c.name === "aprovada_per")) db.exec("ALTER TABLE recomanacio ADD COLUMN aprovada_per TEXT");
+}
+
+/** Databases built before query delivery lack `question_count` and `delivery` on `necessitat`. Idempotent. */
+function ensureQueryDeliveryColumns(db: Db): void {
+  const cols = db.prepare("PRAGMA table_info(necessitat)").all() as { name: string }[];
+  if (!cols.length) return;
+  if (!cols.some((c) => c.name === "question_count")) db.exec("ALTER TABLE necessitat ADD COLUMN question_count INTEGER");
+  if (!cols.some((c) => c.name === "delivery")) db.exec("ALTER TABLE necessitat ADD COLUMN delivery TEXT NOT NULL DEFAULT 'daily' CHECK (delivery IN ('daily','campaign'))");
 }

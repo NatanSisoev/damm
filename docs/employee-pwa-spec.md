@@ -15,6 +15,7 @@ Scope: the employee side only (onboarding, answering, push). Anything the HR sid
 3. `/login`: username and password. "He perdut la contrasenya" takes the recovery code and sets a new password; the used recovery code is cleared and a new one is shown.
 4. `/` (home): today's questions, one at a time, with progress ("1 de 2"). Empty state: "Res més per avui".
 5. Question renderers per `tipus`: `escala5`, `escala10`, `swipe`, `ranking`, `obert` (free text with a short note that it is anonymous and should not include personal data).
+   **Extra one-off query (campaign):** when a published query has delivery "campaign" and the person has not answered it, `GET /api/pool/next` returns it in the separate `campaign` field and the home shows a card badged "Consulta extra" ("Consulta extra, només una vegada") above the daily set, with the intro, "Comença" and "Més tard". The set (all the query's questions, mixed types allowed) is answered in one go, once; it stays on the home until answered or HR closes the query. After it: "Has respost la consulta extra. Gràcies." Its questions never appear in the daily set, and the daily progress ("1 de 3") does not count them. The push for it has its own text ("Avui tens unes preguntes extra d'una consulta puntual...").
 6. `/settings`: enable or disable notifications, change password, regenerate the recovery code (shown once), log out (deletes the push subscription), "Vull esborrar el compte" (confirm with password; answers stay as anonymous data).
 
 ## Accounts

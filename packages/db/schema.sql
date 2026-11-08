@@ -72,7 +72,9 @@ CREATE TABLE necessitat (
   id            INTEGER PRIMARY KEY,
   text_nl       TEXT NOT NULL,                     -- need in natural language
   collectiu_id  INTEGER REFERENCES collectiu(id),  -- NULL = all collectives
-  durada_max_s  INTEGER,
+  durada_max_s  INTEGER,                           -- legacy seconds budget (follow-ups); the form sends question_count instead
+  question_count INTEGER,                          -- questions per person asked of the AI draft; NULL on old rows
+  delivery      TEXT NOT NULL DEFAULT 'daily' CHECK (delivery IN ('daily','campaign')), -- daily = joins the daily set; campaign = one-off extra set
   exclusions    TEXT,
   context       TEXT,                              -- C3 draft: background HR gives the AI
   titol         TEXT,                              -- C3 draft: AI-proposed survey title (editable)

@@ -105,6 +105,15 @@ HR can ask the engine to dig deeper into an alarm: sample one domain more in one
 - **Refusals:** the segment (synthetic population, else accounts) must have at least `min_group_size` (10) people; a second active probe on the same segment and domain is refused; boost and days are range-checked. A probe addresses segments only: nothing in it names or selects an account, and the scheduler's per-account decision is the same function as before.
 - **Progress:** the engine job fills the progress columns on every run from answers since the probe started, never per person. `extraAnswers = answers − answersBefore`, where `answersBefore` counts an equally long window before the start. `confidenceBefore` is the segment's `agregat` confidence when the probe started, `confidenceNow` the latest. If fewer than 10 different people answered during the probe, `suprimit = 1` and every number is hidden. Progress freezes when the probe ends or is stopped.
 
+
+### Campaign queries (delivery = campaign)
+
+A query has `question_count` (2-6) and a `delivery` mode. `daily` queries feed the batch as described above. `campaign` queries are a one-off extra set and never enter the daily batch (excluded in the SQL of `approvedQuestionsFor` and again by `QuestionDef.campaign` in `selectBatch`).
+
+- `engine.getCampaign(accountId)` returns the oldest pending campaign for the person's collective (published, not closed, not yet answered by this person), with all its questions, which may mix types. Pending is derived from the absence of `resposta` rows, so there are no assignment rows and `AssignmentReason` is unchanged.
+- `submitAnswers` accepts each campaign question once (a repeat is `already_answered`) and returns `remainingCampaign` next to `remainingToday`. Campaign answers still feed `learn`.
+- The set stays available until answered or HR closes the query. Databases without the `delivery` column behave as all-daily.
+
 ## 6. Insights (periodic, dashboard)
 
 All per segment with n ≥ 10. Written to `insight` with `kind`:

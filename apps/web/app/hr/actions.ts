@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { draftSurvey, redraftQuestion } from "@damm/ai";
+import { DEFAULT_QUESTION_COUNT, QUESTION_COUNT_OPTIONS, type QueryDelivery } from "@damm/shared";
 import {
   approveQuestion, getRedraftContext, listCollectius, listNeedCards, moveDraft, replaceDraft, saveDraftSurvey, updateNeedHeader, approveRecommendation, createNecessitat, discardQuestion,
   discardRecommendation, publishNecessitat, updateDraftText, closeNecessitat, setSignalStatus,
@@ -15,7 +16,7 @@ import { panelDict } from "@/lib/i18n/hr-panel";
 
 const HR_USER = "hr-demo"; // no auth in the prototype; approval is still an explicit human action
 
-export type NeedFormState = { error: string; field?: "text_nl" | "durada" } | null;
+export type NeedFormState = { error: string; field?: "text_nl" } | null;
 
 /** Creates a need and its AI drafts. Returns an error state (never fails silently); redirects on success. */
 export async function createNeedAction(_prev: NeedFormState, formData: FormData): Promise<NeedFormState> {
@@ -24,17 +25,18 @@ export async function createNeedAction(_prev: NeedFormState, formData: FormData)
   if (!textNl) return { error: t("need_err_empty"), field: "text_nl" };
   if (textNl.length < 15) return { error: t("need_err_short"), field: "text_nl" };
   const c = Number(formData.get("collectiu"));
-  const d = Number(formData.get("durada"));
-  if (!Number.isFinite(d) || d < 30) return { error: t("need_err_duration"), field: "durada" };
+  // Number of questions per person and delivery mode (daily set or one-off campaign); anything else falls back to the defaults.
+  const qc = Number(formData.get("question_count"));
+  const questionCount = (QUESTION_COUNT_OPTIONS as readonly number[]).includes(qc) ? qc : DEFAULT_QUESTION_COUNT;
+  const delivery: QueryDelivery = formData.get("delivery") === "campaign" ? "campaign" : "daily";
   const context = String(formData.get("context") ?? "").trim();
   const exclusions = String(formData.get("exclusions") ?? "").trim();
   const collectiuId = c > 0 ? c : null;
-  const duradaMaxS = d;
   try {
     const collective = collectiuId ? listCollectius().find((x) => x.id === collectiuId)?.nom ?? null : null;
     // AI proposes: drafts only, nothing is approved here. Draft first so a failure leaves no orphan need to retry over.
-    const survey = await draftSurvey({ objective: textNl, context, exclusions, collective, maxSeconds: duradaMaxS });
-    const id = createNecessitat({ textNl, collectiuId, duradaMaxS, context, exclusions });
+    const survey = await draftSurvey({ objective: textNl, context, exclusions, collective, questionCount });
+    const id = createNecessitat({ textNl, collectiuId, questionCount, delivery, context, exclusions });
     saveDraftSurvey(id, survey);
   } catch (err) {
     console.error("createNeedAction", err);

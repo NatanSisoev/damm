@@ -253,20 +253,20 @@ Preconditions: GATE-ON and logged in, LLM-ON (LLM-OFF is branch B1).
 
 | # | Route and action | Expected result |
 |---|---|---|
-| 1 | `/hr/needs` → open "Nova necessitat". Optionally press an example (for instance "B · Logística des del mòbil"). | Fields "Objectiu", "Context", "Què no s'ha de preguntar", "Col·lectiu" (all or one), "Durada màxima per persona (segons)". |
-| 2 | Fill an objective of 15+ characters, a duration of 30+ seconds, press "Genera els esborranys". | Button "Generant…" and text "La IA està redactant les preguntes…". |
+| 1 | `/hr/needs` → open "Nova necessitat". Optionally press an example (for instance "B · Logística des del mòbil"). | Fields "Objectiu", "Context", "Què no s'ha de preguntar", "Col·lectiu" (all or one), "Preguntes per persona" (2 to 6, default 3) and "Com es lliura" (Diària or Campanya puntual). |
+| 2 | Fill an objective of 15+ characters, a number of questions (default 3) and a delivery mode, press "Genera els esborranys". | Button "Generant…" and text "La IA està redactant les preguntes…". |
 | 3 | Wait | Redirect to `/hr/needs`. A card in state "Esborrany" with badge "Proposta de la IA" appears. |
 
-DB effect: one `necessitat` row (`estat = 'oberta'`, `text_nl`, `collectiu_id` or NULL, `durada_max_s`, `context`, `exclusions`) and its `pregunta` rows with `estat = 'draft'`, `generada_per_ia` = 1, ordered by `ordre`. Nothing is `aprovada`. The need row is written only after drafting succeeds, so a failure leaves no orphan.
+DB effect: one `necessitat` row (`estat = 'oberta'`, `text_nl`, `collectiu_id` or NULL, `question_count`, `delivery`, `context`, `exclusions`) and its `pregunta` rows with `estat = 'draft'`, `generada_per_ia` = 1, ordered by `ordre`. Nothing is `aprovada`. The need row is written only after drafting succeeds, so a failure leaves no orphan.
 
 Branches (exact errors, in the form):
 
 - **B1 LLM down or no key:** drafts still appear, badge "Plantilla de reserva" with tooltip "La IA no ha estat disponible: són preguntes de plantilla". No hung page; time how long "Generant…" lasts (dead host).
 - **B2 empty objective:** "Escriu l'objectiu de la consulta abans de generar els esborranys."
 - **B3 objective under 15 characters:** "L'objectiu és massa curt perquè la IA el pugui treballar. Explica què vols entendre i de qui."
-- **B4 duration under 30 or not a number:** "La durada màxima ha de ser d'almenys 30 segons."
+- **B4 question count outside 2 to 6:** the server clamps it to the allowed range; the AI draft always returns exactly that many questions.
 - **B5 AI and DB both fail:** "No s'han pogut generar els esborranys (la IA o la base de dades no han respost). No s'ha desat res: torna-ho a provar."
-- **B6 estimated time above the maximum:** warning "Atenció: el temps estimat … supera la durada màxima" on the card.
+- **B6 campaign delivery:** after publish, everyone in the collective gets the extra push and the "Consulta extra" card once; see `docs/employee-pwa-spec.md`. (The over-time warning shows only for legacy rows with a `durada_max_s`.)
 - **B7 exclusions** (for instance "Salaris"): questions touching an excluded topic are dropped before display (R-FLOW-1e is partial; check by reading the drafts).
 
 Expected gaps: conditional logic between questions (R-FLOW-2e), automatic quality warnings beyond duration (R-FLOW-3e), richer context fields (R-FLOW-1c, partial).

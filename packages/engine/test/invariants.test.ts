@@ -57,7 +57,7 @@ test("every resposta.score is in [0,1] (or NULL for ranking/open)", each(({ name
 }));
 
 test("person levels stay in [0,1] even when item bias pushes the adjusted answer outside", () => {
-  const q = { id: 1, domainId: 1, collectiuId: null, type: "scale10", text: "q", facet: "f", polarity: 1, options: null, isFollowup: false, needId: null, priority: 0 } as const;
+  const q = { id: 1, domainId: 1, collectiuId: null, type: "scale10", text: "q", facet: "f", polarity: 1, options: null, isFollowup: false, needId: null, priority: 0, campaign: false } as const;
   for (const [bias, score] of [[-0.3, 1], [0.3, 0], [-0.9, 1], [0.9, 0]] as const) {
     let person = null;
     let item = { ...EMPTY_ITEM, bias };

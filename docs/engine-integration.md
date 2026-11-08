@@ -78,6 +78,19 @@ Behaviour:
 - **Order:** follow-up first, then the HR need, then monitoring.
 - An empty `items` array means there are no eligible questions (empty pool). The UI shows "nothing today".
 
+
+The route returns the daily batch plus the campaign set as a separate field:
+
+```ts
+PoolNextResponse {
+  preguntes: PoolQuestion[];          // the daily batch
+  campaign: PoolCampaign | null;      // one-off extra set, null when none is pending
+}
+PoolCampaign { needId: number; title: string; intro: string | null; preguntes: PoolQuestion[] }
+```
+
+`POST /api/responses` accepts campaign answers once each (a second answer is rejected as `already_answered`) and returns `remainingCampaign`. Publishing a campaign query sends a distinct push text ("extra query") to the collective. See `docs/engine.md`, "Campaign queries".
+
 ### `POST /api/responses`
 
 The route validates the body shape with zod, then calls:

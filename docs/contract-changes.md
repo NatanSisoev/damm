@@ -19,6 +19,19 @@ What changed and why.
 
 ---
 
+## 2026-11-08: query question count and delivery mode (Jan)
+
+The HR "New query" form no longer asks for a time budget. It asks for the **number of questions per person** (2 to 6, default 3) and a **delivery mode**: `daily` (the query's questions join the normal daily set, as before) or `campaign` (a one-off extra set: everyone in the target collective gets a push on publish and answers ALL the query's questions on top of the 3 daily ones).
+
+- `schema.sql`: `necessitat.question_count INTEGER` (NULL on old rows) and `necessitat.delivery TEXT NOT NULL DEFAULT 'daily' CHECK (delivery IN ('daily','campaign'))`. Existing databases get both columns on first connection from `ensureQueryDeliveryColumns` in `packages/db/src/connection.ts` (`ALTER TABLE ADD COLUMN`, idempotent). `durada_max_s` stays (follow-ups still set it).
+- `@damm/shared`: `QueryDelivery`, `QUESTION_COUNT_OPTIONS`, `DEFAULT_QUESTION_COUNT`; `Necessitat` gains `questionCount` and `delivery`; `PoolNextResponse` gains `campaign: PoolCampaign | null` (`needId`, `title`, `intro`, `preguntes`). `AssignmentReason` is unchanged: campaign answers have no assignment rows.
+- `GET /api/pool/next`: `preguntes` is the daily batch and never holds campaign questions; `campaign` is the pending set (null when none).
+- `POST /api/responses`: also accepts answers to the questions of a published campaign query for the person's collective, once each.
+- `@damm/ai`: `NeedInput.questionCount` (exact count); `maxSeconds` stays optional.
+
+Action items:
+- [x] Jan: schema, migration, types, repository, engine, API, HR form, employee PWA, push, copy, docs. (done 2026-11-08)
+
 ## 2026-11-08: `dismissed` alarm status (Jan)
 
 `senyal.status` accepts `dismissed`: HR judged the alarm not worth acting on. It is final, like `resolved`, and is not an active status, so the engine can open a new alarm for the same type, segment and domain after the 7-day cooldown. Allowed moves: `open`, `acknowledged` and `action_linked` can go to `dismissed`; nothing leaves it.

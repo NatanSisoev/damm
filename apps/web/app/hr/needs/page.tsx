@@ -206,7 +206,13 @@ function NeedItem({ n, draft, domainIdx, t, lang }: { n: NeedCard; draft?: Retur
             </ul>
           </div>
         )}
-        {n.duradaMaxS != null && <p className="text-xs text-subtle">{t("need_max_duration", { n: n.duradaMaxS })}</p>}
+        {n.questionCount != null ? (
+          <p className="text-xs text-subtle">
+            {t("need_question_count", { n: n.questionCount })} · {t(n.delivery === "campaign" ? "need_delivery_campaign" : "need_delivery_daily")}
+          </p>
+        ) : (
+          n.duradaMaxS != null && <p className="text-xs text-subtle">{t("need_max_duration", { n: n.duradaMaxS })}</p>
+        )}
 
         <div className="hr-actions flex flex-wrap items-center justify-end gap-2 border-t border-line pt-4">
           {n.state === "esborrany" && n.approved.length === 0 && n.nDraft === 0 && <p className="mr-auto text-sm text-subtle">{t("need_no_questions")}</p>}
