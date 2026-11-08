@@ -111,7 +111,16 @@ export default async function HrDashboard({ searchParams }: { searchParams: Prom
   // Answers: total in the range and the daily average, from the analytics view.
   const apd = getAnswersPerDay(win, col?.id ?? null);
   // Open alarms for the scope, same source and minimum group size as the alarms page's "open" tab.
-  const openAlarms = hrAlarms({ role: "hr" }, { status: ["open"], ...(col ? { collectiuId: col.id } : {}) }).filter((a) => a.n >= MIN_GROUP_SIZE).length;
+  const openAlarmRows = hrAlarms({ role: "hr" }, { status: ["open"], ...(col ? { collectiuId: col.id } : {}) }).filter((a) => a.n >= MIN_GROUP_SIZE);
+  const openAlarms = openAlarmRows.length;
+  const criticalAlarms = openAlarmRows.filter((a) => a.severity === "critical").length;
+  const alarmsHref = (gravetat?: string) => {
+    const u = new URLSearchParams();
+    if (gravetat) u.set("gravetat", gravetat);
+    if (col) u.set("collectiu", String(col.id));
+    const s = u.toString();
+    return `/hr/signals${s ? `?${s}` : ""}`;
+  };
 
   const domValid = q.dom && heatmap.domains.includes(q.dom) ? q.dom : undefined;
   const segmentTrend = getSegmentTrend(seg?.nom, domValid);
@@ -189,9 +198,17 @@ export default async function HrDashboard({ searchParams }: { searchParams: Prom
           {role === "manager" ? (
             <Stat label={t("kpi_alarms")} value={openAlarms} />
           ) : (
-            <Link href={col ? `/hr/signals?collectiu=${col.id}` : "/hr/signals"} className="block h-full">
-              <Stat label={t("kpi_alarms")} value={openAlarms} />
-            </Link>
+            <Stat
+              label={<Link href={alarmsHref()} className="hover:text-ink">{t("kpi_alarms")}</Link>}
+              value={<Link href={alarmsHref()} className="hover:underline">{openAlarms}</Link>}
+              hint={
+                criticalAlarms > 0 ? (
+                  <Link href={alarmsHref("critical")} className="font-medium text-accent hover:underline">{t("kpi_alarms_critical", { n: criticalAlarms })} →</Link>
+                ) : (
+                  t("kpi_alarms_no_critical")
+                )
+              }
+            />
           )}
           <Stat
             label={t("kpi_score")}
