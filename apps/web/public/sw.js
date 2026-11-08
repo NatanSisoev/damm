@@ -36,8 +36,7 @@ self.addEventListener("fetch", (event) => {
 // Fallback text when the payload has none (the server normally sends it in the account language).
 const FALLBACK_BODY = { ca: "Tens preguntes noves", es: "Tienes preguntas nuevas", en: "New questions" };
 function fallbackBody() {
-  const l = String((self.navigator && self.navigator.language) || "ca").slice(0, 2).toLowerCase();
-  return FALLBACK_BODY[l] || FALLBACK_BODY.ca;
+  return FALLBACK_BODY.ca;
 }
 
 self.addEventListener("push", (event) => {
