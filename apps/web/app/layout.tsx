@@ -28,23 +28,17 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-// Paper: matches the manifest theme_color and the icon background. A forced theme (cookie) wins over the OS.
+// Paper: matches the manifest theme_color and the icon background. Light unless the visitor chose dark with the toggle (cookie).
 export async function generateViewport(): Promise<Viewport> {
   const theme = await getTheme();
-  if (theme) return { themeColor: theme === "dark" ? "#0f0f0e" : "#fafaf8" };
-  return {
-    themeColor: [
-      { media: "(prefers-color-scheme: light)", color: "#fafaf8" },
-      { media: "(prefers-color-scheme: dark)", color: "#0f0f0e" },
-    ],
-  };
+  return { themeColor: theme === "dark" ? "#0f0f0e" : "#fafaf8" };
 }
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
   const lang = await getLang();
   const theme = await getTheme();
   return (
-    <html lang={lang} data-theme={theme} suppressHydrationWarning className={`${hanken.variable} h-full antialiased`}>
+    <html lang={lang} data-theme={theme ?? "light"} suppressHydrationWarning className={`${hanken.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
         <LangProvider lang={lang}>{children}</LangProvider>
         <ServiceWorkerRegister />
