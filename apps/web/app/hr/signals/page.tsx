@@ -298,6 +298,21 @@ function AlarmItem({ t, lang, r, rec, drafted }: { t: HrResultsT; lang: Lang; r:
         </div>
       </div>
       <div className="mt-2 flex flex-wrap items-center justify-end gap-2">
+        {!drafted && r.domainId != null && !NON_ACTIONABLE.has(r.type) && (
+          <form action={generateRecommendationsAction}>
+            <input type="hidden" name="signal" value={r.id} />
+            <GenerateButton />
+          </form>
+        )}
+        {r.status === "open" && (
+          <form action={setAlarmStatusAction}>
+            <input type="hidden" name="id" value={r.id} />
+            <input type="hidden" name="status" value="acknowledged" />
+            <button type="submit" className="alarm-icon-btn" aria-label={t("sg_dismiss")} title={t("sg_dismiss")}>
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
+            </button>
+          </form>
+        )}
         {rec && !rec.seguimentNecessitatId ? (
           <form action={proposeFollowUpAction}>
             <input type="hidden" name="rec" value={rec.id} />
@@ -308,32 +323,15 @@ function AlarmItem({ t, lang, r, rec, drafted }: { t: HrResultsT; lang: Lang; r:
         ) : (
           <Link href={`/hr/signals/${r.id}`} className="btn btn-primary">{t("sg_review")}</Link>
         )}
-        {!drafted && r.domainId != null && !NON_ACTIONABLE.has(r.type) && (
-          <form action={generateRecommendationsAction}>
-            <input type="hidden" name="signal" value={r.id} />
-            <GenerateButton />
+        {next.includes("resolved") && (
+          <form action={setAlarmStatusAction}>
+            <input type="hidden" name="id" value={r.id} />
+            <input type="hidden" name="status" value="resolved" />
+            <button type="submit" className="alarm-icon-btn" aria-label={t("sg_resolve")} title={t("sg_resolve")}>
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7" /></svg>
+            </button>
           </form>
         )}
-        <div className="flex items-center gap-2">
-          {r.status === "open" && (
-            <form action={setAlarmStatusAction}>
-              <input type="hidden" name="id" value={r.id} />
-              <input type="hidden" name="status" value="acknowledged" />
-              <button type="submit" className="alarm-icon-btn" aria-label={t("sg_dismiss")} title={t("sg_dismiss")}>
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
-              </button>
-            </form>
-          )}
-          {next.includes("resolved") && (
-            <form action={setAlarmStatusAction}>
-              <input type="hidden" name="id" value={r.id} />
-              <input type="hidden" name="status" value="resolved" />
-              <button type="submit" className="alarm-icon-btn" aria-label={t("sg_resolve")} title={t("sg_resolve")}>
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7" /></svg>
-              </button>
-            </form>
-          )}
-        </div>
       </div>
     </li>
   );
