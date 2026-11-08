@@ -8,7 +8,7 @@ import {
   listCollectius,
   listNeedCards,
   listThemes,
-  populationOf,
+  getParticipation,
   CHANGE_MIN_DELTA,
   CHANGE_MIN_N,
   PRECISION_MODERADA_MIN_N,
@@ -104,9 +104,8 @@ export default async function HrDashboard({ searchParams }: { searchParams: Prom
   const best = enough ? sorted[0] : undefined;
   const worst = enough ? sorted[sorted.length - 1] : undefined;
 
-  const respondents = means.length ? Math.max(...means.map((m) => m.n)) : null;
-  const population = populationOf(col?.id ?? null);
-  const pct = respondents !== null && population ? Math.min(100, Math.round((respondents / population) * 100)) : null;
+  // People, not answers: read from the job-written aggregates for the period(s) the window overlaps (never above the population).
+  const { respondents, population, pct } = getParticipation(win, col?.id ?? null);
   const counts = accountCounts();
   const accountsRaw = col ? (counts.find((c) => c.collectiu === col.nom)?.comptes ?? null) : counts.every((c) => c.comptes !== null) ? counts.reduce((a, c) => a + (c.comptes ?? 0), 0) : null;
   const suppressed = heatmap.cells.flat().filter((c) => c.suppressed).length;

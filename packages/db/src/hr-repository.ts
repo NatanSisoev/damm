@@ -660,7 +660,8 @@ function readablePeriods(db: ReturnType<typeof getDb>): string[] {
 /**
  * Respondent counts per (collective, shift) for one period.
  * Prefers the all-domains rows (domini_id NULL). The engine writes per-domain rows only, so otherwise the largest
- * per-domain n of the segment is used: a lower bound of the distinct respondents, never an over-count.
+ * per-domain n of the segment is used. That is the number of people who answered at least one item of that domain, so it
+ * is a lower bound of the distinct respondents of the segment, never an over-count.
  */
 function segmentCounts(db: ReturnType<typeof getDb>, periode: string): { c: number; t: number | null; n: number; suprimit: number }[] {
   const all = db
@@ -1076,6 +1077,50 @@ export function populationOf(collectiuId: number | null): number {
   return r.c;
 }
 
+export interface Participation {
+  /** Distinct people (lower bound), capped at the population; null when no readable period overlaps or the count is under the minimum group size. */
+  respondents: number | null;
+  population: number;
+  /** Whole percent, 0..100, null when respondents is null. */
+  pct: number | null;
+}
+
+/**
+ * People (not answers) who took part in a date window, from the job-written `agregat` table. For each period the window overlaps
+ * (up to the reading period), the segment's torn-less row is read: the all-domains row when present, else the largest per-domain n
+ * (people who answered at least that domain). Periods under the minimum group size are ignored. The result is the maximum across
+ * the overlapped periods (never a sum: the same person answers every month), capped at the population, so it is a lower bound of
+ * distinct people and can never exceed the denominator. `collectiuId` null means the whole company.
+ */
+export function getParticipation(w: { from: string; to: string }, collectiuId: number | null): Participation {
+  const db = getDb();
+  const population = populationOf(collectiuId);
+  const cap = readingPeriod(db);
+  const lo = w.from.slice(0, 7);
+  const hi = w.to.slice(0, 7);
+  const periods = cap ? (db.prepare("SELECT DISTINCT periode FROM agregat WHERE periode >= ? AND periode <= ? AND periode <= ?").all(lo, hi, cap) as { periode: string }[]).map((r) => r.periode) : [];
+  const rows = db.prepare("SELECT domini_id AS d, n FROM agregat WHERE periode = ? AND collectiu_id IS ? AND torn_id IS NULL");
+  const scopeCount = (periode: string, c: number | null): number | null => {
+    const r = rows.all(periode, c) as { d: number | null; n: number }[];
+    if (!r.length) return null;
+    const whole = r.find((x) => x.d === null);
+    return whole ? whole.n : Math.max(...r.map((x) => x.n));
+  };
+  let best: number | null = null;
+  for (const p of periods) {
+    let n = scopeCount(p, collectiuId);
+    if (n === null && collectiuId === null) {
+      // No company-wide rows: add up the collectives, but only when all of them are readable.
+      const parts = listCollectius().map((c) => scopeCount(p, c.id));
+      n = parts.length && parts.every((x) => x !== null && x >= MIN_GROUP_SIZE) ? parts.reduce<number>((a, x) => a + (x as number), 0) : null;
+    }
+    if (n !== null && n >= MIN_GROUP_SIZE && (best === null || n > best)) best = n;
+  }
+  const respondents = best === null ? null : Math.min(best, population);
+  const pct = respondents !== null && population > 0 ? Math.min(100, Math.round((respondents / population) * 100)) : null;
+  return { respondents, population, pct };
+}
+
 const BUCKET_SQL: Record<WindowBucket, string> = {
   day: "substr(v.data,1,10)",
   week: "date(substr(v.data,1,10),'weekday 0','-6 days')",
@@ -1086,8 +1131,8 @@ const bucketLabel = (b: WindowBucket, key: string) => (b === "day" || b === "wee
 
 /**
  * Same shape and rigour as getTrends (n < 10 hides, complementary suppression of collectives under "Tots"), but for an arbitrary
- * date window, read from the analytics view (no account ids). `n` is the largest per-question response count of the cell: a lower bound
- * of the distinct respondents, never an over-count. With `collectiuId` set, "Tots" is that collective alone. Means are on the 1-5 scale (1 + 4 x score).
+ * date window, read from the analytics view (no account ids). `n` is the largest per-question ANSWER count of the cell, not a count of
+ * people (questions repeat, so it can exceed the population): use getParticipation for people. With `collectiuId` set, "Tots" is that collective alone. Means are on the 1-5 scale (1 + 4 x score).
  */
 export function getWindowTrends(w: DateWindow, collectiuId: number | null = null): Trends {
   const db = getDb();
