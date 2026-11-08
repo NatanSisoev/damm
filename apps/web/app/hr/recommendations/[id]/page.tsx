@@ -4,7 +4,8 @@ import type { ReactNode } from "react";
 import { notFound } from "next/navigation";
 import { MIN_GROUP_SIZE } from "@damm/shared";
 import { getRecommendationDetail } from "@damm/db/hr";
-import { signalDetail, signalHeadline } from "@/lib/signal-text";
+import { signalHeadline } from "@/lib/signal-text";
+import { SignalSummary } from "@/components/signal-trend-line";
 import { Card, Empty, PageHeader } from "../../ui";
 import { recommendationStatus } from "../../labels";
 import { getTL } from "@/lib/i18n/server";
@@ -161,7 +162,7 @@ export default async function RecommendationPage({ params }: { params: Promise<{
             {signal ? (
               <>
                 <h3 className="font-semibold">{signalHeadline(signal, lang)}</h3>
-                <p className="mt-1 text-[13px] text-muted">{signalDetail(signal, lang)}</p>
+                <p className="mt-1 text-[13px] text-muted"><SignalSummary s={signal} lang={lang} /></p>
                 <div className="mt-3 flex flex-wrap items-center gap-2">
                   <SignalBadges tipus={signal.tipus} severity={signal.severity} status={signal.status} />
                   <span className="badge num">{signal.periode}</span>

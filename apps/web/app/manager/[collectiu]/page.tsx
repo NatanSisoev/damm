@@ -23,7 +23,8 @@ import { RepTable, TrendTable } from "../../hr/tables";
 import { Card, Empty, PageHeader } from "../../hr/ui";
 import { SuppressedBadge } from "../../hr/ui-server";
 import { SignalBadges } from "../../hr/signal-labels";
-import { compareSignals, signalDetail, signalHeadline } from "@/lib/signal-text";
+import { compareSignals, signalHeadline } from "@/lib/signal-text";
+import { SignalSummary } from "@/components/signal-trend-line";
 import { getTL } from "@/lib/i18n/server";
 import { managerDict } from "@/lib/i18n/manager";
 import { collectiveLabel } from "@/lib/i18n/names";
@@ -57,9 +58,9 @@ export default async function ManagerCollectivePage({ params }: { params: Promis
   const tornName = new Map(listTorns().map((tn) => [tn.id, tn.nom]));
   // One list for alarms and signals, same text and order (severity, then size of the drop).
   const cards = [
-    ...alarms.map((a) => ({ key: `alarm-${a.id}`, tipus: a.type, descripcio: a.description, severity: a.severity, n: a.n,
+    ...alarms.map((a) => ({ key: `alarm-${a.id}`, tipus: a.type, descripcio: a.description, periode: a.periode, severity: a.severity, n: a.n,
       domini: a.domainId ? domainName.get(a.domainId) ?? null : null, torn: a.tornId ? tornName.get(a.tornId) ?? null : null, collectiu: collectiu.nom })),
-    ...signals.filter((s) => !alarms.some((a) => a.id === s.id)).map((s) => ({ key: `signal-${s.id}`, tipus: s.tipus, descripcio: s.descripcio,
+    ...signals.filter((s) => !alarms.some((a) => a.id === s.id)).map((s) => ({ key: `signal-${s.id}`, tipus: s.tipus, descripcio: s.descripcio, periode: s.periode,
       severity: s.severity, n: s.n, domini: s.domini, torn: s.torn, collectiu: collectiu.nom })),
   ].sort(compareSignals);
 
@@ -177,7 +178,7 @@ export default async function ManagerCollectivePage({ params }: { params: Promis
                 {cards.map((c) => (
                   <li key={c.key} className="rounded-lg border border-line p-3">
                     <p className="text-[14px] font-semibold">{signalHeadline(c, lang)}</p>
-                    <p className="mt-0.5 text-[13px] text-muted">{signalDetail(c, lang)}</p>
+                    <p className="mt-0.5 text-[13px] text-muted"><SignalSummary s={c} lang={lang} /></p>
                     <div className="mt-2 flex flex-wrap items-center gap-2">
                       <SignalBadges tipus={c.tipus} severity={c.severity} />
                       <span className="num ml-auto text-xs text-subtle"><People n={c.n} scoped={true} /></span>

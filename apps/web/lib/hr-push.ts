@@ -7,6 +7,7 @@ import { deleteHrPushSubscription, listHrPushSubscriptions, listNewAlarms, type 
 import { makeT } from "@/lib/i18n/core";
 import { hrDict } from "@/lib/i18n/hr";
 import { pushEnabled } from "@/lib/push";
+import { signalTrend } from "@/lib/signal-text";
 
 export type HrPushOutcome = { status: "off" } | { status: "none" } | { status: "sent"; alarms: number; browsers: number };
 
@@ -16,7 +17,8 @@ function payload(lang: Lang, afterId: number): string | null {
   const alarms = listNewAlarms(afterId, lang);
   if (!alarms.length) return null;
   const t = makeT(hrDict, lang);
-  const first = alarms[0].descripcio.length > BODY_MAX ? `${alarms[0].descripcio.slice(0, BODY_MAX - 1)}…` : alarms[0].descripcio;
+  const text = signalTrend(alarms[0], lang)?.plain ?? alarms[0].descripcio;
+  const first = text.length > BODY_MAX ? `${text.slice(0, BODY_MAX - 1)}…` : text;
   const body = alarms.length > 1 ? `${first} (${t("hr_push_more", { n: alarms.length - 1 })})` : first;
   const title = alarms.length === 1 ? t("hr_push_title_one") : t("hr_push_title_many", { n: alarms.length });
   return JSON.stringify({ title, body, url: "/hr/signals" });

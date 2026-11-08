@@ -14,6 +14,8 @@ export interface HrPushSubscription {
 export interface NewAlarm {
   id: number;
   descripcio: string;
+  tipus: string;
+  periode: string;
   severity: "warning" | "critical";
 }
 
@@ -47,7 +49,7 @@ export function maxAlarmId(): number {
 export function listNewAlarms(afterId: number, lang: Lang = "ca"): NewAlarm[] {
   const rows = getDb()
     .prepare(
-      `SELECT id, descripcio, severity FROM senyal
+      `SELECT id, descripcio, tipus, periode, severity FROM senyal
        WHERE id > ? AND suprimit = 0 AND COALESCE(status, 'open') = 'open'
          AND severity IN ('warning','critical') AND COALESCE(audience, 'hr') IN ('hr','hr_manager')
        ORDER BY severity = 'critical' DESC, id`,

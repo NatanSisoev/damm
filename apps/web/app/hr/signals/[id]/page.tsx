@@ -17,7 +17,8 @@ import { recommendationStatus } from "../../labels";
 import { ChangeBadge, Sparkline } from "../../trend";
 import { TrendChart } from "../../trend-chart";
 import { SignalBadges, statusLabel } from "../../signal-labels";
-import { signalDetail, signalHeadline } from "@/lib/signal-text";
+import { signalHeadline } from "@/lib/signal-text";
+import { SignalSummary } from "@/components/signal-trend-line";
 import { getT, getTL } from "@/lib/i18n/server";
 import { hrResultsDict, type HrResultsKey, type HrResultsT } from "@/lib/i18n/hr-results";
 import { domainLabel } from "@/lib/i18n/names";
@@ -198,7 +199,7 @@ export default async function SignalPage({ params, searchParams }: { params: Pro
     <>
       <PageHeader
         title={signalHeadline(signal, lang)}
-        subtitle={signalDetail(signal, lang)}
+        subtitle={<SignalSummary s={signal} lang={lang} />}
         actions={<>{emergentTheme && <Link href={commentsHref(emergentTheme.key)} className="btn btn-primary">{t("sd_view_comments")}</Link>}<Link href="/hr/signals" className="btn">{t("sd_back")}</Link></>}
       />
 

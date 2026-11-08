@@ -19,7 +19,8 @@ import type { Lang } from "@damm/shared";
 import { archiveAlarmAction, reopenAlarmAction, setAlarmStatusAction } from "../actions";
 import { ALARM_NEXT } from "./transitions";
 import { NON_ACTIONABLE } from "./alarm-text";
-import { signalDetail, signalDrop, signalSegment } from "@/lib/signal-text";
+import { signalPlain, signalDrop, signalSegment } from "@/lib/signal-text";
+import { SignalSummary } from "@/components/signal-trend-line";
 import { generateRecommendationsAction, proposeFollowUpAction } from "./actions";
 import { pageTitle } from "@/lib/i18n/titles";
 
@@ -35,7 +36,7 @@ const TABS = [
 
 const SEV_RANK: Record<string, number> = { critical: 0, warning: 1, info: 2 };
 
-type Row = AlarmView & { segment: string; group: string; shift: string | null; domain: string | null; drop: number; detail: string };
+type Row = AlarmView & { segment: string; group: string; shift: string | null; domain: string | null; drop: number; detail: string; like: { tipus: string; descripcio: string; periode: string } };
 
 type Params = { estat?: string; tipus?: string; gravetat?: string; collectiu?: string; domini?: string; torn?: string; periode?: string; audiencia?: string; ordre?: string; q?: string };
 
@@ -72,8 +73,8 @@ export default async function AlarmsPage({ searchParams }: { searchParams: Promi
   const toRow = (a: AlarmView): Row => {
     const col = a.collectiuId ? colNames.get(a.collectiuId) ?? null : null;
     const shift = a.tornId ? torns.get(a.tornId) ?? null : null;
-    const like = { tipus: a.type, descripcio: a.description };
-    return { ...a, segment: signalSegment({ collectiu: col, torn: shift }, lang), group: signalSegment({ collectiu: col, torn: null }, lang), shift, domain: a.domainId ? domains.get(a.domainId) ?? null : null, drop: signalDrop(like), detail: signalDetail(like, lang) };
+    const like = { tipus: a.type, descripcio: a.description, periode: a.periode };
+    return { ...a, segment: signalSegment({ collectiu: col, torn: shift }, lang), group: signalSegment({ collectiu: col, torn: null }, lang), shift, domain: a.domainId ? domains.get(a.domainId) ?? null : null, drop: signalDrop(like), detail: signalPlain(like, lang), like };
   };
   const tabRows = inTab.map(toRow);
 
@@ -235,7 +236,7 @@ export default async function AlarmsPage({ searchParams }: { searchParams: Promi
             <Card title={t("sg_good")} meta={<span className="num">{good.length}</span>}>
               <FoldList className="divide-y divide-line" items={good.map((r) => (
                   <li key={r.id} className="py-2 text-[13px]">
-                    <strong>{r.domain ? `${domainLabel(r.domain, lang)} · ` : ""}{r.segment}</strong>: {r.detail}
+                    <strong>{r.domain ? `${domainLabel(r.domain, lang)} · ` : ""}{r.segment}</strong>: <SignalSummary s={r.like} lang={lang} />
                     <span className="num ml-2 text-xs text-subtle">{r.periode} · <People n={r.n} scoped={r.collectiuId !== null || r.tornId !== null} /></span>
 
                   </li>
@@ -300,7 +301,7 @@ function AlarmItem({ t, lang, r, rec, drafted, archived }: { t: HrResultsT; lang
             {r.domain ? domainLabel(r.domain, lang) : t("sg_general")}
             {r.shift && <span className="font-normal text-muted"> · {t("sig_shift", { shift: shiftLabel(r.shift, lang) })}</span>}
           </p>
-          <p className="text-[13px] text-muted">{r.detail}</p>
+          <p className="text-[13px] text-muted"><SignalSummary s={r.like} lang={lang} /></p>
         </div>
       {r.status === "resolved" || r.status === "dismissed" ? (
       <div className="ml-auto flex shrink-0 items-center gap-2">
