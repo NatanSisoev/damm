@@ -18,8 +18,8 @@ import {
 } from "@damm/db/hr";
 import { hrAlarms, hrInsights } from "@/lib/hr-engine";
 import { InsightCards } from "../../hr/insight-cards";
-import { Radar, type RadarSeries } from "../../hr/results/radar";
-import { RepTable, TrendTable } from "../../hr/results/tables";
+import { Radar, type RadarSeries } from "../../hr/radar";
+import { RepTable, TrendTable } from "../../hr/tables";
 import { Card, Empty, PageHeader } from "../../hr/ui";
 import { SuppressedBadge } from "../../hr/ui-server";
 import { SignalBadges } from "../../hr/signal-labels";
