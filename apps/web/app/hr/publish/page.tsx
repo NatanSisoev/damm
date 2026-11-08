@@ -1,10 +1,7 @@
 import Link from "next/link";
 import { MIN_GROUP_SIZE } from "@damm/shared";
-import { listJoinCodes, listNeeds } from "@damm/db/hr";
-import { ConfirmButton } from "../confirm-button";
-import { closeNeedAction } from "../actions";
+import { listJoinCodes } from "@damm/db/hr";
 import { Card, Empty, PageHeader } from "../ui";
-import { needStatus } from "../labels";
 import { getTL } from "@/lib/i18n/server";
 import { hrDict, collectiveLabel } from "@/lib/i18n/hr";
 import { rich } from "@/lib/i18n/rich";
@@ -17,7 +14,6 @@ export const generateMetadata = pageTitle("hr_publish");
 export default async function PublishPage() {
   const { t, lang } = await getTL(hrDict);
   const codes = listJoinCodes();
-  const needs = listNeeds();
   const items = await Promise.all(codes.map(async (c) => ({ ...c, url: joinUrl(c.codi), svg: await qrSvg(joinUrl(c.codi)) })));
   return (
     <>
@@ -73,25 +69,6 @@ export default async function PublishPage() {
           ))}
         </div>
       )}
-
-      <Card title={t("pub_needs")} meta={<span className="num">{needs.length}</span>} className="mt-6">
-        {needs.length === 0 ? (
-          <Empty>{t("pub_no_needs")}</Empty>
-        ) : (
-          <ul className="divide-y divide-line">
-            {needs.map((n) => (
-              <li key={n.id} className="flex flex-wrap items-center gap-3 py-2.5">
-                <span className={`badge ${needStatus(n.estat, lang).cls}`}>{needStatus(n.estat, lang).label}</span>
-                <span className="min-w-0 flex-1 text-[13px]">{n.textNl}{n.collectiu ? ` · ${collectiveLabel(n.collectiu, lang)}` : ""}</span>
-                {n.estat !== "tancada" && (
-                  <form action={closeNeedAction}><input type="hidden" name="id" value={n.id} /><ConfirmButton className="btn" message={t("pub_close_confirm")}>{t("pub_close_need")}</ConfirmButton></form>
-                )}
-              </li>
-            ))}
-          </ul>
-        )}
-        <p className="mt-3 text-xs text-subtle">{t("pub_close_note")}</p>
-      </Card>
     </>
   );
 }

@@ -304,7 +304,7 @@ Preconditions: a need in "Llesta per publicar".
 
 Notes: the card text shows the code and the link uses `PUBLIC_BASE_URL` (default `http://localhost:3000`; missing from `.env.example`, a known finding). Approved questions were already in the pool at F-HR-3 (the engine serves `aprovada` questions whatever the need's state); publishing marks the need and tells the collective. Join codes, links and QR are per collective, for onboarding only; the seed codes `DAMM-*` are always active.
 
-Branches: `/hr/publish` with no code shows "Encara no hi ha cap codi d'invitació." and with no need "Encara no hi ha cap necessitat." The Teams card is a copyable payload; sending to Teams is not built (N-1 roadmap in `docs/teams-integration.md`).
+Branches: `/hr/publish` with no code shows "Encara no hi ha cap codi d'invitació." The query history is not on this page: it lives on `/hr/needs` behind the "Historial" button (modal at `/hr/needs?historial=1`, titles and states only, empty state "Encara no hi ha cap consulta."). The Teams card is a copyable payload; sending to Teams is not built (N-1 roadmap in `docs/teams-integration.md`).
 
 ### F-HR-5 Read the results
 
@@ -376,7 +376,7 @@ Preconditions: a need in any state except "Tancada".
 
 | # | Action | Expected result |
 |---|---|---|
-| 1 | Press "Tanca la necessitat" (on `/hr/needs` or `/hr/publish`) | `necessitat.estat = 'tancada'`. Card shows "Tancada", hint "L'equip l'ha tancada: ja no recull respostes de seguiment." |
+| 1 | Press "Tanca la consulta" (on the need card in `/hr/needs`, or in the "Historial" modal of that page) | `necessitat.estat = 'tancada'`. Card shows "Tancada", hint "L'equip l'ha tancada: ja no recull respostes de seguiment." |
 | 2 | Filter `/hr/needs?estat=tancada` | The need is listed. A filter with no match shows `No hi ha cap necessitat en estat «…».` |
 
 Branches:
