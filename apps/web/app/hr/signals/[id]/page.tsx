@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { alarmReason } from "@/lib/alarm-reason";
 import { Comments, People } from "../../glyphs";
 import { notFound } from "next/navigation";
 import { MIN_GROUP_SIZE } from "@damm/shared";
@@ -210,6 +211,10 @@ export default async function SignalPage({ params, searchParams }: { params: Pro
         {signal.confianca !== null && <span className="badge num">{t("sd_conf", { v: Math.round(signal.confianca <= 1 ? signal.confianca * 100 : signal.confianca) })}</span>}
 
       </div>
+
+      {signal.severity && alarmReason({ tipus: signal.tipus, descripcio: signal.descripcio, severity: signal.severity, n: signal.n, confidence: signal.confianca }, lang) && (
+        <p className="-mt-3 mb-6 text-xs text-subtle">{alarmReason({ tipus: signal.tipus, descripcio: signal.descripcio, severity: signal.severity, n: signal.n, confidence: signal.confianca }, lang)}</p>
+      )}
 
       <div className="mb-6 flex flex-wrap items-center gap-2">
         <span className="text-xs font-semibold text-subtle">{t("sd_status_lbl")}</span>

@@ -100,3 +100,5 @@ export { getBrain, simulateBrain, clearDomainWeight, clearFormatPreference, MAX_
 export type { Brain, BrainCollective, BrainDomain, BrainFormat, BrainProbe, SimulateInput, SimResult, SimQueueItem } from "./brain.ts";
 export { resetConfig, describeConfig, parseConfigPatch } from "./config.ts";
 export type { ConfigEntry } from "./config.ts";
+
+export { ALARM_DEFAULTS } from "./alarms.ts";

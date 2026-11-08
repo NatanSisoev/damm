@@ -23,6 +23,7 @@ import {
   clearDomainWeight,
   clearFormatPreference,
   ConfigError,
+  ALARM_DEFAULTS,
   type SimulateInput,
   type StartProbeInput,
   type AlarmQuery,
@@ -36,7 +37,7 @@ import type { QuestionType } from "@damm/shared";
 const db = () => getDb() as unknown as Parameters<typeof listInsights>[0];
 
 export type { PoolQuestionDetail, PoolWeek, PoolSegment, Pool, PoolQuestion, PoolSummary, PoolState, PoolReason, PoolByCollective, SetPoolStatusResult, AlarmView, AlarmStatus, InsightView, InsightDetails, Viewer, ProbeView, ProbeProgress } from "@damm/engine/hr";
-export { ProbeError };
+export { ProbeError, ALARM_DEFAULTS };
 
 // Insights default to the latest period that clears the minimum group size, not the newest (possibly thin) one.
 export const hrInsights = (viewer: Viewer, q?: InsightQuery) => {
