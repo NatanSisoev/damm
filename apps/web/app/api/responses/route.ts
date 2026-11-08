@@ -6,8 +6,8 @@ import type { PostResponsesRequest } from "@damm/shared";
 
 export const dynamic = "force-dynamic";
 
-// Mirrors PostResponsesRequest from @damm/shared. Per-question rules (in today's batch, value for the
-// type, one answer per day, comment redaction) are enforced by @damm/engine submitAnswers.
+// Mirrors PostResponsesRequest from @damm/shared. Per-question rules (in today's batch or in the pending
+// campaign set, value for the type, one answer per question, comment redaction) are enforced by @damm/engine submitAnswers.
 const bodySchema = z.object({
   respostes: z
     .array(
