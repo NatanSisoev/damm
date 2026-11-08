@@ -1,6 +1,7 @@
 import "./alarms.css";
 import { People } from "../glyphs";
 import { GenerateButton } from "./generate-button";
+import { AutoSubmitForm } from "./auto-submit-form";
 import Link from "next/link";
 import { MIN_GROUP_SIZE } from "@damm/shared";
 import { listCollectius, listDomains, listRecommendations, listTorns } from "@damm/db/hr";
@@ -173,7 +174,7 @@ export default async function AlarmsPage({ searchParams }: { searchParams: Promi
       </div>
 
       {all.length > 0 && (
-        <form method="get" action="/hr/signals" className="alarm-filters mb-5" aria-label={ts("filters_aria")}>
+        <AutoSubmitForm method="get" action="/hr/signals" className="alarm-filters mb-5" aria-label={ts("filters_aria")}>
           {tab.key !== "obertes" && <input type="hidden" name="estat" value={tab.key} />}
           <Select all={ts("f_all")} name="tipus" label={ts("f_type")} value={f.tipus} options={opts.tipus.map((v) => [v, signalTypeLabel(v, lang)])} />
           <Select all={ts("f_all")} name="gravetat" label={ts("f_severity")} value={f.gravetat} options={[["critical", ts("sev_critical")], ["warning", ts("sev_warning")], ["info", ts("sev_info")]]} />
@@ -193,10 +194,9 @@ export default async function AlarmsPage({ searchParams }: { searchParams: Promi
             </select>
           </label>
           <div className="alarm-filter-actions">
-            <button className="btn btn-primary" type="submit">{ts("f_apply")}</button>
             {(activeFilters > 0 || sort !== "gravetat") && <Link className="btn" href={tab.key === "obertes" ? "/hr/signals" : `/hr/signals?estat=${tab.key}`}>{ts("f_clear")}</Link>}
           </div>
-        </form>
+        </AutoSubmitForm>
       )}
 
       {all.length === 0 ? (
