@@ -20,6 +20,7 @@ else
 fi
 
 node scripts/fix-join-codes.mjs
+# TEST_ACCOUNT (optional, "user:password") is created by apps/web/instrumentation.ts when Next starts below.
 
 cd apps/web
 exec pnpm exec next start -H 0.0.0.0 -p "${PORT:-3000}"

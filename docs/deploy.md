@@ -40,6 +40,8 @@ If `--ff-only` fails, `jan/deploy` has commits that are not in `main`: get them 
 
 `DB_PATH` (`/data/app.db`), `PUBLIC_BASE_URL` (the URL above, no trailing slash), `HR_ACCESS_CODE`, `SESSION_SECRET`, `LLM_BASE_URL`, `LLM_API_KEY`, `LLM_MODEL`, `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`, `NODE_ENV`. `TEAMS_WEBHOOK_URL` is not set (empty locally). The VAPID pair was generated for this deploy only. Values live in Railway; set with `railway variables --set NAME=value`. A deleted variable needs `railway redeploy -y` to take effect.
 
+Optional `TEST_ACCOUNT=username:password` (not set on Railway unless Jan asks): on server start (`apps/web/instrumentation.ts`, so also under `scripts/railway-start.sh`) the account is created in Fàbriques if missing, with the app's normal scrypt hashing. Idempotent, never overwrites an existing account, works on any DB (app.db, demo.db, large.db). Password needs 8+ characters.
+
 ## Reseed
 
 Delete the database and redeploy, the start step rebuilds it:
