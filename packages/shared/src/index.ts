@@ -105,7 +105,7 @@ export interface PoolNextResponse {
 // --- API: POST /api/responses ------------------------------------------------
 export interface RespostaInput {
   preguntaId: number;
-  valorNum?: number | null; // scale5: 1..5, scale10: 0..10, yes_no: 0/1; pair/choice: option index
+  valorNum?: number | null; // scale5: 1..5, scale10: 1..10 (older rows may hold 0), yes_no: 0/1; pair/choice: option index
   valueJson?: number[] | null; // ranking: option indices, best first
   answerMs?: number | null; // time from display to answer
   comentari?: string | null; // redacted server-side before insert

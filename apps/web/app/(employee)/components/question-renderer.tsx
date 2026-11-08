@@ -56,7 +56,7 @@ export function QuestionRenderer({
       const [low, high] = anchors(labels, t("scale_low"), t("scale_high"));
       return (
         <Block text={question.text}>
-          <ScaleInput min={0} max={10} value={draft.valorNum} onChange={setNum} lowLabel={low} highLabel={high} />
+          <ScaleInput max={10} value={draft.valorNum} onChange={setNum} lowLabel={low} highLabel={high} />
         </Block>
       );
     }

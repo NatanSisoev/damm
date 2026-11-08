@@ -64,7 +64,7 @@ export const PARAM_GROUPS: ParamGroup[] = [
 ];
 
 export const FORMAT_LABELS: Record<QuestionType, string> = {
-  scale10: "Escala 0-10",
+  scale10: "Escala 1-10",
   scale5: "Escala 1-5",
   yes_no: "Sí o no",
   pair: "Una o l'altra",
