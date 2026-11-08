@@ -82,7 +82,7 @@ export function PushToggle({ vapidKey, compact = false }: { vapidKey: string; co
     try {
       const sub = await (await navigator.serviceWorker.ready).pushManager.getSubscription();
       await sub?.unsubscribe();
-      await deletePushSubscriptionAction();
+      await deletePushSubscriptionAction(sub?.endpoint);
       setState("off");
     } catch {
       setState("error");

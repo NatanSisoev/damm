@@ -465,3 +465,13 @@ Additive and backward compatible.
 Action items:
 - [ ] Natan (optional): if the engine should own reopening, add `dismissed -> open` to `ALARM_TRANSITIONS` and we switch the action to `setAlarmStatus`.
 - [x] Jan: column, repository functions, alarms page tabs and buttons. (done 2026-11-08)
+
+## 2026-11-08: Push subscriptions per device, not per account (R-FLOW-4) (Jan)
+
+Backward compatible; old databases are rebuilt on first use by `ensurePushPerDevice` in the employee repository (rows kept).
+
+- `push_subscripcio` is keyed by `endpoint` (one row per device) instead of `compte_id`, with an index on `compte_id`. An account can now get notifications on several devices (phone and laptop); before, the device opened last replaced the other.
+- `savePushSubscription` upserts on `endpoint` (a device signed in with another account moves to it). `deletePushSubscription(compteId, endpoint?)` removes one device when given the endpoint (push toggle off), all of the account's devices otherwise (logout).
+
+Action items:
+- [x] Jan: schema, migration, repository, settings action and push toggle. (done 2026-11-08)

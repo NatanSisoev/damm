@@ -57,14 +57,16 @@ CREATE TABLE compte (
   creat            TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
--- Web push subscription: own table, deleted on logout, never joined to analytics.
+-- Web push subscriptions: own table, one row per device (an account can have several), deleted on
+-- logout, never joined to analytics.
 CREATE TABLE push_subscripcio (
-  compte_id  TEXT PRIMARY KEY REFERENCES compte(id) ON DELETE CASCADE,
-  endpoint   TEXT NOT NULL,
+  endpoint   TEXT PRIMARY KEY,
+  compte_id  TEXT NOT NULL REFERENCES compte(id) ON DELETE CASCADE,
   p256dh     TEXT NOT NULL,
   auth       TEXT NOT NULL,
   creat      TEXT NOT NULL DEFAULT (datetime('now'))
 );
+CREATE INDEX idx_push_subscripcio_compte ON push_subscripcio(compte_id);
 
 -- HR browsers subscribed to alarm notifications. No account, no person: an HR browser endpoint only.
 CREATE TABLE IF NOT EXISTS hr_push_subscription (
