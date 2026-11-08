@@ -22,6 +22,7 @@ import { NON_ACTIONABLE } from "./alarm-text";
 import { signalPlain, signalDrop, signalSegment } from "@/lib/signal-text";
 import { SignalSummary } from "@/components/signal-trend-line";
 import { generateRecommendationsAction, proposeFollowUpAction } from "./actions";
+import { alarmConfidence, alarmConfidenceLabel, alarmReason } from "@/lib/alarm-reason";
 import { pageTitle } from "@/lib/i18n/titles";
 
 export const generateMetadata = pageTitle("hr_alarms");
@@ -302,6 +303,7 @@ function AlarmItem({ t, lang, r, rec, drafted, archived }: { t: HrResultsT; lang
             {r.shift && <span className="font-normal text-muted"> · {t("sig_shift", { shift: shiftLabel(r.shift, lang) })}</span>}
           </p>
           <p className="text-[13px] text-muted"><SignalSummary s={r.like} lang={lang} /></p>
+          <AlarmWhy r={r} lang={lang} />
         </div>
       {r.status === "resolved" || r.status === "dismissed" ? (
       <div className="ml-auto flex shrink-0 items-center gap-2">
@@ -369,5 +371,18 @@ function AlarmItem({ t, lang, r, rec, drafted, archived }: { t: HrResultsT; lang
       )}
       </div>
     </li>
+  );
+}
+
+/** Confidence of the current score and the rule behind the severity, in small muted text. */
+function AlarmWhy({ r, lang }: { r: Row; lang: Lang }) {
+  const reason = alarmReason({ tipus: r.type, descripcio: r.description, severity: r.severity, n: r.n, confidence: r.confidence }, lang);
+  const conf = alarmConfidenceLabel(r.confidence, lang);
+  if (!reason && !conf) return null;
+  return (
+    <p className="num mt-0.5 text-xs text-subtle">
+      {reason ?? conf}
+      {reason && conf && !reason.includes(`${alarmConfidence(r.confidence)}`) ? ` · ${conf}` : ""}
+    </p>
   );
 }
