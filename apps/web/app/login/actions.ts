@@ -1,19 +1,14 @@
 "use server";
 
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { getCompteLang, recoverAccount, verifyLogin } from "@damm/db/employee";
+import { clientIp } from "@/lib/client-ip";
 import { employeeDict } from "@/lib/i18n/employee";
 import { getT } from "@/lib/i18n/server";
 import { setLangCookie } from "@/lib/lang";
 import { createSession } from "@/lib/session";
 
 export type LoginState = { error?: string; recoveryCode?: string };
-
-async function clientIp(): Promise<string> {
-  const h = await headers();
-  return h.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
-}
 
 export async function loginAction(_prev: LoginState, formData: FormData): Promise<LoginState> {
   const t = await getT(employeeDict);
