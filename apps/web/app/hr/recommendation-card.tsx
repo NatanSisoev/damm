@@ -20,6 +20,14 @@ export async function RecommendationBody({ r }: { r: RecommendationBody }): Prom
   const t = await getT(hrDict);
   return (
     <div className="space-y-2">
+      {r.font && (
+        <span
+          className={`badge ${r.font === "llm" ? "badge-accent" : ""}`}
+          title={r.font === "llm" ? "Text redactat pel model d'IA a partir de dades agregades" : "Text de la biblioteca de plantilles, sense IA"}
+        >
+          {r.font === "llm" ? "Redactat per IA" : "Plantilla"}
+        </span>
+      )}
       {r.titol && <h3 className="font-medium">{r.titol}</h3>}
       <p>{r.text}</p>
       {r.iniciativa && <p className="text-[13px]"><span className="font-medium">{t("rc_initiative")}</span> {r.iniciativa}</p>}

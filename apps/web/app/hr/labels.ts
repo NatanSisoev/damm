@@ -22,6 +22,15 @@ export const recommendationStatus = (estat: string, lang: Lang = "ca") => {
   const s = RECOMMENDATION_STATUS[estat];
   return s ? { label: label(s.key, estat, lang), cls: s.cls } : { label: estat, cls: "" };
 };
+export const QUESTION_TYPE_LABELS: Record<string, string> = {
+  scale5: "1–5",
+  scale10: "1–10",
+  yes_no: "Sí / No",
+  pair: "Parella",
+  choice: "Opció",
+  ranking: "Ordenació",
+  open: "Oberta",
+};
 export const needStatus = (estat: string, lang: Lang = "ca") => {
   const s = NEED_STATUS[estat];
   return s ? { label: label(s.key, estat, lang), cls: s.cls } : { label: estat, cls: "" };

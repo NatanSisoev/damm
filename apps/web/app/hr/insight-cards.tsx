@@ -1,8 +1,8 @@
 // Engine insight cards (C4/C5). Rendered per kind from InsightDetails; suppressed rows are never passed in.
 import type { ReactNode } from "react";
 import type { Lang } from "@damm/shared";
-import { nLabel } from "@damm/db/hr";
 import type { InsightView } from "@/lib/hr-engine";
+import { People } from "./glyphs";
 import { getTL } from "@/lib/i18n/server";
 import { hrDict, hrLookup } from "@/lib/i18n/hr";
 import { LOCALES, type TFn } from "@/lib/i18n/core";
@@ -129,7 +129,7 @@ export async function InsightCards({ insights, empty }: { insights: InsightView[
           <li key={i.id} className="rounded-lg border border-line p-3 text-[13px]">
             <div className="mb-1 flex flex-wrap items-center gap-2">
               <span className="badge">{hrLookup("ins_", i.kind, lang)}</span>
-              <span className="num ml-auto text-xs text-subtle">{nLabel(i.n, i.collectiuId !== null || i.tornId !== null)}</span>
+              <span className="num ml-auto text-xs text-subtle"><People n={i.n} scoped={i.collectiuId !== null || i.tornId !== null} /></span>
             </div>
             <div className="mb-1 text-xs text-subtle">{where(labels, t, lang)}</div>
             <Body i={i} t={t} lang={lang} />

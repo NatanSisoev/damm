@@ -1044,3 +1044,101 @@ export function listJoinCodes(): JoinCodeRow[] {
     return { ...r, actiu: r.actiu === 1, comptes: first ? total : null, comptesSuppressed: total === null, showsCount: first };
   });
 }
+
+// ---------- dashboard window (date range + collective filter) ----------
+
+export type WindowBucket = "day" | "week" | "month" | "all";
+export interface DateWindow { from: string; to: string; bucket: WindowBucket } // ISO dates, inclusive
+
+/** First and last day with a scored response, for presets ("today" never goes past the last data). */
+export function getDataBounds(): { min: string | null; max: string | null } {
+  const r = getDb()
+    .prepare("SELECT MIN(substr(data,1,10)) AS lo, MAX(substr(data,1,10)) AS hi FROM v_resposta_analitica WHERE score IS NOT NULL")
+    .get() as { lo: string | null; hi: string | null };
+  return { min: r.lo, max: r.hi };
+}
+
+/** Synthetic population of one collective (or all). The denominator for participation. */
+export function populationOf(collectiuId: number | null): number {
+  const db = getDb();
+  const r = (collectiuId === null
+    ? db.prepare("SELECT COUNT(*) AS c FROM empleat_sintetic").get()
+    : db.prepare("SELECT COUNT(*) AS c FROM empleat_sintetic WHERE collectiu_id = ?").get(collectiuId)) as { c: number };
+  return r.c;
+}
+
+const BUCKET_SQL: Record<WindowBucket, string> = {
+  day: "substr(v.data,1,10)",
+  week: "date(substr(v.data,1,10),'weekday 0','-6 days')",
+  month: "substr(v.data,1,7)",
+  all: "'Total'",
+};
+const bucketLabel = (b: WindowBucket, key: string) => (b === "day" || b === "week" ? `${key.slice(8, 10)}/${key.slice(5, 7)}` : key);
+
+/**
+ * Same shape and rigour as getTrends (n < 10 hides, complementary suppression of collectives under "Tots"), but for an arbitrary
+ * date window, read from the analytics view (no account ids). `n` is the largest per-question response count of the cell: a lower bound
+ * of the distinct respondents, never an over-count. With `collectiuId` set, "Tots" is that collective alone. Means are on the 1-5 scale (1 + 4 x score).
+ */
+export function getWindowTrends(w: DateWindow, collectiuId: number | null = null): Trends {
+  const db = getDb();
+  const doms = db.prepare("SELECT id, nom FROM domini ORDER BY id").all() as { id: number; nom: string }[];
+  const cols = listCollectius();
+  const rows = db
+    .prepare(
+      `SELECT ${BUCKET_SQL[w.bucket]} AS b, v.collectiu_id AS c, v.domini_id AS d, v.pregunta_id AS q, COUNT(*) AS n, SUM(v.score) AS s
+       FROM v_resposta_analitica v
+       WHERE v.score IS NOT NULL AND substr(v.data,1,10) BETWEEN ? AND ? ${collectiuId === null ? "" : "AND v.collectiu_id = ?"}
+       GROUP BY b, v.collectiu_id, v.domini_id, v.pregunta_id`,
+    )
+    .all(...(collectiuId === null ? [w.from, w.to] : [w.from, w.to, collectiuId])) as { b: string; c: number; d: number; q: number; n: number; s: number }[];
+  const keys = [...new Set(rows.map((r) => r.b))].sort();
+
+  type Acc = { n: number; s: number; q: Map<number, number> };
+  const acc = new Map<string, Acc>();
+  const add = (k: string, r: { q: number; n: number; s: number }) => {
+    const a = acc.get(k) ?? { n: 0, s: 0, q: new Map<number, number>() };
+    a.n += r.n; a.s += r.s; a.q.set(r.q, (a.q.get(r.q) ?? 0) + r.n);
+    acc.set(k, a);
+  };
+  for (const r of rows) {
+    add(`${r.b}|${r.c}|${r.d}`, r);
+    add(`${r.b}|null|${r.d}`, r);
+  }
+  const cell = (b: string, c: number | null, d: number) => {
+    const a = acc.get(`${b}|${c}|${d}`);
+    return a ? { n: Math.max(...a.q.values()), mean: 1 + 4 * (a.s / a.n) } : null;
+  };
+
+  const reasonOf = new Map<string, HideReason>();
+  for (const b of keys) {
+    for (const d of doms) {
+      const tot = cell(b, null, d.id);
+      if (tot) reasonOf.set(`${b}|null|${d.id}`, tot.n < MIN_GROUP_SIZE ? "primari" : null);
+      if (collectiuId !== null) continue;
+      const present = cols.filter((c) => cell(b, c.id, d.id));
+      const res = complementarySuppression(present.map((c) => ({ n: cell(b, c.id, d.id)!.n, primary: false })));
+      present.forEach((c, k) => reasonOf.set(`${b}|${c.id}|${d.id}`, res[k]));
+    }
+  }
+
+  const scopes: { id: number | null; nom: string }[] =
+    collectiuId === null ? [{ id: null, nom: "Tots" }, ...cols.map((c) => ({ id: c.id, nom: c.nom }))] : [{ id: null, nom: cols.find((c) => c.id === collectiuId)?.nom ?? "Col·lectiu" }];
+  const series = scopes
+    .map((s) => ({
+      scope: s.nom,
+      rows: doms.map((d): TrendRow => {
+        const cells = keys.map((b): TrendCell => {
+          const r = cell(b, s.id, d.id);
+          if (!r) return { mitjana: null, n: null, precisio: null, suprimit: false, motiu: null, consensus: null, sd: null };
+          const motiu = reasonOf.get(`${b}|${s.id}|${d.id}`) ?? null;
+          if (motiu) return { mitjana: null, n: null, precisio: null, suprimit: true, motiu, consensus: null, sd: null };
+          return { mitjana: r.mean, n: r.n, precisio: precisionBand(r.n), suprimit: false, motiu: null, consensus: null, sd: null };
+        });
+        const last = cells.length - 1;
+        return { domini: d.nom, cells, canvi: classifyChange(cells[last - 1], cells[last]) };
+      }),
+    }))
+    .filter((s) => s.rows.some((r) => r.cells.some((c) => c.mitjana !== null || c.suprimit)));
+  return { periodes: keys.map((k) => bucketLabel(w.bucket, k)), series };
+}

@@ -164,8 +164,7 @@ export type Heatmap = {
   maxAbs: number;
 };
 
-export function getHeatmap(): Heatmap {
-  const t = getTrends();
+export function getHeatmap(t: ReturnType<typeof getTrends> = getTrends()): Heatmap {
   const [overall, ...rest] = t.series;
   const last = t.periodes.length - 1;
   if (!overall || last < 0) return { periode: null, domains: [], collectives: [], company: [], cells: [], maxAbs: 0.5 };

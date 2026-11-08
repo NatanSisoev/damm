@@ -19,19 +19,54 @@ What changed and why.
 
 ---
 
-## C19 · 2026-11-08 · Jan · Data retention constants and purge (R-PRIV-8)
+## C22 · 2026-11-08 · Jan · Data retention constants and purge (R-PRIV-8)
 
 `packages/shared` gains `RETENTION` (`rawResponseMonths: 24`, `inactiveAccountMonths: 24`, `pushSubscriptionMonths: 12`). `@damm/db` gains `purgeExpired(db, { dryRun })` (`packages/db/src/retention.ts`): deletes `resposta` rows with `periode` older than the window plus their `comentari_tema` and `resposta_seed` rows, accounts with no recent answer (their `assignment` and `person_domain_state` rows cascade), and old push subscriptions. Aggregate tables (`agregat`, `tema`, `senyal`, `insight`, `recomanacio`, `domain_importance`) are never touched. `POST /api/jobs/run` calls it as its last step (`?dryRun=1` only counts); also `pnpm --filter @damm/db run purge [-- --dry-run]`. No schema change.
 
 - [ ] Natan: confirm the engine tolerates `resposta` rows disappearing for old periods (`runEngineJob` only rewrites `agregat` for periods that still have rows, so older aggregates survive; `comments.ts` does `DELETE FROM tema` and rebuilds, so check that old-period themes are not lost once their comments are purged), and tell Jan if a window should be longer.
 - [ ] Jan: add the purge to the Railway scheduled job once the windows are agreed.
 
-## C18 · 2026-11-07 · Jan · Join code lookup ignores accents; DEMO-FÀB becomes DEMO-FAB
+---
+
+## C21 · 2026-11-07 · Jan · Join code lookup ignores accents; DEMO-FÀB becomes DEMO-FAB
 
 `lookupJoinCode` (`@damm/db/join`) matches on a key without diacritics, hyphens, spaces and case, and now returns the stored `codi`; `registerAccount` resolves the code through it. No schema change. The deployed DB renames `DEMO-FÀB` to `DEMO-FAB` at startup (`scripts/fix-join-codes.mjs`, idempotent). `packages/engine/demo/build-demo.ts` still derives `DEMO-<first 3 letters>` from the collective name, so a fresh demo DB has `DEMO-FÀB` until the generator strips diacritics.
 
 - [ ] Natan: in `packages/engine/demo/build-demo.ts` strip diacritics from the generated code (`.normalize("NFD").replace(/[\u0300-\u036f]/g, "")`) so it yields `DEMO-FAB`.
 - [x] Jan: lookup, startup rename and docs (done 2026-11-07).
+
+---
+
+## C20 · 2026-11-08 · Natan · HR dashboard: date window and collective filter
+
+- New read-only HR repository functions in `@damm/db/hr`: `getWindowTrends` (same shape and suppression as `getTrends`, for an arbitrary date window and optional collective, read from the analytics view), `getDataBounds`, `populationOf`. No schema change.
+- `/hr` is now the dashboard ("Panell") with interval and collective dropdowns and an "Actualitza" button (`refreshDashboardAction`: runs the engine job and, with `LLM_API_KEY`, the narrative). The sidebar is now Panell, Banc de preguntes, Alarmes, Consultes; Enllaços i QR, Cervell, Com es calcula? and Vista de responsables are at the bottom. "Necessitats" is renamed "Consultes" in the UI only; routes are unchanged.
+
+Action items:
+- [ ] Jan: FYI only. If you rework the HR sidebar or `/hr`, keep these entries and the filter dropdowns.
+
+---
+
+## C19 · 2026-11-07 · Natan · Brain tab: engine parameters, signals and what-if simulator
+
+- New HR-side engine API in `@damm/engine/hr`: `getBrain` (every config value with its default, HR weights and format preferences with their source, per-collective domain statistics and priorities, format arms per shift, active probes), `simulateBrain` (plays hypothetical people with no history over up to 28 days against the real question bank; config, weights, format preferences and probe boosts can be overridden for the run, nothing is stored), `resetConfig`, `clearDomainWeight`, `clearFormatPreference`, `describeConfig`, `parseConfigPatch`.
+- Statistics are hidden for a collective with fewer accounts than the minimum group size; the simulator then uses neutral signals. No account is read or returned.
+- The per-collective domain statistics moved from `engine.ts` to `signals.ts` so the live batch and the brain view share them. Behaviour is the same.
+- New page `/hr/brain` ("Cervell", sidebar footer) with server actions in `apps/web/app/hr/brain/actions.ts`. It writes only through the existing HR setters (`setConfig`, `setDomainWeight`, `setFormatPreference`). No schema or API change for the employee side.
+
+Action items:
+- [ ] Jan: FYI only. If you rework the HR sidebar, keep the `/hr/brain` link.
+
+---
+
+## C18 · 2026-11-07 · Natan · The engine tops up published needs itself
+
+- `getDailyBatch` (`@damm/engine`) now always appends the unanswered questions of `publicada` needs for the account's collective to the day's batch, past `questionsPerDay` and `maxNeedsPerDay`, in slots after the existing ones. It runs on every call, so a need published later shows up the same day.
+- `approvedQuestionsFor` serves need questions only while their `necessitat` is `publicada`. Nothing else changes; the API and schema are the same.
+- The web top-up is now redundant but harmless (`addPublishedNeedsToDay` skips rows already in the batch).
+
+Action items:
+- [ ] Jan: remove `addPublishedNeedsToDay` (`@damm/db/employee`) and `getTodaysBatch` (`apps/web/lib/engine.ts`) and call `getEngine().getDailyBatch` directly in `GET /api/pool/next`.
 
 ## C17 · 2026-11-07 · Jan · NeedCard carries dates, per-question answer counts and participation
 
@@ -58,8 +93,8 @@ Action items:
 - No schema change. This is a second writer of the engine-owned `assignment` table, from the web layer.
 
 Action items:
-- [ ] Natan: in `approvedQuestionsFor` / `selectBatch`, serve need questions only when their `necessitat` is `publicada` (today an `aprovada` question is served while the need is still `oberta`, before HR publishes; seen in the browser 2026-11-07).
-- [ ] Natan: in `getDailyBatch`, top up an existing day's batch with unanswered questions of `publicada` needs, past `questionsPerDay` and `maxNeedsPerDay`; then tell Jan so `addPublishedNeedsToDay` and `getTodaysBatch` can be removed.
+- [x] Natan: in `approvedQuestionsFor` / `selectBatch`, serve need questions only when their `necessitat` is `publicada` (done 2026-11-07, uncommitted: `store.approvedQuestionsFor` filters on `necessitat.estat`).
+- [x] Natan: in `getDailyBatch`, top up an existing day's batch with unanswered questions of `publicada` needs, past `questionsPerDay` and `maxNeedsPerDay` (done 2026-11-07, uncommitted: `store.publishedNeedsMissing`, called from `getDailyBatch`; see C18 for Jan).
 
 ## C14 · 2026-11-07 · Jan · Publishing a need sends web push, no per-need join code
 
@@ -68,7 +103,7 @@ Action items:
 - No schema change. The engine still serves every `aprovada` question whatever the need's state.
 
 Action items:
-- [ ] Natan: none required; FYI if the engine or seed ever relied on a `publicacio` row per need.
+- [x] Natan: none required; FYI if the engine or seed ever relied on a `publicacio` row per need (done 2026-11-07, nothing to change).
 
 ---
 
@@ -285,7 +320,7 @@ Both are `null` whenever the cell is suppressed (primary or complementary) or n 
 
 Action items:
 - [x] Jan: trend chart, signal table and results table show SD and consensus; signal page plots its own segment on 0-10. (done 2026-11-07)
-- [ ] Natan: aware: `TrendCell` gains `consensus` and `sd`.
+- [x] Natan: aware: `TrendCell` gains `consensus` and `sd` (done 2026-11-07, FYI only).
 
 ## 2026-11-07: HR reads the latest readable period; daily limit on publish (Jan)
 

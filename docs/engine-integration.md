@@ -297,10 +297,26 @@ stopProbe(db, probe.id);
 - Suggested UI: a "Digging deeper" card with days left, "+N answers", "confidence 42 → 61" and a Stop button. Never show anything per person.
 - Employee side: nothing changes. `GET /api/pool/next` already picks questions through the scheduler.
 
+### Brain (`/hr/brain`)
+
+- `getBrain(db)` returns the whole state the daily batch is built from: `config` (key, effective value, default, `overridden`), per collective the domain rows (weight and where it comes from, probe boost, priority, `drawShare`, and `stats` with score, confidence, consensus, info gain and outlier share, or `null` when the collective has fewer accounts than the minimum group size), the format rows (preference and Thompson arms per shift) and the question pool counts.
+- `simulateBrain(db, input)` plays 1..300 fresh hypothetical people for 1..28 days with the real question bank and the same `selectBatch` and need top-up as the live engine. `config` (snake_case), `domainWeights`, `formatPreferences` and `probeBoosts` override the saved values for that run only. It returns the domain, format and reason mix, repeat gap, need coverage by day and the day-by-day queue of one imaginary person. The page runs the saved and the draft settings side by side.
+- Writes go through `setConfig`, `resetConfig`, `setDomainWeight`, `setFormatPreference` and the two `clear*` helpers. Config changes apply to batches generated after the save; a batch already made for today does not change.
+
 ### Getting alarms to the screen
 
 - **Today:** alarms are written by each job run, at most every 10 minutes. The dashboard picks them up when it reads, so a page load or a 60-second poll of `alarmCounts` for the header badge is enough for the demo.
 - **Planned:** a weekly digest of warnings and an immediate push or email for critical alarms. These will be an `onReport` hook on the scheduler (`report.alarms.opened > 0`). Not built yet.
+
+## Question pool inspector (HR dashboard)
+
+`/hr/pool` lists every question with how often it was asked and answered, and `/hr/pool/<id>` opens one question (weekly evolution, answer distribution, per period, collective and shift). Both read `@damm/engine/hr`:
+
+- `listPool(db)` returns `{ summary, questions }`. Per question: state (`live`, `waiting`, `inactive`) and a reason, next batch day, asked and answered counts (from `assignment` and `resposta`), answer rate, last 7 days, first and last time asked, reach (accounts that answered / eligible accounts) and per-collective and per-period counts.
+- `getPoolQuestion(db, id)` adds the weekly series, the answer distribution and the segment table.
+- `setQuestionActive(db, id, active, by)` retires a question or brings a previously approved one back. Drafts and never-approved discarded questions cannot be reactivated here; they go through review.
+
+Only counts and aggregates leave the engine. Mean score, response time, comments, the distribution and segment scores are `null` under the minimum group size (10). "Asked" counts `assignment` rows, so a DB seeded without batches (`data/app.db`) shows 0 asked and no answer rate until the engine has served batches.
 
 ## Narrative insights
 

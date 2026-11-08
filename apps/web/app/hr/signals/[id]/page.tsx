@@ -1,10 +1,15 @@
 import Link from "next/link";
+import { Comments, People, PeopleRange } from "../../glyphs";
 import { notFound } from "next/navigation";
 import { MIN_GROUP_SIZE, type Lang } from "@damm/shared";
-import { nLabel, getSignalDetail, listCollectius, listContextEvents, listDomains, listTorns, type SignalTimelineStep } from "@damm/db/hr";
+import { getSignalDetail, listCollectius, listContextEvents, listDomains, listTorns, type SignalTimelineStep } from "@damm/db/hr";
+
 import { hrInsights, hrListProbes, type ProbeView } from "@/lib/hr-engine";
 import { Card, Empty, PageHeader, SuppressedBadge } from "../../ui";
 import { setSignalStatusAction } from "../../actions";
+import "../alarms.css";
+import { generateRecommendationsAction } from "../actions";
+import { GenerateButton } from "../generate-button";
 import { addContextEventAction, approveFromSignalAction, discardFromSignalAction, followUpFromSignalAction, startProbeAction, stopProbeAction } from "./actions";
 
 import { recommendationStatus } from "../../labels";
@@ -139,8 +144,9 @@ export default async function SignalPage({ params, searchParams }: { params: Pro
       <div className="mb-6 flex flex-wrap items-center gap-2">
         <SignalBadges tipus={signal.tipus} severity={signal.severity} status={signal.status} />
         <span className="badge num">{signal.periode}</span>
-        <span className="badge num">{nLabel(signal.n, signal.collectiuId !== null || (signal.tornId ?? null) !== null)}</span>
+        <span className="badge num"><People n={signal.n} scoped={signal.collectiuId !== null || (signal.tornId ?? null) !== null} /></span>
         {signal.confianca !== null && <span className="badge num">{t("sd_conf", { v: Math.round(signal.confianca <= 1 ? signal.confianca * 100 : signal.confianca) })}</span>}
+
       </div>
 
       <div className="mb-6 flex flex-wrap items-center gap-2">
@@ -200,7 +206,8 @@ export default async function SignalPage({ params, searchParams }: { params: Pro
                               ) : (
                                 <>
                                   {numD((c.mitjana - 1) * 2.5, lang, 1)}
-                                  <div className={`text-[11px] whitespace-nowrap ${c.precisio === "indicativa" ? "text-warn" : "text-subtle"}`}>n={c.n} · {t(`prec_${c.precisio === "sòlida" ? "solida" : c.precisio}` as HrResultsKey)}</div>
+                                  <div className={`text-[11px] whitespace-nowrap ${c.precisio === "indicativa" ? "text-warn" : "text-subtle"}`}><People n={c.n} /> · {t(`prec_${c.precisio === "sòlida" ? "solida" : c.precisio}` as HrResultsKey)}</div>
+
                                   {c.sd !== null && c.consensus !== null && (
                                     <div className="text-[11px] whitespace-nowrap text-subtle">{t("tb_sd_cons", { sd: numD(c.sd * 2.5, lang, 1), c: Math.round(c.consensus) })}</div>
                                   )}
@@ -230,7 +237,8 @@ export default async function SignalPage({ params, searchParams }: { params: Pro
                     <div className="mb-1.5 flex flex-wrap items-center gap-2">
                       <h3 className="font-medium">{th.etiqueta}</h3>
                       {th.emergent && <span className="badge badge-warn">{t("rs_emergent")}</span>}
-                      <span className="num ml-auto text-xs text-subtle">{t("sd_theme_n", { n: th.n })}</span>
+                      <span className="num ml-auto text-xs text-subtle"><Comments n={th.n} /></span>
+
                     </div>
                     {th.resum && <p className="text-[13px] text-muted">{th.resum} <span className="text-xs text-subtle">{t("sd_ai_summary")}</span></p>}
                     {th.snippets.length > 0 && (
@@ -254,7 +262,22 @@ export default async function SignalPage({ params, searchParams }: { params: Pro
         <div className="space-y-6">
           <Card id="recomanacions" title={t("sd_recs")} meta={<span className="num">{recommendations.length}</span>}>
             {recommendations.length === 0 ? (
-              <Empty>{t("sd_recs_empty")}</Empty>
+              signal.dominiId != null ? (
+                <div className="gen-panel">
+                  <span className="gen-panel-mark" aria-hidden>
+                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" strokeLinecap="round"><path d="M8 1.5 9.6 6.4 14.5 8 9.6 9.6 8 14.5 6.4 9.6 1.5 8 6.4 6.4Z" /></svg>
+                  </span>
+                  <h3>Encara no hi ha cap recomanació</h3>
+                  <p>Proposa fins a 3 accions concretes per a aquest senyal, amb responsable i termini suggerits.</p>
+                  <form action={generateRecommendationsAction}>
+                    <input type="hidden" name="signal" value={signal.id} />
+                    <GenerateButton variant="panel" />
+                  </form>
+                  <small>Una persona les aprova o les descarta.</small>
+                </div>
+              ) : (
+                <Empty>Aquest senyal no té un domini concret, així que no es poden proposar recomanacions.</Empty>
+              )
             ) : (
               <ul className="space-y-3">
                 {recommendations.map((r) => (
@@ -264,6 +287,7 @@ export default async function SignalPage({ params, searchParams }: { params: Pro
                       {r.seguimentNecessitatId && <span className="badge badge-accent">{t("sd_follow_created")}</span>}
                     </div>
                     <RecommendationBody r={r} />
+                    <Link href={`/hr/recommendations/${r.id}`} className="mt-3 inline-block text-xs text-accent-ink hover:underline">Veure tot el detall →</Link>
                     {(r.estat === "proposada" || (r.estat === "aprovada" && !r.seguimentNecessitatId)) && (
                       <div className="mt-3 flex flex-wrap justify-end gap-2 border-t border-line pt-3">
                         {r.estat === "proposada" && (
@@ -297,7 +321,7 @@ export default async function SignalPage({ params, searchParams }: { params: Pro
                       <div className="mb-1 text-xs font-medium text-subtle">{t("sd_since", { since: d.since, label: d.anchor.label })}</div>
                       <p className="text-[13px]">{d.wording}</p>
                       <p className="mt-1 text-xs text-subtle">
-                        <span className="num">{f1(d.before.score)} → {f1(d.after.score)}</span> · n={d.before.n} / {d.after.n}
+                        <span className="num">{f1(d.before.score)} → {f1(d.after.score)}</span> · <PeopleRange from={d.before.n} to={d.after.n} />
                       </p>
                       <p className="mt-1 text-xs text-subtle">{d.limits}</p>
                     </li>
@@ -367,8 +391,9 @@ export default async function SignalPage({ params, searchParams }: { params: Pro
                     )}
                     <p className="mt-3 text-xs text-subtle">
                       {f.newResults
-                        ? <>{rich(hrResultsDict[lang].sd_newres, { n: <span className="num">{f.newResults.n}</span> })}{f.newResults.mitjana !== null && rich(hrResultsDict[lang].sd_newres_avg, { v: <span className="num">{numD(f.newResults.mitjana, lang, 1)}</span> })}</>
+                        ? <>{rich(hrResultsDict[lang].sd_newres, { n: <span className="num"><People n={f.newResults.n} /></span> })}{f.newResults.mitjana !== null && rich(hrResultsDict[lang].sd_newres_avg, { v: <span className="num">{numD(f.newResults.mitjana, lang, 1)}</span> })}</>
                         : t("sd_newres_pending", { min: MIN_GROUP_SIZE })}
+
                     </p>
                   </li>
                 ))}

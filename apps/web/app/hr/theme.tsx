@@ -33,7 +33,7 @@ export async function HrShell({ children, subtitle, manager = false, badges }: {
   subtitle ??= t("shell_subtitle");
   if (manager) {
     return (
-      <div className={`hr-shell flex flex-col`}>
+      <div className={`hr-shell flex min-h-screen flex-col`}>
         <header className="hr-bar">
           <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-8 px-4 md:px-8">
             <Link href="/manager" className="flex h-12 items-center gap-3">

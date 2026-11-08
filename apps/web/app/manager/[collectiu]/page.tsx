@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { People } from "../../hr/glyphs";
 import { notFound } from "next/navigation";
 import { MIN_GROUP_SIZE } from "@damm/shared";
 import {
@@ -14,7 +15,6 @@ import {
   CHANGE_MIN_N,
   PRECISION_MODERADA_MIN_N,
   PRECISION_SOLIDA_MIN_N,
-  nLabel,
 } from "@damm/db/hr";
 import { hrAlarms, hrInsights } from "@/lib/hr-engine";
 import { InsightCards } from "../../hr/insight-cards";
@@ -176,7 +176,7 @@ export default async function ManagerCollectivePage({ params }: { params: Promis
                     <p className="mt-0.5 text-[13px] text-muted">{signalDetail(c, lang)}</p>
                     <div className="mt-2 flex flex-wrap items-center gap-2">
                       <SignalBadges tipus={c.tipus} severity={c.severity} />
-                      <span className="num ml-auto text-xs text-subtle">{nLabel(c.n, true)}</span>
+                      <span className="num ml-auto text-xs text-subtle"><People n={c.n} scoped={true} /></span>
                     </div>
                   </li>
                 ))}

@@ -47,6 +47,8 @@ export interface RecommendationOptions {
   config?: Partial<EngineConfig>;
   /** Proposals kept per alarm (default 3). */
   maxPerAlarm?: number;
+  /** Draft for this one alarm only (a person asked for it), in any status. Still skips suppressed segments and alarms that already have proposals. */
+  alarmId?: number;
 }
 
 export interface RecommendationReport {
@@ -169,8 +171,9 @@ export async function runRecommendations(db: SqlDatabase, opts: RecommendationOp
      LEFT JOIN collectiu c ON c.id = s.collectiu_id
      LEFT JOIN torn t ON t.id = s.torn_id
      LEFT JOIN domini d ON d.id = s.domini_id
-     WHERE s.status = 'open' AND s.suprimit = 0 AND s.domini_id IS NOT NULL AND s.n >= ?
+     WHERE ${opts.alarmId ? "s.id = ?" : "s.status = 'open'"} AND s.suprimit = 0 AND s.domini_id IS NOT NULL AND s.n >= ?
      ORDER BY s.id`,
+    ...(opts.alarmId ? [opts.alarmId] : []),
     minN,
   );
   const have = new Set(all<{ senyal_id: number }>(db, "SELECT DISTINCT senyal_id FROM recomanacio WHERE senyal_id IS NOT NULL").map((r) => r.senyal_id));

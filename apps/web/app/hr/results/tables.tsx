@@ -1,4 +1,5 @@
 import { MIN_GROUP_SIZE } from "@damm/shared";
+import { People } from "../glyphs";
 import { SuppressedBadge } from "../ui";
 import { getTL } from "@/lib/i18n/server";
 import { hrResultsDict, type HrResultsKey } from "@/lib/i18n/hr-results";
@@ -53,7 +54,7 @@ export async function RepTable({ rows, byShift }: { rows: RepRow[]; byShift: boo
                 <td>
                   <div className="flex items-center gap-3">
                     <Bar value={r.respShare!} tone="chart" />
-                    <span className="num text-xs whitespace-nowrap text-muted">{pct(r.respShare!)} · n={r.respondents}</span>
+                    <span className="num text-xs whitespace-nowrap text-muted">{pct(r.respShare!)} · <People n={r.respondents} /></span>
                   </div>
                 </td>
                 <td>
@@ -106,7 +107,7 @@ export async function TrendTable({ periodes, rows }: { periodes: string[]; rows:
                   <div>
                     <div>{numD(c.mitjana, lang, 1)}</div>
                     <div className={`text-[11px] whitespace-nowrap ${c.precisio === "indicativa" ? "text-warn" : "text-subtle"}`}>
-                      n={c.n} · {t(`prec_${c.precisio === "sòlida" ? "solida" : c.precisio}` as HrResultsKey)}
+                      <People n={c.n} /> · {t(`prec_${c.precisio === "sòlida" ? "solida" : c.precisio}` as HrResultsKey)}
                     </div>
                     {c.sd !== null && c.consensus !== null && (
                       <div className="text-[11px] whitespace-nowrap text-subtle">{t("tb_sd_cons", { sd: numD(c.sd, lang, 1), c: Math.round(c.consensus) })}</div>

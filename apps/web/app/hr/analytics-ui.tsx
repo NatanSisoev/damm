@@ -1,6 +1,8 @@
 // Insights-first blocks shared by the HR overview and results pages. Server components; all forms post to HR-only server actions.
 import Link from "next/link";
+import { People } from "./glyphs";
 import { MIN_GROUP_SIZE, type Lang } from "@damm/shared";
+
 import { ChangeBadge, Sparkline } from "./trend";
 import { Card, Empty, FoldList } from "./ui";
 import { RecommendationBody } from "./recommendation-card";
@@ -168,8 +170,9 @@ export async function HeadlineStrip({ headlines }: { headlines: Headline[] }) {
               <div className="min-w-0 flex-1">
                 <p className="text-[14px] leading-snug">{headlineText(t, lang, h.msg)}</p>
                 <p className="num mt-0.5 text-xs text-subtle">
-                  n={h.n} <span className="font-sans">{t("an_n_smaller")}</span>
+                  <People n={h.n} /> <span className="font-sans">{t("an_n_smaller")}</span>
                   {h.confidence !== null && <> · {t("an_conf", { v: Math.round(h.confidence) })}</>}
+
                   {" · "}
                   <Link href={h.href} className="text-accent-ink hover:underline">{t("an_detail")}</Link>
                 </p>
@@ -303,7 +306,8 @@ export async function SegmentTrendCard({ trend }: { trend: SegmentTrend }) {
                 <div className="num text-xs text-subtle">{p}</div>
                 <div className="num font-semibold">
                   {c?.suprimit ? t("an_supp") : c?.mitjana == null ? "—" : numD(c.mitjana, lang, 1)}
-                  {c && !c.suprimit && c.n !== null && <span className="ml-1 text-xs font-normal text-subtle">n={c.n}</span>}
+                  {c && !c.suprimit && c.n !== null && <span className="ml-1 text-xs font-normal text-subtle"><People n={c.n} /></span>}
+
                 </div>
               </li>
             );

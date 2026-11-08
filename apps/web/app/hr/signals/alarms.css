@@ -1,0 +1,21 @@
+/* Alarmes: filter bar */
+.alarm-filters { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px 12px; }
+.alarm-filter { display: flex; flex-direction: column; gap: 3px; min-width: 130px; }
+.alarm-filter > span { font-size: 11px; color: var(--subtle, #666); text-transform: uppercase; letter-spacing: .04em; }
+.alarm-filter .input { padding-block: 5px; font-size: 13px; }
+.alarm-filter-actions { display: flex; gap: 8px; }
+
+/* Generate recommendations */
+.gen-btn { display: inline-flex; align-items: center; gap: 7px; }
+.gen-btn[disabled] { opacity: .7; cursor: progress; }
+.gen-icon { width: 14px; height: 14px; flex: none; }
+.gen-spinner { width: 13px; height: 13px; flex: none; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: gen-spin .7s linear infinite; }
+@keyframes gen-spin { to { transform: rotate(360deg); } }
+.gen-btn-lg { padding: 9px 18px; font-size: 14px; }
+.gen-panel { display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; padding: 28px 20px 24px; border: 1px solid var(--border); border-radius: 8px; background: var(--accent-soft); }
+.gen-panel-mark { display: grid; place-items: center; width: 40px; height: 40px; margin-bottom: 4px; border-radius: 50%; background: var(--surface); border: 1px solid var(--border-strong); color: var(--text); }
+.gen-panel-mark svg { width: 18px; height: 18px; }
+.gen-panel h3 { font-size: 14px; font-weight: 600; color: var(--text); }
+.gen-panel p { max-width: 34ch; font-size: 13px; color: var(--text-muted); }
+.gen-panel form { margin-top: 10px; }
+.gen-panel small { margin-top: 6px; font-size: 11.5px; color: var(--text-subtle); }

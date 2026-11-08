@@ -210,3 +210,28 @@ export function getSignalDetail(id: number): SignalDetail | null {
 
   return { signal, periodes, trend, trendScope, themes, hiddenThemes, recommendations, followUps, timeline };
 }
+
+export interface RecommendationDetail {
+  recommendation: SignalRecommendation & { creat: string };
+  /** The signal that triggered it. Null when the recommendation has none, or the signal is under the minimum group size. */
+  signal: SignalDetail | null;
+  /** Other recommendations drafted for the same signal. */
+  siblings: SignalRecommendation[];
+  followUp: SignalFollowUp | null;
+}
+
+/** One recommendation with everything around it: originating signal (trend, themes), siblings and follow-up survey. Null when missing. */
+export function getRecommendationDetail(id: number): RecommendationDetail | null {
+  const row = getDb()
+    .prepare(`SELECT senyal_id AS senyalId, creat, ${RECOMMENDATION_COLUMNS} FROM recomanacio WHERE id = ?`)
+    .get(id) as (SignalRecommendation & { creat: string; senyalId: number | null }) | undefined;
+  if (!row) return null;
+  const { senyalId, ...recommendation } = row;
+  const signal = senyalId ? getSignalDetail(senyalId) : null;
+  return {
+    recommendation,
+    signal,
+    siblings: (signal?.recommendations ?? []).filter((r) => r.id !== id),
+    followUp: signal?.followUps.find((f) => f.necessitatId === row.seguimentNecessitatId) ?? null,
+  };
+}

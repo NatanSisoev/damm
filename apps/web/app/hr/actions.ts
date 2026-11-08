@@ -8,7 +8,7 @@ import {
   discardRecommendation, publishNecessitat, updateDraftText, closeNecessitat, setSignalStatus,
 } from "@damm/db/hr";
 import { createDraftedFollowUp } from "./follow-up";
-import { changeAlarmStatus, type AlarmStatus } from "@/lib/hr-engine";
+import { changeAlarmStatus, hrSetQuestionActive, type AlarmStatus } from "@/lib/hr-engine";
 import { notifyNeedPublished } from "@/lib/push";
 
 const HR_USER = "hr-demo"; // no auth in the prototype; approval is still an explicit human action
@@ -150,4 +150,31 @@ export async function recomputeAction() {
   const { getScheduler } = await import("@/lib/engine");
   await getScheduler().runNow();
   revalidatePath("/hr", "layout");
+}
+
+/** Pool control: a person retires a question from the rotation, or brings a previously approved one back. */
+export async function setQuestionActiveAction(formData: FormData) {
+  hrSetQuestionActive(Number(formData.get("id")), formData.get("active") === "1", HR_USER);
+  revalidatePath("/hr/pool");
+}
+
+/** Dashboard "Actualitza": re-reads the database (aggregates, alarms) and rewrites the AI summary when an LLM key is configured. */
+export async function refreshDashboardAction(formData: FormData) {
+  const { getScheduler } = await import("@/lib/engine");
+  const s = getScheduler();
+  s.runNow();
+  let status = "ok";
+  if (!process.env.LLM_API_KEY) status = "sense-llm";
+  else {
+    const r = await s.runNarrativeNow();
+    status = r === null ? "ocupat" : r.segments.some((x) => x.status === "failed") ? "fallada" : "ok";
+  }
+  revalidatePath("/hr", "layout");
+  const q = new URLSearchParams();
+  for (const k of ["r", "from", "to", "c"]) {
+    const v = formData.get(k);
+    if (typeof v === "string" && v) q.set(k, v);
+  }
+  q.set("actualitzat", status);
+  redirect(`/hr?${q.toString()}`);
 }
