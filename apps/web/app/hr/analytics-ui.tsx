@@ -4,7 +4,8 @@ import { People } from "./glyphs";
 import { MIN_GROUP_SIZE, type Lang } from "@damm/shared";
 
 import { ChangeBadge, Sparkline } from "./trend";
-import { Card, Empty, FoldList } from "./ui";
+import { Card, Empty } from "./ui";
+import { FoldList } from "./ui-server";
 import { RecommendationBody } from "./recommendation-card";
 import { approveRecommendationAction, discardRecommendationAction, followUpAction, setAlarmStatusAction } from "./actions";
 import type { Headline, HeadlineWhere, Heatmap, HeatCell, NarrativeView, ReachGap, SegmentTrend, ThemesByDomain } from "./analytics";

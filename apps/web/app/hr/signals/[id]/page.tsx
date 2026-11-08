@@ -5,7 +5,8 @@ import { MIN_GROUP_SIZE, type Lang } from "@damm/shared";
 import { getSignalDetail, listCollectius, listContextEvents, listDomains, listTorns, type SignalTimelineStep } from "@damm/db/hr";
 
 import { hrInsights, hrListProbes, type ProbeView } from "@/lib/hr-engine";
-import { Card, Empty, PageHeader, SuppressedBadge } from "../../ui";
+import { Card, Empty, PageHeader } from "../../ui";
+import { SuppressedBadge } from "../../ui-server";
 import { setSignalStatusAction } from "../../actions";
 import "../alarms.css";
 import { generateRecommendationsAction } from "../actions";

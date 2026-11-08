@@ -7,7 +7,8 @@ import { listRecommendations, listSignals } from "@damm/db/hr";
 import {
   approveRecommendationAction, discardRecommendationAction, followUpAction,
 } from "../actions";
-import { Card, Empty, FoldList, PageHeader } from "../ui";
+import { Card, Empty, PageHeader } from "../ui";
+import { FoldList } from "../ui-server";
 import { SignalBadges, SignalText } from "../signal-labels";
 import { compareSignals } from "@/lib/signal-text";
 import { recommendationStatus } from "../labels";

@@ -1,6 +1,6 @@
 import { MIN_GROUP_SIZE } from "@damm/shared";
 import { People } from "../glyphs";
-import { SuppressedBadge } from "../ui";
+import { SuppressedBadge } from "../ui-server";
 import { getTL } from "@/lib/i18n/server";
 import { hrResultsDict, type HrResultsKey } from "@/lib/i18n/hr-results";
 import { collectiveLabel, domainLabel, shiftLabel } from "@/lib/i18n/names";
