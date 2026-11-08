@@ -1,6 +1,5 @@
 import "./alarms.css";
 import { People } from "../glyphs";
-import { GenerateButton } from "./generate-button";
 import { AutoSubmitForm } from "./auto-submit-form";
 import Link from "next/link";
 import { MIN_GROUP_SIZE } from "@damm/shared";
@@ -22,7 +21,7 @@ import { ALARM_NEXT } from "./transitions";
 import { NON_ACTIONABLE } from "./alarm-text";
 import { signalPlain, signalDrop, signalSegment } from "@/lib/signal-text";
 import { SignalSummary } from "@/components/signal-trend-line";
-import { generateRecommendationsAction, proposeFollowUpAction } from "./actions";
+import { proposeFollowUpAction } from "./actions";
 import { alarmConfidence, alarmConfidenceLabel, alarmReason } from "@/lib/alarm-reason";
 import { pageTitle } from "@/lib/i18n/titles";
 
@@ -227,7 +226,7 @@ export default async function AlarmsPage({ searchParams }: { searchParams: Promi
                 <FoldList
                   className="divide-y divide-line"
                   items={items.map((r) => (
-                    <AlarmItem key={r.id} t={t} lang={lang} r={r} rec={recs.find((x) => x.senyalId === r.id && x.estat === "aprovada")} drafted={recs.some((x) => x.senyalId === r.id)} archived={archived.has(r.id)} />
+                    <AlarmItem key={r.id} t={t} lang={lang} r={r} rec={recs.find((x) => x.senyalId === r.id && x.estat === "aprovada")} archived={archived.has(r.id)} />
                   ))}
                 />
               </div>
@@ -287,7 +286,7 @@ function Select({ all, name, label, value, options }: { all: string; name: strin
   );
 }
 
-function AlarmItem({ t, lang, r, rec, drafted, archived }: { t: HrResultsT; lang: Lang; r: Row; rec?: { id: number; seguimentNecessitatId: number | null }; drafted: boolean; archived: boolean }) {
+function AlarmItem({ t, lang, r, rec, archived }: { t: HrResultsT; lang: Lang; r: Row; rec?: { id: number; seguimentNecessitatId: number | null }; archived: boolean }) {
 
   const next = ALARM_NEXT[r.status];
   return (
@@ -321,12 +320,6 @@ function AlarmItem({ t, lang, r, rec, drafted, archived }: { t: HrResultsT; lang
       </div>
       ) : (
       <div className="ml-auto flex shrink-0 flex-wrap items-center justify-end gap-2">
-        {!drafted && r.domainId != null && !NON_ACTIONABLE.has(r.type) && (
-          <form action={generateRecommendationsAction}>
-            <input type="hidden" name="signal" value={r.id} />
-            <GenerateButton />
-          </form>
-        )}
         <div className="alarm-split">
           {rec && !rec.seguimentNecessitatId ? (
             <form action={proposeFollowUpAction}>

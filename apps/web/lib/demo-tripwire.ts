@@ -25,18 +25,36 @@ function isLow(tipus: string, value: number): boolean {
 /** Call after a successful submit. Never throws and never blocks the response. */
 export function maybeFireDemoAlarm(answers: { preguntaId: number; valorNum?: number | null }[]): void {
   if (!tripwireEnabled() || Date.now() - lastFired < COOLDOWN_MS) return;
-  void fire(answers).catch((e) => console.warn("[demo-tripwire] failed:", e?.message ?? e));
+  void fire(answers)
+    .then((r) => console.log(`[demo-tripwire] ${r}`))
+    .catch((e) => console.warn("[demo-tripwire] failed:", e?.message ?? e));
 }
 
-async function fire(answers: { preguntaId: number; valorNum?: number | null }[]): Promise<void> {
+/**
+ * DEMO_LIVE_JOB fallback: when the real engine run found no new alarm, the same staged demo alarm is opened for ANY
+ * answer (any question, collective or value) so the phone-to-laptop push always shows. Shorter cooldown than the tripwire.
+ */
+export async function fireDemoAlarmForAnyAnswer(): Promise<string> {
+  if (Date.now() - lastFired < 5_000) return "skipped: fired less than 5 s ago";
+  try {
+    return await fire(null);
+  } catch (e) {
+    console.warn("[demo-tripwire] failed:", e instanceof Error ? e.message : e);
+    return `failed: ${e instanceof Error ? e.message : e}`;
+  }
+}
+
+async function fire(answers: { preguntaId: number; valorNum?: number | null }[] | null): Promise<string> {
   const db = getDb();
-  const kind = db.prepare("SELECT tipus FROM pregunta WHERE id = ?");
-  const low = answers.some((a) => {
-    if (a.valorNum == null) return false;
-    const row = kind.get(a.preguntaId) as { tipus: string } | undefined;
-    return !!row && isLow(row.tipus, a.valorNum);
-  });
-  if (!low) return;
+  if (answers) {
+    const kind = db.prepare("SELECT tipus FROM pregunta WHERE id = ?");
+    const low = answers.some((a) => {
+      if (a.valorNum == null) return false;
+      const row = kind.get(a.preguntaId) as { tipus: string } | undefined;
+      return !!row && isLow(row.tipus, a.valorNum);
+    });
+    if (!low) return "skipped: answer not low";
+  }
 
   const collective = process.env.DEMO_TRIPWIRE_COLLECTIVE || "Logística";
   const domain = process.env.DEMO_TRIPWIRE_DOMAIN || "Condicions i organització";
@@ -48,7 +66,7 @@ async function fire(answers: { preguntaId: number; valorNum?: number | null }[])
        ORDER BY a.periode DESC LIMIT 1`,
     )
     .get(collective, domain, MIN_GROUP_SIZE) as { c: number; d: number; periode: string; n: number; confidence: number | null } | undefined;
-  if (!seg) return; // no readable aggregate for the segment: nothing to show, so nothing to push
+  if (!seg) return `skipped: no aggregate with n >= ${MIN_GROUP_SIZE} for ${collective} / ${domain} (check DEMO_TRIPWIRE_COLLECTIVE/DOMAIN and the DB)`;
   lastFired = Date.now();
 
   const before = maxAlarmId();
@@ -59,5 +77,6 @@ async function fire(answers: { preguntaId: number; valorNum?: number | null }[])
      VALUES ('sharp_drop', ?, ?, NULL, ?, ?, ?, ?, 'critical', 'open', 'hr', 0)`,
   ).run(`${DEMO_PREFIX}alarma de demostració activada des del mòbil, sobre dades agregades de ${collective} (n=${seg.n}).`, seg.c, seg.d, seg.periode, seg.n, seg.confidence);
   invalidateHrMemo();
-  await notifyNewAlarms(before);
+  const push = await notifyNewAlarms(before);
+  return `alarm opened for ${collective} / ${domain}, push: ${JSON.stringify(push)}`;
 }
