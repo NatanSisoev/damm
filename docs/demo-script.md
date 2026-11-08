@@ -30,7 +30,7 @@ Checklist:
 1. `pnpm install`, copy `.env.example` to `.env`. The LLM key stays in `.env` only; never show it.
 2. Create the DB (fixture, see above), then `pnpm dev`. App at `http://localhost:3000`.
 3. Phone: it cannot reach `localhost`. Set `PUBLIC_BASE_URL` in `.env` to the laptop's LAN address (for example `http://192.168.1.20:3000`) or a tunnel URL, then restart. Join links and QR use this base. Phone and laptop on the same Wi-Fi. Push notifications need public HTTPS (tunnel or quick deploy); they are not part of this script.
-4. Open `/hr` in one browser window and keep a second tab ready on `/hr/results`.
+4. Open `/hr` in one browser window and keep a second tab ready on `/hr/signals`.
 5. Dry run once end to end. Publishing and approving write to the DB; re-run the DB command to reset.
 
 ## Steps
@@ -100,7 +100,7 @@ The fixture DB has no join codes. For a live scan use the seed DB, or publish in
 | --- | --- |
 | Status | ✅ Works now with the fixture DB. 🔶 Needs Natan with the seed DB: the analysis job that writes the aggregates, themes and trends is not landed, so the pages are empty. |
 | Who | HR person |
-| URL | `http://localhost:3000/hr/results` |
+| URL | `http://localhost:3000/hr` |
 | Click | Read "Perfil per domini" (radar). Use "Compara amb" to overlay a second series. Scroll to "Representativitat" and the "Per torn" breakdown. Scroll to "Temes dels comentaris" and "Tendències per domini". |
 | Audience should notice | (a) Radar: fixed 1–5 scale, at most two series. A group under 10 people is a gap labelled "n<10", not a number. (b) Representativitat: respondents against the population ("Població"), with the "Diferència" column; gaps of 5 points or more are flagged. Night shift is the low-response group. (c) Suppressed items show "Suprimit" and the summary tile "Segments suprimits". (d) Comment themes: the "Emergent" badge on the October theme about shift communication and breaks. (e) "Cap resposta individual." appears where individual answers would be: there are none. |
 | Fallback | Page empty: you are on the seed DB. Rerun the fixture DB command and reload. If the DB is gone, show the screenshots from the backup folder. |

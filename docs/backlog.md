@@ -135,7 +135,7 @@ Findings from reading `hr-repository.ts` against the seeded fixtures:
 New read functions for 16 to 20 go in new files under `packages/db/src/` (for example `hr-signals.ts`, `hr-rigour.ts`) and are re-exported from `hr.ts`, so parallel branches do not collide in `hr-repository.ts`.
 
 ### 17. Statistical rigour: `jan/rigour` (light)
-- Files: `packages/db/src/hr-rigour.ts` (new), `packages/db/src/hr.ts` (re-export), `packages/db/src/hr-repository.ts` (call sites only), `apps/web/app/hr/results/**`, `apps/web/app/hr/trends/**` if it exists.
+- Files: `packages/db/src/hr-rigour.ts` (new), `packages/db/src/hr.ts` (re-export), `packages/db/src/hr-repository.ts` (call sites only), `apps/web/app/hr/**`, `apps/web/app/hr/trends/**` if it exists.
 - Complementary suppression on read: when a parent has exactly one suppressed child (or the suppressed children sum to under 10), also suppress the smallest visible sibling, and blank the n of suppressed cells. Applies to the page and the CSV export.
 - Precision: every mean shows its n; a precision label per n band (n < 30 "indicativa", 30 to 99 "moderada", 100 or more "sòlida"). A true confidence interval needs a per-segment standard deviation in `agregat` (see Natan table).
 - Change rule: a period-over-period change is only called "puja" or "baixa" when |Δ| ≥ 0.3 on the 1-5 scale and both periods have n ≥ 30; otherwise "sense canvi clar". One constant in `@damm/shared` once agreed, local constant until then.
