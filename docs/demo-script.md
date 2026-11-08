@@ -151,6 +151,28 @@ Say, with the repo open if there is a screen:
 - Tunnel or LAN setup for the phone (`jan/tunnel`, blocked at the time of writing).
 - Record the backup screen capture and take screenshots once everything is in.
 
-## Live trigger: phone answer to laptop alarm (staged)
+## Live trigger: phone answer to laptop alarm
 
-Set `DEMO_TRIPWIRE=1` (plus the VAPID keys, and HTTPS) on the server. On the laptop, open `/hr/settings` and turn on alarm push; the laptop must stay open or the browser running. On the phone, answer a scale question with a low value (1 or 2 of 5, up to 4 of 10, "no" on yes/no). Within a second or two the laptop gets a critical "Condicions i organització · Logística" push opening the signal. It is a **staged** demo alarm, not an engine result: its description starts with "Demo:", it uses the aggregate of a fixed segment (`DEMO_TRIPWIRE_COLLECTIVE` / `DEMO_TRIPWIRE_DOMAIN`, default Logística · Condicions i organització) only when that segment already has n >= 10, never reads or stores who answered, fires at most once every 20 s, and closes the previous demo alarm. Say so if asked. Leave the variable unset outside demos.
+**Plan A, a real engine alarm (`DEMO_LIVE_JOB=1`).** One answer from the phone makes the analysis job run and a genuine alarm appear on HR, with a push to the laptop. Nothing is staged: the alarm comes from the normal engine on real aggregates.
+
+What is primed. The demo DB plants one segment, **Comercial · Desenvolupament**, with a slow slide and no open alarm. A published need ("We want to know how much room people in Comercial have to grow in their role", question "How much room do you have to grow in your current role?", scale 1 to 5) is served first to any Comercial account, so a fresh phone sees it at once. Period scores of the segment (n about 105): Sep 5.54, Oct 5.53, Nov 5.38. The sustained-decline rule needs the last three periods strictly decreasing and Nov minus Sep of -0.2 or lower (score points). Before the answer Nov minus Sep is -0.16, so nothing fires. One answer moves the Nov score by about -0.04 (1/5), 0 (3/5) or +0.04 (5/5): 1/5 gives Nov 5.34, so Nov minus Sep is -0.20 and the engine opens a **warning** (n >= 10, audience hr_manager) that is pushed; 3/5 (5.38) and 5/5 (5.42) change nothing. Say it plainly: the last straw on a sliding trend, not one answer deciding a score. The numbers are exact for this seed and date; `packages/engine/demo/live-check.ts` re-checks them (below).
+
+Setup on the server (Railway service `web`, branch `jan/deploy`):
+
+```bash
+railway variables --set DEMO_LIVE_JOB=1 DEMO_RESET_ENABLED=1
+```
+
+Plus the VAPID keys and HTTPS (already needed for push). Both flags are off by default. Leave `DEMO_TRIPWIRE` unset for plan A.
+
+Before going on stage:
+
+1. Right after a reseed (clean DB, snapshot written by `scripts/railway-start.sh`), laptop on `/hr/settings`: turn on alarm push and confirm with the test push. The laptop must stay open.
+2. Phone: open the Comercial join link (`/join/DEMO-COM`, or the QR on `/hr/publish`), create an account (demo accounts have no password, so the presenter makes a fresh one: pick any username and password, save the recovery code), allow notifications if asked. The first question of the day is the live one.
+3. Rehearse once: answer 1/5, watch the alarm and push, then press "Restaura la demo" on `/hr/settings` (accounts and push subscriptions survive, the answer and alarm go). Repeat as needed.
+
+Live: answer **1** (or 2). The job starts 1.5 s after the answer, takes about 1.5 to 2.5 s, and HR gets the push, so the alarm shows on `/hr/signals` within about 4 to 6 s (refresh the list). The answer response itself never waits for the job. The alarm is an aggregate of the whole segment; nothing records which account answered beyond the normal `resposta` row. After the demo, reset.
+
+Check on the scratch DB without a server: `node --experimental-strip-types --experimental-sqlite --no-warnings packages/engine/demo/live-check.ts --db <copy of data/app.db>` runs a low, a neutral and a high answer on a copy and exits non-zero if the low one does not trip the segment or the others do. Run it after any change to the demo build.
+
+**Plan B, a staged alarm (`DEMO_TRIPWIRE=1`).** Use it if the live job or the data misbehave. Set `DEMO_TRIPWIRE=1` (plus the VAPID keys, and HTTPS) on the server. On the laptop, open `/hr/settings` and turn on alarm push. On the phone, answer a scale question with a low value (1 or 2 of 5, up to 4 of 10, "no" on yes/no). Within a second or two the laptop gets a critical "Condicions i organització · Logística" push opening the signal. It is a **staged** demo alarm, not an engine result: its description starts with "Demo:", it uses the aggregate of a fixed segment (`DEMO_TRIPWIRE_COLLECTIVE` / `DEMO_TRIPWIRE_DOMAIN`, default Logística · Condicions i organització) only when that segment already has n >= 10, never reads or stores who answered, fires at most once every 20 s, and closes the previous demo alarm. Say so if asked. Leave the variable unset outside demos.

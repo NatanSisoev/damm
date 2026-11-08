@@ -13,7 +13,7 @@ import { DatabaseSync } from "node:sqlite";
 import { readFileSync, rmSync } from "node:fs";
 import { resolve } from "node:path";
 import { parseArgs } from "node:util";
-import { buildDemo } from "../packages/engine/demo/build-demo.ts";
+import { buildDemo, LIVE_TRIGGER } from "../packages/engine/demo/build-demo.ts";
 import { COMMENTS as EN_COMMENTS, THEME_COMMENTS as EN_THEME_COMMENTS } from "../packages/engine/demo/comments.ts";
 import {
   ADOPTED_REC, CA_POOL, COLLECTIVE, CONTEXT_EVENT, DOMAIN, ES_POOL, Misses, NEED, SIGNAL_DESC, translateRecRationale, translateRecText,
@@ -166,6 +166,24 @@ try {
   for (const q of NEED.questions) {
     db.prepare("UPDATE pregunta SET text = ?, text_i18n = ? WHERE necessitat_id = 1 AND tipus = ?").run(q.text.ca, JSON.stringify(q.text), q.type);
   }
+
+  // 3b. The live-trigger need (Comercial, Desenvolupament): found by its English marker text, not by id.
+  const liveNeed = db.prepare("SELECT id FROM necessitat WHERE text_nl = ?").get(LIVE_TRIGGER.needText) as { id: number } | undefined;
+  if (liveNeed) {
+    const LIVE_NEED: Tri = {
+      ca: "Volem saber quin marge de creixement tenen a Comercial en el seu lloc de feina.",
+      es: "Queremos saber qué margen de crecimiento tienen en Comercial en su puesto de trabajo.",
+      en: LIVE_TRIGGER.needText,
+    };
+    const LIVE_Q: Tri = {
+      ca: "Quin marge tens per créixer en el teu lloc actual?",
+      es: "¿Qué margen tienes para crecer en tu puesto actual?",
+      en: LIVE_TRIGGER.questionText,
+    };
+    db.prepare("UPDATE necessitat SET text_nl = ? WHERE id = ?").run(LIVE_NEED.ca, liveNeed.id);
+    putTri("necessitat", liveNeed.id, "text_nl", LIVE_NEED);
+    db.prepare("UPDATE pregunta SET text = ?, text_i18n = ? WHERE necessitat_id = ?").run(LIVE_Q.ca, JSON.stringify(LIVE_Q), liveNeed.id);
+  } else misses.add("live-need", LIVE_TRIGGER.needText);
 
   // 4. Adopted recommendation, planted signal and context event: Catalan canonical, es/en in `traduccio`.
   const adopted = db.prepare("SELECT id FROM recomanacio WHERE aprovada_el IS NOT NULL AND senyal_id IS NOT NULL ORDER BY id LIMIT 1").get() as { id: number } | undefined;

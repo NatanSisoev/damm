@@ -67,6 +67,14 @@ The snapshot is written by `scripts/railway-start.sh` right after the demo DB is
 railway variables --set DEMO_RESET_ENABLED=1
 ```
 
+## Live phone trigger (N-19)
+
+`DEMO_LIVE_JOB=1` runs the engine job in the background after each stored answer (debounce `DEMO_LIVE_JOB_DEBOUNCE_MS`, default 1500) and pushes HR for new warning or critical alarms. Set it with `DEMO_RESET_ENABLED=1` only for the demo; steps and the math are in `docs/demo-script.md`. It needs the demo DB built by this branch (the primed Comercial segment and its published need). Watch it with `railway logs`: lines start with `[demo-live-job]`.
+
+```bash
+railway variables --set DEMO_LIVE_JOB=1
+```
+
 ## Health check
 
 ```bash
