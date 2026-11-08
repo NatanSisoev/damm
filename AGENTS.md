@@ -183,6 +183,7 @@ Read these before planning work. Both people's agents keep them current.
 - `docs/teams-integration.md`: what the Teams publish card does today and the Graph/bot/Entra roadmap (R-FLOW-4d, N-1).
 - `docs/frontend-audit.md`: employee, HR and manager frontend audit (2026-11-07) with P0/P1/P2 findings and owners.
 - `docs/hr-ui-audit.md`: HR portal and manager view audit (2026-11-07), one table per screen with severity, fix and status.
+- `docs/style-guide.md`: the "Give a Damm" style guide (logo usage, colour tokens, type scale, components, voice, motion, accessibility) with a table of what differs from the current code; logo, title and icon files in `docs/brand/`. Read it before restyling any screen.
 - `docs/visual-identity.md`: the chosen visual identity ("Paper": ink on paper, Hanken only, 2px corners, red as signal) for employee, HR and manager, with the code changes needed to apply it.
 - `docs/e2e-test-plan.md`: manual end-to-end runbook for the full loop (setup, main scenario, edge-case scenarios, results log); run it after merging `jan/dev` with `main`.
 - `docs/user-flows.md`: expected user flow paths per persona (employee, HR, manager, anonymity, jobs) with exact UI copy, branches, invariants and expected gaps; ends with a requirement-to-flow matrix and a flow-to-e2e-case map. Source for reworking the e2e plan.
