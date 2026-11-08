@@ -700,6 +700,50 @@ export interface RepRow {
   gap: number | null; // respShare - popShare
 }
 
+export interface ChannelCell { canal: "app" | "mobil_qr"; n: number | null; share: number | null }
+export interface ChannelRow {
+  collectiu: string;
+  total: number | null; // null when suppressed
+  suprimit: boolean;
+  cells: ChannelCell[]; // n null = under the minimum group size ("<10")
+}
+export interface ChannelParticipation { periode: string | null; rows: ChannelRow[] }
+
+/**
+ * Answers per channel (app, QR on a phone) per collective in the reading period, from the analytics view (no account ids).
+ * A cell under the minimum group size is hidden. While any non-empty cell is hidden the total and shares are hidden too,
+ * or the hidden count could be subtracted back out.
+ */
+export function getChannelParticipation(): ChannelParticipation {
+  const db = getDb();
+  const periode = readingPeriod(db);
+  if (!periode) return { periode: null, rows: [] };
+  const counts = db
+    .prepare("SELECT collectiu_id AS c, canal, COUNT(*) AS n FROM v_resposta_analitica WHERE periode = ? GROUP BY collectiu_id, canal")
+    .all(periode) as { c: number; canal: "app" | "mobil_qr"; n: number }[];
+  const channels = ["app", "mobil_qr"] as const;
+  const rows = listCollectius().map((col): ChannelRow => {
+    const n = (canal: string) => counts.find((x) => x.c === col.id && x.canal === canal)?.n ?? 0;
+    const raw = channels.map((canal) => ({ canal, n: n(canal) }));
+    const total = raw.reduce((s, x) => s + x.n, 0);
+    const hiddenAny = raw.some((x) => x.n > 0 && x.n < MIN_GROUP_SIZE);
+    if (total < MIN_GROUP_SIZE) {
+      return { collectiu: col.nom, total: null, suprimit: true, cells: raw.map((x) => ({ canal: x.canal, n: null, share: null })) };
+    }
+    return {
+      collectiu: col.nom,
+      total: hiddenAny ? null : total,
+      suprimit: false,
+      cells: raw.map((x) => ({
+        canal: x.canal,
+        n: x.n > 0 && x.n < MIN_GROUP_SIZE ? null : x.n,
+        share: hiddenAny || x.n < MIN_GROUP_SIZE && x.n > 0 ? null : x.n / total,
+      })),
+    };
+  });
+  return { periode, rows };
+}
+
 export interface Representativeness {
   periode: string | null;
   collectius: RepRow[];
