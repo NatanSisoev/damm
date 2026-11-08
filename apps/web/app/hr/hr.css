@@ -233,3 +233,11 @@
 .alarm-split-items { position: absolute; right: 0; top: calc(100% + 4px); z-index: 20; min-width: 10rem; border: 1px solid var(--line); background: var(--surface); border-radius: 2px; padding: 4px 0; box-shadow: 0 4px 12px rgb(0 0 0 / 0.08); }
 .alarm-split-items button { display: block; width: 100%; text-align: left; padding: 6px 12px; font-size: 13px; color: var(--text); }
 .alarm-split-items button:hover, .alarm-split-items button:focus-visible { background: var(--surface-muted); outline: none; }
+
+/* Testing toggle: HR (full portal) vs manager (dashboard only, no action controls) */
+.hr-role-toggle { display: flex; gap: 2px; margin-top: 8px; padding: 2px; border: 1px solid var(--border); }
+.hr-role-toggle[data-compact="true"] { flex-direction: column; }
+.hr-role-toggle button { flex: 1; min-height: 32px; padding: 0 8px; font-size: 12px; font-weight: 600; color: var(--text-muted); }
+.hr-role-toggle button[aria-pressed="true"] { color: var(--text); background: var(--accent-soft); }
+.hr-shell[data-role="manager"] main form,
+.hr-shell[data-role="manager"] main .hr-act { display: none; }

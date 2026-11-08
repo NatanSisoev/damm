@@ -94,7 +94,7 @@ export async function NarrativeCard({ narrative, title, fold }: { narrative: Nar
                           <button className="btn btn-primary" type="submit">{t("an_follow")}</button>
                         </form>
                       ) : (
-                        <Link href="/hr/needs" className="btn">{t("an_follow")}</Link>
+                        <Link href="/hr/needs" className="btn hr-act">{t("an_follow")}</Link>
                       )}
                       {a.alarmId !== null && <ReviewedButton alarmId={a.alarmId} />}
                     </div>
@@ -389,7 +389,7 @@ export async function ReachCard({ gaps, fold }: { gaps: ReachGap[]; fold?: boole
             <li key={g.key} className="py-3">
               <p className="text-[14px]">{text}</p>
               <p className="mt-1 text-[13px] text-muted">{t(g.kind === "torn" ? "an_reach_act_shift" : "an_reach_act_col", { label })}</p>
-              <Link href="/hr/needs?nova=1#nova" className="btn mt-2 inline-flex" aria-label={t("an_reach_aria", { text })}>{t("an_follow")}</Link>
+              <Link href="/hr/needs?nova=1#nova" className="btn hr-act mt-2 inline-flex" aria-label={t("an_reach_aria", { text })}>{t("an_follow")}</Link>
             </li>
             );
           })}
