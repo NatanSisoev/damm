@@ -42,7 +42,7 @@ export default async function JoinPage({ params }: { params: Promise<{ codi: str
                 {t("privacy_note", { min: MIN_GROUP_SIZE })}
               </PrivacyNote>
               <p className="pb-8 text-center text-sm">
-                <Link href="/privacitat" className="underline">
+                <Link href="/privacitat" className="inline-flex min-h-11 items-center underline">
                   {t("privacy_link")}
                 </Link>
               </p>
