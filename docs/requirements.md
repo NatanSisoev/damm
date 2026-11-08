@@ -124,7 +124,7 @@ The guide says "Publicar a Typeform". AGENTS.md decides to ignore Typeform: the 
 |----|-------------|--------|----------------|
 | R-FLOW-7a | Participation | done | HR home KPI, results |
 | R-FLOW-7b | Representativeness | done | Against the 1,200 population. HR-X-1 fallback when the job writes no company-level rows (C11, Natan's emission still open). |
-| R-FLOW-7c | Main themes | done | Results / signals |
+| R-FLOW-7c | Main themes | done | Results / signals. Comment browser `/hr/comments` (HR only): themes table with comment counts per period, collective and domain (cells under 10 hidden, themes under 10 counted but not named), plus a filtered search over redacted comments (a filter combination under 10 returns nothing). Reads only `tema`, `comentari_tema` and `v_resposta_analitica`. |
 | R-FLOW-7d | Evolution | done | Trends |
 | R-FLOW-7e | **Alerts** | done | Signals on the home page and the signal list. HR UI audit (c1c7422): signal detail timeline steps link to recommendations and follow-up, back link goes to the alarm list. |
 | R-FLOW-7f | **Sample size** on every figure | done | n plus a precision band (task 17). HR UI audit (c1c7422): headline strip flags the smaller n; empty theme and narrative cards explain why and link to `/hr/methodology`. |

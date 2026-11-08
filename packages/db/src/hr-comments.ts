@@ -3,6 +3,7 @@
 import { MIN_GROUP_SIZE, type Lang } from "@damm/shared";
 import { getDb } from "./connection";
 import { readingPeriod } from "./hr-repository";
+import { overlayTranslations } from "./hr-i18n";
 
 export const COMMENTS_PAGE_SIZE = 25;
 const MAX_QUERY_CHARS = 80;
@@ -22,25 +23,9 @@ function suppressCells<T extends { n: number | null }>(cells: T[]): T[] {
   return out;
 }
 
-/**
- * Theme text in the UI language. Single seam for translations: it reads `traduccio` (entitat 'tema', camps etiqueta and resum)
- * and falls back to the Catalan source when the table or a row is missing. After merging jan/demo-db, replace the body with
- * `overlayTranslations(db, "tema", rows, { etiqueta: "etiqueta", resum: "resum" }, lang)` from ./hr-i18n (same semantics).
- */
+/** Theme text in the UI language, through the shared `traduccio` overlay (falls back to Catalan). */
 function overlayThemeText<T extends { id: number; etiqueta: string; resum: string | null }>(db: ReturnType<typeof getDb>, rows: T[], lang?: Lang): T[] {
-  if (!lang || lang === "ca" || rows.length === 0) return rows;
-  let found: { entitat_id: number; camp: string; text: string }[];
-  try {
-    found = db.prepare("SELECT entitat_id, camp, text FROM traduccio WHERE entitat = 'tema' AND lang = ?").all(lang) as typeof found;
-  } catch {
-    return rows; // table not there yet
-  }
-  const by = new Map(found.map((f) => [`${f.entitat_id}:${f.camp}`, f.text]));
-  for (const r of rows) {
-    r.etiqueta = by.get(`${r.id}:etiqueta`) ?? r.etiqueta;
-    if (r.resum != null) r.resum = by.get(`${r.id}:resum`) ?? r.resum;
-  }
-  return rows;
+  return overlayTranslations(db, "tema", rows, { etiqueta: "etiqueta", resum: "resum" }, lang);
 }
 
 export interface ThemeCount { label: string; n: number | null }

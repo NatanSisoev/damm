@@ -396,7 +396,7 @@ Additive, no schema or `@damm/shared` change. New HR repository API in `@damm/db
 
 Action items:
 - [x] Jan: page, nav entry, dictionaries. (done 2026-11-08)
-- [ ] Jan: after merging `jan/demo-db`, swap the `overlayThemeText` body as above.
+- [x] Jan: after merging `jan/demo-db`, swap the `overlayThemeText` body as above. (done 2026-11-08, merge e50c0b1 and the commit that follows it)
 
 ## 2026-11-08: Demo DB build, `traduccio` overlay for generated text (N-6, R-FLOW-5) (Jan)
 
