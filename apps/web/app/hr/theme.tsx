@@ -65,6 +65,10 @@ export async function HrShell({ children, subtitle, manager = false, badges }: {
         }
       />
       <div className="hr-content flex min-w-0 flex-col">
+        {/* Desktop: language chooser top right (below 1024px it sits in the top bar) */}
+        <div className="hr-lang-top hidden justify-end px-4 pt-4 md:px-8 lg:flex">
+          <LangSwitcher />
+        </div>
         <main className="min-w-0 flex-1 px-4 py-6 md:px-8 md:py-8">
           <div className="mx-auto max-w-6xl">{children}</div>
         </main>

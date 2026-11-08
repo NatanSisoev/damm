@@ -3,8 +3,8 @@
 import { useT } from "@/lib/i18n/client";
 import { employeeDict } from "@/lib/i18n/employee";
 
-// scale5 (1..5) and scale10 (0..10): large tap targets, extremes labelled.
-// scale10 has 11 values, so it wraps into two rows of 6 to keep 44px+ targets on a 375px phone.
+// scale5 (1..5) and scale10 (1..10): large tap targets, extremes labelled.
+// scale10 wraps into two rows of 5 to keep 44px+ targets on a 375px phone.
 export function ScaleInput({
   min = 1,
   max,
@@ -22,7 +22,6 @@ export function ScaleInput({
 }) {
   const t = useT(employeeDict);
   const values = Array.from({ length: max - min + 1 }, (_, i) => i + min);
-  const cols = max === 10 ? "grid-cols-6" : "grid-cols-5";
   // Accessible name per tile: "3 de 5, Neutral"; the two ends carry the question's own anchors.
   const nameFor = (v: number) => {
     const base = t("scale_of", { v, max });
@@ -33,7 +32,7 @@ export function ScaleInput({
   };
   return (
     <div>
-      <div role="radiogroup" aria-label={t("scale_rating")} className={`tiles grid ${cols}`}>
+      <div role="radiogroup" aria-label={t("scale_rating")} className="tiles grid grid-cols-5">
         {values.map((v) => {
           const on = value === v;
           return (

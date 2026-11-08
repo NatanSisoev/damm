@@ -1,10 +1,9 @@
 import Link from "next/link";
-import { Comments, People, PeopleRange } from "../../glyphs";
+import { Comments, People } from "../../glyphs";
 import type { ReactNode } from "react";
 import { notFound } from "next/navigation";
 import { MIN_GROUP_SIZE } from "@damm/shared";
 import { getRecommendationDetail } from "@damm/db/hr";
-import { hrInsights } from "@/lib/hr-engine";
 import { signalDetail, signalHeadline } from "@/lib/signal-text";
 import { Card, Empty, PageHeader } from "../../ui";
 import { recommendationStatus } from "../../labels";
@@ -12,7 +11,6 @@ import { SignalBadges } from "../../signal-labels";
 import { TrendChart } from "../../trend-chart";
 import { approveFromDetailAction, discardFromDetailAction, followUpFromDetailAction } from "../actions";
 
-const f1 = (v: number) => v.toLocaleString("ca-ES", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 const day = (s: string) => s.slice(0, 10);
 
 function Fact({ label, children }: { label: string; children: ReactNode }) {
@@ -31,14 +29,6 @@ export default async function RecommendationPage({ params }: { params: Promise<{
   const { recommendation: r, signal: sd, siblings, followUp } = detail;
   const status = recommendationStatus(r.estat);
   const signal = sd?.signal ?? null;
-
-  // "Since" comparisons for this segment, once the recommendation is adopted. Correlation, never proof.
-  const sameSegment = (c: number | null, t: number | null, d: number | null) =>
-    !!signal && (c === null || c === signal.collectiuId) && (t === null || signal.tornId === null || t === signal.tornId) && (d === null || d === signal.dominiId);
-  const effects = r.estat === "aprovada" && signal
-    ? hrInsights({ role: "hr" }, { periode: "all", kind: "action_effect", collectiuId: signal.collectiuId ?? undefined })
-        .filter((i): i is Extract<typeof i, { kind: "action_effect" }> => i.kind === "action_effect" && !i.suppressed && !!i.detail && sameSegment(i.collectiuId, i.tornId, i.domainId))
-    : [];
 
   const steps = [
     { label: "Proposada", detail: `${day(r.creat)}${r.font ? ` · ${r.font === "llm" ? "redactada per la IA" : "plantilla"}` : ""}`, done: true },
@@ -172,28 +162,6 @@ export default async function RecommendationPage({ params }: { params: Promise<{
               </>
             ) : (
               <Empty>Aquesta recomanació no té cap alarma visible associada.</Empty>
-            )}
-          </Card>
-
-          <Card title="Des de quan ha canviat?" meta="Context, no causa">
-            {r.estat !== "aprovada" ? (
-              <Empty>La comparació «des de» apareix quan la recomanació s&apos;aprova i hi ha prou respostes abans i després.</Empty>
-            ) : effects.length === 0 ? (
-              <Empty>Encara no hi ha prou respostes després del {r.aprovadaEl ? day(r.aprovadaEl) : "moment de l'aprovació"}.</Empty>
-            ) : (
-              <ul className="space-y-3">
-                {effects.map((i) => {
-                  const d = i.detail!;
-                  return (
-                    <li key={i.id} className="rounded-lg border border-line p-4">
-                      <div className="mb-1 text-xs font-medium text-subtle">Des de {d.since} · {d.anchor.label}</div>
-                      <p className="text-[13px]">{d.wording}</p>
-                      <p className="mt-1 text-xs text-subtle"><span className="num">{f1(d.before.score)} → {f1(d.after.score)}</span> · <PeopleRange from={d.before.n} to={d.after.n} /></p>
-                      <p className="mt-1 text-xs text-subtle">{d.limits}</p>
-                    </li>
-                  );
-                })}
-              </ul>
             )}
           </Card>
 

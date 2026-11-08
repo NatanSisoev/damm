@@ -104,17 +104,22 @@
   }
 }
 
-/* Alarms: compact status menu */
-.alarm-status { position: relative; }
-.alarm-status > summary { list-style: none; cursor: pointer; }
-.alarm-status > summary::-webkit-details-marker { display: none; }
-.alarm-status-menu {
-  position: absolute; z-index: 10; left: 0; top: calc(100% + 4px); min-width: 9rem;
-  display: flex; flex-direction: column;
-  background: var(--surface); border: 1px solid var(--border-strong);
+/* Alarms: one-click status icons (dismiss, resolve) */
+.alarm-icon-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px; border-radius: 2px;
+  color: var(--text-subtle, currentColor); opacity: .7; cursor: pointer;
+  transition: opacity 120ms, background-color 120ms;
 }
-.alarm-status-menu button { width: 100%; text-align: left; padding: 8px 12px; font-size: 13px; }
-.alarm-status-menu button:hover { background: var(--surface-muted); }
+.alarm-icon-btn:hover { opacity: 1; background: var(--surface-muted); }
+.alarm-icon-btn:focus-visible { opacity: 1; outline: 2px solid currentColor; outline-offset: 1px; }
+
+/* Alarms: foldable group per collective */
+.alarm-group > summary { list-style: none; align-items: center; padding-top: 12px; padding-bottom: 12px; height: auto; }
+.alarm-group > summary::-webkit-details-marker { display: none; }
+.alarm-group-chev { transition: transform 120ms; }
+.alarm-group[open] .alarm-group-chev { transform: rotate(90deg); }
+.alarm-group:not([open]) > summary { border-bottom: 0; }
 
 /* Heatmap (collectives x domains) */
 .hr-heat-grid { table-layout: fixed; min-width: 34rem; }

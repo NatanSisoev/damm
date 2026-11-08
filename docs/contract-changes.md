@@ -366,3 +366,14 @@ Additive and backward compatible.
 Action items:
 - [ ] Natan: if the engine or an analysis job writes `recomanacio` rows or approves them, set `aprovada_per` too (never an email or an account id), and keep it out of anything shipped to the employee side.
 - [x] Jan: HR approve forms, recommendation card, signal page, gate. (done 2026-11-08)
+
+## 2026-11-08: scale10 answers are 1..10, no 0 (Jan)
+
+The employee app now shows scale10 questions as 1 to 10 (two rows of 5). It never sends 0 again. Seeded and older answers may still hold 0, so readers must keep accepting it.
+
+- `@damm/shared` `Resposta.valorNum` comment: scale10 is 1..10 (older rows may hold 0).
+- The engine still validates 0..10 and scores `v / 10`, so today the lowest answer (1) scores 0.1 instead of 0. Nothing breaks, the floor is just slightly off.
+
+Action items:
+- [x] Jan: answer UI, HR type label. (done 2026-11-08)
+- [ ] Natan: in `packages/engine` set `SCALES.scale10` to `{ min: 1, max: 10 }` and score scale10 as `(v - 1) / 9` in `normalize.ts` (keep accepting 0 for old rows, clamped to 0), and generate 1..10 in the demo/sim answers.
