@@ -1,7 +1,7 @@
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/brand/svg/title-oneline-dark.svg">
-    <img src="docs/brand/svg/title-oneline-light.svg" alt="Give a Damm" width="640">
+    <img src="docs/brand/svg/title-oneline-light.svg" alt="Give a Damm" width="860">
   </picture>
 </p>
 
