@@ -198,11 +198,7 @@ export default async function HrDashboard({ searchParams }: { searchParams: Prom
             label={t("kpi_apd")}
             value={apd.total === null ? "—" : numD(apd.total, lang, 0)}
           />
-          <div className="card h-full px-5 py-4">
-            <div className="text-xs font-medium text-subtle">{t("kpi_part")}</div>
-            <div className="num mt-1 text-2xl font-semibold tracking-tight">{pct === null ? "—" : `${pct}%`}</div>
-            <div className="hr-meter mt-2"><span style={{ width: `${pct ?? 0}%` }} /></div>
-          </div>
+          <Stat label={t("kpi_part")} value={pct === null ? "—" : `${pct}%`} />
           <Link href={col ? `/hr/signals?collectiu=${col.id}` : "/hr/signals"} className="block h-full">
             <Stat label={t("kpi_alarms")} value={openAlarms} />
           </Link>
