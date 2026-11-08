@@ -56,12 +56,21 @@ function ago(t: T, today: string, d: string | null): string {
   return t("days_ago", { n });
 }
 
-function groupOf(q: PoolQuestion, by: GroupKey, t: T, lang: Lang): string {
+/** Facets are stored as snake_case keys; show them as words. */
+const facetName = (f: string) => {
+  const s = f.replace(/_/g, " ");
+  return s.charAt(0).toUpperCase() + s.slice(1);
+};
+
+function groupOf(q: PoolQuestion, by: GroupKey, t: T, lang: Lang, inDomain = false): string {
   const dom = domainLabel(q.domain, lang);
   switch (by) {
     case "domain": return dom;
     case "type": return questionTypeLabel(q.type, lang);
-    case "facet": return q.facet ? `${dom} · ${q.facet}` : `${dom} · ${t("no_facet")}`;
+    case "facet": {
+      const facet = q.facet ? facetName(q.facet) : t("no_facet");
+      return inDomain ? facet : `${dom} · ${facet}`;
+    }
     case "collective": return collectiveLabel(q.collective, lang);
     case "need": return q.needId === null ? t("continuous") : t("need_n_title", { n: q.needId, title: q.needTitle ?? "" });
     case "state": return t(STATE[q.state].key);
@@ -103,8 +112,12 @@ export default async function PoolPage({ searchParams }: { searchParams: Promise
   const dir = p.dir === "desc" || (p.dir !== "asc" && sort !== "id") ? "desc" : "asc";
   const needle = (p.q ?? "").trim().toLowerCase();
 
-  const domains = [...new Map(pool.questions.map((q) => [q.domainId, q.domain])).entries()];
+  const domains = [...new Map(pool.questions.map((q) => [q.domainId, q.domain])).entries()].sort((a, b) => a[0] - b[0]);
   const collectives = [...new Set(pool.questions.map((q) => q.collective))];
+  const domain = domains.find(([id]) => String(id) === p.domini);
+
+  // Landing: pick a domain first. Any search, filter or explicit grouping skips straight to the list.
+  const overview = !p.domini && !p.q && !p.estat && !p.tipus && !p.col && !p.origen && !p.group && !p.sort;
 
   let qs = pool.questions.filter((q) => {
     if (p.estat && q.state !== p.estat) return false;
@@ -122,7 +135,7 @@ export default async function PoolPage({ searchParams }: { searchParams: Promise
 
   const groups = new Map<string, PoolQuestion[]>();
   for (const q of qs) {
-    const k = groupOf(q, group, t, lang);
+    const k = groupOf(q, group, t, lang, Boolean(domain));
     (groups.get(k) ?? groups.set(k, []).get(k)!).push(q);
   }
   // Pagination follows the displayed order (groups first), so a group can span pages; its header totals cover the whole group.
@@ -136,19 +149,26 @@ export default async function PoolPage({ searchParams }: { searchParams: Promise
 
   return (
     <div className="mx-auto max-w-[88rem]">
-      <PageHeader
-        title={t("title")}
-        subtitle={t("subtitle")}
-      />
+      {domain ? (
+        <PageHeader
+          title={domainLabel(domain[1], lang)}
+          subtitle={t("dom_sub")}
+          actions={<Link href={href(p, { domini: undefined, page: undefined })} className="btn">← {t("dom_all")}</Link>}
+        />
+      ) : (
+        <PageHeader title={t("title")} subtitle={t("subtitle")} />
+      )}
 
-      <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
+      {!domain && <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
         <Stat label={t("stat_questions")} value={num(s.counts.total)} hint={t("stat_questions_hint", { live: s.counts.live, waiting: s.counts.waiting, inactive: s.counts.inactive })} />
         <Stat label={t("stat_asked")} value={num(s.asked)} hint={t("stat_last7", { n: num(s.asked7d) })} />
         <Stat label={t("stat_responses")} value={num(s.responses)} hint={t("stat_last7", { n: num(s.responses7d) })} />
         <Stat label={t("stat_rate")} value={pct(s.answerRate)} hint={t("stat_rate_hint")} />
         <Stat label={t("stat_batch")} value={t("stat_batch_value", { n: s.questionsPerDay })} hint={t("stat_batch_hint", { n: s.itemCooldownDays })} />
         <Stat label={t("stat_accounts")} value={num(s.accounts)} hint={t("stat_accounts_hint", { day: s.today, tz: s.timezone })} />
-      </div>
+      </div>}
+
+      {overview && <DomainGrid questions={pool.questions} t={t} lang={lang} num={num} />}
 
       <form method="get" action="/hr/pool" className="card mb-4">
         {p.per && <input type="hidden" name="per" value={p.per} />}
@@ -172,6 +192,7 @@ export default async function PoolPage({ searchParams }: { searchParams: Promise
         </div>
       </form>
 
+      {!overview && <>
       <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
       <p className="text-xs text-subtle" aria-live="polite">
         {filtered ? t("count_filtered", { n: qs.length, total: pool.questions.length }) : t("count_all", { n: qs.length })}
@@ -237,7 +258,46 @@ export default async function PoolPage({ searchParams }: { searchParams: Promise
           </div>
         </nav>
       )}
+      </>}
     </div>
+  );
+}
+
+/** Domain-first landing: one card per domain with its size and facets; a click opens the domain grouped by facet. */
+function DomainGrid({ questions, t, lang, num }: { questions: PoolQuestion[]; t: T; lang: Lang; num: (x: number) => string }) {
+  const byDomain = new Map<number, PoolQuestion[]>();
+  for (const q of questions) (byDomain.get(q.domainId) ?? byDomain.set(q.domainId, []).get(q.domainId)!).push(q);
+  const SHOW = 5;
+  return (
+    <section aria-label={t("f_domain")} className="mb-6">
+      <p className="mb-3 text-sm text-subtle">{t("dom_pick")}</p>
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+        {[...byDomain.entries()].sort((a, b) => a[0] - b[0]).map(([id, list]) => {
+          const facets = new Map<string, number>();
+          for (const q of list) if (q.facet) facets.set(q.facet, (facets.get(q.facet) ?? 0) + 1);
+          const top = [...facets.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+          const responses = list.reduce((sum, q) => sum + q.responses, 0);
+          const live = list.filter((q) => q.state === "live").length;
+          return (
+            <Link key={id} href={`/hr/pool?domini=${id}`} className="card pool-domain block p-4">
+              <span className="flex items-baseline justify-between gap-3">
+                <span className="text-[15px] font-semibold">{domainLabel(list[0].domain, lang)}</span>
+                <span aria-hidden="true" className="text-subtle">→</span>
+              </span>
+              <span className="mt-1 block text-xs text-subtle num">
+                {t("dom_meta", { n: num(list.length), f: num(facets.size) })} · {t("dom_live", { n: num(live) })} · {t("dom_responses", { n: num(responses) })}
+              </span>
+              <span className="mt-3 flex flex-wrap gap-1.5">
+                {top.slice(0, SHOW).map(([name, n]) => (
+                  <span key={name} className="badge">{facetName(name)} <span className="num text-subtle">{n}</span></span>
+                ))}
+                {top.length > SHOW && <span className="badge">{t("dom_more", { n: top.length - SHOW })}</span>}
+              </span>
+            </Link>
+          );
+        })}
+      </div>
+    </section>
   );
 }
 
