@@ -123,7 +123,7 @@ export async function Radar({ axes, series, legend = true }: { axes: string[]; s
       </div>
       )}
       <svg
-        viewBox={`-80 25 ${SIZE + 160} ${SIZE - 30}`}
+        viewBox={`-80 25 ${SIZE + 160} ${SIZE + 10}`}
         className="mx-auto w-full max-w-[48rem] text-muted"
         role="img"
         aria-label={t("rd_aria", { lo: fmt(sc.lo), hi: fmt(sc.hi), series: series.map((s) => s.label).join(t("rd_and")) })}
