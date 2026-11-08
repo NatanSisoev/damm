@@ -30,6 +30,17 @@ HR browsers can subscribe to web push on `/hr/settings`. When the analysis job (
 Action items:
 - [x] Jan: schema, migration, repository, sender, job trigger, settings toggle, copy. (done 2026-11-08)
 
+## 2026-11-08: HR alarm push wording and deep link (Jan)
+
+Follows the entry above. Only the notification text and the `@damm/db/hr` read changed; no table change.
+
+- `listNewAlarms(afterId)` now takes no language and returns structured fields only (`id`, `tipus`, `severity`, `domini`, `collectiu`, `torn`), not the engine text. Alarms with `senyal.n` under the minimum group size are never listed.
+- One alarm: title "Severity: Domain · Segment" in the browser's saved language, body is the alarm type, and the click opens `/hr/signals/<id>`. Several alarms: a count title, the most severe named in the body, click opens `/hr/signals`. No figures or counts in any payload.
+- Dedupe by alarm id: the job route takes `maxAlarmId()` before the run and notifies only alarms above it, so a rerun that finds the same alarms sends nothing. Alarms created by the dashboard "Actualitza" button are not pushed.
+
+Action items:
+- [x] Jan: sender, repository read, copy. (done 2026-11-08)
+
 ## 2026-11-08: query question count and delivery mode (Jan)
 
 The HR "New query" form no longer asks for a time budget. It asks for the **number of questions per person** (2 to 6, default 3) and a **delivery mode**: `daily` (the query's questions join the normal daily set, as before) or `campaign` (a one-off extra set: everyone in the target collective gets a push on publish and answers ALL the query's questions on top of the 3 daily ones).

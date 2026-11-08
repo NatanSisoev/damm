@@ -126,7 +126,7 @@ The guide says "Publicar a Typeform". AGENTS.md decides to ignore Typeform: the 
 | R-FLOW-7b | Representativeness | done | Against the 1,200 population. HR-X-1 fallback when the job writes no company-level rows (C11, Natan's emission still open). |
 | R-FLOW-7c | Main themes | done | Results / signals. Comment browser `/hr/comments` (HR only): themes table with comment counts per period, collective and domain (cells under 10 hidden, themes under 10 counted but not named), plus a filtered search over redacted comments (a filter combination under 10 returns nothing). Reads only `tema`, `comentari_tema` and `v_resposta_analitica`. |
 | R-FLOW-7d | Evolution | done | Trends |
-| R-FLOW-7e | **Alerts** | done | Signals on the home page and the signal list. HR UI audit (c1c7422): signal detail timeline steps link to recommendations and follow-up, back link goes to the alarm list. |
+| R-FLOW-7e | **Alerts** | done | HR web push for new alarms: opt-in toggle on `/hr/settings` (`hr_push_subscription`, separate from the employee table, never joined to analytics), sent only from `POST /api/jobs/run` for warning and critical alarms created in that run, title "severity: domain · segment", click opens `/hr/signals/<id>`, groups under 10 never notified, 404/410 subscriptions deleted. Signals on the home page and the signal list. HR UI audit (c1c7422): signal detail timeline steps link to recommendations and follow-up, back link goes to the alarm list. |
 | R-FLOW-7f | **Sample size** on every figure | done | n plus a precision band (task 17). HR UI audit (c1c7422): headline strip flags the smaller n; empty theme and narrative cards explain why and link to `/hr/methodology`. |
 
 ### R-FLOW-8 Recommend and close the loop
@@ -304,7 +304,7 @@ Bonus items named by the guide (G-§4 "Bonus") and the deck (D-S18), then our ow
 | N-9 | Methodology page "Com calculem" | ours | Explainability, scenario C6 | done | `apps/web/app/hr/methodology/page.tsx`, linked from results and the HR nav (ca/es/en) |
 | N-10 | Question-quality checker | ours | Wording bias, R-BIAS-4 | done | Per-question warnings in the draft review, see R-FLOW-3e |
 | N-11 | Decision audit log and AI provenance | ours | Traceability, R-PRIV-10 | blocked | Task 21 |
-| N-12 | Installable PWA plus daily push reminder | ours | Reminders R-FLOW-5d, participation | partial | Installable: manifest, icons (Paper identity, ink `#17211a`), offline page, service worker with push and notification click. Subscribe and send on publish built; a daily reminder and the tunnel (9) are open. |
+| N-12 | Installable PWA plus daily push reminder | ours | Reminders R-FLOW-5d, participation | partial | HR side: alarm push on `/hr/settings` (R-FLOW-7e). Installable: manifest, icons (Paper identity, ink `#17211a`), offline page, service worker with push and notification click. Subscribe and send on publish built; a daily reminder and the tunnel (9) are open. |
 | N-13 | Participation by channel chart | G-§6.2 | Uses the `canal` field we already store | missing | Small: one aggregate by `canal` with suppression. |
 | N-14 | Initiative ↔ domain mapping | D-S3 | Turns results into "is our policy working?" | missing | R-DOM-5 |
 | N-15 | Retention and purge job | G-§8 | Closes R-PRIV-8 | done | See R-PRIV-8. |
