@@ -1277,3 +1277,47 @@ export function getWindowTrends(w: DateWindow, collectiuId: number | null = null
     .filter((s) => s.rows.some((r) => r.cells.some((c) => c.mitjana !== null || c.suprimit)));
   return { periodes: keys.map((k) => bucketLabel(w.bucket, k)), series };
 }
+
+// ---------- manager positivity bias (N-8, R-BIAS-5) ----------
+
+export interface ManagerGapRow {
+  domini: string;
+  /** Means on the 1-5 scale; null when that side is under the minimum group size (suppressed). */
+  managers: number | null;
+  others: number | null;
+  /** managers - others, in points; null when either side is suppressed. */
+  gap: number | null;
+}
+export interface ManagerGap {
+  /** Per domain, plus `total` over all domains. */
+  rows: ManagerGapRow[];
+  total: ManagerGapRow;
+}
+
+/**
+ * Manager vs non-manager mean per domain, from the analytics view (it carries the role flag, never an account id). A side is
+ * suppressed when its largest per-question ANSWER count in the cell is under the minimum group size (same convention as the trends);
+ * the gap is shown only when both sides are visible. Managers are not removed from any other result: this is the documented bias.
+ */
+export function getManagerGap(): ManagerGap {
+  const db = getDb();
+  const doms = db.prepare("SELECT id, nom FROM domini ORDER BY id").all() as { id: number; nom: string }[];
+  const rows = db
+    .prepare(
+      `SELECT v.domini_id AS d, v.es_manager AS m, v.pregunta_id AS q, COUNT(*) AS n, SUM(v.score) AS s
+       FROM v_resposta_analitica v WHERE v.score IS NOT NULL GROUP BY v.domini_id, v.es_manager, v.pregunta_id`,
+    )
+    .all() as { d: number; m: number; q: number; n: number; s: number }[];
+  type Acc = { n: number; s: number; maxQ: number };
+  const side = (pick: (r: { d: number; m: number }) => boolean, m: number): number | null => {
+    const a: Acc = { n: 0, s: 0, maxQ: 0 };
+    for (const r of rows) if (r.m === m && pick(r)) { a.n += r.n; a.s += r.s; a.maxQ = Math.max(a.maxQ, r.n); }
+    return a.maxQ >= MIN_GROUP_SIZE && a.n > 0 ? 1 + 4 * (a.s / a.n) : null;
+  };
+  const build = (domini: string, pick: (r: { d: number; m: number }) => boolean): ManagerGapRow => {
+    const managers = side(pick, 1);
+    const others = side(pick, 0);
+    return { domini, managers, others, gap: managers !== null && others !== null ? managers - others : null };
+  };
+  return { rows: doms.map((d) => build(d.nom, (r) => r.d === d.id)), total: build("", () => true) };
+}

@@ -8,6 +8,7 @@ import { Card, Empty } from "./ui";
 import { FoldList } from "./ui-server";
 import { RecommendationBody } from "./recommendation-card";
 import { approveRecommendationAction, discardRecommendationAction, followUpAction, setAlarmStatusAction } from "./actions";
+import type { ManagerGap } from "@damm/db/hr";
 import type { Headline, HeadlineWhere, Heatmap, HeatCell, NarrativeView, ReachGap, SegmentTrend, ThemesByDomain } from "./analytics";
 import { segHref } from "./analytics";
 import { getTL } from "@/lib/i18n/server";
@@ -408,6 +409,44 @@ export async function ReachCard({ gaps, fold }: { gaps: ReachGap[]; fold?: boole
           })}
         </ul>
       )}
+    </Card>
+  );
+}
+
+// ---------- manager positivity bias ----------
+
+export async function ManagerGapCard({ gap, fold }: { gap: ManagerGap; fold?: boolean }) {
+  const { t, lang } = await getTL(hrResultsDict);
+  const f = (x: number | null) => (x === null ? t("mg_hidden", { min: MIN_GROUP_SIZE }) : numD(x, lang, 2));
+  const tot = gap.total;
+  return (
+    <Card fold={fold} title={t("mg_title")} meta={<Link href="/hr/methodology" className="underline">{t("an_how")}</Link>}>
+      <p className="text-[13px] text-muted">{t("mg_lede")}</p>
+      <p className="mt-2 text-[14px]">
+        {tot.gap === null || tot.managers === null || tot.others === null
+          ? t("mg_head_none", { min: MIN_GROUP_SIZE })
+          : t("mg_head", { x: numD(tot.gap, lang, 2), a: numD(tot.managers, lang, 2), b: numD(tot.others, lang, 2) })}
+      </p>
+      <table className="mt-3 w-full text-[13px]">
+        <thead>
+          <tr className="text-left text-subtle">
+            <th className="py-1 font-medium">{t("mg_col_dom")}</th>
+            <th className="py-1 font-medium">{t("mg_col_mgr")}</th>
+            <th className="py-1 font-medium">{t("mg_col_oth")}</th>
+            <th className="py-1 font-medium">{t("mg_col_gap")}</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-line">
+          {gap.rows.map((r) => (
+            <tr key={r.domini}>
+              <td className="py-1.5">{domainLabel(r.domini, lang)}</td>
+              <td className="num py-1.5">{f(r.managers)}</td>
+              <td className="num py-1.5">{f(r.others)}</td>
+              <td className="num py-1.5">{r.gap === null ? "–" : `${r.gap > 0 ? "+" : ""}${numD(r.gap, lang, 2)}`}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </Card>
   );
 }
