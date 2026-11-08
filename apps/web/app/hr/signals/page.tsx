@@ -297,7 +297,7 @@ function AlarmItem({ t, lang, r, rec, drafted }: { t: HrResultsT; lang: Lang; r:
           </p>
         </div>
       </div>
-      <div className="mt-2 flex flex-wrap items-center gap-2">
+      <div className="mt-2 flex flex-wrap items-center justify-end gap-2">
         {rec && !rec.seguimentNecessitatId ? (
           <form action={proposeFollowUpAction}>
             <input type="hidden" name="rec" value={rec.id} />
@@ -314,7 +314,7 @@ function AlarmItem({ t, lang, r, rec, drafted }: { t: HrResultsT; lang: Lang; r:
             <GenerateButton />
           </form>
         )}
-        <div className="ml-auto flex items-center gap-2">
+        <div className="flex items-center gap-2">
           {r.status === "open" && (
             <form action={setAlarmStatusAction}>
               <input type="hidden" name="id" value={r.id} />
