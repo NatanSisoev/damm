@@ -263,6 +263,7 @@ const TIMEFRAME: Record<string, Tri> = {
   "Propers 30 dies": { ca: "", es: "Próximos 30 días", en: "Next 30 days" },
   "Propers 15 dies": { ca: "", es: "Próximos 15 días", en: "Next 15 days" },
   "Propers 2 mesos": { ca: "", es: "Próximos 2 meses", en: "Next 2 months" },
+  "Propers 3 mesos": { ca: "", es: "Próximos 3 meses", en: "Next 3 months" },
   "Pròxim trimestre": { ca: "", es: "Próximo trimestre", en: "Next quarter" },
   "Pròxims 3 mesos": { ca: "", es: "Próximos 3 meses", en: "Next 3 months" },
 };
