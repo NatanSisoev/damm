@@ -66,7 +66,7 @@ const median = (xs: number[]) => [...xs].sort((a, b) => a - b)[Math.floor(xs.len
 test("soak: 6 months of daily answers, scheduler running weekly on a fake clock", { timeout: 120_000 }, (t) => {
   mock.timers.enable({ apis: ["setInterval"] });
   t.after(() => mock.timers.reset());
-  const { db, rng, clock, engine, people } = setup(22, Date.UTC(2026, 7, 1, 8, 0));
+  const { db, rng, clock, engine, people } = setup(60, Date.UTC(2026, 7, 1, 8, 0));
   const errors: unknown[] = [];
   const runs: { at: number; ms: number; answers: number; report: JobReport; c: ReturnType<typeof counts> }[] = [];
   let answers = 0;

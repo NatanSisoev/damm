@@ -18,7 +18,7 @@ function agg(db: SqlDatabase, periode: string, c: number | null, t: number | nul
   }
   db.prepare(
     "INSERT INTO agregat (periode, collectiu_id, torn_id, domini_id, n, mitjana, score, confidence, consensus, suprimit) VALUES (?,?,?,?,?,?,?,?,?,0)",
-  ).run(periode, c, t, d, p.n ?? 20, 3, p.score, p.conf ?? 70, p.cons ?? 70);
+  ).run(periode, c, t, d, p.n ?? 40, 3, p.score, p.conf ?? 70, p.cons ?? 70);
 }
 
 /** Replaces the history of one segment × domain (all periods given, oldest first: Aug, Sep, Oct). */
@@ -53,13 +53,13 @@ test("sharp_drop opens a critical hr_manager alarm on a confident drop", () => {
   assert.equal(a[0]!.audience, "hr_manager");
   assert.equal(a[0]!.status, "open");
   assert.equal(a[0]!.periode, "2026-10");
-  assert.equal(a[0]!.n, 20);
+  assert.equal(a[0]!.n, 40);
   assert.equal(r.opened, alarms(db).length);
 });
 
-test("sharp_drop needs confidence >= 60", () => {
+test("sharp_drop needs a reliable estimate (confidence >= 30)", () => {
   const db = makeDb();
-  series(db, OFICINES, null, BENESTAR, [{ score: 7.5 }, { score: 6.0, conf: 50 }]);
+  series(db, OFICINES, null, BENESTAR, [{ score: 7.5 }, { score: 6.0, conf: 25 }]);
   runAlarms(db, { now: NOW });
   assert.equal(alarms(db, "sharp_drop").length, 0);
 });
@@ -94,7 +94,7 @@ test("hysteresis: stays open between the levels, resolves at the clear level", (
   const db = makeDb();
   series(db, OFICINES, null, BENESTAR, [{ score: 7.5 }, { score: 6.3 }]); // drop 1.2: trigger
   runAlarms(db, { now: NOW });
-  series(db, OFICINES, null, BENESTAR, [{ score: 7.5 }, { score: 6.8 }]); // drop 0.7: between 0.5 and 1.0
+  series(db, OFICINES, null, BENESTAR, [{ score: 7.5 }, { score: 6.9 }]); // drop 0.6: between the clear (0.4) and trigger (0.7) levels
   let r = runAlarms(db, { now: NOW + DAY_MS });
   assert.equal(r.resolved, 0);
   assert.equal(alarms(db, "sharp_drop")[0]!.status, "open");
@@ -132,7 +132,7 @@ test("alarms a human moved on are never auto-resolved or duplicated", () => {
 
 test("sustained_decline: three falling periods open a warning", () => {
   const db = makeDb();
-  series(db, OFICINES, null, BENESTAR, [{ score: 7.0 }, { score: 6.8 }, { score: 6.5 }]);
+  series(db, OFICINES, null, BENESTAR, [{ score: 7.4 }, { score: 6.9 }, { score: 6.4 }]);
   runAlarms(db, { now: NOW });
   const a = alarms(db, "sustained_decline");
   assert.equal(a.length, 1);
@@ -147,7 +147,7 @@ test("sustained_decline: three falling periods open a warning", () => {
 
 test("feble: small steady decline with rising confidence, info then warning if it persists", () => {
   const db = makeDb();
-  series(db, OFICINES, null, BENESTAR, [{ score: 7.0, conf: 50 }, { score: 6.85, conf: 60 }, { score: 6.65, conf: 70 }]);
+  series(db, OFICINES, null, BENESTAR, [{ score: 7.2, conf: 60, n: 60 }, { score: 6.9, conf: 70, n: 60 }, { score: 6.6, conf: 80, n: 60 }]);
   runAlarms(db, { now: NOW });
   let a = alarms(db, "feble");
   assert.equal(a.length, 1);
@@ -161,43 +161,45 @@ test("feble: small steady decline with rising confidence, info then warning if i
   assert.equal(a[0]!.severity, "warning");
   // Confidence not rising: no weak signal.
   const db2 = makeDb();
-  series(db2, OFICINES, null, BENESTAR, [{ score: 7.0, conf: 70 }, { score: 6.85, conf: 70 }, { score: 6.65, conf: 70 }]);
+  series(db2, OFICINES, null, BENESTAR, [{ score: 7.2, conf: 70, n: 60 }, { score: 6.9, conf: 70, n: 60 }, { score: 6.6, conf: 70, n: 60 }]);
   runAlarms(db2, { now: NOW });
   assert.equal(alarms(db2, "feble").length, 0);
 });
 
-test("polarisation: consensus fell >= 15 points", () => {
+test("polarisation: consensus fell >= 20 points to a split level, n >= 50", () => {
   const db = makeDb();
-  series(db, OFICINES, null, BENESTAR, [{ score: 7.0, cons: 80 }, { score: 7.0, cons: 62 }]);
+  series(db, OFICINES, null, BENESTAR, [{ score: 7.0, cons: 85, n: 60 }, { score: 7.0, cons: 58, n: 60 }]);
   runAlarms(db, { now: NOW });
   const a = alarms(db, "polarisation");
   assert.equal(a.length, 1);
   assert.equal(a[0]!.severity, "warning");
   assert.equal(a[0]!.audience, "hr");
-  series(db, OFICINES, null, BENESTAR, [{ score: 7.0, cons: 80 }, { score: 7.0, cons: 75 }]);
+  series(db, OFICINES, null, BENESTAR, [{ score: 7.0, cons: 80, n: 60 }, { score: 7.0, cons: 75, n: 60 }]);
   assert.equal(runAlarms(db, { now: NOW + DAY_MS }).resolved, 1);
 });
 
-test("low_confidence: below 40 for 14 days", () => {
+test("low_confidence: below 35 in two periods (or a full period of data)", () => {
   const db = makeDb();
-  series(db, OFICINES, null, BENESTAR, [{ score: 7.0, conf: 35 }, { score: 7.0, conf: 30 }]);
+  series(db, OFICINES, null, BENESTAR, [{ score: 7.0, conf: 30 }, { score: 7.0, conf: 30 }]);
   runAlarms(db, { now: NOW });
   const a = alarms(db, "low_confidence");
   assert.equal(a.length, 1);
   assert.equal(a[0]!.severity, "info");
   assert.equal(a[0]!.audience, "hr");
-  // Only the current period, only 5 days in: not yet.
+  // Only the current period: needs most of the month in.
   const db2 = makeDb();
   series(db2, OFICINES, null, BENESTAR, [{ score: 7.0, conf: 30 }]);
   runAlarms(db2, { now: Date.UTC(2026, 9, 6, 9) });
   assert.equal(alarms(db2, "low_confidence").length, 0);
   runAlarms(db2, { now: Date.UTC(2026, 9, 16, 9) });
+  assert.equal(alarms(db2, "low_confidence").length, 0);
+  runAlarms(db2, { now: Date.UTC(2026, 9, 29, 9) });
   assert.equal(alarms(db2, "low_confidence").length, 1);
-  // Hysteresis: 45 keeps it open, 50 clears it.
-  series(db2, OFICINES, null, BENESTAR, [{ score: 7.0, conf: 45 }]);
-  assert.equal(runAlarms(db2, { now: Date.UTC(2026, 9, 17, 9) }).resolved, 0);
+  // Hysteresis: 40 keeps it open, 50 clears it.
+  series(db2, OFICINES, null, BENESTAR, [{ score: 7.0, conf: 40 }]);
+  assert.equal(runAlarms(db2, { now: Date.UTC(2026, 9, 30, 9) }).resolved, 0);
   series(db2, OFICINES, null, BENESTAR, [{ score: 7.0, conf: 50 }]);
-  assert.equal(runAlarms(db2, { now: Date.UTC(2026, 9, 18, 9) }).resolved, 1);
+  assert.equal(runAlarms(db2, { now: Date.UTC(2026, 9, 31, 9) }).resolved, 1);
 });
 
 test("improvement: significant rise since an adopted recommendation or a recorded context event", () => {
@@ -298,4 +300,108 @@ test("suppression: nothing opens on n < 10, open alarms are hidden when their se
 test("no aggregates: nothing happens", () => {
   const db = makeDb();
   assert.deepEqual(runAlarms(db, { now: NOW }), { opened: 0, resolved: 0, suppressed: 0 });
+});
+
+// ---- Noise must not alarm; planted signals must. Pure evaluators, default thresholds. ----------------------------
+
+import {
+  ALARM_DEFAULTS as T,
+  evalChangepointCluster,
+  evalImprovement,
+  evalLowConfidence,
+  evalPolarisation,
+  evalSharpDrop,
+  evalSustainedDecline,
+  evalWeakSignal,
+  isBroad,
+  zOfDifference,
+} from "../src/alarms.ts";
+
+const P = (score: number, n = 60, confidence = 70, consensus = 70) => ({ score, n, confidence, consensus });
+
+test("noise: a small drop in a small group does not alarm", () => {
+  assert.equal(evalSharpDrop([P(7.2, 12), P(6.4, 12)], T).trigger, false, "n=12 is below the change gate");
+  assert.equal(evalSharpDrop([P(7.2, 29), P(6.0, 29)], T).trigger, false, "n=29 is just below the gate");
+});
+
+test("noise: a modest drop (0.5) with a decent n does not alarm", () => {
+  assert.equal(evalSharpDrop([P(7.0, 40), P(6.5, 40)], T).trigger, false);
+});
+
+test("noise: a drop that one or two people could cause is not broad", () => {
+  // 0.7 points in 40 people is 28 person-points; breadth needs >= 30. Two people moving 7 points each would be 14.
+  assert.equal(isBroad(0.7, 40, T), false);
+  assert.equal(isBroad(0.7, 60, T), true);
+  assert.equal(evalSharpDrop([P(7.0, 40), P(6.3, 40)], T).trigger, false);
+});
+
+test("noise: a large drop on a low-confidence estimate does not alarm", () => {
+  assert.equal(evalSharpDrop([P(7.5, 60, 70), P(6.2, 60, 25)], T).trigger, false);
+});
+
+test("noise: sustained decline needs total >= 0.6 and significance", () => {
+  assert.equal(evalSustainedDecline([P(7.0), P(6.8), P(6.6)], T).trigger, false, "total 0.4");
+  assert.equal(evalSustainedDecline([P(7.0, 40, 30), P(6.7, 40, 30), P(6.4, 40, 30)], T).trigger, false, "total 0.6 but z too low at confidence 30");
+});
+
+test("noise: a 10 of 100 changepoint cluster is under the share gate", () => {
+  assert.equal(evalChangepointCluster(10, 14, T, 10, 100).trigger, false);
+  assert.equal(evalChangepointCluster(5, 14, T, 10, 30).trigger, false, "5 people is below the absolute count");
+});
+
+test("noise: polarisation at small n or with a small fall does not alarm", () => {
+  assert.equal(evalPolarisation([P(7, 30, 70, 70), P(7, 30, 70, 40)], T).trigger, false, "n=30 < 50");
+  assert.equal(evalPolarisation([P(7, 80, 70, 70), P(7, 80, 70, 55)], T).trigger, false, "fall 15 < 20");
+});
+
+test("noise: low confidence on a small group, or in a first period, does not alarm", () => {
+  assert.equal(evalLowConfidence([P(7, 20, 20)], 40, T).trigger, false, "n=20");
+  assert.equal(evalLowConfidence([P(7, 60, 20)], 5, T).trigger, false, "first look, 5 days in");
+});
+
+test("noise: an improvement that is small or not significant does not alarm", () => {
+  assert.equal(evalImprovement(P(6.0), P(6.4), T).trigger, false);
+  assert.equal(evalImprovement(P(6.0, 40, 30), P(6.6, 40, 30), T).trigger, false);
+});
+
+test("planted: a large, broad, significant drop is critical", () => {
+  const e = evalSharpDrop([P(7.5, 80, 75), P(6.2, 80, 75)], T);
+  assert.equal(e.trigger, true);
+  assert.equal(e.severity, "critical");
+  assert.ok(zOfDifference(P(7.5, 80, 75), P(6.2, 80, 75)) >= T.zCritical);
+});
+
+test("planted: a drop of 0.8 with z in the warning band is a warning, not critical", () => {
+  const e = evalSharpDrop([P(7.0, 60, 60), P(6.2, 60, 60)], T);
+  assert.equal(e.trigger, true);
+  assert.equal(e.severity, "warning");
+});
+
+test("planted: a steady, significant three-period slide is critical when large", () => {
+  const e = evalSustainedDecline([P(7.6, 80, 75), P(6.8, 80, 75), P(6.1, 80, 75)], T);
+  assert.equal(e.trigger, true);
+  assert.equal(e.severity, "critical");
+});
+
+test("planted: a weak signal (small steady fall, confidence rising) still alarms at n=60", () => {
+  const e = evalWeakSignal([P(7.0, 60, 55), P(6.7, 60, 65), P(6.4, 60, 75)], T);
+  assert.equal(e.trigger, true);
+});
+
+test("planted: a changepoint cluster of 30% of a segment is critical", () => {
+  const e = evalChangepointCluster(24, 14, T, 10, 80);
+  assert.equal(e.trigger, true);
+  assert.equal(e.severity, "critical");
+});
+
+test("planted: polarisation with a real fall at n>=50 alarms", () => {
+  assert.equal(evalPolarisation([P(7, 80, 70, 75), P(7, 80, 70, 45)], T).trigger, true);
+});
+
+test("ALARM_MIN_CONFIDENCE is the one tunable gate on score confidence", () => {
+  assert.equal(T.changeMinConfidence, 50);
+  const hist = [P(7.5, 80, 45), P(6.2, 80, 45)];
+  assert.equal(evalSharpDrop(hist, T).trigger, false, "confidence 45 is under the default 50");
+  assert.equal(evalSharpDrop(hist, { ...T, changeMinConfidence: 40 }).trigger, true, "looser setting lets it through");
+  assert.equal(evalSharpDrop([P(7.5, 80, 75), P(6.2, 80, 75)], { ...T, changeMinConfidence: 80 }).trigger, false, "stricter setting blocks it");
 });

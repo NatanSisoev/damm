@@ -133,24 +133,35 @@ For each anchor the row has the segment × domain **score, confidence and n in t
 
 Each alarm has `severity`, `status` (`open` → `acknowledged` → `action_linked` → `resolved`), `audience`, a trigger level and a separate clear level (hysteresis), and a cooldown of 7 days per (type, segment, domain). Warnings go in a weekly digest; critical alarms are pushed immediately. The AI may attach a proposed `recomanacio`; a human decides.
 
-| `tipus` | Trigger (defaults) | Severity | Audience |
+**Principle: an alarm claims something real and important.** Every change alarm passes the same gates, so a small score move in a handful of people never fires:
+
+1. **Size and reliability:** both periods compared need `n ≥ 30` (`changeMinN`) and confidence ≥ `ALARM_MIN_CONFIDENCE` (default 50, see below). The minimum group size 10 only governs display; it is far too small to claim a change.
+2. **Significance:** a z-test on the difference of two segment scores, using the standard error implied by each confidence (`se10 = 0.5 · (1 − confidence/100)`, floor 0.02). Warning needs z ≥ 2.58 (p < 0.01), critical z ≥ 3.29 (p < 0.001), weak signals z ≥ 1.96.
+3. **Effect size:** an absolute floor per type (see table), so a significant but tiny move does not fire.
+4. **Breadth:** `|Δ| · n ≥ 30` (`breadthPeople` = 3). A drop that two or three people could cause alone cannot reach it.
+5. **Persistence or consensus** where it fits (sustained decline, low confidence, weak signal, participation).
+6. **Severity tiers:** critical only for a large, broad, highly significant change; otherwise warning.
+
+| `tipus` | Trigger (defaults, all constants in `ALARM_DEFAULTS`) | Severity | Audience |
 |---|---|---|---|
-| `sharp_drop` | segment score fell ≥ 1.0 (0–10) within 14 days with confidence ≥ 60 | critical | hr_manager |
-| `sustained_decline` | negative slope over ≥ 3 consecutive periods | warning | hr_manager |
-| `changepoint_cluster` | ≥ 10 people in a segment with a *confirmed* drop in the same domain within 14 days | critical | hr_manager |
-| `polarisation` | consensus fell ≥ 15 points | warning | hr |
-| `feble` (weak signal) | small but steady shift (≥ 0.3 over 3 periods) with rising confidence | info → warning if it persists | hr |
-| `emergent` | new growing comment theme (analysis module) | warning | hr |
-| `baixa_participacio` | segment response rate < 40% of its population, or its share of respondents < 0.7 × its population share (clear at ≥ 45% and ≥ 0.8) | warning | hr |
-| `low_confidence` | domain confidence < 40 for 14 days | info | hr |
-| `improvement` | significant rise since an adopted recommendation or a recorded context event (same anchors as `action_effect`; baseline = the period before the anchor's) | info | hr_manager |
+| `sharp_drop` | drop ≥ 0.7 vs. previous period, n ≥ 30 both, conf ≥ 50 both, z ≥ 2.58, broad | critical if drop ≥ 1.0 and z ≥ 3.29, else warning | hr_manager |
+| `sustained_decline` | 3 periods each falling ≥ 0.15, total ≥ 0.6, z(first, last) ≥ 2.58, n ≥ 30 each, broad | critical if total ≥ 1.2 and z ≥ 3.29, else warning | hr_manager |
+| `changepoint_cluster` | ≥ 10 people with a *confirmed* drop within 14 days, ≥ 15% of the segment's respondents, z vs. a 5% chance rate ≥ 3.29 | critical if ≥ 25% of the segment, else warning | hr_manager |
+| `polarisation` | n ≥ 50 both periods, consensus fell ≥ 20 points and is now ≤ 60 | warning | hr |
+| `feble` (weak signal) | steady fall 0.4 to < 1.0 over 3 periods, confidence rising, z ≥ 1.96, n ≥ 30, broad | info → warning after 14 days | hr |
+| `emergent` | comment theme: ≥ 15 comments, base ≥ 40 in both periods, share up ≥ 10 points, two-proportion z ≥ 2.58 (analysis module) | warning | hr |
+| `baixa_participacio` | rate < 40% of population or share ratio < 0.7, **and** a two-proportion z ≤ -2.58 against the rest of the company; population ≥ 30; the rate path needs ≥ 14 days into the period | warning | hr |
+| `low_confidence` | confidence < 35 with n ≥ 30, low in two consecutive periods (or ≥ 28 days into the first one) | info | hr |
+| `improvement` | rise ≥ 0.6 since an adopted recommendation or context event, z ≥ 2.58, n ≥ 30, broad | info | hr_manager |
 
 Routing:
 - `hr_manager` = HR plus the manager of that collective. Managers see only their own collective and only n ≥ 10. Smaller teams roll up to the next level.
 - **Lideratge alarms go to HR only**, never to the manager being assessed.
 - Safety or harassment content in comments never becomes an alarm that exposes the comment. The app points the person to the official confidential reporting channel (Ley 2/2023). HR only sees aggregate theme trends.
 
-**Implemented** in `packages/engine/src/alarms.ts` (`runAlarms(db, { now })`, run after `runEngineJob`), all types above; `emergent` is implemented by the comment analysis (section 12). Thresholds live in `ALARM_DEFAULTS` (overridable via `opts.thresholds`). Because `agregat` is per month, "within 14 days" for `sharp_drop` and `polarisation` is read as "vs. the previous period"; `low_confidence` needs two low periods or 14 days into the current one. Clear levels: `sharp_drop` drop < 0.5, `sustained_decline` slope ≥ 0, `changepoint_cluster` < 5 people, `polarisation` fall < 7.5, `feble` fall < 0.15, `low_confidence` ≥ 50, `improvement` rise < 0.25. Cooldown counts from the last alarm's `created_at` (there is no resolved-at column). `changepoint_cluster` is evaluated on non-nesting segments only (collective × shift where the collective has shifts, else the collective) so counts cannot be differenced. Company-wide and Lideratge alarms go to `hr`. Open alarms whose segment falls below n = 10 get `suprimit = 1` until it recovers. `baixa_participacio` compares distinct respondents in the current period (`resposta`, counted inside the engine, never stored per account) with the synthetic population (`empleat_sintetic`), on the same non-nesting segments as `changepoint_cluster`. It has no domain (`domini_id` NULL), a Catalan description such as "Participació baixa al torn de nit de Fàbriques: 22% (n=18 de 82). Pes a la mostra …", and is suppressed (nothing opened, open alarms hidden) when the population or the respondents are under `minGroupSize`. Thresholds: `participationTrigger`/`participationClear`, `shareRatioTrigger`/`shareRatioClear`.
+**Tuning the confidence gate.** `ALARM_MIN_CONFIDENCE` (0 to 100, exported from `alarms.ts`, feeds `ALARM_DEFAULTS.changeMinConfidence`) is the minimum score confidence an estimate needs before it can back `sharp_drop`, `sustained_decline`, `polarisation`, `feble` or `improvement`. Default 50. Override without a code change with the env var `ALARM_MIN_CONFIDENCE` (read at startup; invalid values fall back to 50), or per run with `opts.thresholds.changeMinConfidence`. Higher means rarer alarms. `low_confidence` (about confidence itself), `changepoint_cluster`, `baixa_participacio` and `emergent` have no score confidence and are gated by counts and z-tests. Effect on the demo DB (alarms re-run on a copy): 30 or 50 give 9 alarms, 70 gives 6 (it drops a planted Logística sharp drop and the sustained decline).
+
+**Implemented** in `packages/engine/src/alarms.ts` (`runAlarms(db, { now })`, run after `runEngineJob`), all types above; `emergent` is implemented by the comment analysis (section 12, constants in `COMMENT_DEFAULTS`). Thresholds live in `ALARM_DEFAULTS` (overridable via `opts.thresholds`); the pure evaluators (`evalSharpDrop`, `evalSustainedDecline`, ...) and the helpers `zOfDifference`, `isBroad` are exported and unit-tested with noise cases (must not alarm) and planted cases (must alarm). Because `agregat` is per month, "within 14 days" for `sharp_drop` and `polarisation` is read as "vs. the previous period". Clear levels: `sharp_drop` drop < 0.4, `sustained_decline` total < 0.3, `changepoint_cluster` < 5 people or share < 7.5%, `polarisation` fall < 10, `feble` fall < 0.2, `low_confidence` ≥ 45, `improvement` rise < 0.3. Cooldown counts from the last alarm's `created_at` (there is no resolved-at column). `changepoint_cluster` is evaluated on non-nesting segments only (collective × shift where the collective has shifts, else the collective) so counts cannot be differenced; the count is read against the segment's respondent count. Company-wide and Lideratge alarms go to `hr`. Open alarms whose segment falls below n = 10 get `suprimit = 1` until it recovers. `baixa_participacio` compares distinct respondents in the current period (`resposta`, counted inside the engine, never stored per account) with the synthetic population (`empleat_sintetic`), on the same non-nesting segments as `changepoint_cluster`. It has no domain (`domini_id` NULL), a Catalan description such as "Participació baixa al torn de nit de Fàbriques: 22% (n=18 de 82). Pes a la mostra …", and is suppressed (nothing opened, open alarms hidden) when the population or the respondents are under `minGroupSize`. Thresholds: `participationTrigger`/`participationClear`, `shareRatioTrigger`/`shareRatioClear`.
 
 ## 8. Configuration
 

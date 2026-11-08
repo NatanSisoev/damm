@@ -57,8 +57,8 @@ test("suppression: a collective with fewer than 10 comments gets no summary and 
 
 test("emergent: opens when a theme's share rises, clears when it falls, respects cooldown", () => {
   const db = makeDb();
-  comments(db, "f", "2026-09", [SHIFT, ...Array(11).fill(TOOLS)]); // 8% shift
-  comments(db, "f", "2026-10", [...Array(12).fill(SHIFT), ...Array(12).fill(TOOLS)]); // 50% shift
+  comments(db, "f", "2026-09", [SHIFT, SHIFT, ...Array(58).fill(TOOLS)]); // 3% shift
+  comments(db, "f", "2026-10", [...Array(30).fill(SHIFT), ...Array(30).fill(TOOLS)]); // 50% shift
   assert.equal(runCommentAnalysisSync(db, { now: NOW }).emergentOpened, 1);
   const s = rows(db, "SELECT * FROM senyal WHERE tipus = 'emergent'");
   assert.equal(s.length, 1);
@@ -90,6 +90,24 @@ test("emergent needs enough comments in both periods", () => {
   assert.equal(runCommentAnalysisSync(db, { now: NOW }).emergentOpened, 0);
 });
 
+test("emergent does not fire on noise: a small count, a small rise or a rise within chance", () => {
+  // Rise of 24 points but only 14 comments: not enough to call it a theme.
+  const small = makeDb();
+  comments(small, "f", "2026-09", [SHIFT, SHIFT, ...Array(48).fill(TOOLS)]);
+  comments(small, "f", "2026-10", [...Array(14).fill(SHIFT), ...Array(36).fill(TOOLS)]);
+  assert.equal(runCommentAnalysisSync(small, { now: NOW }).emergentOpened, 0);
+  // 20 comments, but the share went from 17% to 25%: under the 10-point trigger.
+  const mild = makeDb();
+  comments(mild, "f", "2026-09", [...Array(10).fill(SHIFT), ...Array(50).fill(TOOLS)]);
+  comments(mild, "f", "2026-10", [...Array(20).fill(SHIFT), ...Array(60).fill(TOOLS)]);
+  assert.equal(runCommentAnalysisSync(mild, { now: NOW }).emergentOpened, 0);
+  // Rise of 10 points on 18 comments in groups of 45 and 50: z about 1.4, within chance.
+  const chance = makeDb();
+  comments(chance, "f", "2026-09", [...Array(9).fill(SHIFT), ...Array(36).fill(TOOLS)]);
+  comments(chance, "f", "2026-10", [...Array(18).fill(SHIFT), ...Array(32).fill(TOOLS)]);
+  assert.equal(runCommentAnalysisSync(chance, { now: NOW }).emergentOpened, 0);
+});
+
 test("sensitive content: counted in aggregate, no comment links, no alarm, fixed summary", () => {
   const db = makeDb();
   comments(db, "f", "2026-09", Array(12).fill(TOOLS));
@@ -105,8 +123,8 @@ test("sensitive content: counted in aggregate, no comment links, no alarm, fixed
 
 test("a seeded emergent placeholder is adopted instead of duplicated", () => {
   const db = makeDb();
-  comments(db, "f", "2026-09", [SHIFT, ...Array(11).fill(TOOLS)]);
-  comments(db, "f", "2026-10", [...Array(12).fill(SHIFT), ...Array(12).fill(TOOLS)]);
+  comments(db, "f", "2026-09", [SHIFT, SHIFT, ...Array(58).fill(TOOLS)]); // 3% shift
+  comments(db, "f", "2026-10", [...Array(30).fill(SHIFT), ...Array(30).fill(TOOLS)]); // 50% shift
   db.prepare("INSERT INTO senyal (tipus, descripcio, collectiu_id, periode, n, confianca) VALUES ('emergent','Comunicació del sistema de torns i pauses',1,'2026-10',31,0.8)").run();
   runCommentAnalysisSync(db, { now: NOW });
   const s = rows(db, "SELECT * FROM senyal WHERE tipus = 'emergent'");
@@ -127,8 +145,8 @@ test("template summaries are aggregate and never copy a comment", () => {
 
 test("LLM injection: used when it answers, falls back to rules when it fails or copies a comment", async () => {
   const db = makeDb();
-  comments(db, "f", "2026-09", [SHIFT, ...Array(11).fill(TOOLS)]);
-  comments(db, "f", "2026-10", [...Array(12).fill(SHIFT), ...Array(12).fill(TOOLS)]);
+  comments(db, "f", "2026-09", [SHIFT, SHIFT, ...Array(58).fill(TOOLS)]); // 3% shift
+  comments(db, "f", "2026-10", [...Array(30).fill(SHIFT), ...Array(30).fill(TOOLS)]); // 50% shift
   const llm = await runCommentAnalysis(db, {
     now: NOW,
     classify: async (cs) => {
@@ -138,7 +156,7 @@ test("LLM injection: used when it answers, falls back to rules when it fails or 
     summarise: async (i) => (i.emergent ? "El col·lectiu expressa preocupació creixent per la planificació dels horaris de treball." : null),
   });
   assert.equal(llm.source, "llm");
-  assert.equal(llm.llmClassified, 36);
+  assert.equal(llm.llmClassified, 120);
   assert.ok(rows(db, "SELECT 1 FROM tema WHERE clau = 'ambient_equip' AND collectiu_id = 1 AND suprimit = 0").length > 0);
   assert.equal(rows(db, "SELECT COUNT(*) AS n FROM tema WHERE clau = 'torns_comunicacio_pauses'")[0]!.n, 0, "LLM assignment replaced the rules");
 
@@ -146,8 +164,8 @@ test("LLM injection: used when it answers, falls back to rules when it fails or 
   const a = makeDb();
   const b = makeDb();
   for (const d of [a, b]) {
-    comments(d, "f", "2026-09", [SHIFT, ...Array(11).fill(TOOLS)]);
-    comments(d, "f", "2026-10", [...Array(12).fill(SHIFT), ...Array(12).fill(TOOLS)]);
+    comments(d, "f", "2026-09", [SHIFT, SHIFT, ...Array(58).fill(TOOLS)]);
+    comments(d, "f", "2026-10", [...Array(30).fill(SHIFT), ...Array(30).fill(TOOLS)]);
   }
   const fallback = await runCommentAnalysis(a, { now: NOW, classify: async () => { throw new Error("down"); }, summarise: async () => { throw new Error("down"); } });
   const plain = runCommentAnalysisSync(b, { now: NOW });

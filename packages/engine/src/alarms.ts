@@ -19,74 +19,141 @@ export type AlarmType =
 export type Severity = "info" | "warning" | "critical";
 export type Audience = "hr" | "hr_manager";
 
-/** Trigger and clear levels (hysteresis). Kept local so config.ts stays untouched; see docs/engine.md section 7. */
+/**
+ * Trigger and clear levels (hysteresis). Every constant that decides whether an alarm fires lives here, so tuning
+ * is one place. See docs/engine.md section 7 for the reasoning.
+ *
+ * Gates every change claim passes (sharp_drop, sustained_decline, polarisation, feble, improvement):
+ *   1. Size: both periods have at least `changeMinN` respondents (3x the minimum group size of 10).
+ *   2. Effect: the move is at least a per-type number of score points (0..10 scale), not just a non-zero move.
+ *   3. Significance: the z-score of the period difference reaches `zWarning` (or `zInfo` for info-level types). The
+ *      standard error is read back from the stored confidence (confidence = 100 * (1 - SE/0.05), so SE10 = 0.5 * (1 - c/100)).
+ *   4. Breadth: the change must be too big for `breadthPeople` people to cause on their own (delta * n >= breadthPeople * 10).
+ * Severity is tiered: critical only when the effect, the z-score and the breadth are all large.
+ */
 export interface AlarmThresholds {
   cooldownDays: number;
-  /** sharp_drop: score fell at least this much (0..10) vs. the previous period, with confidence >= minConfidence. */
+  /** Change claims need at least this many respondents in every period compared. Well above the minimum group size. */
+  changeMinN: number;
+  /** ...and at least this confidence (0..100) in each period, so the SE derived from it is trustworthy. */
+  changeMinConfidence: number;
+  /** z-score needed for a warning/critical claim: 2.58 = p < 0.01 (the screen runs on ~60 segments x 6 domains, so 0.05 is too loose). */
+  zWarning: number;
+  /** z-score needed for a critical claim: 3.29 = p < 0.001. */
+  zCritical: number;
+  /** z-score needed for an info-level claim (weak signals): 1.96 = p < 0.05. */
+  zInfo: number;
+  /** Breadth: a change that `breadthPeople` people, each moving the full 0..10 scale, could cause alone does not alarm. */
+  breadthPeople: number;
+  /** sharp_drop: score fell at least this much (0..10) vs. the previous period, significant and broad. Warning tier. */
   sharpDropTrigger: number;
+  /** sharp_drop critical tier: fall of at least this much and z >= zCritical. */
+  sharpDropCritical: number;
   sharpDropClear: number;
-  sharpDropMinConfidence: number;
-  /** sustained_decline: every step negative over the last `periods` periods and mean slope <= -trigger per period. */
+  /** sustained_decline: every step down by at least `sustainedMinStep` over the last `periods` periods, and the total fall is at least trigger. */
   sustainedPeriods: number;
-  sustainedSlopeTrigger: number;
-  /** Cleared when the mean slope over the same window is >= -clear. */
-  sustainedSlopeClear: number;
+  sustainedMinStep: number;
+  sustainedTotalTrigger: number;
+  /** Critical tier: total fall at least this much and z >= zCritical. */
+  sustainedTotalCritical: number;
+  /** Cleared when the total fall over the same window is below this. */
+  sustainedTotalClear: number;
   /** changepoint_cluster: people in the segment with a confirmed drop in the domain within windowDays. */
   changepointTrigger: number;
   changepointClear: number;
   changepointWindowDays: number;
-  /** polarisation: consensus fell at least this much (0..100) vs. the previous period. */
+  /** ...and at least this share of the segment's respondents (0..1): 10 people in a segment of 300 is not a cluster. */
+  changepointMinShare: number;
+  /** Share of people expected to show a confirmed drop by chance in the window (confirmation is at 2 sigma). The count must beat it by zCritical. */
+  changepointBaseRate: number;
+  /** Critical tier: share of the segment at least this large. Otherwise warning. */
+  changepointCriticalShare: number;
+  /** polarisation: consensus fell at least this much (0..100) vs. the previous period, in a segment of at least polarisationMinN. */
   polarisationTrigger: number;
   polarisationClear: number;
-  /** feble: steady fall of at least trigger (and less than sharpDropTrigger) over `periods`, confidence rising. */
+  polarisationMinN: number;
+  /** ...and consensus is now at or below this level (0..100); a fall that leaves opinions mostly aligned is not polarisation. */
+  polarisationMaxConsensus: number;
+  /** feble: steady fall of at least trigger (and less than sharpDropCritical) over `periods`, confidence rising, z >= zInfo. */
   feblePeriods: number;
   febleTrigger: number;
   febleClear: number;
   /** An open weak signal still triggering after this many days goes from info to warning. */
   feblePersistDays: number;
-  /** low_confidence: confidence below trigger for at least lowConfidenceDays. Cleared at >= clear. */
+  /** low_confidence: confidence below trigger in two consecutive periods (or a full period when there is no earlier one), segment of at least lowConfidenceMinN. */
   lowConfidenceTrigger: number;
   lowConfidenceClear: number;
   lowConfidenceDays: number;
-  /** improvement: score rose at least trigger since the period before an adopted recommendation or a recorded context event. */
+  lowConfidenceMinN: number;
+  /** improvement: score rose at least trigger since the period before an adopted recommendation or a recorded context event, significantly. */
   improvementTrigger: number;
   improvementClear: number;
-  improvementMinConfidence: number;
   /** baixa_participacio: response rate (respondents / population) below trigger, or share of respondents below
-   *  shareRatioTrigger × share of the population. Cleared only when both are back above the clear levels. */
+   *  shareRatioTrigger x share of the population, AND significantly below the rest of the company (z <= -zWarning).
+   *  The rate path needs participationMinElapsedDays of the period gone (early in a month every rate is low).
+   *  Cleared only when both are back above the clear levels. */
   participationTrigger: number;
   participationClear: number;
   shareRatioTrigger: number;
   shareRatioClear: number;
+  participationMinElapsedDays: number;
+  /** Segments smaller than this are not judged on participation. */
+  participationMinPopulation: number;
 }
+
+/**
+ * Minimum confidence (0-100) an estimate must have before it can back a change alarm (sharp drop, sustained decline,
+ * polarisation, weak signal, improvement). Higher = rarer alarms. Override without a code change with the env var
+ * `ALARM_MIN_CONFIDENCE`. `low_confidence` (about confidence itself), `changepoint_cluster`, `baixa_participacio`
+ * and `emergent` have no score confidence and are gated by counts and z-tests instead.
+ */
+export const ALARM_MIN_CONFIDENCE = (() => {
+  const v = Number(process.env.ALARM_MIN_CONFIDENCE);
+  return process.env.ALARM_MIN_CONFIDENCE !== undefined && process.env.ALARM_MIN_CONFIDENCE !== "" && Number.isFinite(v) && v >= 0 && v <= 100 ? v : 50;
+})();
 
 export const ALARM_DEFAULTS: AlarmThresholds = {
   cooldownDays: 7,
-  sharpDropTrigger: 1.0,
-  sharpDropClear: 0.5,
-  sharpDropMinConfidence: 60,
+  changeMinN: 30,
+  changeMinConfidence: ALARM_MIN_CONFIDENCE,
+  zWarning: 2.58,
+  zCritical: 3.29,
+  zInfo: 1.96,
+  breadthPeople: 3,
+  sharpDropTrigger: 0.7,
+  sharpDropCritical: 1.0,
+  sharpDropClear: 0.4,
   sustainedPeriods: 3,
-  sustainedSlopeTrigger: 0.1,
-  sustainedSlopeClear: 0,
+  sustainedMinStep: 0.15,
+  sustainedTotalTrigger: 0.6,
+  sustainedTotalCritical: 1.2,
+  sustainedTotalClear: 0.3,
   changepointTrigger: 10,
   changepointClear: 5,
   changepointWindowDays: 14,
-  polarisationTrigger: 15,
-  polarisationClear: 7.5,
+  changepointMinShare: 0.15,
+  changepointBaseRate: 0.05,
+  changepointCriticalShare: 0.25,
+  polarisationTrigger: 20,
+  polarisationClear: 10,
+  polarisationMinN: 50,
+  polarisationMaxConsensus: 60,
   feblePeriods: 3,
-  febleTrigger: 0.3,
-  febleClear: 0.15,
+  febleTrigger: 0.4,
+  febleClear: 0.2,
   feblePersistDays: 14,
-  lowConfidenceTrigger: 40,
-  lowConfidenceClear: 50,
-  lowConfidenceDays: 14,
-  improvementTrigger: 0.5,
-  improvementClear: 0.25,
-  improvementMinConfidence: 60,
+  lowConfidenceTrigger: 35,
+  lowConfidenceClear: 45,
+  lowConfidenceDays: 28,
+  lowConfidenceMinN: 30,
+  improvementTrigger: 0.6,
+  improvementClear: 0.3,
   participationTrigger: 0.4,
   participationClear: 0.45,
   shareRatioTrigger: 0.7,
   shareRatioClear: 0.8,
+  participationMinElapsedDays: 14,
+  participationMinPopulation: 30,
 };
 
 export const ALARM_SEVERITY: Record<AlarmType, Severity> = {
@@ -159,6 +226,8 @@ export interface Evaluation {
   n: number;
   confidence: number | null;
   description: string;
+  /** Tier chosen by the evaluator; falls back to ALARM_SEVERITY[type]. */
+  severity?: Severity;
 }
 
 const NONE: Evaluation = { trigger: false, clear: false, n: 0, confidence: null, description: "" };
@@ -167,8 +236,22 @@ type Point = { score: number; confidence: number; consensus: number; n: number }
 
 const fmt = (x: number) => (Math.round(x * 10) / 10).toFixed(1);
 
-/** Mean change per period over the series (first to last). */
-const meanSlope = (xs: number[]) => (xs.length < 2 ? 0 : (xs[xs.length - 1]! - xs[0]!) / (xs.length - 1));
+// ---- Statistics helpers ----------------------------------------------------------------------------------------
+
+/** Standard error of a score on the 0..10 scale, read back from its confidence (confidence = 100 * (1 - SE/0.05), SE on 0..1). */
+export const scoreSe = (confidence: number) => Math.max(0.02, 0.5 * (1 - Math.min(Math.max(confidence, 0), 100) / 100));
+
+/** z-score of `a.score - b.score`, treating the two periods as independent estimates. Positive = a is higher. */
+export function zOfDifference(a: Point, b: Point): number {
+  return (a.score - b.score) / Math.hypot(scoreSe(a.confidence), scoreSe(b.confidence));
+}
+
+/** A change of `delta` points in a segment of `n` people is broad when more than `breadthPeople` people would have to move the whole scale to cause it. */
+export const isBroad = (delta: number, n: number, t: AlarmThresholds) => Math.abs(delta) * n >= t.breadthPeople * 10;
+
+/** Both ends of a comparison are large and reliable enough to claim a change. */
+const comparable = (a: Point, b: Point, t: AlarmThresholds) =>
+  a.n >= t.changeMinN && b.n >= t.changeMinN && a.confidence >= t.changeMinConfidence && b.confidence >= t.changeMinConfidence;
 
 // ---- Pure evaluators. `hist` is the segment's per-period history, oldest first, ending at the current period;
 // null marks a period that is missing or suppressed. ------------------------------------------------------------
@@ -184,28 +267,37 @@ export function evalSharpDrop(hist: (Point | null)[], t: AlarmThresholds): Evalu
   if (!p) return NONE;
   const [prev, cur] = p;
   const drop = prev.score - cur.score;
+  const z = zOfDifference(prev, cur);
+  const significant = comparable(prev, cur, t) && drop >= t.sharpDropTrigger && z >= t.zWarning && isBroad(drop, cur.n, t);
   return {
-    trigger: drop >= t.sharpDropTrigger && cur.confidence >= t.sharpDropMinConfidence,
+    trigger: significant,
     clear: drop < t.sharpDropClear,
     n: cur.n,
     confidence: cur.confidence,
-    description: `Score fell ${fmt(drop)} points (${fmt(prev.score)} → ${fmt(cur.score)}) since the previous period.`,
+    severity: significant && drop >= t.sharpDropCritical && z >= t.zCritical ? "critical" : "warning",
+    description: `Score fell ${fmt(drop)} points (${fmt(prev.score)} → ${fmt(cur.score)}, z=${fmt(z)}) since the previous period.`,
   };
 }
 
 export function evalSustainedDecline(hist: (Point | null)[], t: AlarmThresholds): Evaluation {
   const w = hist.slice(-t.sustainedPeriods);
   if (w.length < t.sustainedPeriods || w.some((x) => x === null)) return NONE;
-  const xs = (w as Point[]).map((x) => x.score);
-  const slope = meanSlope(xs);
-  const allDown = xs.every((x, i) => i === 0 || x < xs[i - 1]!);
-  const cur = w[w.length - 1]!;
+  const pts = w as Point[];
+  const xs = pts.map((x) => x.score);
+  const total = xs[0]! - xs[xs.length - 1]!;
+  const everyStep = xs.every((x, i) => i === 0 || xs[i - 1]! - x >= t.sustainedMinStep);
+  const first = pts[0]!;
+  const cur = pts[pts.length - 1]!;
+  const z = zOfDifference(first, cur);
+  const significant =
+    everyStep && pts.every((x) => x.n >= t.changeMinN && x.confidence >= t.changeMinConfidence) && total >= t.sustainedTotalTrigger && z >= t.zWarning && isBroad(total, cur.n, t);
   return {
-    trigger: allDown && slope <= -t.sustainedSlopeTrigger,
-    clear: slope >= -t.sustainedSlopeClear,
+    trigger: significant,
+    clear: total < t.sustainedTotalClear,
     n: cur.n,
     confidence: cur.confidence,
-    description: `Score declined ${w.length} periods in a row (${xs.map(fmt).join(" → ")}).`,
+    severity: significant && total >= t.sustainedTotalCritical && z >= t.zCritical ? "critical" : "warning",
+    description: `Score declined ${w.length} periods in a row (${xs.map(fmt).join(" → ")}, z=${fmt(z)}).`,
   };
 }
 
@@ -214,8 +306,9 @@ export function evalPolarisation(hist: (Point | null)[], t: AlarmThresholds): Ev
   if (!p) return NONE;
   const [prev, cur] = p;
   const fall = prev.consensus - cur.consensus;
+  const reliable = cur.n >= t.polarisationMinN && prev.n >= t.polarisationMinN && cur.confidence >= t.changeMinConfidence && prev.confidence >= t.changeMinConfidence;
   return {
-    trigger: fall >= t.polarisationTrigger,
+    trigger: reliable && fall >= t.polarisationTrigger && cur.consensus <= t.polarisationMaxConsensus,
     clear: fall < t.polarisationClear,
     n: cur.n,
     confidence: cur.confidence,
@@ -230,13 +323,16 @@ export function evalWeakSignal(hist: (Point | null)[], t: AlarmThresholds): Eval
   const xs = pts.map((x) => x.score);
   const fall = xs[0]! - xs[xs.length - 1]!;
   const steady = xs.every((x, i) => i === 0 || x <= xs[i - 1]!);
-  const rising = pts[pts.length - 1]!.confidence > pts[0]!.confidence;
+  const first = pts[0]!;
+  const cur = pts[pts.length - 1]!;
+  const rising = cur.confidence > first.confidence;
+  const z = zOfDifference(first, cur);
   return {
-    trigger: steady && rising && fall >= t.febleTrigger && fall < t.sharpDropTrigger,
+    trigger: steady && rising && comparable(first, cur, t) && fall >= t.febleTrigger && fall < t.sharpDropCritical && z >= t.zInfo && isBroad(fall, cur.n, t),
     clear: fall < t.febleClear,
-    n: pts[pts.length - 1]!.n,
-    confidence: pts[pts.length - 1]!.confidence,
-    description: `Small steady decline of ${fmt(fall)} points over ${pts.length} periods with rising confidence.`,
+    n: cur.n,
+    confidence: cur.confidence,
+    description: `Small steady decline of ${fmt(fall)} points over ${pts.length} periods with rising confidence (z=${fmt(z)}).`,
   };
 }
 
@@ -245,8 +341,9 @@ export function evalLowConfidence(hist: (Point | null)[], daysIntoCurrent: numbe
   const cur = hist[hist.length - 1];
   if (!cur) return NONE;
   const prev = hist[hist.length - 2];
-  const low = cur.confidence < t.lowConfidenceTrigger;
-  const persisted = (prev != null && prev.confidence < t.lowConfidenceTrigger) || daysIntoCurrent >= t.lowConfidenceDays;
+  const low = cur.confidence < t.lowConfidenceTrigger && cur.n >= t.lowConfidenceMinN;
+  // Persistence: low in two consecutive periods; with no earlier period, a whole period of data has to be in.
+  const persisted = prev != null ? prev.confidence < t.lowConfidenceTrigger : daysIntoCurrent >= t.lowConfidenceDays;
   return {
     trigger: low && persisted,
     clear: cur.confidence >= t.lowConfidenceClear,
@@ -259,23 +356,33 @@ export function evalLowConfidence(hist: (Point | null)[], daysIntoCurrent: numbe
 export function evalImprovement(baseline: Point | null, cur: Point | null, t: AlarmThresholds, since?: string): Evaluation {
   if (!baseline || !cur) return NONE;
   const rise = cur.score - baseline.score;
+  const z = zOfDifference(cur, baseline);
   return {
-    trigger: rise >= t.improvementTrigger && cur.confidence >= t.improvementMinConfidence,
+    trigger: comparable(baseline, cur, t) && rise >= t.improvementTrigger && z >= t.zWarning && isBroad(rise, cur.n, t),
     clear: rise < t.improvementClear,
     n: cur.n,
     confidence: cur.confidence,
-    description: `Score rose ${fmt(rise)} points (${fmt(baseline.score)} → ${fmt(cur.score)}) since ${since ?? "an action was adopted"}; this does not show the action caused it.`,
+    description: `Score rose ${fmt(rise)} points (${fmt(baseline.score)} → ${fmt(cur.score)}, z=${fmt(z)}) since ${since ?? "an action was adopted"}; this does not show the action caused it.`,
   };
 }
 
-export function evalChangepointCluster(count: number, windowDays: number, t: AlarmThresholds, minN: number): Evaluation {
+/**
+ * `count`: people with a confirmed drop in the window. `segmentN`: respondents in the segment (the denominator).
+ * Fires only when the count is large in absolute terms, a real share of the segment, and well beyond the chance rate.
+ */
+export function evalChangepointCluster(count: number, windowDays: number, t: AlarmThresholds, minN: number, segmentN: number): Evaluation {
+  const share = segmentN > 0 ? count / segmentN : 0;
+  const expected = segmentN * t.changepointBaseRate;
+  const z = segmentN > 0 ? (count - expected) / Math.sqrt(Math.max(expected * (1 - t.changepointBaseRate), 1e-9)) : 0;
+  const significant = count >= Math.max(t.changepointTrigger, minN) && share >= t.changepointMinShare && z >= t.zCritical;
   return {
     // Only the count is output, so it must itself respect the minimum group size.
-    trigger: count >= Math.max(t.changepointTrigger, minN),
-    clear: count < t.changepointClear,
+    trigger: significant,
+    clear: count < t.changepointClear || share < t.changepointMinShare / 2,
     n: count,
     confidence: null,
-    description: `${count} people in this segment show a confirmed drop in this domain in the last ${windowDays} days.`,
+    severity: significant && share >= t.changepointCriticalShare ? "critical" : "warning",
+    description: `${count} people (${Math.round(share * 100)}% of this segment) show a confirmed drop in this domain in the last ${windowDays} days.`,
   };
 }
 
@@ -289,15 +396,26 @@ export interface ParticipationCounts {
 
 const TORN_CA: Record<string, string> = { mati: "matí", tarda: "tarda", nit: "nit" };
 
-/** `where` is the Catalan place phrase, e.g. "al torn de nit de Fàbriques". */
-export function evalLowParticipation(c: ParticipationCounts, where: string, t: AlarmThresholds, minN: number): Evaluation {
+/** `where` is the Catalan place phrase, e.g. "al torn de nit de Fàbriques". `daysIntoPeriod`: days of the period elapsed (default: all of it). */
+export function evalLowParticipation(c: ParticipationCounts, where: string, t: AlarmThresholds, minN: number, daysIntoPeriod = Infinity): Evaluation {
   const { respondents, population } = c;
   if (population < minN || respondents < minN) return { ...NONE, suppressed: true, n: respondents };
   const rate = respondents / population;
   const ratio = c.totalRespondents > 0 && c.totalPopulation > 0 ? respondents / c.totalRespondents / (population / c.totalPopulation) : 1;
   const pct = (x: number) => Math.round(x * 100);
+  // Significance against the rest of the company: two-proportion z with a pooled variance.
+  const restPop = c.totalPopulation - population;
+  const restResp = c.totalRespondents - respondents;
+  let z = 0;
+  if (restPop > 0 && population > 0) {
+    const pooled = c.totalRespondents / c.totalPopulation;
+    const se = Math.sqrt(pooled * (1 - pooled) * (1 / population + 1 / restPop));
+    z = se > 0 ? (rate - restResp / restPop) / se : 0;
+  }
+  const rateLow = rate < t.participationTrigger && daysIntoPeriod >= t.participationMinElapsedDays;
+  const ratioLow = ratio < t.shareRatioTrigger;
   return {
-    trigger: rate < t.participationTrigger || ratio < t.shareRatioTrigger,
+    trigger: population >= t.participationMinPopulation && (rateLow || ratioLow) && z <= -t.zWarning,
     clear: rate >= t.participationClear && ratio >= t.shareRatioClear,
     n: respondents,
     confidence: null,
@@ -420,7 +538,7 @@ export function runAlarms(db: SqlDatabase, opts: AlarmOptions): AlarmReport {
     if (!e.trigger) return;
     const last = latest.get(k);
     if (last && toMs(nowSql) - toMs(last.created_at) < t.cooldownDays * 86_400_000) return;
-    insert.run(type, e.description, c, tn, d, current, e.n, e.confidence, ALARM_SEVERITY[type], d === null ? "hr" : audienceFor(type, c, d, leadershipId), nowSql);
+    insert.run(type, e.description, c, tn, d, current, e.n, e.confidence, e.severity ?? ALARM_SEVERITY[type], d === null ? "hr" : audienceFor(type, c, d, leadershipId), nowSql);
     report.opened++;
   };
 
@@ -458,7 +576,7 @@ export function runAlarms(db: SqlDatabase, opts: AlarmOptions): AlarmReport {
       const cn = names.c.get(seg.c) ?? `col·lectiu ${seg.c}`;
       const where = seg.t === null ? `a ${cn}` : `al torn de ${TORN_CA[names.t.get(seg.t) ?? ""] ?? names.t.get(seg.t) ?? seg.t} de ${cn}`;
       const counts = { respondents: respBySeg.get(k) ?? 0, population: seg.n, totalRespondents: totalResp, totalPopulation: totalPop };
-      apply("baixa_participacio", seg.c, seg.t, null, evalLowParticipation(counts, where, t, minN));
+      apply("baixa_participacio", seg.c, seg.t, null, evalLowParticipation(counts, where, t, minN, daysIntoCurrent));
     }
     for (const h of hist.values()) {
       const cur = h.pts[h.pts.length - 1] ?? null;
@@ -482,10 +600,11 @@ export function runAlarms(db: SqlDatabase, opts: AlarmOptions): AlarmReport {
 
       // Changepoint cluster on the non-nesting segments only.
       if (h.c !== null && (shifted.has(h.c) ? h.t !== null : h.t === null)) {
+        const segN = cur.n;
         const count = h.t === null
           ? [...cpCounts].filter(([k]) => k.startsWith(`${h.c}|`) && k.endsWith(`|${h.d}`)).reduce((s, [, v]) => s + v, 0)
           : cpCounts.get(segKey(h.c, h.t, h.d)) ?? 0;
-        apply("changepoint_cluster", h.c, h.t, h.d, evalChangepointCluster(count, t.changepointWindowDays, t, minN));
+        apply("changepoint_cluster", h.c, h.t, h.d, evalChangepointCluster(count, t.changepointWindowDays, t, minN, segN));
       }
     }
   });

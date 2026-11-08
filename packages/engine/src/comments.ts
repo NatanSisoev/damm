@@ -128,9 +128,30 @@ export interface CommentThresholds {
   emergentTrigger: number;
   emergentClear: number;
   cooldownDays: number;
+  /** emergent: the theme needs at least this many comments in the period (well above the minimum group size of 10). */
+  emergentMinCount: number;
+  /** emergent: both periods need at least this many comments in the collective, so a share is meaningful. */
+  emergentMinBase: number;
+  /** emergent: two-proportion z-score the rise must reach (2.58 = p < 0.01; many themes x collectives are screened). */
+  emergentZ: number;
 }
 
-export const COMMENT_DEFAULTS: CommentThresholds = { emergentTrigger: 0.1, emergentClear: 0.05, cooldownDays: 7 };
+export const COMMENT_DEFAULTS: CommentThresholds = {
+  emergentTrigger: 0.1,
+  emergentClear: 0.05,
+  cooldownDays: 7,
+  emergentMinCount: 15,
+  emergentMinBase: 40,
+  emergentZ: 2.58,
+};
+
+/** Two-proportion z-score of x1/n1 against x2/n2 (pooled variance). Positive = the first share is higher. */
+export function twoProportionZ(x1: number, n1: number, x2: number, n2: number): number {
+  if (n1 <= 0 || n2 <= 0) return 0;
+  const pooled = (x1 + x2) / (n1 + n2);
+  const se = Math.sqrt(pooled * (1 - pooled) * (1 / n1 + 1 / n2));
+  return se > 0 ? (x1 / n1 - x2 / n2) / se : 0;
+}
 
 export interface CommentReport {
   comments: number;
@@ -175,6 +196,8 @@ interface PlannedRow {
   prevShare: number | null;
   suppressed: boolean;
   emergent: boolean;
+  prevBase: number;
+  prevCount: number;
   resum: string | null;
   font: "rules" | "llm";
   ids: number[];
@@ -289,7 +312,7 @@ function plan(db: SqlDatabase, rows: CommentRow[], assign: Map<number, ThemeMatc
       : [...pair].filter(([k]) => k.startsWith(`${g.periode}|${g.collectiuId ?? ""}|${g.key}>`)).sort((a, b2) => b2[1] - a[1]).slice(0, 2).filter(([, c]) => c >= minN).map(([k]) => THEME_BY_KEY.get(k.split(">")[1]!)!.label);
     const row: PlannedRow = {
       theme, periode: g.periode, collectiuId: g.collectiuId, collective: g.collectiuId === null ? null : collectives.get(g.collectiuId) ?? null,
-      n: g.count, base: b, share: b ? g.count / b : 0, prevShare, suppressed, emergent: false, resum: null, font: "rules",
+      n: g.count, base: b, share: b ? g.count / b : 0, prevShare, prevBase, prevCount, suppressed, emergent: false, resum: null, font: "rules",
       ids: g.ids, conf: g.conf, coThemes, sample: suppressed || theme.sensitive ? [] : g.ids.slice(0, 8).map((id) => sampleOf.get(id)!),
     };
     out.push(row);
@@ -299,7 +322,15 @@ function plan(db: SqlDatabase, rows: CommentRow[], assign: Map<number, ThemeMatc
 
   // Emerging: the share rose enough, both groups have at least minN comments, the theme itself is shown.
   for (const r of out) {
-    r.emergent = !r.suppressed && !r.theme.sensitive && r.prevShare !== null && r.share - r.prevShare >= t.emergentTrigger;
+    r.emergent =
+      !r.suppressed &&
+      !r.theme.sensitive &&
+      r.prevShare !== null &&
+      r.n >= t.emergentMinCount &&
+      r.base >= t.emergentMinBase &&
+      r.prevBase >= t.emergentMinBase &&
+      r.share - r.prevShare >= t.emergentTrigger &&
+      twoProportionZ(r.n, r.base, r.prevCount, r.prevBase) >= t.emergentZ;
   }
   for (const r of out) {
     r.resum = r.suppressed
