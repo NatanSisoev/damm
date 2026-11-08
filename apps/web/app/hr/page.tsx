@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { cookies } from "next/headers";
+import { VIEW_ROLE_COOKIE, parseRole } from "@/lib/view-role";
 import { MIN_GROUP_SIZE } from "@damm/shared";
 import {
   getDataBounds,
@@ -42,6 +44,7 @@ const NOTICE_KEY = { ok: "notice_ok", "sense-llm": "notice_no_llm", ocupat: "not
 
 export default async function HrDashboard({ searchParams }: { searchParams: Promise<Params> }) {
   const q = await searchParams;
+  const role = parseRole((await cookies()).get(VIEW_ROLE_COOKIE)?.value);
   const { t: tr, lang } = await getTL(hrResultsDict);
   const { t } = await getTL(hrDashboardDict);
   const collectius = listCollectius();
@@ -183,9 +186,13 @@ export default async function HrDashboard({ searchParams }: { searchParams: Prom
             value={apd.total === null ? "—" : numD(apd.total, lang, 0)}
           />
           <Stat label={t("kpi_part")} value={pct === null ? "—" : `${pct}%`} />
-          <Link href={col ? `/hr/signals?collectiu=${col.id}` : "/hr/signals"} className="block h-full">
+          {role === "manager" ? (
             <Stat label={t("kpi_alarms")} value={openAlarms} />
-          </Link>
+          ) : (
+            <Link href={col ? `/hr/signals?collectiu=${col.id}` : "/hr/signals"} className="block h-full">
+              <Stat label={t("kpi_alarms")} value={openAlarms} />
+            </Link>
+          )}
           <Stat
             label={t("kpi_score")}
             value={score === null ? "—" : <>{f1(score)}<span className="text-base font-normal text-subtle"> / 5</span></>}
@@ -282,7 +289,7 @@ export default async function HrDashboard({ searchParams }: { searchParams: Prom
         <Card fold title={tr("rs_engine")} meta={<span className="num">{insights.length}</span>}>
           <InsightCards insights={insights} empty={tr("rs_engine_empty", { min: MIN_GROUP_SIZE })} />
         </Card>
-        <ProposalsCard fold proposals={getProposals()} />
+        {role === "hr" && <ProposalsCard fold proposals={getProposals()} />}
       </div>
     </>
   );
