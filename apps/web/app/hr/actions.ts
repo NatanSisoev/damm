@@ -7,6 +7,7 @@ import { DEFAULT_QUESTION_COUNT, QUESTION_COUNT_OPTIONS, type QueryDelivery } fr
 import {
   approveQuestion, fillQuestionTranslations, getDraftFollowup, removeDraftFollowup, getQuestionWording, getRedraftContext, listCollectius, listNeedCards, moveDraft, replaceDraft, saveDraftSurvey, updateNeedHeader, approveRecommendation, createNecessitat, discardQuestion,
   discardRecommendation, publishNecessitat, updateDraftText, closeNecessitat, setSignalStatus, setAlarmArchived, reopenClosedAlarm,
+  recordDecision, alarmInfo, questionInfo,
 } from "@damm/db/hr";
 import { createDraftedFollowUp } from "./follow-up";
 import { changeAlarmStatus, hrSetQuestionActive, invalidateHrPool, type AlarmStatus } from "@/lib/hr-engine";
@@ -56,7 +57,7 @@ export async function regenerateQuestionAction(formData: FormData) {
   const ctx = getRedraftContext(id);
   const r = ctx ? await redraftQuestion(ctx.need, ctx.current as never, ctx.others as never) : null;
   if (!r) redirect(`/hr/needs?regenError=${id}`);
-  replaceDraft(id, r.question, r.source === "llm");
+  replaceDraft(id, r.question, r.source === "llm", HR_USER);
   revalidatePath("/hr/review");
   revalidatePath("/hr/needs");
 }
@@ -93,13 +94,13 @@ export async function approveQuestionAction(formData: FormData) {
 }
 
 export async function removeFollowupAction(formData: FormData) {
-  removeDraftFollowup(Number(formData.get("id")));
+  removeDraftFollowup(Number(formData.get("id")), HR_USER);
   revalidatePath("/hr/review");
   revalidatePath("/hr/needs");
 }
 
 export async function discardQuestionAction(formData: FormData) {
-  discardQuestion(Number(formData.get("id")));
+  discardQuestion(Number(formData.get("id")), HR_USER);
   invalidateHrPool();
   revalidatePath("/hr/review");
   revalidatePath("/hr/needs");
@@ -107,7 +108,7 @@ export async function discardQuestionAction(formData: FormData) {
 
 export async function editQuestionAction(formData: FormData) {
   const text = String(formData.get("text") ?? "").trim();
-  if (text) updateDraftText(Number(formData.get("id")), text, String(formData.get("text_es") ?? ""), String(formData.get("text_en") ?? ""));
+  if (text) updateDraftText(Number(formData.get("id")), text, String(formData.get("text_es") ?? ""), String(formData.get("text_en") ?? ""), HR_USER);
   // The review screen re-runs the wording check (questionWarnings) on the saved text, so warnings show right after saving.
   revalidatePath("/hr/review");
   revalidatePath("/hr/needs");
@@ -120,7 +121,7 @@ export async function editQuestionAction(formData: FormData) {
  */
 export async function publishAction(formData: FormData) {
   const id = Number(formData.get("id"));
-  if (!publishNecessitat(id)) redirect("/hr/needs");
+  if (!publishNecessitat(id, HR_USER)) redirect("/hr/needs");
   invalidateHrPool();
   const outcome = await notifyNeedPublished(id);
   revalidatePath("/hr/needs");
@@ -144,12 +145,12 @@ export async function remindNeedAction(formData: FormData) {
 }
 
 export async function approveRecommendationAction(formData: FormData) {
-  approveRecommendation(Number(formData.get("id")), String(formData.get("approver") ?? ""));
+  approveRecommendation(Number(formData.get("id")), String(formData.get("approver") ?? "") || HR_USER);
   revalidatePath("/hr", "layout");
 }
 
 export async function discardRecommendationAction(formData: FormData) {
-  discardRecommendation(Number(formData.get("id")));
+  discardRecommendation(Number(formData.get("id")), HR_USER);
   revalidatePath("/hr", "layout");
 }
 
@@ -160,13 +161,13 @@ export async function followUpAction(formData: FormData) {
 }
 
 export async function closeNeedAction(formData: FormData) {
-  closeNecessitat(Number(formData.get("id")));
+  closeNecessitat(Number(formData.get("id")), HR_USER);
   revalidatePath("/hr", "layout");
 }
 
 export async function setSignalStatusAction(formData: FormData) {
   const id = Number(formData.get("id"));
-  setSignalStatus(id, String(formData.get("status") ?? ""));
+  setSignalStatus(id, String(formData.get("status") ?? ""), HR_USER);
   revalidatePath("/hr", "layout");
 }
 
@@ -174,7 +175,12 @@ export async function setAlarmStatusAction(formData: FormData) {
   const status = String(formData.get("status") ?? "");
   if (!["acknowledged", "action_linked", "resolved", "dismissed"].includes(status)) return;
   try {
-    changeAlarmStatus(Number(formData.get("id")), status as AlarmStatus);
+    const id = Number(formData.get("id"));
+    const before = alarmInfo(id);
+    changeAlarmStatus(id, status as AlarmStatus);
+    if (before && before.status !== status) {
+      recordDecision({ entity: "senyal", entityId: id, action: "status", font: "engine_alarm", actor: HR_USER, fromState: before.status, toState: status, subject: before.description });
+    }
   } catch {
     // invalid transition (stale page): just refresh
   }
@@ -183,13 +189,13 @@ export async function setAlarmStatusAction(formData: FormData) {
 
 /** Archive a resolved or dismissed alarm (archive=1) or bring it back to its tab (archive=0). */
 export async function archiveAlarmAction(formData: FormData) {
-  setAlarmArchived(Number(formData.get("id")), formData.get("archive") === "1");
+  setAlarmArchived(Number(formData.get("id")), formData.get("archive") === "1", HR_USER);
   revalidatePath("/hr", "layout");
 }
 
 /** A resolved alarm came back or a dismissed one turned out to matter: reopen it. */
 export async function reopenAlarmAction(formData: FormData) {
-  reopenClosedAlarm(Number(formData.get("id")));
+  reopenClosedAlarm(Number(formData.get("id")), HR_USER);
   revalidatePath("/hr", "layout");
 }
 
@@ -201,7 +207,14 @@ export async function recomputeAction() {
 
 /** Pool control: a person retires a question from the rotation, or brings a previously approved one back. */
 export async function setQuestionActiveAction(formData: FormData) {
-  hrSetQuestionActive(Number(formData.get("id")), formData.get("active") === "1", HR_USER);
+  const id = Number(formData.get("id"));
+  const active = formData.get("active") === "1";
+  const before = questionInfo(id);
+  hrSetQuestionActive(id, active, HR_USER);
+  const after = questionInfo(id);
+  if (before && after && before.estat !== after.estat) {
+    recordDecision({ entity: "pregunta", entityId: id, necessitatId: after.necessitatId, action: active ? "restore" : "retire", font: after.font, actor: HR_USER, fromState: before.estat, toState: after.estat, subject: after.text });
+  }
   revalidatePath("/hr/pool");
 }
 

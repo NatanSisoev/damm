@@ -151,8 +151,8 @@ New read functions for 16 to 20 go in new files under `packages/db/src/` (for ex
 - Files: employee home section, a new read function in `packages/db/src/employee-*.ts` that returns approved recommendations and their aggregate context (no per-account data).
 - Shows employees what changed because they answered: approved actions per collective, with the period and n. Closing the loop is what keeps participation up and makes the anonymity promise credible.
 
-### 21. Decision audit log and AI provenance: `jan/audit-log` (blocked on schema)
-- Needs a `decisio` table (what, previous and new state, AI original text, timestamp, HR role) and a `font` field on `pregunta` and `recomanacio` (source signal, n, confidence). Shared contract: agree with Natan first.
+### 21. Decision audit log and AI provenance: `jan/traceability` (done 2026-11-08)
+- `decisio` table (what, previous and new state, AI original text, timestamp, HR label, source `font`), written by every HR action on AI output; trail on `/hr/traceability` and per need. Provenance lives in `decisio.font`, no new columns on `pregunta` or `recomanacio`. Contract entry in `docs/contract-changes.md`.
 
 ## Needs Natan first
 
@@ -165,7 +165,7 @@ New read functions for 16 to 20 go in new files under `packages/db/src/` (for ex
 | Branch protection on `main` | repo flow | 10 |
 | A standard deviation (`desviacio`) per `agregat` row, written by the analysis job | real confidence intervals instead of n bands | 17 (full) |
 | Complementary suppression in the analysis job too, so stored aggregates are already safe | defence in depth for 17 | 17 |
-| `decisio` table and `font` provenance fields | audit trail of human decisions over AI proposals | 21 |
+| ~~`decisio` table and `font` provenance fields~~ (done 2026-11-08, Jan) | audit trail of human decisions over AI proposals | 21 |
 | Signals carry a minimum effect size and n in their criteria | signals are not noise | 16, 18 |
 | Catalan seed text in `packages/engine/demo/build-demo.ts` and `comments.ts` (NEEDS-DECISION HR-X-8, HR-NEED-1) | demo copy matches `docs/copy-guide.md` | 22, demo |
 | Wording of 'punts' for scores (NEEDS-DECISION HR-X-9) | one consistent unit on the 1-5 scale | 22 |

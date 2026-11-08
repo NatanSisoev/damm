@@ -27,6 +27,7 @@ const icons = {
   recs: svg(<><path d="M9 18h6M10 21h4M12 3a6 6 0 00-3.5 10.9c.7.6 1 1.3 1 2.1h5c0-.8.3-1.5 1-2.1A6 6 0 0012 3z" /></>),
   pool: svg(<><rect x="4" y="4" width="16" height="4" /><rect x="4" y="10" width="16" height="4" /><rect x="4" y="16" width="16" height="4" /></>),
   method: svg(<><circle cx="12" cy="12" r="9" /><path d="M9.5 9.5a2.5 2.5 0 114 2c-.9.6-1.5 1-1.5 2M12 17h.01" /></>),
+  trace: svg(<><path d="M8 4h9l3 3v13H8z" /><path d="M5 8v12h3M11 11h6M11 15h6" /></>),
   brain: svg(<><circle cx="12" cy="12" r="3" /><path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M18.4 5.6l-2.8 2.8M8.4 15.6l-2.8 2.8" /></>),
   comments: svg(<><path d="M4 5h16v11H9l-5 4z" /><path d="M8 9h8M8 12h5" /></>),
   settings: svg(<><path d="M4 7h10M18 7h2M4 17h4M12 17h8" /><circle cx="16" cy="7" r="2" /><circle cx="10" cy="17" r="2" /></>),
@@ -59,6 +60,7 @@ const groups: { title: HrKey; items: Item[] }[] = [
 ];
 
 const footer: Item[] = [
+  { href: "/hr/traceability", label: "nav_trace", icon: icons.trace },
   { href: "/hr/methodology", label: "nav_method", icon: icons.method },
   { href: "/hr/settings", label: "nav_settings", icon: icons.settings },
 ];

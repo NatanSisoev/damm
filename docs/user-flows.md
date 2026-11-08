@@ -539,7 +539,7 @@ The plan was reworked against this file (2026-11-07). Every M-* and S-* case now
 3. **Form validation in HR (F-HR-2 B2 to B6).**
 4. **Empty pool and day cap (F-EMP-5 B1; 3 a day by default).**
 5. **Deleted account with live cookie (F-EMP-3 B3), second use of a recovery code (F-EMP-4), inactive code mid-flow (F-EMP-2 B5).**
-6. **Approver recording (F-HR-3).** `aprovada_per = 'hr-demo'` and `aprovada_el`; R-PRIV-10 stays partial.
+6. **Approver recording (F-HR-3).** `aprovada_per = 'hr-demo'` and `aprovada_el`; each approval also writes a `decisio` row (R-PRIV-10 done), shown on `/hr/traceability`.
 7. **Manager scope (S-72).** All collectives open is the expected current behaviour (N-8 gap), not a failure.
 8. **Atomic batch in `POST /api/responses`.**
 9. **PII redaction forms** beyond one name, email and phone: DNI/NIE and IBAN.
