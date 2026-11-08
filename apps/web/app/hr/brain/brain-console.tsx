@@ -8,6 +8,7 @@ import { recomputeAction } from "../actions";
 import { refreshBrainAction, resetConfigAction, saveConfigAction, saveWeightsAction, simulateAction } from "./actions";
 import { CLOSED_TYPES, FORMAT_KEYS, PARAM_GROUPS, REASON_KEYS, WEIGHT_SOURCE_KEYS, type ParamMeta } from "./meta";
 import { useLang, useT } from "@/lib/i18n/client";
+import { ConfirmDialog } from "../confirm-button";
 import { LOCALES } from "@/lib/i18n/core";
 import { brainDict, type BrainKey } from "@/lib/i18n/hr-brain";
 import { collectiveLabel, domainLabel, shiftLabel } from "@/lib/i18n/names";
@@ -99,6 +100,7 @@ export function BrainConsole({ initial }: { initial: Brain }) {
   const [collectiuId, setCollectiuId] = useState(initial.collectives[0]?.id ?? 0);
   const [msg, setMsg] = useState<{ tone: "ok" | "err"; text: string } | null>(null);
   const [busy, startBusy] = useTransition();
+  const [confirmReset, setConfirmReset] = useState(false);
 
   const savedConfig = useMemo<Draft>(() => Object.fromEntries(brain.config.map((c) => [c.key, c.value])), [brain.config]);
   const [configDraft, setConfigDraft] = useState<Draft>(savedConfig);
@@ -291,10 +293,11 @@ export function BrainConsole({ initial }: { initial: Brain }) {
             <button type="button" className="btn btn-ghost" onClick={discard} disabled={!dirty}>{t("discard")}</button>
             <button
               type="button" className="btn btn-ghost" disabled={busy || !brain.config.some((c) => c.overridden)}
-              onClick={() => confirm(t("reset_confirm")) && resetConfig()}
+              onClick={() => setConfirmReset(true)}
             >
               {t("reset_all_btn")}
             </button>
+          <ConfirmDialog open={confirmReset} onClose={() => setConfirmReset(false)} onConfirm={resetConfig} message={t("reset_confirm")} confirmLabel={t("reset_all_btn")} />
           </div>
         </div>
       )}
