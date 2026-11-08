@@ -3,10 +3,13 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import { useT } from "@/lib/i18n/client";
+import { hrDict, type HrKey } from "@/lib/i18n/hr";
+import { LangSwitcher } from "@/components/lang-switcher";
 
 export type NavBadges = { alarms?: { critical: number; total: number }; recommendations?: number };
 
-type Item = { href: string; label: string; icon: ReactNode };
+type Item = { href: string; label: HrKey; icon: ReactNode };
 
 const svg = (d: ReactNode) => (
   <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -28,17 +31,18 @@ const icons = {
 };
 
 const main: Item[] = [
-  { href: "/hr", label: "Panell", icon: icons.home },
-  { href: "/hr/pool", label: "Banc de preguntes", icon: icons.pool },
-  { href: "/hr/signals", label: "Alarmes", icon: icons.alarms },
-  { href: "/hr/needs", label: "Consultes", icon: icons.needs },
+  { href: "/hr", label: "nav_home", icon: icons.home },
+  { href: "/hr/pool", label: "nav_pool", icon: icons.pool },
+  { href: "/hr/signals", label: "nav_alarms", icon: icons.alarms },
+  { href: "/hr/needs", label: "nav_needs", icon: icons.needs },
 ];
 
 const footer: Item[] = [
-  { href: "/hr/publish", label: "Enllaços i QR", icon: icons.publish },
-  { href: "/hr/brain", label: "Cervell", icon: icons.brain },
-  { href: "/hr/methodology", label: "Com es calcula?", icon: icons.method },
-  { href: "/manager", label: "Vista de responsables", icon: icons.manager },
+  { href: "/hr/publish", label: "nav_publish", icon: icons.publish },
+  { href: "/hr/brain", label: "nav_brain", icon: icons.brain },
+  { href: "/hr/methodology", label: "nav_method", icon: icons.method },
+  { href: "/manager", label: "nav_manager", icon: icons.manager },
+
 ];
 
 /** Pages that live under a main item (results under Panell, recommendations under Alarmes). */
@@ -68,6 +72,7 @@ const FOCUSABLE = 'a[href],button:not([disabled])';
 
 export function HrSidebar({ badges, subtitle, logo }: { badges?: NavBadges; subtitle: string; logo: ReactNode }) {
   const path = usePathname();
+  const t = useT(hrDict);
   // Collapsed state lives in localStorage (per viewer); server and first render use the expanded layout.
   const collapsed = useSyncExternalStore(subscribe, readCollapsed, () => false);
   // The drawer is open only for the path it was opened on, so any navigation closes it.
@@ -112,26 +117,27 @@ export function HrSidebar({ badges, subtitle, logo }: { badges?: NavBadges; subt
 
   const badgeFor = (href: string) => {
     if (href === "/hr/signals" && badges?.alarms && badges.alarms.total > 0)
-      return { n: badges.alarms.total, warn: badges.alarms.critical > 0, title: `${badges.alarms.critical} crítiques`, sr: "alarmes obertes" };
+      return { n: badges.alarms.total, warn: badges.alarms.critical > 0, title: t("nav_critical", { n: badges.alarms.critical }), sr: t("nav_open_alarms") };
     if (href === "/hr/recommendations" && badges?.recommendations)
-      return { n: badges.recommendations, warn: false, title: "Pendents de decisió", sr: "pendents" };
+      return { n: badges.recommendations, warn: false, title: t("nav_pending_decision"), sr: t("nav_pending") };
     return null;
   };
 
   const renderItem = (l: Item, compact: boolean) => {
     const active = (l.href === "/hr" ? path === "/hr" : path.startsWith(l.href)) || (alias[l.href] ?? []).some((p) => path.startsWith(p));
     const b = badgeFor(l.href);
+    const label = t(l.label);
     return (
       <Link
         key={l.href}
         href={l.href}
         aria-current={active ? "page" : undefined}
-        aria-label={compact ? `${l.label}${b ? `, ${b.n} ${b.sr}` : ""}` : undefined}
-        title={compact ? l.label : undefined}
+        aria-label={compact ? `${label}${b ? `, ${b.n} ${b.sr}` : ""}` : undefined}
+        title={compact ? label : undefined}
         className="hr-side-item"
       >
         <span className="hr-side-icon">{l.icon}</span>
-        <span className="hr-side-label">{l.label}</span>
+        <span className="hr-side-label">{label}</span>
         {b && (
           <span className={`badge num hr-side-badge ${b.warn ? "badge-warn" : ""}`} title={b.title}>
             {b.n}
@@ -146,7 +152,10 @@ export function HrSidebar({ badges, subtitle, logo }: { badges?: NavBadges; subt
       <div className="hr-side-scroll">
         {main.map((l) => renderItem(l, compact))}
       </div>
-      <div className="hr-side-foot">{footer.map((l) => renderItem(l, compact))}</div>
+      <div className="hr-side-foot">
+        {footer.map((l) => renderItem(l, compact))}
+        {!compact && <LangSwitcher className="mt-2 px-2" />}
+      </div>
     </>
   );
 
@@ -158,7 +167,7 @@ export function HrSidebar({ badges, subtitle, logo }: { badges?: NavBadges; subt
           ref={menuBtn}
           type="button"
           className="hr-icon-btn"
-          aria-label="Obre el menú"
+          aria-label={t("nav_open_menu")}
           aria-expanded={open}
           aria-controls="hr-drawer"
           onClick={() => setOpenAt(path)}
@@ -171,10 +180,10 @@ export function HrSidebar({ badges, subtitle, logo }: { badges?: NavBadges; subt
       {open && (
         <div className="hr-drawer-wrap">
           <div className="hr-scrim" onClick={close} aria-hidden="true" />
-          <nav id="hr-drawer" ref={drawerRef} aria-label="Seccions" role="dialog" aria-modal="true" className="hr-drawer">
+          <nav id="hr-drawer" ref={drawerRef} aria-label={t("sections")} role="dialog" aria-modal="true" className="hr-drawer">
             <div className="hr-drawer-head">
               <span className="text-[13px] font-bold">Escolta activa</span>
-              <button type="button" className="hr-icon-btn" aria-label="Tanca el menú" onClick={close}>
+              <button type="button" className="hr-icon-btn" aria-label={t("nav_close_menu")} onClick={close}>
                 {svg(<path d="M6 6l12 12M18 6L6 18" />)}
               </button>
             </div>
@@ -189,7 +198,7 @@ export function HrSidebar({ badges, subtitle, logo }: { badges?: NavBadges; subt
           {logo}
           {!collapsed && <span className="hr-side-sub">{subtitle}</span>}
         </div>
-        <nav aria-label="Seccions" className="hr-side-nav">
+        <nav aria-label={t("sections")} className="hr-side-nav">
           {body(collapsed)}
         </nav>
         <button
@@ -197,11 +206,11 @@ export function HrSidebar({ badges, subtitle, logo }: { badges?: NavBadges; subt
           className="hr-side-toggle"
           onClick={toggle}
           aria-pressed={collapsed}
-          aria-label={collapsed ? "Desplega la barra lateral" : "Replega la barra lateral"}
-          title={collapsed ? "Desplega" : "Replega"}
+          aria-label={collapsed ? t("nav_expand") : t("nav_collapse")}
+          title={collapsed ? t("nav_expand_short") : t("nav_collapse_short")}
         >
           {svg(<path d={collapsed ? "M9 6l6 6-6 6" : "M15 6l-6 6 6 6"} />)}
-          <span className="hr-side-label">Replega</span>
+          <span className="hr-side-label">{t("nav_collapse_short")}</span>
         </button>
       </aside>
     </>

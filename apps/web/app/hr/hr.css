@@ -186,6 +186,14 @@
   .hr-actions > * , .hr-actions form, .hr-actions .btn { width: 100%; }
 }
 
+/* FoldList: native <details> fold for long lists */
+.hr-fold { margin-top: 8px; border-top: 1px solid var(--line); }
+.hr-fold > summary { display: flex; align-items: center; min-height: 36px; padding: 6px 0; cursor: pointer; list-style: none; font-size: 0.8125rem; color: var(--text); }
+.hr-fold > summary::-webkit-details-marker { display: none; }
+.hr-fold > summary:hover { text-decoration: underline; }
+.hr-fold > summary:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; border-radius: 2px; }
+.hr-fold .hr-fold-close, .hr-fold[open] .hr-fold-open { display: none; }
+.hr-fold[open] .hr-fold-close { display: inline; }
 /* Question pool: a data row and its detail row read as one block. */
 .pool-row { position: relative; }
 .pool-row > td { padding: 14px 12px; vertical-align: top; }

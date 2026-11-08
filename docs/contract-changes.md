@@ -19,13 +19,31 @@ What changed and why.
 
 ---
 
+## C22 · 2026-11-08 · Jan · Data retention constants and purge (R-PRIV-8)
+
+`packages/shared` gains `RETENTION` (`rawResponseMonths: 24`, `inactiveAccountMonths: 24`, `pushSubscriptionMonths: 12`). `@damm/db` gains `purgeExpired(db, { dryRun })` (`packages/db/src/retention.ts`): deletes `resposta` rows with `periode` older than the window plus their `comentari_tema` and `resposta_seed` rows, accounts with no recent answer (their `assignment` and `person_domain_state` rows cascade), and old push subscriptions. Aggregate tables (`agregat`, `tema`, `senyal`, `insight`, `recomanacio`, `domain_importance`) are never touched. `POST /api/jobs/run` calls it as its last step (`?dryRun=1` only counts); also `pnpm --filter @damm/db run purge [-- --dry-run]`. No schema change.
+
+- [ ] Natan: confirm the engine tolerates `resposta` rows disappearing for old periods (`runEngineJob` only rewrites `agregat` for periods that still have rows, so older aggregates survive; `comments.ts` does `DELETE FROM tema` and rebuilds, so check that old-period themes are not lost once their comments are purged), and tell Jan if a window should be longer.
+- [ ] Jan: add the purge to the Railway scheduled job once the windows are agreed.
+
+---
+
+## C21 · 2026-11-07 · Jan · Join code lookup ignores accents; DEMO-FÀB becomes DEMO-FAB
+
+`lookupJoinCode` (`@damm/db/join`) matches on a key without diacritics, hyphens, spaces and case, and now returns the stored `codi`; `registerAccount` resolves the code through it. No schema change. The deployed DB renames `DEMO-FÀB` to `DEMO-FAB` at startup (`scripts/fix-join-codes.mjs`, idempotent). `packages/engine/demo/build-demo.ts` still derives `DEMO-<first 3 letters>` from the collective name, so a fresh demo DB has `DEMO-FÀB` until the generator strips diacritics.
+
+- [ ] Natan: in `packages/engine/demo/build-demo.ts` strip diacritics from the generated code (`.normalize("NFD").replace(/[\u0300-\u036f]/g, "")`) so it yields `DEMO-FAB`.
+- [x] Jan: lookup, startup rename and docs (done 2026-11-07).
+
+---
+
 ## C20 · 2026-11-08 · Natan · HR dashboard: date window and collective filter
 
 - New read-only HR repository functions in `@damm/db/hr`: `getWindowTrends` (same shape and suppression as `getTrends`, for an arbitrary date window and optional collective, read from the analytics view), `getDataBounds`, `populationOf`. No schema change.
 - `/hr` is now the dashboard ("Panell") with interval and collective dropdowns and an "Actualitza" button (`refreshDashboardAction`: runs the engine job and, with `LLM_API_KEY`, the narrative). The sidebar is now Panell, Banc de preguntes, Alarmes, Consultes; Enllaços i QR, Cervell, Com es calcula? and Vista de responsables are at the bottom. "Necessitats" is renamed "Consultes" in the UI only; routes are unchanged.
 
 Action items:
-- [ ] Jan: FYI only. If you rework the HR sidebar or `/hr`, keep these entries and the filter dropdowns.
+- [x] Jan: FYI only. If you rework the HR sidebar or `/hr`, keep these entries and the filter dropdowns. (done 2026-11-08, merge of origin/main into jan/dev)
 
 ---
 
@@ -37,7 +55,7 @@ Action items:
 - New page `/hr/brain` ("Cervell", sidebar footer) with server actions in `apps/web/app/hr/brain/actions.ts`. It writes only through the existing HR setters (`setConfig`, `setDomainWeight`, `setFormatPreference`). No schema or API change for the employee side.
 
 Action items:
-- [ ] Jan: FYI only. If you rework the HR sidebar, keep the `/hr/brain` link.
+- [x] Jan: FYI only. If you rework the HR sidebar, keep the `/hr/brain` link. (done 2026-11-08, merge of origin/main into jan/dev)
 
 ---
 
@@ -48,7 +66,7 @@ Action items:
 - The web top-up is now redundant but harmless (`addPublishedNeedsToDay` skips rows already in the batch).
 
 Action items:
-- [ ] Jan: remove `addPublishedNeedsToDay` (`@damm/db/employee`) and `getTodaysBatch` (`apps/web/lib/engine.ts`) and call `getEngine().getDailyBatch` directly in `GET /api/pool/next`.
+- [x] Jan: remove `addPublishedNeedsToDay` (`@damm/db/employee`) and `getTodaysBatch` (`apps/web/lib/engine.ts`) and call `getEngine().getDailyBatch` directly in `GET /api/pool/next`. (done 2026-11-08, merge of origin/main into jan/dev)
 
 ## C17 · 2026-11-07 · Jan · NeedCard carries dates, per-question answer counts and participation
 
@@ -317,3 +335,34 @@ Action items:
 - [ ] Natan: make `runAlarms` and `latestInsightPeriod` use the latest period with n of at least 10 (not the newest), and reinstate alarms in the engine job itself, so the HR-side workaround can go and the CLI job behaves the same.
 - [x] Jan: HR pages, job route, scheduler and publish use the above. (done 2026-11-07)
 
+## 2026-11-07: Multi-language questions and portals, ca/es/en (N-6) (Jan)
+
+Additive and backward compatible. Catalan stays canonical; a missing translation falls back to Catalan (`text`).
+
+- `pregunta.text_i18n` (new, nullable TEXT): JSON `{"ca","es","en"}`. NULL means "use `text`".
+- Options inside `options_json` may carry an optional `i18n: {es:{label}, en:{label}}` (scale anchors, pair, choice, ranking). `ScoredOption` and `RankingOption` in `@damm/shared` gain `i18n?`; `Pregunta` gains `textI18n`.
+- `compte.lang` (new, `ca|es|en`, default `ca`): the only language data kept per account. It is never in `v_resposta_analitica`, and push targets expose the language but never the account id.
+- `@damm/shared` exports `LANGS`, `Lang`, `pickText`, `negotiateLang`, `parseTranslations`. `getConnection` runs an idempotent `ensureI18nColumns` so existing DBs gain the columns on start.
+- `GET /api/pool/next` returns text and option labels already in the account's language. The engine still returns only `text` and `options[].label`; the app merges translations by question id and option index (`getQuestionTranslations`).
+- `docs/i18n/question-bank-translations.json`: ca/es/en text and options for the 163 questions of `packages/engine/fixtures/question-bank.json`, keyed by question id. `applyBankTranslations` (called from `apps/web/instrumentation.ts`) backfills rows with NULL `text_i18n` by normalised text, so the engine bank works without touching `packages/engine`.
+- `@damm/ai` drafts es/en in a second pass (`translateQuestionTexts`, `withTranslations`); HR edits them in the draft review before approval. `updateDraftText` and `DraftInput` carry them. A failed pass leaves es/en empty and warns HR.
+- Not translated (data, not UI): AI/analysis text stored in the DB (theme names, signal titles, recommendation text, need text). Drafted scale anchors are not stored for DB drafts.
+
+Action items:
+- [x] Jan: employee PWA, HR portal and manager view dictionaries; language switchers; push per language; draft review with editable es/en. (done 2026-11-07)
+- [ ] Natan: adopt `docs/i18n/question-bank-translations.json` in the engine bank (bank loader and `question-bank.json`) and make the bank Catalan-first (it is English today), so the backfill by text can go.
+- [ ] Natan: when the engine writes `pregunta` rows, set `text_i18n` and option `i18n` from the bank, and keep `compte.lang` out of anything the engine returns.
+- [ ] Natan (optional): translate the engine's insight and alarm texts (`agregat`/`senyal` titles) per language, or store keys instead of sentences.
+
+
+## 2026-11-08: Approver of a recommendation, one comment snippet per theme (R-X-2, R-X-3) (Jan)
+
+Additive and backward compatible.
+
+- `recomanacio.aprovada_per` (new, nullable TEXT): non-personal label of who approved (what HR types in an optional field, max 60 chars, `@` and control characters stripped, default `HR`). Set together with `aprovada_el` by `approveRecommendation(id, approvedBy?)` in `@damm/db/hr`. `getDb` adds the column to existing databases on start (`ensureApprovalColumn`); `schema.sql` has it for new ones. `SignalRecommendation` gains `aprovadaPer`.
+- `getSignalDetail` themes now carry at most 1 verbatim snippet (was 3), and none when the theme has fewer than 10 comments in the signal's scope.
+- The HR gate fails closed in production when `HR_ACCESS_CODE` is empty (`/hr`, `/manager`, `POST /api/jobs/run`). Development stays open.
+
+Action items:
+- [ ] Natan: if the engine or an analysis job writes `recomanacio` rows or approves them, set `aprovada_per` too (never an email or an account id), and keep it out of anything shipped to the employee side.
+- [x] Jan: HR approve forms, recommendation card, signal page, gate. (done 2026-11-08)

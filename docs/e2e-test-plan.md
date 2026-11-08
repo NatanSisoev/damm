@@ -57,7 +57,7 @@ pnpm --filter @damm/engine run demo        # about 4 minutes, writes data/demo.d
 DB_PATH=data/demo.db pnpm dev
 ```
 
-Join codes in the demo DB are `DEMO-<first three letters of the collective>`. Read the real values before testing and write them in the log:
+Join codes in the demo DB are `DEMO-<first three letters of the collective>` (the deployed DB has `DEMO-FAB`: accents are stripped at startup). Read the real values before testing and write them in the log:
 
 ```bash
 sqlite3 data/demo.db "select * from joincode"
@@ -115,7 +115,7 @@ Covers R-FLOW-1 to R-FLOW-8, R-CH-1, N-7. Preconditions: 1.1 to 1.3 done on the 
 
 | # | Flow | Action | Expected | Req | Result |
 |---|---|---|---|---|---|
-| M-1 | F-HR-1 | [B] Open `/hr` with no cookie | Redirect to `/hr-login?next=/hr`. Page "Portal de persones", text "Accés restringit a l'equip de persones. Escriu el codi d'accés de la demo.", field "Codi d'accés", button "Entra" | R-X-3 | ☐ |
+| M-1 | F-HR-1 | [B] Open `/hr` with no cookie | Redirect to `/hr-login?next=/hr`. Page "Accés de Recursos Humans", text "Accés restringit a l'equip de persones. Escriu el codi d'accés de la demo.", field "Codi d'accés", button "Entra" | R-X-3 | ☐ |
 | M-2 | F-HR-1 | [B] Enter a wrong code, press "Entra" | Stays on the page with the alert "Codi incorrecte." No `hr_access` cookie | R-PRIV-3 | ☐ |
 | M-3 | F-HR-1 | [B] Enter the right code (from `.env`), press "Entra" | Cookie `hr_access` set, lands on `/hr`. Nav: "Inici", "Necessitats", "Enllaços i QR", "Resultats", "Alarmes" (with a count badge), "Recomanacions", "Com es calcula?", "Vista de responsables" | R-X-3, R-PRIV-9 | ☐ |
 | M-4 | F-HR-2 | [B] "Necessitats", open "Nova necessitat", press the example "B · Logística des del mòbil" | Fields "Objectiu", "Context", "Què no s'ha de preguntar", "Col·lectiu" (Logística) and "Durada màxima per persona (segons)" (60) are filled | R-FLOW-1a to 1e | ☐ |
@@ -392,7 +392,7 @@ Run date:           2026-11-07 ~19:00-20:30 (Europe/Madrid)
 Commit:             b39c355   branch: jan/e2e-run
 Tester:             Claude (agent session)
 Devices:            built-in browser pane, mobile 375x812 and desktop / no phone
-DB:                 demo (data/demo.db)   Join codes: DEMO-FÀB, DEMO-LOG, DEMO-COM, DEMO-OFI, E2AC187B (new Logística need)
+DB:                 demo (data/demo.db)   Join codes: DEMO-FAB, DEMO-LOG, DEMO-COM, DEMO-OFI, E2AC187B (new Logística need)
 LLM:                fallback (no key; badge "Plantilla de reserva")   HR gate: on for M-1..M-3 and S-4, then OFF (HR_ACCESS_CODE emptied) for the rest of the HR browser cases, because the 12 h cookie expired and the code cannot be typed without echoing it
 Build checks:       check:anonymity P (also via S-5)  lint not run  build not run
 Server:             port 3001 (3000 was taken), so join links and QR show 3000; substitute 3001

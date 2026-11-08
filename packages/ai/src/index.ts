@@ -4,11 +4,15 @@ import { violatesExclusions } from "./exclusions";
 import { fallbackQuestions, fallbackReplacement, fallbackSurvey, isShortTone } from "./fallback";
 import { chatJson, LlmUnavailable } from "./llm";
 import { anchorsClash, anchorsFor, findProblems, jaccard, maxOpen, trimToBudget } from "./quality";
+import { withTranslations } from "./translate";
 import { draftQuestionSchema, draftSurveySchema, estimateSeconds, type DraftQuestion, type DraftSurvey, type NeedInput } from "./types";
 
 export { estimateSeconds, DRAFT_TYPES } from "./types";
 export type { DraftQuestion, DraftSurvey, DraftType, NeedInput } from "./types";
 export { violatesExclusions } from "./exclusions";
+export { questionWarnings, wordLimit } from "./quality";
+export type { QuestionWarning, QuestionWarningCode } from "./quality";
+export { translateQuestionTexts, withTranslations } from "./translate";
 export { classifyCommentsLlm, summariseThemeLlm } from "./comments";
 export type { CommentToClassify, SummaryRequest, ThemeOption } from "./comments";
 
@@ -152,14 +156,20 @@ function finish(survey: Draft, need: NeedInput, source: "llm" | "fallback", note
   return { title: toCatalan(survey.title), intro: fixCount(toCatalan(survey.intro), questions.length), questions, source, notes };
 }
 
+/** Second pass: natural es/en wording for HR to review. Catalan text is untouched; a failed pass just leaves es/en empty. */
+async function translated(s: DraftSurvey): Promise<DraftSurvey> {
+  const questions = await withTranslations(s.questions);
+  return questions.some((q) => q.i18n) ? { ...s, questions } : { ...s, notes: [...s.notes, "Sense traduccions al castellà i anglès: afegeix-les a mà abans d'aprovar."] };
+}
+
 /** Draft a micro-survey from a need. Never throws: falls back to a template and says so in `source` and `notes`. */
 export async function draftSurvey(need: NeedInput): Promise<DraftSurvey> {
   try {
     const { value, left } = await askWithRepair(SYSTEM, userPrompt(need), (x) => draftSurveySchema.parse(x), survProblems(need));
-    return finish(value, need, "llm", left.length ? [`Revisa: ${left.slice(0, 3).join(" ")}`] : []);
+    return await translated(finish(value, need, "llm", left.length ? [`Revisa: ${left.slice(0, 3).join(" ")}`] : []));
   } catch (e) {
     const why = e instanceof LlmUnavailable ? e.message : "resposta de la IA no vàlida";
-    return finish(fallbackSurvey(need), need, "fallback", [`Plantilla de reserva: ${why}.`]);
+    return await translated(finish(fallbackSurvey(need), need, "fallback", [`Plantilla de reserva: ${why}.`]));
   }
 }
 
@@ -182,14 +192,14 @@ export async function redraftQuestion(need: NeedInput, current: DraftQuestion, o
     try {
       const { value, left } = await askWithRepair(SINGLE_SYSTEM, user, (x) => polish(draftQuestionSchema.parse(x)), bad);
       if (process.env.AI_DEBUG) console.error("redraft round", round, "left:", left);
-      if (left.length === 0) return { question: value, source: "llm" };
+      if (left.length === 0) return { question: (await withTranslations([{ ...value, i18n: undefined }]))[0], source: "llm" };
     } catch (e) {
       if (process.env.AI_DEBUG) console.error("redraft error", String(e).slice(0, 200));
       break;
     }
   }
   const f = fallbackReplacement(need, current, others);
-  return f ? { question: f, source: "fallback" } : null;
+  return f ? { question: (await withTranslations([f]))[0], source: "fallback" } : null;
 }
 
 const norm0 = (s: string) => s.toLowerCase().replace(/[^a-zà-ü0-9]/g, "");

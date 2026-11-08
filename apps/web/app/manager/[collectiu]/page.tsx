@@ -20,14 +20,19 @@ import { hrAlarms, hrInsights } from "@/lib/hr-engine";
 import { InsightCards } from "../../hr/insight-cards";
 import { Radar, type RadarSeries } from "../../hr/results/radar";
 import { RepTable, TrendTable } from "../../hr/results/tables";
-import { Card, Empty, PageHeader, SuppressedBadge } from "../../hr/ui";
-import { SignalBadges, SignalText } from "../../hr/signal-labels";
-import { compareSignals } from "@/lib/signal-text";
-import { num1 } from "@/lib/format";
+import { Card, Empty, PageHeader } from "../../hr/ui";
+import { SuppressedBadge } from "../../hr/ui-server";
+import { SignalBadges } from "../../hr/signal-labels";
+import { compareSignals, signalDetail, signalHeadline } from "@/lib/signal-text";
+import { getTL } from "@/lib/i18n/server";
+import { managerDict } from "@/lib/i18n/manager";
+import { collectiveLabel } from "@/lib/i18n/names";
+import { num1L } from "@/lib/i18n/num";
 import { AggregateNote } from "../note";
 
 export default async function ManagerCollectivePage({ params }: { params: Promise<{ collectiu: string }> }) {
   const { collectiu: raw } = await params;
+  const { t, lang } = await getTL(managerDict);
   const nom = decodeURIComponent(raw);
   const all = listCollectius();
   const collectiu = all.find((c) => c.nom === nom);
@@ -38,7 +43,7 @@ export default async function ManagerCollectivePage({ params }: { params: Promis
   const rep = getRepresentativeness();
   const repRows = rep.collectius.filter((r) => r.collectiu === collectiu.nom);
   const shiftRows = rep.torns.filter((r) => r.collectiu === collectiu.nom);
-  const themes = listThemes({ collectiuId: collectiu.id }).filter((t) => !t.suprimit);
+  const themes = listThemes({ collectiuId: collectiu.id }).filter((th) => !th.suprimit);
   const signals = listManagerSignals(collectiu.id);
   const recs = listManagerRecommendations(collectiu.id);
   // Viewer comes from the route's collective, never from a request parameter; managers only get their own hr_manager alarms.
@@ -46,7 +51,7 @@ export default async function ManagerCollectivePage({ params }: { params: Promis
   const insights = hrInsights(viewer, { kind: ["top_mover", "polarisation", "importance_gap", "trajectory_mix", "followup_confirmation", "segment_gap"] }).slice(0, 8);
   const alarms = hrAlarms(viewer);
   const domainName = new Map(listDomains().map((d) => [d.id, d.nom]));
-  const tornName = new Map(listTorns().map((t) => [t.id, t.nom]));
+  const tornName = new Map(listTorns().map((tn) => [tn.id, tn.nom]));
   // One list for alarms and signals, same text and order (severity, then size of the drop).
   const cards = [
     ...alarms.map((a) => ({ key: `alarm-${a.id}`, tipus: a.type, descripcio: a.description, severity: a.severity, n: a.n,
@@ -60,38 +65,38 @@ export default async function ManagerCollectivePage({ params }: { params: Promis
   const prev = trends.periodes[last - 1];
   const radarSeries: RadarSeries[] = series
     ? [
-        { label: `${collectiu.nom} · ${latest}`, values: series.rows.map((r) => r.cells[last]?.mitjana ?? null), tone: "primary" },
-        ...(prev ? [{ label: `${collectiu.nom} · ${prev}`, values: series.rows.map((r) => r.cells[last - 1]?.mitjana ?? null), tone: "compare" as const }] : []),
+        { label: `${collectiveLabel(collectiu.nom, lang)} · ${latest}`, values: series.rows.map((r) => r.cells[last]?.mitjana ?? null), tone: "primary" },
+        ...(prev ? [{ label: `${collectiveLabel(collectiu.nom, lang)} · ${prev}`, values: series.rows.map((r) => r.cells[last - 1]?.mitjana ?? null), tone: "compare" as const }] : []),
       ]
     : [];
 
   return (
     <>
       <PageHeader
-        title={collectiu.nom}
-        subtitle="Resultats del col·lectiu: perfil per domini, tendència, temes i recomanacions aprovades."
+        title={collectiveLabel(collectiu.nom, lang)}
+        subtitle={t("page_subtitle")}
         actions={
           <>
             {rep.periode && <span className="badge num">{rep.periode}</span>}
-            <Link href="/manager" className="btn">Canvia de col·lectiu</Link>
+            <Link href="/manager" className="btn">{t("switch")}</Link>
           </>
         }
       />
       <AggregateNote />
 
       <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
-        <Card title="Perfil per domini" meta="Mitjana per domini">
-          {series ? <Radar axes={series.rows.map((r) => r.domini)} series={radarSeries} /> : <Empty>Encara no hi ha dades visibles per a aquest col·lectiu.</Empty>}
+        <Card title={t("profile")} meta={t("profile_meta")}>
+          {series ? <Radar axes={series.rows.map((r) => r.domini)} series={radarSeries} /> : <Empty>{t("no_visible")}</Empty>}
         </Card>
 
-        <Card title="Recomanacions aprovades" meta={<span className="num">{recs.length}</span>}>
+        <Card title={t("recs")} meta={<span className="num">{recs.length}</span>}>
           {recs.length === 0 ? (
-            <Empty>Encara no hi ha recomanacions aprovades per a aquest col·lectiu.</Empty>
+            <Empty>{t("recs_empty")}</Empty>
           ) : (
             <ul className="space-y-3">
               {recs.map((r) => (
                 <li key={r.id} className="rounded-lg border border-line p-4">
-                  {r.seguiment && <span className="badge badge-accent mb-2">Enquesta de seguiment en marxa</span>}
+                  {r.seguiment && <span className="badge badge-accent mb-2">{t("followup_running")}</span>}
                   <p>{r.text}</p>
                 </li>
               ))}
@@ -101,38 +106,38 @@ export default async function ManagerCollectivePage({ params }: { params: Promis
       </div>
 
       <div className="mt-6 space-y-6">
-        <Card title="Què destaca l'anàlisi" meta={<span className="num">{insights.length}</span>}>
-          <InsightCards insights={insights} empty={`Encara no hi ha prou respostes per destacar res (cal 👤≥${MIN_GROUP_SIZE}).`} />
+        <Card title={t("insights")} meta={<span className="num">{insights.length}</span>}>
+          <InsightCards insights={insights} empty={t("insights_empty", { min: MIN_GROUP_SIZE })} />
         </Card>
 
-        <Card title="Tendència per domini" meta="Mitjana en escala 1–5, per període" flush={!!series}>
+        <Card title={t("trend")} meta={t("trend_meta")} flush={!!series}>
           {series ? (
             <>
               <p className="border-b border-line px-5 py-3 text-xs text-subtle">
-                Cada mitjana mostra la seva n i una precisió: <span className="font-medium">indicativa</span> (n &lt; {PRECISION_MODERADA_MIN_N}),{" "}
-                <span className="font-medium">moderada</span> ({PRECISION_MODERADA_MIN_N}–{PRECISION_SOLIDA_MIN_N - 1}) o{" "}
-                <span className="font-medium">sòlida</span> (n ≥ {PRECISION_SOLIDA_MIN_N}). Un canvi només és «puja» o «baixa» si |Δ| ≥ {num1(CHANGE_MIN_DELTA)} i els dos períodes tenen n ≥ {CHANGE_MIN_N}.
+                {t("prec_a")}<span className="font-medium">{t("prec_indicative")}</span>{t("prec_b", { a: PRECISION_MODERADA_MIN_N })}
+                <span className="font-medium">{t("prec_moderate")}</span>{t("prec_c", { a: PRECISION_MODERADA_MIN_N, b: PRECISION_SOLIDA_MIN_N - 1 })}
+                <span className="font-medium">{t("prec_solid")}</span>{t("prec_d", { c: PRECISION_SOLIDA_MIN_N, delta: num1L(CHANGE_MIN_DELTA, lang), n: CHANGE_MIN_N })}
               </p>
               <TrendTable periodes={trends.periodes} rows={series.rows} />
             </>
           ) : (
-            <Empty>Encara no hi ha dades visibles per a aquest col·lectiu.</Empty>
+            <Empty>{t("no_visible")}</Empty>
           )}
         </Card>
 
         <Card
-          title="Representativitat"
-          meta={<>Respostes davant població sintètica · <Link href="/hr/methodology" className="underline">Com es calcula?</Link></>}
+          title={t("rep")}
+          meta={<>{t("rep_meta")}<Link href="/hr/methodology" className="underline">{t("rep_how")}</Link></>}
           flush={repRows.length > 0}
         >
           {repRows.length === 0 ? (
-            <Empty>Encara no hi ha dades.</Empty>
+            <Empty>{t("rep_empty")}</Empty>
           ) : (
             <>
               <RepTable rows={repRows} byShift={false} />
               {shiftRows.length > 0 && (
                 <>
-                  <div className="border-t border-line px-5 pt-5 pb-2 text-xs font-semibold tracking-wide text-subtle uppercase">Per torn</div>
+                  <div className="border-t border-line px-5 pt-5 pb-2 text-xs font-semibold tracking-wide text-subtle uppercase">{t("by_shift")}</div>
                   <RepTable rows={shiftRows} byShift />
                 </>
               )}
@@ -141,34 +146,35 @@ export default async function ManagerCollectivePage({ params }: { params: Promis
         </Card>
 
         <div className="grid gap-6 lg:grid-cols-2">
-          <Card title="Temes dels comentaris" meta="Tota l'empresa, no només aquest col·lectiu">
+          <Card title={t("themes")} meta={t("themes_meta")}>
             {themes.length === 0 ? (
-              <Empty>Encara no hi ha temes: cal que {MIN_GROUP_SIZE} comentaris o més parlin del mateix a tota l&apos;empresa. S&apos;actualitzen quan s&apos;executa l&apos;anàlisi.</Empty>
+              <Empty>{t("themes_empty", { min: MIN_GROUP_SIZE })}</Empty>
             ) : (
               <ul className="-my-1 divide-y divide-line">
-                {themes.map((t) => (
-                  <li key={t.id} className="py-3">
+                {themes.map((th) => (
+                  <li key={th.id} className="py-3">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-medium">{t.etiqueta}</span>
-                      {t.emergent && <span className="badge badge-accent">Emergent</span>}
-                      <span className="num ml-auto text-xs text-subtle">{t.periode}</span>
+                      <span className="font-medium">{th.etiqueta}</span>
+                      {th.emergent && <span className="badge badge-accent">{t("emergent")}</span>}
+                      <span className="num ml-auto text-xs text-subtle">{th.periode}</span>
                     </div>
-                    {t.resum && <p className="mt-1 text-[13px] text-muted">{t.resum}</p>}
+                    {th.resum && <p className="mt-1 text-[13px] text-muted">{th.resum}</p>}
                   </li>
                 ))}
               </ul>
             )}
-            <p className="mt-3 text-xs text-subtle">Els temes s&apos;extreuen de tots els comentaris. Els que tenen menys de {MIN_GROUP_SIZE} comentaris no es mostren.</p>
+            <p className="mt-3 text-xs text-subtle">{t("themes_foot", { min: MIN_GROUP_SIZE })}</p>
           </Card>
 
-          <Card title="Senyals del col·lectiu" meta={<span className="num">{cards.length}</span>}>
+          <Card title={t("signals")} meta={<span className="num">{cards.length}</span>}>
             {signals.length === 0 && alarms.length === 0 ? (
-              <Empty>Cap senyal per a aquest col·lectiu.</Empty>
+              <Empty>{t("signals_empty")}</Empty>
             ) : (
               <ul className="space-y-3">
                 {cards.map((c) => (
                   <li key={c.key} className="rounded-lg border border-line p-3">
-                    <SignalText s={c} />
+                    <p className="text-[14px] font-semibold">{signalHeadline(c, lang)}</p>
+                    <p className="mt-0.5 text-[13px] text-muted">{signalDetail(c, lang)}</p>
                     <div className="mt-2 flex flex-wrap items-center gap-2">
                       <SignalBadges tipus={c.tipus} severity={c.severity} />
                       <span className="num ml-auto text-xs text-subtle"><People n={c.n} scoped={true} /></span>
@@ -185,10 +191,11 @@ export default async function ManagerCollectivePage({ params }: { params: Promis
   );
 }
 
-function SuppressedNote() {
+async function SuppressedNote() {
+  const { t } = await getTL(managerDict);
   return (
     <p className="mt-3 flex items-center gap-2 text-xs text-subtle">
-      <SuppressedBadge /> Els grups de menys de {MIN_GROUP_SIZE} persones no es mostren mai.
+      <SuppressedBadge /> {t("suppressed_note", { min: MIN_GROUP_SIZE })}
     </p>
   );
 }

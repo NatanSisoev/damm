@@ -9,6 +9,7 @@ import { mulberry32, int, pick, shuffle, normal, chance, type Rng } from "./rng"
 import { THEMES } from "./themes";
 import { CORES, PREFIXES, SUFFIXES } from "./comment-bank";
 import { anchorsOf, BANK, EXTRA, type QItem } from "./questions";
+import { ANCHOR_I18N, QUESTION_I18N } from "./questions-i18n";
 import { runEngineJob, runCommentAnalysisSync, runRecommendations } from "@damm/engine/job";
 import { templateRecommendations } from "@damm/ai/recommendations";
 
@@ -109,22 +110,26 @@ for (const s of SEGS)
 interface Q { id: number; col: string; dom: number; domNom: string; item: QItem }
 const pool: Q[] = [];
 const insQ = db.prepare(
-  `INSERT INTO pregunta (domini_id, collectiu_id, text, tipus, facet, necessitat_id, estat, prioritat, generada_per_ia, aprovada_per, aprovada_el, options_json)
-   VALUES (?,?,?,?,?,NULL,'aprovada',0,0,'seed','2026-07-30 09:00:00',?)`,
+  `INSERT INTO pregunta (domini_id, collectiu_id, text, text_i18n, tipus, facet, necessitat_id, estat, prioritat, generada_per_ia, aprovada_per, aprovada_el, options_json)
+
+   VALUES (?,?,?,?,?,?,NULL,'aprovada',0,0,'seed','2026-07-30 09:00:00',?)`,
 );
 // Scale questions carry their low/high anchors as two scored labels (existing options_json shape).
 function scaleOptionsJson(item: QItem): string | null {
   const a = anchorsOf(item);
   if (!a) return null;
-  return JSON.stringify([{ label: a[0], score: 0 }, { label: a[1], score: item.tipus === "scale10" ? 10 : 5 }]);
+  const tr = (l: string) => ({ ca: l, ...ANCHOR_I18N[l] });
+  return JSON.stringify([{ label: a[0], score: 0, i18n: tr(a[0]) }, { label: a[1], score: item.tipus === "scale10" ? 10 : 5, i18n: tr(a[1]) }]);
 }
+const textI18n = (item: QItem) => JSON.stringify({ ca: item.text, ...QUESTION_I18N[item.text] });
 COLLECTIUS.forEach((col, k) => {
   DOMINIS.forEach((domNom, d) => {
     const items: QItem[] = [0, 1, 2, 3].map((j) => BANK[domNom][(k * 2 + j) % 7]);
     if ((d + k) % 2 === 0) items.push(BANK[domNom][7]);
     for (const e of EXTRA[col] ?? []) if (e.domini === domNom) items.push(e.item);
     for (const item of items) {
-      const id = Number(insQ.run(domId.get(domNom), colId.get(col), item.text, item.tipus, item.facet ?? null, scaleOptionsJson(item)).lastInsertRowid);
+      const id = Number(insQ.run(domId.get(domNom), colId.get(col), item.text, textI18n(item), item.tipus, item.facet ?? null, scaleOptionsJson(item)).lastInsertRowid);
+
       pool.push({ id, col, dom: d, domNom, item });
     }
   });

@@ -1,6 +1,9 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { MIN_GROUP_SIZE } from "@damm/shared";
+import { getT } from "@/lib/i18n/server";
+import { hrDict } from "@/lib/i18n/hr";
+import { LangSwitcher } from "@/components/lang-switcher";
 import { Wordmark } from "../wordmark";
 import { HrSidebar, type NavBadges } from "./nav";
 import "./hr.css";
@@ -12,19 +15,22 @@ export function HrScope({ children }: { children: ReactNode }) {
 
 export type { NavBadges };
 
-const Footer = () => (
-  <footer className="border-t border-line px-4 py-4 text-[12px] text-subtle md:px-8">
-    <p className="mx-auto max-w-6xl">
-      Dades sintètiques. Cap resposta individual. Grups de menys de {MIN_GROUP_SIZE} persones suprimits. La IA proposa, una persona decideix.
-    </p>
-  </footer>
-);
+async function Footer() {
+  const t = await getT(hrDict);
+  return (
+    <footer className="border-t border-line px-4 py-4 text-[12px] text-subtle md:px-8">
+      <p className="mx-auto max-w-6xl">{t("footer", { n: MIN_GROUP_SIZE })}</p>
+    </footer>
+  );
+}
 
 /**
  * Shared chrome. /hr gets a grouped sidebar (drawer below 1024px); /manager keeps the neutral top bar.
  * Red only on the active nav item.
  */
-export function HrShell({ children, subtitle = "Portal de persones", manager = false, badges }: { children: ReactNode; subtitle?: string; manager?: boolean; badges?: NavBadges }) {
+export async function HrShell({ children, subtitle, manager = false, badges }: { children: ReactNode; subtitle?: string; manager?: boolean; badges?: NavBadges }) {
+  const t = await getT(hrDict);
+  subtitle ??= t("shell_subtitle");
   if (manager) {
     return (
       <div className={`hr-shell flex min-h-screen flex-col`}>
@@ -34,8 +40,9 @@ export function HrShell({ children, subtitle = "Portal de persones", manager = f
               <Wordmark className="text-[15px]" />
               <span className="border-l border-line pl-3 text-[11px] text-subtle">{subtitle}</span>
             </Link>
-            <nav aria-label="Seccions" className="ml-auto">
-              <Link href="/hr" className="hr-tab">Portal de persones →</Link>
+            <nav aria-label={t("sections")} className="ml-auto flex items-center gap-4">
+              <LangSwitcher />
+              <Link href="/hr" className="hr-tab">{t("manager_to_portal")}</Link>
             </nav>
           </div>
         </header>
@@ -52,7 +59,7 @@ export function HrShell({ children, subtitle = "Portal de persones", manager = f
         badges={badges}
         subtitle={subtitle}
         logo={
-          <Link href="/hr" aria-label="Escolta activa, inici" className="flex items-center">
+          <Link href="/hr" aria-label={t("logo_aria")} className="flex items-center">
             <Wordmark className="text-[15px]" />
           </Link>
         }

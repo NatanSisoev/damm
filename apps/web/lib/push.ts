@@ -3,7 +3,8 @@
 // aggregate outcome only (a device count, "<10" under the minimum group size): never an
 // account id, endpoint or key.
 import webpush from "web-push";
-import { MIN_GROUP_SIZE } from "@damm/shared";
+import { MIN_GROUP_SIZE, type Lang } from "@damm/shared";
+import { employeeDict } from "@/lib/i18n/employee";
 import { deletePushSubscriptionByEndpoint, listPushTargetsForNecessitat } from "@damm/db/employee";
 
 export type PushOutcome =
@@ -23,7 +24,7 @@ export function pushEnabled(): boolean {
   const priv = process.env.VAPID_PRIVATE_KEY;
   if (!pub || !priv) return (configured = false);
   try {
-    webpush.setVapidDetails(process.env.VAPID_SUBJECT || "mailto:escolta@example.invalid", pub, priv);
+    webpush.setVapidDetails(vapidSubject(), pub, priv);
     configured = true;
   } catch (e) {
     console.warn("[push] invalid VAPID configuration, notifications are off:", (e as Error).message);
@@ -32,11 +33,23 @@ export function pushEnabled(): boolean {
   return configured;
 }
 
-const PAYLOAD = JSON.stringify({
-  title: "Escolta activa",
-  body: "Tens preguntes noves. Només et prendrà un minut.",
-  url: "/",
-});
+/**
+ * VAPID subject (the sender contact). Apple's push service rejects reserved domains such as
+ * example.invalid with 403 BadJwtToken, so prefer VAPID_SUBJECT, then the public https origin.
+ */
+function vapidSubject(): string {
+  const set = process.env.VAPID_SUBJECT?.trim();
+  if (set && !/\.invalid\b|localhost/i.test(set)) return set;
+  const base = process.env.PUBLIC_BASE_URL?.trim().replace(/\/+$/, "");
+  if (base?.startsWith("https://")) return base;
+  return set || "mailto:escolta@example.com";
+}
+
+// One payload per language; each device gets the language stored on its account.
+function payloadFor(lang: Lang): string {
+  const d = employeeDict[lang] ?? employeeDict.ca;
+  return JSON.stringify({ title: d.push_payload_title, body: d.push_payload_body, url: "/" });
+}
 
 /** Notifies every subscribed device in the need's collective (all collectives if it has none). */
 export async function notifyNeedPublished(necessitatId: number): Promise<PushOutcome> {
@@ -44,7 +57,7 @@ export async function notifyNeedPublished(necessitatId: number): Promise<PushOut
   const targets = listPushTargetsForNecessitat(necessitatId);
   const results = await Promise.allSettled(
     targets.map((t) =>
-      webpush.sendNotification({ endpoint: t.endpoint, keys: { p256dh: t.p256dh, auth: t.auth } }, PAYLOAD, { TTL: 60 * 60 * 24 }),
+      webpush.sendNotification({ endpoint: t.endpoint, keys: { p256dh: t.p256dh, auth: t.auth } }, payloadFor(t.lang), { TTL: 60 * 60 * 24 }),
     ),
   );
   let delivered = 0;

@@ -2,6 +2,8 @@ import type { Metadata, Viewport } from "next";
 import { Hanken_Grotesk } from "next/font/google";
 import "./globals.css";
 import { ServiceWorkerRegister } from "./(employee)/components/sw-register";
+import { LangProvider } from "@/lib/i18n/client";
+import { getLang } from "@/lib/lang";
 
 // One font for the whole app (docs/visual-identity.md): Hanken Grotesk 400, 500, 700, 800.
 const hanken = Hanken_Grotesk({
@@ -21,14 +23,15 @@ export const metadata: Metadata = {
 
 // Paper ink: same as the manifest theme_color and the icon background.
 export const viewport: Viewport = {
-  themeColor: "#17211a",
+  themeColor: "#0a0a0a",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  const lang = await getLang();
   return (
-    <html lang="ca" suppressHydrationWarning className={`${hanken.variable} h-full antialiased`}>
+    <html lang={lang} suppressHydrationWarning className={`${hanken.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
-        {children}
+        <LangProvider lang={lang}>{children}</LangProvider>
         <ServiceWorkerRegister />
       </body>
     </html>

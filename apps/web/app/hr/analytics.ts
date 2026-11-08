@@ -3,10 +3,8 @@
 import { MIN_GROUP_SIZE } from "@damm/shared";
 import { shownCount, getRepresentativeness, getTrends, listRecommendations, listThemes, type TrendCell } from "@damm/db/hr";
 import { hrInsights, type InsightView } from "@/lib/hr-engine";
-import { fixShifts } from "@/lib/format";
 
-const f1 = (v: number) => v.toLocaleString("ca-ES", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
-const pct = (v: number) => `${Math.round(v)}%`;
+// User-facing sentences are built in analytics-ui.tsx (translated); this module only returns structured figures.
 
 export const COMPANY = "Tots";
 
@@ -39,10 +37,18 @@ export function getProposals() {
 
 // ---------- headlines ----------
 
+export type HeadlineWhere = { domain: string | null; collective: string; shift: string | null };
+export type HeadlineMsg =
+  | { k: "mover"; where: HeadlineWhere; up: boolean; delta: number; prev: number; cur: number }
+  | { k: "polar"; where: HeadlineWhere; drop: number; consensus: number }
+  | { k: "importance"; where: HeadlineWhere; importance: number; score: number }
+  | { k: "shiftgap"; where: HeadlineWhere; low: string | null; high: string | null; gap: number; lowScore: number; highScore: number }
+  | { k: "manager"; where: HeadlineWhere; gap: number };
+
 export type Headline = {
   key: string;
   tone: "up" | "down" | "warn" | "neutral";
-  text: string;
+  msg: HeadlineMsg;
   n: string; // shownCount: exact for company-wide rows, "≥10" for collective or shift rows
   confidence: number | null;
   href: string;
@@ -50,8 +56,6 @@ export type Headline = {
 
 function headlineOf(i: InsightView): (Headline & { rank: number }) | null {
   if (i.suppressed || !i.detail) return null;
-  const where = (l: { collective: string; domain: string | null; shift: string | null }) =>
-    `${l.domain ?? "El clima"} ${l.collective === "All" ? "a tota l'empresa" : `a ${l.collective}`}${l.shift ? ` (${fixShifts(l.shift)})` : ""}`;
   const base = { key: `${i.kind}-${i.id}`, n: shownCount(i.n, i.collectiuId !== null || i.tornId !== null) };
   switch (i.kind) {
     case "top_mover": {
@@ -60,7 +64,7 @@ function headlineOf(i: InsightView): (Headline & { rank: number }) | null {
       return {
         ...base,
         tone: up ? "up" : "down",
-        text: `${where(d.labels)} ${up ? "puja" : "baixa"} ${f1(Math.abs(d.delta))} punts (de ${f1(d.previous.score)} a ${f1(d.current.score)} sobre 10).`,
+        msg: { k: "mover", where: d.labels, up, delta: Math.abs(d.delta), prev: d.previous.score, cur: d.current.score },
         confidence: d.current.confidence,
         href: segHref(d.labels.collective, d.labels.domain),
         rank: 100 + Math.abs(d.delta) * (d.current.confidence / 100) * 10 + (up ? 0 : 5),
@@ -71,7 +75,7 @@ function headlineOf(i: InsightView): (Headline & { rank: number }) | null {
       return {
         ...base,
         tone: "warn",
-        text: `${where(d.labels)}: les opinions s'allunyen (el consens baixa ${Math.round(d.consensusDrop)} punts, ara ${pct(d.current.consensus)}).`,
+        msg: { k: "polar", where: d.labels, drop: d.consensusDrop, consensus: d.current.consensus },
         confidence: d.current.confidence,
         href: segHref(d.labels.collective, d.labels.domain),
         rank: 80 + d.consensusDrop / 5,
@@ -83,7 +87,7 @@ function headlineOf(i: InsightView): (Headline & { rank: number }) | null {
       return {
         ...base,
         tone: "down",
-        text: `${where(d.labels)} és important per a la plantilla (${pct(d.importance * 100)}) però puntua només ${f1(d.score)}/10: actua-hi primer.`,
+        msg: { k: "importance", where: d.labels, importance: d.importance * 100, score: d.score },
         confidence: null,
         href: segHref(d.labels.collective, d.labels.domain),
         rank: 90 + d.priority * 10,
@@ -95,7 +99,7 @@ function headlineOf(i: InsightView): (Headline & { rank: number }) | null {
         return {
           ...base,
           tone: "warn",
-          text: `${where(d.labels)}: ${fixShifts(d.lowest.label ?? "un torn")} puntua ${f1(d.gap)} punts per sota de ${fixShifts(d.highest.label ?? "un altre torn")} (${f1(d.lowest.score)} davant ${f1(d.highest.score)}).`,
+          msg: { k: "shiftgap", where: d.labels, low: d.lowest.label ?? null, high: d.highest.label ?? null, gap: d.gap, lowScore: d.lowest.score, highScore: d.highest.score },
           confidence: null,
           href: segHref(d.labels.collective, d.labels.domain),
           rank: 60 + d.gap * 5,
@@ -104,7 +108,7 @@ function headlineOf(i: InsightView): (Headline & { rank: number }) | null {
       return {
         ...base,
         tone: "warn",
-        text: `${where(d.labels)}: els responsables puntuen ${f1(Math.abs(d.gap))} punts ${d.gap >= 0 ? "per sobre" : "per sota"} de la resta. Pot ser un biaix de positivitat.`,
+        msg: { k: "manager", where: d.labels, gap: d.gap },
         confidence: null,
         href: segHref(d.labels.collective, d.labels.domain),
         rank: 50 + Math.abs(d.gap) * 5,
@@ -134,7 +138,7 @@ export function getHeadlines(): Headline[] {
   for (const h of all) if (picked.length < 5 && !picked.includes(h)) picked.push(h);
   return picked
     .sort((a, b) => b.rank - a.rank)
-    .map((h) => ({ key: h.key, tone: h.tone, text: h.text, n: h.n, confidence: h.confidence, href: h.href }));
+    .map((h) => ({ key: h.key, tone: h.tone, msg: h.msg, n: h.n, confidence: h.confidence, href: h.href }));
 }
 
 // ---------- heatmap ----------
@@ -284,7 +288,7 @@ export function getThemesByDomain(domains: string[]): ThemesByDomain {
 
 // ---------- who to reach ----------
 
-export type ReachGap = { key: string; text: string; action: string; pp: number };
+export type ReachGap = { key: string; kind: "col·lectiu" | "torn"; label: string; resp: number; pop: number; pp: number };
 
 export function getReachGaps(limit = 4): ReachGap[] {
   const rep = getRepresentativeness();
@@ -296,11 +300,10 @@ export function getReachGaps(limit = 4): ReachGap[] {
     gaps.push({
       key: `${kind}-${label}`,
       pp,
-      text: `${kind === "torn" ? `El torn ${label}` : label} aporta el ${Math.round(r.respShare * 100)}% de les respostes però és el ${Math.round(r.popShare * 100)}% de la plantilla (${pp} pp).`,
-      action:
-        kind === "torn"
-          ? `Envia les preguntes a l'hora del torn ${label} i reforça el recordatori abans del canvi de torn.`
-          : `Demana a ${label} que comparteixi l'enllaç d'invitació i prova un recordatori curt.`,
+      kind,
+      label,
+      resp: Math.round(r.respShare * 100),
+      pop: Math.round(r.popShare * 100),
     });
   };
   for (const r of rep.collectius) add(r.collectiu, "col·lectiu", r);

@@ -1,6 +1,8 @@
 import type { ReactNode } from "react";
 import { Wordmark } from "../../wordmark";
 
+export { CompanyLabel } from "./company-label";
+
 // Scope for the employee app: 16px text, 44px targets, 3px focus (.emp in globals.css).
 // HR and manager pages never render this.
 export function EmployeeFrame({ children, className = "" }: { children: ReactNode; className?: string }) {
@@ -57,9 +59,4 @@ export function PrivacyNote({ children }: { children: ReactNode }) {
       <span>{children}</span>
     </p>
   );
-}
-
-// Relation to Estrella Damm: text only, no logo.
-export function CompanyLabel() {
-  return <p className="eyebrow pb-8 text-center">Persones · Estrella Damm</p>;
 }

@@ -9,23 +9,25 @@ Idea: ink on paper. Text first, thin rules, no decoration. Red is a signal, neve
 - Product name stays **Escolta activa** (short name in the PWA: **Escolta**).
 - Wordmark is plain text in Hanken Grotesk 800. No logo lockup with a symbol.
 - Do **not** use the Damm wordmark (`app/hr/damm-logo.tsx`, from Wikimedia) or the white "D" speech bubble icon. Both read as Damm's own branding. Replace them.
-- App icon: ink `#17211a` square with a white "E" or a plain speech-bubble outline. Maskable variant keeps the glyph inside the safe zone.
+- App icon: ink `#0a0a0a` square with a white "E" or a plain speech-bubble outline. Maskable variant keeps the glyph inside the safe zone.
 - Relation to Estrella Damm: a small text label such as "Persones · Estrella Damm" in the footer or the login. No logo, star, red-and-gold combination or proprietary font.
 
 ## Palette
 
-Tokens already exist in `apps/web/app/hr/hr.css` and become the single source for all routes.
+Strict white, black and red (backlog #28). Source: `apps/web/app/globals.css`; `hr.css` reuses it. No tinted neutrals: every grey has equal R, G and B.
 
 | Token | Light | Dark | Use |
 |---|---|---|---|
-| `--bg` | `#eef0ea` | `#121512` | page |
-| `--surface` | `#fbfcf9` | `#1a1e1a` | cards, bars |
-| `--surface-muted` | `#e6e9e0` | `#232823` | tracks, wells |
-| `--border` / `--border-strong` | `#d3d9cc` / `#b9c1b0` | `#2f362f` / `#434c43` | 1px rules |
-| `--text` / `--text-muted` | `#17211a` / `#52604f` | `#eef1ea` / `#b2bcaf` | text |
-| `--accent` | `#17211a` (ink) | `#eef1ea` | primary buttons, focus, selected state |
-| `--brand-red` | `#c8201a` | `#ff7a6e` | active nav tab, participation bar, alarms and weak signals only |
-| `--warn` / `--good` | `#a3331f` / `#1d6b34` | `#ff9a86` / `#7fd194` | status text with a label |
+| `--bg` | `#ffffff` | `#000000` | page |
+| `--surface` | `#ffffff` | `#0a0a0a` | cards, bars |
+| `--surface-muted` | `#f2f2f2` | `#1a1a1a` | tracks, wells |
+| `--border` / `--border-strong` | `#dcdcdc` / `#b3b3b3` | `#2e2e2e` / `#4a4a4a` | 1px rules |
+| `--text` / `--text-muted` | `#0a0a0a` / `#4d4d4d` | `#ffffff` / `#b8b8b8` | text |
+| `--accent` | `#0a0a0a` (ink) | `#ffffff` | primary buttons, focus, selected state |
+| `--brand-red` | `#c8201a` | `#e0302a` | active nav tab, participation bar, alarms and weak signals only |
+| `--warn` / `--good` | `#c8201a` / `#0a0a0a` | `#ff6b60` / `#ffffff` | status text with a label |
+
+Outside the CSS tokens (phase 2): `themeColor`, `icon.svg`, the PNG icons in `public/icons` (background `#0a0a0a`, white glyph), manifest `background_color #ffffff` / `theme_color #0a0a0a`, and `public/offline.html` (light `#ffffff` / `#0a0a0a` / `#4d4d4d`, dark `#000000` / `#ffffff` / `#b8b8b8`). The Teams card preview (`hr/publish/[codi]/teams`) keeps Microsoft's own greys and purple on purpose, because it mimics Teams.
 
 Rules:
 - Primary buttons are ink, not red. Red never fills a button.
@@ -72,7 +74,7 @@ Coordinate with the HR UI polish branch before touching `hr.css` or HR pages. Up
 
 - `apps/web/app/globals.css` is the single token source (light and dark, 2px radii, `--line`, `--line-strong`, `--control-border` for 3:1 employee controls, `--on-accent`). `hr.css` keeps HR layout only. `brand.css`, `BrandHero`, `damm-logo.tsx`, Alfa Slab One and the zinc and black-sidebar tokens are gone.
 - Employee screens share `(employee)/components/frame.tsx` (`EmployeeFrame`, flat `PageHead`, outline `LockIcon`, `PrivacyNote`, `CompanyLabel` "Persones · Estrella Damm"). `app/wordmark.tsx` is the text wordmark used by HR and the poster.
-- Hanken Grotesk is loaded once in `app/layout.tsx` (400, 500, 700, 800). `themeColor` is ink `#17211a`, manifest background `#eef0ea`.
+- Hanken Grotesk is loaded once in `app/layout.tsx` (400, 500, 700, 800). `themeColor` is ink `#0a0a0a`, manifest background `#ffffff`.
 - `app/icon.svg` and the four PNG icons are regenerated (ink square, white E, maskable keeps the glyph in the safe zone). `public/offline.html` follows the same palette and supports dark mode.
 - Chart tokens (`--co-*`, `--dom-*`, heatmap) moved unchanged, so the dataviz palette validation was not re-run.
 - Error text uses `--warn` now, because the accent is ink and no longer distinct from body text.

@@ -21,7 +21,7 @@ Status legend:
 - `missing`: nobody has built it.
 - `blocked`: waiting on Natan's area (engine, AI, analysis, schema).
 
-Status snapshot: 7 Nov 2026, evening. `packages/engine`, `packages/ai` and `packages/analysis` do not exist on `jan/dev` or `origin/natan/dev` yet. Natan's engine spec is on `origin/natan/engine-spec`.
+Status snapshot: 7 Nov 2026, evening. `packages/engine` (Natan's) and `packages/ai` exist and are wired in; there is no separate `packages/analysis`, its jobs live in the engine (`packages/engine/src/job.ts`, `comments.ts`). Natan's engine spec is `docs/engine.md`.
 
 ---
 
@@ -32,8 +32,8 @@ G-§9: "Criteris excloents". These outrank everything else.
 | ID | Requirement | Status | Evidence / gap |
 |----|-------------|--------|----------------|
 | R-X-1 | No real personal data anywhere: code, seed, DB, slides, screenshots, LLM prompts | done | Seed is synthetic (`packages/seed`). Re-check slide screenshots before the deck. |
-| R-X-2 | No identifiable individual results on any screen or export | done | n≥10 suppression plus complementary suppression (task 17), CSV export with `suprimit` (task 8). |
-| R-X-3 | Human control: nothing the AI proposes takes effect without a person approving it | done | Questions need `aprovada`; recommendations need approval. Re-verify once Natan's AI calls land. Gap: the approver of a recommendation is not recorded (needs `recomanacio.aprovada_per/aprovada_el`); `/hr/*` now sits behind `HR_ACCESS_CODE`. |
+| R-X-2 | No identifiable individual results on any screen or export | done | n≥10 suppression plus complementary suppression (task 17), CSV export with `suprimit` (task 8). Free text: at most 1 verbatim snippet per theme, only when the theme has ≥10 comments in scope (`hr-signals.ts`); otherwise counts only. Redaction is still regex only (`pii.ts`). |
+| R-X-3 | Human control: nothing the AI proposes takes effect without a person approving it | done | Questions need `aprovada`; recommendations need approval. Re-verify once Natan's AI calls land. Approver recorded: `recomanacio.aprovada_per` (non-personal label HR types, max 60 chars, default "HR") plus `aprovada_el`, shown as "Aprovada per X, data". `/hr/*`, `/manager/*` and `POST /api/jobs/run` sit behind `HR_ACCESS_CODE` and fail closed in production when it is unset. |
 | R-X-4 | No tokens or secrets exposed in code, git history, slides or screenshots | partial | `.env` is gitignored and `.env.example` has empty values. Still to do: a history scan (`git log -p \| grep -iE "key\|token\|secret"`) before the PR, and a check of the slides and screenshots. |
 
 ## 1. Challenge statement and principle
@@ -66,9 +66,9 @@ G-§4 is the authoritative list ("Tots els equips han de cobrir aquest recorregu
 |----|-------------|--------|----------------|
 | R-FLOW-1a | HR describes the objective in natural language | done | `/hr/needs`, `text_nl` |
 | R-FLOW-1b | Target collective | done | Collective select, or "Tots" |
-| R-FLOW-1c | Context | partial | Only free text. There is no separate context field. |
+| R-FLOW-1c | Context | done | Separate optional field in `apps/web/app/hr/needs/need-form.tsx` (`context` textarea, with examples), stored in `necessitat.context`, passed to the AI prompt (`packages/ai/src/index.ts`). |
 | R-FLOW-1d | Maximum duration | done | `durada_max_s`, default 120 s |
-| R-FLOW-1e | **What must not be asked** ("què no s'ha de preguntar") | partial | The column exists (`necessitat.exclusions`, on main). The need form, the AI prompt and the quality checker (19) do not use it yet: in progress on the need-AI branch. |
+| R-FLOW-1e | **What must not be asked** ("què no s'ha de preguntar") | done | Optional "exclusions" field in `need-form.tsx`, stored in `necessitat.exclusions`, sent to the AI prompt (`packages/ai/src/index.ts`), enforced on drafts (`violatesExclusions`, `packages/ai/src/exclusions.ts`) and flagged by the quality checker (`packages/ai/src/quality.ts`). |
 
 ### R-FLOW-2 Generate the survey with AI
 | ID | Requirement | Status | Evidence / gap |
@@ -88,13 +88,13 @@ G-§4 is the authoritative list ("Tots els equips han de cobrir aquest recorregu
 | R-FLOW-3b | HR can **delete** each question | done | `discardQuestionAction` |
 | R-FLOW-3c | HR can **reorder** questions | done | `moveDraftAction` with `pregunta.ordre` (C3 draft column, contract entry pending). |
 | R-FLOW-3d | HR **approves**. The AI never publishes without approval | done | `approveQuestionAction`; only `aprovada` enters the pool. |
-| R-FLOW-3e | Quality warnings before approval (bias in the wording, D-S9 #4) | missing | Task 19 (ready) |
+| R-FLOW-3e | Quality warnings before approval (bias in the wording, D-S9 #4) | done | `questionWarnings` (`packages/ai/src/quality.ts`, same rules as the AI repair loop) runs on every draft in `draft-review.tsx` and re-runs on the saved text after an HR edit; ca/es/en strings in `hr-draft-review.ts`. Warnings inform, they never block Approve. |
 
 ### R-FLOW-4 Publish
 The guide says "Publicar a Typeform". AGENTS.md decides to ignore Typeform: the app is the channel. The equivalent requirement is below. **Explain this choice on the pitch** (we own the anonymity boundary end to end).
 | ID | Requirement | Status | Evidence / gap |
 |----|-------------|--------|----------------|
-| R-FLOW-4a | Publishing makes the approved questions live | done | `publishNecessitat` sets `publicada`; `notifyNeedPublished` (`apps/web/lib/push.ts`) sends web push to the need's collective and returns only a device count (`<10` under 10). Button "Publica i envia la notificació" on `/hr/needs`, redesigned in the HR UI audit (4bc0db3): filter tabs with counts, fact cards (collective, dates, participation n/population, per-question answers `<10` suppressed), confirm before closing. An employee in the collective who opens `/` (login or push tap) gets the published need's unanswered questions at once, past the daily cap (`addPublishedNeedsToDay` via `getTodaysBatch`). |
+| R-FLOW-4a | Publishing makes the approved questions live | done | `publishNecessitat` sets `publicada`; `notifyNeedPublished` (`apps/web/lib/push.ts`) sends web push to the need's collective and returns only a device count (`<10` under 10). Button "Publica i envia la notificació" on `/hr/needs`, redesigned in the HR UI audit (4bc0db3): filter tabs with counts, fact cards (collective, dates, participation n/population, per-question answers `<10` suppressed), confirm before closing. An employee in the collective who opens `/` (login or push tap) gets the published need's unanswered questions at once, past the daily cap (the engine's `getDailyBatch` tops up published needs itself, C18). |
 | R-FLOW-4b | A shareable **link** | done | `/hr/publish`, onboarding join URL per collective (not per need: a need reaches people by push) |
 | R-FLOW-4c | A **QR** | done | Server-side SVG plus a printable A4 poster |
 | R-FLOW-4d | Publish via **API** / M365 integration (D-S13) | done | `/hr/publish/[codi]/teams`: Adaptive Card preview, copyable JSON, optional send to `TEAMS_WEBHOOK_URL`. The webhook send is not yet tested against a real Teams channel. |
@@ -105,8 +105,8 @@ The guide says "Publicar a Typeform". AGENTS.md decides to ignore Typeform: the 
 | R-FLOW-5a | Mobile **and PC** | done | Responsive PWA |
 | R-FLOW-5b | QR access | done | `/join/[codi]` |
 | R-FLOW-5c | **Frequency** strategy (about 2 a day, no repeats 4 days in a row) | blocked | Pool stub today; engine is Natan's |
-| R-FLOW-5d | **Reminders** | partial | Web push built: opt-in toggle (`/settings`, nudge on `/`), subscription in `push_subscripcio`, a publish notifies the collective, expired subscriptions (404/410) deleted. No daily reminder job yet. A real phone needs HTTPS (task 9). |
-| R-FLOW-5e | **Representativeness control** while collecting (warn when a group is under-sampled) | partial | Shown on results; the reach card links to a new need aimed at the gap (`/hr/needs?nova=1#nova`, c1c7422). The engine raises a `baixa_participacio` alarm (C9; banner pending) and can act on it with a time-boxed probe that samples a domain more in a segment (`startProbe`, C12) with progress. Indagar button and progress card on the signal page (51458d3). |
+| R-FLOW-5d | **Reminders** | partial | Web push built: opt-in toggle (`/settings`, nudge on `/`), subscription in `push_subscripcio`, a publish notifies the collective, expired subscriptions (404/410) deleted. Low-participation banner on a published need (`apps/web/app/hr/participation.ts`: under 30 % of the collective's population, or under the minimum group size) with a "Send a reminder" button (`remindNeedAction`, same push path as publish, aggregate device count only, `<10` under the minimum). No automatic daily reminder job yet. A real phone needs HTTPS (task 9). |
+| R-FLOW-5e | **Representativeness control** while collecting (warn when a group is under-sampled) | partial | Shown on results; the reach card links to a new need aimed at the gap (`/hr/needs?nova=1#nova`, c1c7422). The engine raises a `baixa_participacio` alarm (C9); the needs page now shows a participation banner with a reminder action and can act on it with a time-boxed probe that samples a domain more in a segment (`startProbe`, C12) with progress. Indagar button and progress card on the signal page (51458d3). |
 | R-FLOW-5f | Does not saturate anyone | blocked | Engine rules |
 
 ### R-FLOW-6 Collect and analyse
@@ -187,7 +187,7 @@ D-S9 and D-S10. Each needs a named mitigation we can point at in the demo. "AI d
 | R-BIAS-5 | Social desirability | Anonymity promise plus `/privacitat`; **show the manager positivity gap** (seeded `MANAGER_BONUS`) | missing: the manager segment is not shown anywhere (option B, not started) |
 | R-BIAS-6 | Timing | The engine spreads questions over days and shifts; trend change rule | partial |
 | R-BIAS-7 | Segmentation (averages hide collectives) | Always broken down by collective, domain radar per collective | done |
-| R-BIAS-8 | Analysis (confirmation bias) | Change rule, precision bands, "correlation is not cause" note, human validation of signals | partial (methodology page `/hr/methodology` pending merge, audit item 19) |
+| R-BIAS-8 | Analysis (confirmation bias) | Change rule, precision bands, "correlation is not cause" note, human validation of signals | partial (change rule, precision bands and human approval are explained on `/hr/methodology`; the page has no explicit "correlation is not cause" sentence yet) |
 
 ### R-DIFF (D-S10)
 | ID | Difficulty | Our answer | Status |
@@ -219,9 +219,9 @@ G-§8 principles, D-S16 trust pillars and D-S17 golden rules, merged. All Must.
 | R-PRIV-3 | Automatic detection and removal of identifying data in comments (names, emails, phones) | G-§8 | done | `redactPii` regex before storage. LLM pass is optional (Natan). |
 | R-PRIV-4 | No individual profile or inference about specific people; cannot be used to evaluate anyone | G-§8, D-S16 "No vigilància" | done | Trajectories exist only inside the analysis layer; the admin sees counts only. |
 | R-PRIV-5 | **Transparency to respondents**: what the survey is for and how data is handled | G-§8, D-S16 | done | `/privacitat`: what we collect, what HR sees (n≥10), what we never do, comment redaction, session and account deletion (answers stay anonymous). |
-| R-PRIV-6 | **Explainability**: sample size, confidence and limits of the analysis; correlations are not causes | G-§8 | partial | n and precision bands done; HR UI audit (c1c7422) adds scale and threshold explanations on trends and empty-state reasons linking to the methodology page; methodology page `/hr/methodology` built on `claude/audit-p2-methodology-8b92a4` (audit item 19), status unchanged until merge |
+| R-PRIV-6 | **Explainability**: sample size, confidence and limits of the analysis; correlations are not causes | G-§8 | partial | n and precision bands done; scale and threshold explanations on trends; empty states link to the methodology page `/hr/methodology` (`apps/web/app/hr/methodology/page.tsx`: sample size, precision bands, change rule, suppression, anonymity, limits, retention). Gap: no explicit "correlation is not cause" sentence on the page. |
 | R-PRIV-7 | Human control: HR validates surveys and recommendations before acting | G-§8, D-S16, D-S17 | done | |
-| R-PRIV-8 | **Minimisation and expiry**: keep only what is needed, for as long as needed | G-§8 | partial | Minimisation done (no email or phone, redacted comments only). **No retention or expiry rule exists.** Add a documented retention period and a purge script or job. |
+| R-PRIV-8 | **Minimisation and expiry**: keep only what is needed, for as long as needed | G-§8 | done | Minimisation (no email or phone, redacted comments only) plus a retention rule: `RETENTION` in `packages/shared/src/index.ts` (raw responses and redacted comments 24 months, inactive accounts 24 months, push subscriptions deleted on logout and after 12 months). `purgeExpired` in `packages/db/src/retention.ts` deletes raw rows past the window and keeps all aggregate tables; run it as `pnpm --filter @damm/db run purge [-- --dry-run]` or as the last step of `POST /api/jobs/run` (`?dryRun=1` counts only). Shown in plain words on `/hr/methodology` section 7 and `/privacitat`. The 24-month window keeps the Aug-Oct 2026 seed until Aug 2028. Caveat: the comment job rebuilds `tema` from the comments that remain, so themes of purged periods disappear at its next run (open item for Natan, C19). |
 | R-PRIV-9 | Equity: check coverage and results per collective | D-S16 | done | |
 | R-PRIV-10 | **Traceability**: record sources, criteria and decisions | D-S16 | blocked | Task 21 needs the `decisio` table and `font` fields (Natan) |
 | R-PRIV-11 | Synthetic data only | D-S17, G-§6 | done | |
@@ -298,16 +298,16 @@ Bonus items named by the guide (G-§4 "Bonus") and the deck (D-S18), then our ow
 | N-3 | **Experience for people without a computer** | G bonus, D-S18 | Plant and logistics, scenario B | partial | QR plus mobile done. Add a **kiosk mode**: shared tablet, no account, one answer per session with a rate limit, own `canal` value. |
 | N-4 | **Actionable wellbeing recommendations** | G bonus, D-S18 | Value for people | done (engine side) | Proposals name a Damm initiative, a suggested owner and timeframe, and cite n and confidence. UI done (51458d3). |
 | N-5 | **Dynamic follow-up questions** | G bonus | Ties to R-FLOW-2e | missing | A low score triggers an open "why?" question in the same session. |
-| N-6 | **Multi-language** | G bonus | Catalan, Spanish, English at minimum; plant staff | missing | i18n on the employee app first; the AI translates approved questions with human review. |
+| N-6 | **Multi-language** | G bonus | Catalan, Spanish, English at minimum; plant staff | done (UI + questions) | Employee PWA, HR portal and manager view in ca/es/en (typed dictionaries in `apps/web/lib/i18n`, cookie `damm_lang`, `compte.lang`, switcher in onboarding, settings, HR nav and manager). Questions carry `text_i18n` and option `i18n`; AI drafts es/en and HR edits them in the review screen. Push follows the subscriber's language. Gaps: DB-sourced analysis text (themes, signals, recommendations) stays in the language it was written; engine bank still English until Natan adopts `docs/i18n/`. See `docs/i18n/README.md`. |
 | N-7 | **Full cycle in one platform** | D-S18 | Already our architecture | done | Say it explicitly. |
 | N-8 | Manager segment in HR results (social desirability, R-BIAS-5) | ours | Shows we detect a seeded bias | missing (manager view `/manager/[collectiu]` audited, empty-state themes explained in c1c7422; the manager-bias segment itself is still open) | "Option B". Needs a db query on `es_manager` (Natan's area: flag). Only above n≥10. |
-| N-9 | Methodology page "Com calculem" | ours | Explainability, scenario C6 | missing | Task 18, ready |
-| N-10 | Question-quality checker | ours | Wording bias, R-BIAS-4 | missing | Task 19, ready |
+| N-9 | Methodology page "Com calculem" | ours | Explainability, scenario C6 | done | `apps/web/app/hr/methodology/page.tsx`, linked from results and the HR nav (ca/es/en) |
+| N-10 | Question-quality checker | ours | Wording bias, R-BIAS-4 | done | Per-question warnings in the draft review, see R-FLOW-3e |
 | N-11 | Decision audit log and AI provenance | ours | Traceability, R-PRIV-10 | blocked | Task 21 |
 | N-12 | Installable PWA plus daily push reminder | ours | Reminders R-FLOW-5d, participation | partial | Installable: manifest, icons (Paper identity, ink `#17211a`), offline page, service worker with push and notification click. Subscribe and send on publish built; a daily reminder and the tunnel (9) are open. |
 | N-13 | Participation by channel chart | G-§6.2 | Uses the `canal` field we already store | missing | Small: one aggregate by `canal` with suppression. |
 | N-14 | Initiative ↔ domain mapping | D-S3 | Turns results into "is our policy working?" | missing | R-DOM-5 |
-| N-15 | Retention and purge job | G-§8 | Closes R-PRIV-8 | missing | Document the period; a script deletes old `resposta` rows after aggregation. |
+| N-15 | Retention and purge job | G-§8 | Closes R-PRIV-8 | done | See R-PRIV-8. |
 | N-16 | Accuracy of the theme classifier against `resposta_seed` | G-§6.2 | A number that proves analysis quality | done | `pnpm --filter @damm/engine run comments:eval`: 91.2 % top-1, 97.4 % recall, 84.8 % precision (engine.md section 12, with the template-data caveat). |
 | N-17 | Demo reset and presenter mode | ours | Demo reliability | deferred | Task 15, after 8 Nov 09:00 |
 | N-18 | Question reordering and conditional logic in review | G-§4 | Closes R-FLOW-3c and R-FLOW-2e | missing | Needs an `ordre` field (shared contract). |

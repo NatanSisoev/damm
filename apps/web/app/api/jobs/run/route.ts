@@ -1,12 +1,12 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { getDb } from "@damm/db";
+import { getDb, purgeExpired } from "@damm/db";
 import { reinstateAlarmsForReadingPeriod } from "@damm/db/hr";
 import { runEngineJob, runCommentAnalysisSync, runRecommendations } from "@damm/engine/job";
 import { draftRecommendations } from "@damm/ai";
-import { HR_COOKIE, accessToken, gateEnabled } from "@/lib/hr-access";
+import { HR_COOKIE, accessToken, gateEnabled, gateMisconfigured } from "@/lib/hr-access";
 
 // The analysis job: engine (aggregates, insights, alarms) -> comment themes -> recommendation proposals.
-// Job code only: never call these from a dashboard request path. HR-only (same gate as /hr).
+// Ends with the retention purge (RETENTION in @damm/shared). Job code only: never call these from a dashboard request path. HR-only (same gate as /hr).
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -15,6 +15,7 @@ type EngineDb = Parameters<typeof runEngineJob>[0]; // better-sqlite3 satisfies 
 let running = false;
 
 export async function POST(req: NextRequest) {
+  if (gateMisconfigured()) return NextResponse.json({ error: "access not configured" }, { status: 503 });
   if (gateEnabled()) {
     const token = req.cookies.get(HR_COOKIE)?.value;
     if (!token || token !== (await accessToken(process.env.HR_ACCESS_CODE!))) {
@@ -33,7 +34,9 @@ export async function POST(req: NextRequest) {
     const comments = runCommentAnalysisSync(db, { now });
     // Proposals for open alarms: LLM when LLM_BASE_URL and LLM_API_KEY are set, template library otherwise.
     const recommendations = await runRecommendations(db, { now, draft: (ctx) => draftRecommendations(ctx) });
-    return NextResponse.json({ ok: true, engine, reinstatedAlarms: reinstated, comments, recommendations }, { headers: { "Cache-Control": "no-store" } });
+    // Retention (R-PRIV-8): last, so aggregates are written before raw rows past the window are deleted. ?dryRun=1 only counts.
+    const retention = purgeExpired(getDb(), { dryRun: req.nextUrl.searchParams.get("dryRun") === "1" });
+    return NextResponse.json({ ok: true, engine, reinstatedAlarms: reinstated, comments, recommendations, retention }, { headers: { "Cache-Control": "no-store" } });
   } catch (e) {
     console.error("job failed", e);
     return NextResponse.json({ error: "job failed" }, { status: 500 });

@@ -15,7 +15,7 @@ Status: `running`, `ready` (can start now), `blocked` (waiting on a dependency),
 | 1 | Frontend refinement, HR side (domain radar, Magenta Desks-style restyle) | `jan/ui` | done | light |
 | 2 | PWA accounts and onboarding | `jan/pwa-auth` | done | heavy |
 | 3 | PWA answer flow | `jan/pwa-answer` | done | heavy |
-| 4 | Installable PWA and push | `jan/pwa-push` | ready (installable part done in `jan/p0-employee`; push open) | heavy |
+| 4 | Installable PWA and push | `jan/pwa-push` | done (push live on Railway; Apple needs an https VAPID subject, aadf13f on `jan/deploy`) | heavy |
 | 5 | Employee UI refinement | `jan/ui-employee` | done | light |
 | 6 | Security demo | `jan/security-demo` | done | light |
 | 7 | Demo script and slide notes | `jan/demo-script` | done | light |
@@ -34,8 +34,11 @@ Status: `running`, `ready` (can start now), `blocked` (waiting on a dependency),
 | 21 | Decision audit log and AI provenance | `jan/audit-log` | blocked on schema (Natan) | light |
 | 22 | HR UI deep audit and polish (`docs/hr-ui-audit.md`): P0/P1/P2 fixes, `/hr/needs` redesign (R-FLOW-4a), trend and signal clarity (R-FLOW-6d, 7e, 7f) | `jan/hr-ui-polish` | done (4bc0db3, c1c7422; deferred items listed in the audit) | light |
 | 23 | Visual identity spec "Paper" (`docs/visual-identity.md`) | `jan/visual-identity` | done (merged 10bf3e4) | light |
-| 24 | Apply the Paper visual identity to employee, HR and manager | `jan/visual-identity-apply` | blocked on Jan's go | heavy |
+| 24 | Apply the Paper visual identity to employee, HR and manager | `jan/paper-identity` | done (merged 44cccfc) | heavy |
 | 25 | Signal page: recommendation fields (C11), Indagar probes (C12), context events and "des de" effects (C13); R-DIFF-6, R-FLOW-8e | `jan/signal-actions` | done (51458d3) | light |
+| 26 | Multi-language CAT/ES/EN: per-question translations and portal strings | `jan/i18n` | running | heavy |
+| 27 | Product name: pick a proper name to replace the working name "Escolta activa" (wordmark, PWA manifest and short name, page titles, push title, poster, deck, `docs/visual-identity.md`) | `jan/product-name` | deferred (Jan decides the name first) | light |
+| 28 | Paper redesign to strict white, black and red: neutral white paper and black ink instead of the current green-tinted tokens (`--bg #eef0ea`, ink `#17211a`), red stays signal only; update `globals.css`, icons, manifest and `themeColor`, `docs/visual-identity.md`; re-run the dataviz validation if chart tokens change | `jan/paper-bw` | phase 1 tokens done (jan/paper-bw); phase 2 done on jan/paper-phase2: themeColor, icons (svg and png), manifest, offline page; no other tinted colours left in `apps/web`. Per-screen visual QA remains | heavy |
 
 Order for the next free slots: 18, 19, then 4. Pitch deck and demo work (14, 15) go last and are not raised before 8 Nov 9:00.
 

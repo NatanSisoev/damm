@@ -1,10 +1,12 @@
 import { MIN_GROUP_SIZE } from "@damm/shared";
+import { getT } from "@/lib/i18n/server";
+import { managerDict } from "@/lib/i18n/manager";
 
-export function AggregateNote() {
+export async function AggregateNote() {
+  const t = await getT(managerDict);
   return (
     <p className="rounded-lg border border-line bg-surface-muted px-4 py-3 text-[13px] text-muted">
-      Vista de només lectura amb dades agregades. No hi ha respostes ni comentaris individuals, i els grups de menys de {MIN_GROUP_SIZE} persones
-      es mostren com a <span className="font-medium">Suprimit</span>. Només es mostren les recomanacions que l&apos;equip de persones ha aprovat.
+      {t("note_a", { min: MIN_GROUP_SIZE })}<span className="font-medium">{t("suppressed")}</span>{t("note_b")}
     </p>
   );
 }

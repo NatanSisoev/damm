@@ -2,8 +2,10 @@
 // (reads `pregunta`, reads/writes the caller's own `resposta`).
 // No email, phone or name: an account is an opaque id, a username and salted hashes.
 import { randomBytes, randomUUID, scrypt, timingSafeEqual } from "node:crypto";
+import { DEFAULT_LANG, isLang, parseTranslations, type Lang, type Translations } from "@damm/shared";
 import { getDb } from "./connection";
 import { redactPii } from "./pii";
+import { lookupJoinCode } from "./join-repository";
 
 const KEYLEN = 64;
 const USERNAME_RE = /^[a-z0-9._-]{3,30}$/;
@@ -117,16 +119,16 @@ export async function registerAccount(input: {
   codi: string;
   username: string;
   password: string;
+  lang?: Lang;
 }): Promise<{ ok: true; compteId: string; recoveryCode: string } | { ok: false; error: RegisterError }> {
   const db = getDb();
   const username = normalizeUsername(input.username);
   if (!USERNAME_RE.test(username)) return { ok: false, error: "username_invalid" };
   if (input.password.length < MIN_PASSWORD_LENGTH) return { ok: false, error: "password_curta" };
 
-  const jc = db
-    .prepare("SELECT collectiu_id FROM joincode WHERE codi = ? AND actiu = 1")
-    .get(input.codi.trim().toUpperCase()) as { collectiu_id: number } | undefined;
-  if (!jc) return { ok: false, error: "codi_invalid" };
+  const found = lookupJoinCode(input.codi);
+  if (!found || !found.actiu) return { ok: false, error: "codi_invalid" };
+  const jc = db.prepare("SELECT collectiu_id FROM joincode WHERE codi = ?").get(found.codi) as { collectiu_id: number };
 
   const salt = randomBytes(16).toString("hex");
   const recoveryCode = newRecoveryCode();
@@ -136,9 +138,9 @@ export async function registerAccount(input: {
 
   try {
     db.prepare(
-      `INSERT INTO compte (id, collectiu_id, username, password_hash, salt, recovery_hash)
-       VALUES (?, ?, ?, ?, ?, ?)`,
-    ).run(compteId, jc.collectiu_id, username, passwordHash, salt, recoveryHash);
+      `INSERT INTO compte (id, collectiu_id, username, password_hash, salt, recovery_hash, lang)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    ).run(compteId, jc.collectiu_id, username, passwordHash, salt, recoveryHash, isLang(input.lang) ? input.lang : DEFAULT_LANG);
   } catch (e) {
     if ((e as { code?: string }).code === "SQLITE_CONSTRAINT_UNIQUE") return { ok: false, error: "username_ocupat" };
     throw e;
@@ -294,6 +296,48 @@ export function compteExists(compteId: string): boolean {
   return getDb().prepare("SELECT 1 FROM compte WHERE id = ?").get(compteId) !== undefined;
 }
 
+/** The account's chosen language (the only language data stored per person). */
+export function getCompteLang(compteId: string): Lang {
+  const r = getDb().prepare("SELECT lang FROM compte WHERE id = ?").get(compteId) as { lang: string } | undefined;
+  return r && isLang(r.lang) ? r.lang : DEFAULT_LANG;
+}
+
+export function setCompteLang(compteId: string, lang: Lang): void {
+  if (!isLang(lang)) return;
+  getDb().prepare("UPDATE compte SET lang = ? WHERE id = ?").run(lang, compteId);
+}
+
+export interface QuestionTranslation {
+  text: Translations | null;
+  /** Per option index, in the same order as the question's options. */
+  options: (Translations | null)[];
+}
+
+/**
+ * Translations of the given questions, by id. The engine only returns Catalan/canonical text and
+ * labels, so the app merges these by question id and option index. Missing = fall back to the text.
+ */
+export function getQuestionTranslations(ids: number[]): Map<number, QuestionTranslation> {
+  const out = new Map<number, QuestionTranslation>();
+  if (ids.length === 0) return out;
+  const rows = getDb()
+    .prepare(`SELECT id, text_i18n, options_json FROM pregunta WHERE id IN (${ids.map(() => "?").join(",")})`)
+    .all(...ids) as { id: number; text_i18n: string | null; options_json: string | null }[];
+  for (const r of rows) {
+    let options: (Translations | null)[] = [];
+    if (r.options_json) {
+      try {
+        const arr = JSON.parse(r.options_json);
+        if (Array.isArray(arr)) options = arr.map((o) => parseTranslations(o?.i18n));
+      } catch {
+        /* malformed options: no option translations */
+      }
+    }
+    out.set(r.id, { text: parseTranslations(r.text_i18n), options });
+  }
+  return out;
+}
+
 export function deletePushSubscription(compteId: string): void {
   getDb().prepare("DELETE FROM push_subscripcio WHERE compte_id = ?").run(compteId);
 }
@@ -316,6 +360,11 @@ export interface PushTarget {
   auth: string;
 }
 
+/** A push target plus the subscriber's language (never the account id). */
+export interface PushTargetLang extends PushTarget {
+  lang: Lang;
+}
+
 /** Stores (or replaces) this account's subscription: one device per account. */
 export function savePushSubscription(compteId: string, sub: PushTarget): void {
   getDb()
@@ -335,78 +384,19 @@ export function hasPushSubscription(compteId: string): boolean {
  * Subscriptions of every account in the need's collective (all collectives when the need has
  * none). Returns endpoints and keys only, never the account id.
  */
-export function listPushTargetsForNecessitat(necessitatId: number): PushTarget[] {
+export function listPushTargetsForNecessitat(necessitatId: number): PushTargetLang[] {
   const db = getDb();
   const n = db.prepare("SELECT collectiu_id AS c FROM necessitat WHERE id = ?").get(necessitatId) as { c: number | null } | undefined;
   if (!n) return [];
   return db
     .prepare(
-      `SELECT s.endpoint, s.p256dh, s.auth FROM push_subscripcio s JOIN compte c ON c.id = s.compte_id
+      `SELECT s.endpoint, s.p256dh, s.auth, c.lang FROM push_subscripcio s JOIN compte c ON c.id = s.compte_id
        WHERE ? IS NULL OR c.collectiu_id = ?`,
     )
-    .all(n.c, n.c) as PushTarget[];
+    .all(n.c, n.c) as PushTargetLang[];
 }
 
 /** The push service said the subscription is gone (404/410). */
 export function deletePushSubscriptionByEndpoint(endpoint: string): void {
   getDb().prepare("DELETE FROM push_subscripcio WHERE endpoint = ?").run(endpoint);
-}
-
-/** Daily question limit: engine config `questions_per_day`, 3 when unset (same default as the engine). */
-function questionsPerDay(db: ReturnType<typeof getDb>): number {
-  const row = db.prepare("SELECT value FROM engine_config WHERE key = 'questions_per_day'").get() as { value: string } | undefined;
-  const v = row ? Number(JSON.parse(row.value)) : NaN;
-  return Number.isFinite(v) && v > 0 ? Math.floor(v) : 3;
-}
-
-/**
- * Puts the unanswered questions of published HR needs for this account's collective into an
- * existing day's batch, so a need published after the batch was built shows up straight away
- * (on login or from the push). The batch never goes past the daily limit: need questions take
- * the free slots first, then replace unanswered `monitor` questions (needs have top priority).
- * Whatever does not fit stays in the pool for the next day's batch. Never adds a question the
- * account already answered or that is already in that day's batch. Returns how many rows changed.
- * Call it after the engine has built the day (it only changes it, it never creates the batch).
- */
-export function addPublishedNeedsToDay(compteId: string, day: string): number {
-  const db = getDb();
-  return db.transaction(() => {
-    const limit = questionsPerDay(db);
-    const rows = db
-      .prepare("SELECT slot, reason, answered_at FROM assignment WHERE compte_id = ? AND day = ?")
-      .all(compteId, day) as { slot: number; reason: string; answered_at: string | null }[];
-    if (rows.length === 0) return 0;
-    const used = new Set(rows.map((r) => r.slot));
-    const slots: number[] = [];
-    for (let i = 0; i < limit; i++) if (!used.has(i)) slots.push(i);
-    const replaceable = rows.filter((r) => r.reason === "monitor" && !r.answered_at).map((r) => r.slot).sort((a, b) => b - a);
-    const room = slots.length + replaceable.length;
-    if (room === 0) return 0;
-    const missing = db
-      .prepare(
-        `SELECT p.id FROM pregunta p
-           JOIN necessitat n ON n.id = p.necessitat_id
-           JOIN compte c ON c.id = ?
-          WHERE p.estat = 'aprovada' AND p.is_followup = 0 AND n.estat = 'publicada'
-            AND (n.collectiu_id IS NULL OR n.collectiu_id = c.collectiu_id)
-            AND (p.collectiu_id IS NULL OR p.collectiu_id = c.collectiu_id)
-            AND NOT EXISTS (SELECT 1 FROM resposta r WHERE r.compte_id = c.id AND r.pregunta_id = p.id)
-            AND NOT EXISTS (SELECT 1 FROM assignment a WHERE a.compte_id = c.id AND a.day = ? AND a.pregunta_id = p.id)
-          ORDER BY p.prioritat DESC, p.id
-          LIMIT ?`,
-      )
-      .all(compteId, day, room) as { id: number }[];
-    const del = db.prepare("DELETE FROM assignment WHERE compte_id = ? AND day = ? AND slot = ?");
-    const insert = db.prepare(
-      "INSERT OR IGNORE INTO assignment (compte_id, pregunta_id, day, slot, reason) VALUES (?, ?, ?, ?, 'need')",
-    );
-    const targets = [...slots, ...replaceable];
-    let changed = 0;
-    missing.forEach((q, i) => {
-      const slot = targets[i]!;
-      if (i >= slots.length) del.run(compteId, day, slot);
-      changed += insert.run(compteId, q.id, day, slot).changes;
-    });
-    return changed;
-  })();
 }

@@ -10,6 +10,7 @@ Two people work on this repo: **Jan** and **Natan**. Goal: move fast, keep `main
 | [`docs/engine.md`](docs/engine.md) | engine model: scheduling, scores / confidence / consensus, follow-ups, insights, alarms, learning | working on or with the engine |
 | [`docs/engine-integration.md`](docs/engine-integration.md) | how the employee app, HR dashboard and jobs call `@damm/engine` | wiring routes or pages to the engine |
 | [`docs/question-types.md`](docs/question-types.md) | every question type with an example DB row and answers | writing questions, the seed or the answer UI |
+| [`docs/deploy.md`](docs/deploy.md) | Railway deploy: project, env var names, volume, reseed, health check, switching branch to `main` | deploying or debugging the live URL |
 
 Engine commands (from `packages/engine`, after `pnpm install`; Node 22.5+, no native modules needed):
 - Test: `pnpm test` (Node test runner, in-memory SQLite)
@@ -186,6 +187,7 @@ Read these before planning work. Both people's agents keep them current.
 - `docs/user-flows.md`: expected user flow paths per persona (employee, HR, manager, anonymity, jobs) with exact UI copy, branches, invariants and expected gaps; ends with a requirement-to-flow matrix and a flow-to-e2e-case map. Source for reworking the e2e plan.
 - `docs/ai-drafting-eval.md`: how need drafting is evaluated (cases, checks, judge), per-round results, remaining weaknesses and the `options_json` gap (R-FLOW-2a..2g).
 - `docs/copy-guide.md`: Catalan voice rules, glossary and before/after examples for every user-facing string.
+- `docs/i18n/`: multi-language support (N-6): `README.md` (design, storage, how to add a language or key) and `question-bank-translations.json` (ca/es/en text and options for the engine bank, for Natan to adopt).
 
 When you add a doc, list it here with one line on what it is for.
 
