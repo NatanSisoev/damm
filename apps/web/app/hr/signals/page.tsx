@@ -7,7 +7,6 @@ import { getTrends, listCollectius, listDomains, listRecommendations, listTorns 
 import { hrAlarms, type AlarmView } from "@/lib/hr-engine";
 import { Card, Empty, PageHeader } from "../ui";
 import { FoldList } from "../ui-server";
-import { countPendingRecommendations } from "@damm/db/hr";
 import { statusLabel, signalTypeLabel } from "../signal-labels";
 import { getT, getTL } from "@/lib/i18n/server";
 import { hrResultsDict, type HrResultsT } from "@/lib/i18n/hr-results";
@@ -47,7 +46,6 @@ const SORTS = [
 ] as const;
 
 export default async function AlarmsPage({ searchParams }: { searchParams: Promise<Params> }) {
-  const pendingRecs = countPendingRecommendations();
   const sp = await searchParams;
   const { estat } = sp;
   const { t, lang } = await getTL(hrResultsDict);
@@ -152,9 +150,6 @@ export default async function AlarmsPage({ searchParams }: { searchParams: Promi
         subtitle={t("sg_sub")}
         actions={
           <div className="flex flex-wrap gap-2">
-            <Link href="/hr/recommendations" className="btn">
-              {ts("suggestions")}{pendingRecs > 0 && <span className="badge num">{pendingRecs}</span>}
-            </Link>
             <form action={recomputeAction}>
               <button className="btn" type="submit">{t("sg_recalc")}</button>
             </form>

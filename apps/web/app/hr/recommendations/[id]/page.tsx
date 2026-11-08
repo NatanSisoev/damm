@@ -52,7 +52,7 @@ export default async function RecommendationPage({ params }: { params: Promise<{
       <PageHeader
         title={r.titol ?? t("rd_title_fallback", { id: r.id })}
         subtitle={r.titol ? r.text : undefined}
-        actions={<Link href="/hr/recommendations" className="btn">{t("rd_back")}</Link>}
+        actions={<Link href={signal ? `/hr/signals/${signal.id}#recomanacions` : "/hr/signals"} className="btn">{t("rd_back")}</Link>}
       />
 
       <div className="mb-6 flex flex-wrap items-center gap-2">

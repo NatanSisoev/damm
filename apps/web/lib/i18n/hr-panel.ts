@@ -21,7 +21,7 @@ export const panelDict = defineDict({
 
     // Recommendation detail
     rd_title_fallback: "Recomanació {id}",
-    rd_back: "← Recomanacions",
+    rd_back: "← Alarma",
     rd_followup_created: "Seguiment creat",
     rd_all: "Tots",
     rd_flow: "De la proposta a l'acció",
@@ -96,7 +96,7 @@ export const panelDict = defineDict({
     generate: "Genera recomendaciones",
 
     rd_title_fallback: "Recomendación {id}",
-    rd_back: "← Recomendaciones",
+    rd_back: "← Alarma",
     rd_followup_created: "Seguimiento creado",
     rd_all: "Todos",
     rd_flow: "De la propuesta a la acción",
@@ -170,7 +170,7 @@ export const panelDict = defineDict({
     generate: "Generate recommendations",
 
     rd_title_fallback: "Recommendation {id}",
-    rd_back: "← Recommendations",
+    rd_back: "← Alarm",
     rd_followup_created: "Follow-up created",
     rd_all: "All",
     rd_flow: "From proposal to action",
