@@ -144,6 +144,9 @@ export const employeeDict = defineDict({
       "Encara no hi ha accions aprovades per al teu col·lectiu. Quan Recursos Humans en aprovi, les veuràs aquí, amb el període i quantes persones hi havia al darrere.",
     actions_based_on: "a partir de les respostes de {n} persones",
     actions_follow_up: "Enquesta de seguiment en marxa",
+    actions_count: "{n} accions per al teu col·lectiu",
+    actions_lede:
+      "Això és el que s'ha fet a partir de les respostes del teu col·lectiu.",
 
     // push toggle
     push_title: "Notificacions",
@@ -369,6 +372,9 @@ export const employeeDict = defineDict({
       "Todavía no hay acciones aprobadas para tu colectivo. Cuando Recursos Humanos apruebe alguna, la verás aquí, con el periodo y cuántas personas había detrás.",
     actions_based_on: "a partir de las respuestas de {n} personas",
     actions_follow_up: "Encuesta de seguimiento en marcha",
+    actions_count: "{n} acciones para tu colectivo",
+    actions_lede:
+      "Esto es lo que se ha hecho a partir de las respuestas de tu colectivo.",
 
     push_title: "Notificaciones",
     push_on: "Recibirás un aviso en este dispositivo cuando haya preguntas nuevas para tu colectivo.",
@@ -589,6 +595,9 @@ export const employeeDict = defineDict({
       "There are no approved actions for your collective yet. When Human Resources approves one, you'll see it here, with the period and how many people were behind it.",
     actions_based_on: "based on the answers of {n} people",
     actions_follow_up: "Follow-up survey under way",
+    actions_count: "{n} actions for your collective",
+    actions_lede:
+      "This is what has been done based on your collective's answers.",
 
     push_title: "Notifications",
     push_on: "You'll get an alert on this device when there are new questions for your collective.",

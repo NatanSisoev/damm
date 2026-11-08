@@ -5,7 +5,7 @@ import { vapidPublicKey } from "@/lib/push";
 import { employeeDict } from "@/lib/i18n/employee";
 import { getT } from "@/lib/i18n/server";
 import { getCompteId } from "@/lib/session";
-import { ActionsList } from "./(employee)/components/actions-list";
+import { ActionsLink } from "./(employee)/components/actions-list";
 import { AnswerFlow } from "./(employee)/components/answer-flow";
 import { PushToggle } from "./(employee)/components/push-toggle";
 import { EmployeeShell } from "./(employee)/components/shell";
@@ -27,7 +27,7 @@ export default async function Home() {
     <EmployeeShell>
       <AnswerFlow compteId={compteId} />
       {vapidKey && <PushToggle vapidKey={vapidKey} compact />}
-      <ActionsList actions={actions} />
+      <ActionsLink actions={actions} />
       <p className="mt-6 text-center text-sm text-subtle">
         <Link href="/privacitat" className="inline-flex h-11 items-center underline underline-offset-2">
           {t("privacy_link")}

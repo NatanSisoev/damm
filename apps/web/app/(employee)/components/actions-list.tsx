@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { ApprovedAction } from "@damm/db/employee";
 import { LOCALES } from "@/lib/i18n/core";
 import { employeeDict } from "@/lib/i18n/employee";
@@ -20,17 +21,38 @@ function periodLabel(periode: string, lang: Lang): string {
 
 // "Has dit, hem fet": actions HR approved for this person's collective. Aggregate context only
 // (period and how many people were behind the signal); never who answered or what they said.
-export async function ActionsList({ actions }: { actions: ApprovedAction[] }) {
+export async function ActionsLink({ actions }: { actions: ApprovedAction[] }) {
   if (actions.length === 0) return null;
-  const { t, lang } = await getTL(employeeDict);
+  const { t } = await getTL(employeeDict);
   return (
-    <section aria-labelledby="has-dit" className="card mt-6">
-      <div className="card-header">
-        <h2 id="has-dit" className="section-title">
+    <Link
+      href="/accions"
+      className="card mt-6 flex items-center justify-between gap-3 p-4 no-underline"
+    >
+      <span>
+        <span className="section-title block">{t("actions_title")}</span>
+        <span className="mt-1 block text-sm text-muted">
+          {t("actions_count", { n: actions.length })}
+        </span>
+      </span>
+      <span aria-hidden="true" className="text-xl text-subtle">
+        ›
+      </span>
+    </Link>
+  );
+}
+
+export async function ActionsList({ actions }: { actions: ApprovedAction[] }) {
+  const { t, lang } = await getTL(employeeDict);
+  if (actions.length === 0) {
+    return <p className="mt-4 text-muted">{t("actions_empty")}</p>;
+  }
+  return (
+    <section aria-labelledby="has-dit" className="card mt-4">
+      <div className="card-body">
+        <h2 id="has-dit" className="sr-only">
           {t("actions_title")}
         </h2>
-      </div>
-      <div className="card-body">
         <ul className="space-y-3">
           {actions.map((a) => (
             <li
