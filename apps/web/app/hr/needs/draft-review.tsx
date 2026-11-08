@@ -52,15 +52,16 @@ export async function DraftReview({ g, regenError = null }: { g: NeedDraftGroup;
         <SubmitButton className="btn btn-ghost">{t("save_header")}</SubmitButton>
       </form>
       <p className="mt-3 text-xs text-subtle">{t("translations_hint")}</p>
-      <ul className="mt-4 divide-y divide-line border-t border-line">
+      <ul className="mt-4 space-y-5">
         {g.questions.map((q, i) => (
-          <li key={q.id} className="space-y-3 py-4">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="num text-xs text-subtle">{i + 1}.</span>
+          <li key={q.id} className="overflow-hidden rounded-lg border border-line-strong bg-surface">
+            <div className="flex flex-wrap items-center gap-2 border-b border-line-strong bg-surface-muted px-4 py-3">
+              <span className="num text-lg font-bold leading-none text-ink">{i + 1}.</span>
               <span className="badge">{domainLabel(q.domini, lang)}</span>
               <span className="badge">{typeLabel(q.tipus)}</span>
               <span className="num text-xs text-subtle">~{estimateSeconds([q.tipusAi])} s</span>
             </div>
+            <div className="space-y-3 p-4">
             {q.motiu && <p className="text-sm text-subtle">{t("why", { reason: q.motiu })}</p>}
             {(() => {
               // Same wording rules the AI repair loop uses, re-run on the saved text so HR edits are checked too.
@@ -129,6 +130,7 @@ export async function DraftReview({ g, regenError = null }: { g: NeedDraftGroup;
                 <input type="hidden" name="id" value={q.id} />
                 <SubmitButton className="btn btn-primary">{t("approve")}</SubmitButton>
               </form>
+            </div>
             </div>
           </li>
         ))}

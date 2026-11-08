@@ -57,6 +57,9 @@
   position: absolute; inset: 0 auto 0 0; width: min(300px, 86vw);
   display: flex; flex-direction: column; background: var(--surface); border-right: 1px solid var(--border);
 }
+.hr-drawer-actions { display: flex; align-items: center; gap: 4px; }
+.hr-side-theme { flex: none; width: 44px; height: 44px; border: 0; border-radius: 2px; color: var(--text-muted); }
+.hr-side-theme:hover { color: var(--text); }
 .hr-drawer-head { display: flex; align-items: center; justify-content: space-between; padding: 4px 4px 4px 16px; border-bottom: 1px solid var(--border); }
 
 .hr-side-scroll { flex: 1; overflow-y: auto; padding: 8px 8px 0; }
@@ -89,8 +92,11 @@
   .hr-side-brand { display: flex; flex-direction: column; justify-content: center; align-items: flex-start; gap: 1px; height: 56px; padding: 0 20px; white-space: nowrap; border-bottom: 1px solid var(--border); overflow: hidden; }
   .hr-side-sub { font-size: 11px; line-height: 1.2; color: var(--text-subtle); white-space: nowrap; }
   .hr-side-nav { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+  .hr-side-bottom { display: flex; align-items: center; border-top: 1px solid var(--border); padding-right: 4px; }
+  .hr-sidebar[data-collapsed="true"] .hr-side-bottom { flex-direction: column-reverse; padding: 0; }
+  .hr-sidebar[data-collapsed="true"] .hr-side-toggle { width: 100%; padding: 0; justify-content: center; }
   .hr-side-toggle {
-    display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 22px; border: 0; border-top: 1px solid var(--border);
+    flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 22px; border: 0;
     background: transparent; color: var(--text-muted); font: inherit; font-size: 12px; cursor: pointer;
   }
   .hr-side-toggle:hover { color: var(--text); background: var(--accent-soft); }
@@ -257,8 +263,14 @@ main:focus { outline: none; }
 .rec-hint { margin-bottom: 8px; font-size: 13px; color: var(--muted, inherit); }
 
 /* Modals: native dialog, Paper identity. */
-.hr-modal { width: min(30rem, calc(100vw - 2rem)); max-height: min(85dvh, 46rem); margin: auto; padding: 0; border: 1px solid var(--line-strong); border-radius: 2px; background: var(--surface); color: var(--text); }
-.hr-modal-wide { width: min(40rem, calc(100vw - 2rem)); }
+.hr-modal { width: min(30rem, calc(100vw - 2rem)); max-height: min(85dvh, 46rem); margin: auto; padding: 0; border: 1px solid var(--line-strong); border-radius: 8px; overflow: hidden; background: var(--surface); color: var(--text); }
+.hr-modal-wide { width: min(60rem, calc(100vw - 2rem)); }
+.hr-modal-wide .proposal-main { max-width: 75ch; }
+@media (min-width: 48rem) {
+  .hr-modal-wide .proposal-facts { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .hr-modal-wide .proposal-notes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 32px; }
+}
+.hr-modal:focus, .hr-modal:focus-visible { outline: none; }
 .hr-modal[open] { display: flex; flex-direction: column; animation: hr-modal-in var(--t-base) var(--ease); }
 .hr-modal::backdrop { background: rgb(20 18 16 / 0.45); }
 .hr-modal-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 16px 12px 0 20px; }
@@ -270,6 +282,3 @@ main:focus { outline: none; }
 html:has(.hr-modal[open]) { overflow: hidden; }
 @keyframes hr-modal-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .hr-modal[open] { animation: none; } }
-
-/* Theme toggle row in the sidebar footer and drawer. */
-.hr-theme-row { display: flex; margin-top: 8px; }
