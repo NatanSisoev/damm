@@ -3,7 +3,7 @@ import { People } from "../glyphs";
 import { GenerateButton } from "./generate-button";
 import Link from "next/link";
 import { MIN_GROUP_SIZE } from "@damm/shared";
-import { getTrends, listCollectius, listDomains, listRecommendations, listTorns } from "@damm/db/hr";
+import { listCollectius, listDomains, listRecommendations, listTorns } from "@damm/db/hr";
 import { hrAlarms, type AlarmView } from "@/lib/hr-engine";
 import { Card, Empty, PageHeader } from "../ui";
 import { FoldList } from "../ui-server";
@@ -15,7 +15,6 @@ import { signalsDict } from "@/lib/i18n/hr-signals";
 import { collectiveLabel, domainLabel, shiftLabel } from "@/lib/i18n/names";
 import type { Lang } from "@damm/shared";
 
-import { Sparkline } from "../trend";
 import { recomputeAction, setAlarmStatusAction } from "../actions";
 import { ALARM_NEXT } from "./transitions";
 import { NON_ACTIONABLE, alarmHint } from "./alarm-text";
@@ -53,7 +52,6 @@ export default async function AlarmsPage({ searchParams }: { searchParams: Promi
   const tab = TABS.find((x) => x.key === estat) ?? TABS[0];
 
 
-  const trends = getTrends();
   const domains = new Map(listDomains().map((d) => [d.id, d.nom]));
   const torns = new Map(listTorns().map((x) => [x.id, x.nom]));
   const recs = listRecommendations(lang);
@@ -133,13 +131,6 @@ export default async function AlarmsPage({ searchParams }: { searchParams: Promi
   for (const r of actionable) groups.set(r.segment, [...(groups.get(r.segment) ?? []), r]);
   const grouped = [...groups.entries()].sort((a, b) => order(a[1][0], b[1][0]));
   good.sort(order);
-
-  const sparkFor = (r: Row): number[] | null => {
-    const scope = trends.series.find((s) => s.scope === (r.collectiuId ? colNames.get(r.collectiuId) : "Tots"));
-    const row = scope?.rows.find((x) => x.domini === r.domain);
-    const vals = row?.cells.map((c) => c.mitjana) ?? [];
-    return vals.filter((v) => v !== null).length >= 2 ? (vals as number[]) : null;
-  };
 
   const severe = actionable.filter((r) => r.severity !== "info").length;
 
@@ -225,7 +216,7 @@ export default async function AlarmsPage({ searchParams }: { searchParams: Promi
                 <FoldList
                   className="divide-y divide-line"
                   items={items.map((r) => (
-                    <AlarmItem key={r.id} t={t} lang={lang} r={r} spark={sparkFor(r)} rec={recs.find((x) => x.senyalId === r.id && x.estat === "aprovada")} drafted={recs.some((x) => x.senyalId === r.id)} />
+                    <AlarmItem key={r.id} t={t} lang={lang} r={r} rec={recs.find((x) => x.senyalId === r.id && x.estat === "aprovada")} drafted={recs.some((x) => x.senyalId === r.id)} />
                   ))}
                 />
               </div>
@@ -284,7 +275,7 @@ function Select({ all, name, label, value, options }: { all: string; name: strin
   );
 }
 
-function AlarmItem({ t, lang, r, spark, rec, drafted }: { t: HrResultsT; lang: Lang; r: Row; spark: number[] | null; rec?: { id: number; seguimentNecessitatId: number | null }; drafted: boolean }) {
+function AlarmItem({ t, lang, r, rec, drafted }: { t: HrResultsT; lang: Lang; r: Row; rec?: { id: number; seguimentNecessitatId: number | null }; drafted: boolean }) {
 
   const next = ALARM_NEXT[r.status];
   return (
@@ -305,12 +296,6 @@ function AlarmItem({ t, lang, r, spark, rec, drafted }: { t: HrResultsT; lang: L
 
           </p>
         </div>
-        {spark && (
-          <div className="shrink-0 text-right" title={t("sg_spark_title")}>
-            <Sparkline values={spark} />
-            <div className="text-[11px] text-subtle">{t("sg_spark_cap")}</div>
-          </div>
-        )}
       </div>
       <div className="mt-2 flex flex-wrap items-center gap-2">
         {rec && !rec.seguimentNecessitatId ? (
@@ -329,24 +314,26 @@ function AlarmItem({ t, lang, r, spark, rec, drafted }: { t: HrResultsT; lang: L
             <GenerateButton />
           </form>
         )}
-        {r.status === "open" && (
-          <form action={setAlarmStatusAction}>
-            <input type="hidden" name="id" value={r.id} />
-            <input type="hidden" name="status" value="acknowledged" />
-            <button type="submit" className="alarm-icon-btn" aria-label={t("sg_dismiss")} title={t("sg_dismiss")}>
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
-            </button>
-          </form>
-        )}
-        {next.includes("resolved") && (
-          <form action={setAlarmStatusAction}>
-            <input type="hidden" name="id" value={r.id} />
-            <input type="hidden" name="status" value="resolved" />
-            <button type="submit" className="alarm-icon-btn" aria-label={t("sg_resolve")} title={t("sg_resolve")}>
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7" /></svg>
-            </button>
-          </form>
-        )}
+        <div className="ml-auto flex items-center gap-2">
+          {r.status === "open" && (
+            <form action={setAlarmStatusAction}>
+              <input type="hidden" name="id" value={r.id} />
+              <input type="hidden" name="status" value="acknowledged" />
+              <button type="submit" className="alarm-icon-btn" aria-label={t("sg_dismiss")} title={t("sg_dismiss")}>
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
+              </button>
+            </form>
+          )}
+          {next.includes("resolved") && (
+            <form action={setAlarmStatusAction}>
+              <input type="hidden" name="id" value={r.id} />
+              <input type="hidden" name="status" value="resolved" />
+              <button type="submit" className="alarm-icon-btn" aria-label={t("sg_resolve")} title={t("sg_resolve")}>
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7" /></svg>
+              </button>
+            </form>
+          )}
+        </div>
       </div>
     </li>
   );
