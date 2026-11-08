@@ -58,6 +58,19 @@ export interface AlarmThresholds {
   participationClear: number;
   shareRatioTrigger: number;
   shareRatioClear: number;
+  /** Severity per alarm instance (log / warning / critical), from magnitude and confidence. */
+  /** Critical: score fall of at least this much with confidence >= criticalConfidence. */
+  criticalDrop: number;
+  criticalConfidence: number;
+  /** Critical whatever the fall: the current score is below this level (0..10). */
+  criticalScore: number;
+  /** sustained_decline is only a log while the total fall is below this and the score is still >= logScoreFloor. */
+  logFall: number;
+  logScoreFloor: number;
+  /** polarisation: critical when consensus fell at least this much with confidence >= criticalConfidence. */
+  criticalPolarisation: number;
+  /** baixa_participacio: critical when the response rate is below this. */
+  criticalParticipation: number;
 }
 
 export const ALARM_DEFAULTS: AlarmThresholds = {
@@ -87,6 +100,13 @@ export const ALARM_DEFAULTS: AlarmThresholds = {
   participationClear: 0.45,
   shareRatioTrigger: 0.7,
   shareRatioClear: 0.8,
+  criticalDrop: 1.5,
+  criticalConfidence: 75,
+  criticalScore: 4.5,
+  logFall: 0.5,
+  logScoreFloor: 5.5,
+  criticalPolarisation: 30,
+  criticalParticipation: 0.25,
 };
 
 export const ALARM_SEVERITY: Record<AlarmType, Severity> = {
@@ -159,6 +179,8 @@ export interface Evaluation {
   n: number;
   confidence: number | null;
   description: string;
+  /** Level for this instance; falls back to ALARM_SEVERITY[type]. */
+  severity?: Severity;
 }
 
 const NONE: Evaluation = { trigger: false, clear: false, n: 0, confidence: null, description: "" };
@@ -184,11 +206,13 @@ export function evalSharpDrop(hist: (Point | null)[], t: AlarmThresholds): Evalu
   if (!p) return NONE;
   const [prev, cur] = p;
   const drop = prev.score - cur.score;
+  const critical = (drop >= t.criticalDrop && cur.confidence >= t.criticalConfidence) || cur.score < t.criticalScore;
   return {
     trigger: drop >= t.sharpDropTrigger && cur.confidence >= t.sharpDropMinConfidence,
     clear: drop < t.sharpDropClear,
     n: cur.n,
     confidence: cur.confidence,
+    severity: critical ? "critical" : "warning",
     description: `Score fell ${fmt(drop)} points (${fmt(prev.score)} → ${fmt(cur.score)}) since the previous period.`,
   };
 }
@@ -200,11 +224,19 @@ export function evalSustainedDecline(hist: (Point | null)[], t: AlarmThresholds)
   const slope = meanSlope(xs);
   const allDown = xs.every((x, i) => i === 0 || x < xs[i - 1]!);
   const cur = w[w.length - 1]!;
+  const fall = xs[0]! - xs[xs.length - 1]!;
+  const severity: Severity =
+    (fall >= t.sharpDropTrigger && cur.confidence >= t.criticalConfidence) || cur.score < t.criticalScore
+      ? "critical"
+      : fall < t.logFall && cur.score >= t.logScoreFloor
+        ? "info"
+        : "warning";
   return {
     trigger: allDown && slope <= -t.sustainedSlopeTrigger,
     clear: slope >= -t.sustainedSlopeClear,
     n: cur.n,
     confidence: cur.confidence,
+    severity,
     description: `Score declined ${w.length} periods in a row (${xs.map(fmt).join(" → ")}).`,
   };
 }
@@ -219,6 +251,7 @@ export function evalPolarisation(hist: (Point | null)[], t: AlarmThresholds): Ev
     clear: fall < t.polarisationClear,
     n: cur.n,
     confidence: cur.confidence,
+    severity: fall >= t.criticalPolarisation && cur.confidence >= t.criticalConfidence ? "critical" : "warning",
     description: `Consensus fell ${Math.round(fall)} points (${Math.round(prev.consensus)} → ${Math.round(cur.consensus)}): opinions are splitting.`,
   };
 }
@@ -275,6 +308,7 @@ export function evalChangepointCluster(count: number, windowDays: number, t: Ala
     clear: count < t.changepointClear,
     n: count,
     confidence: null,
+    severity: count >= 2 * Math.max(t.changepointTrigger, minN) ? "critical" : "warning",
     description: `${count} people in this segment show a confirmed drop in this domain in the last ${windowDays} days.`,
   };
 }
@@ -301,6 +335,7 @@ export function evalLowParticipation(c: ParticipationCounts, where: string, t: A
     clear: rate >= t.participationClear && ratio >= t.shareRatioClear,
     n: respondents,
     confidence: null,
+    severity: rate < t.criticalParticipation ? "critical" : "warning",
     description:
       `Participació baixa ${where}: ${pct(rate)}% (n=${respondents} de ${population}). ` +
       `Pes a la mostra ${pct(respondents / c.totalRespondents)}% davant ${pct(population / c.totalPopulation)}% de la plantilla.`,
@@ -414,13 +449,16 @@ export function runAlarms(db: SqlDatabase, opts: AlarmOptions): AlarmReport {
         report.resolved++;
       } else if (type === "feble" && e.trigger && act.severity === "info" && toMs(nowSql) - toMs(act.created_at) >= t.feblePersistDays * 86_400_000) {
         run(db, "UPDATE senyal SET severity = 'warning' WHERE id = ?", act.id);
+      } else if (e.trigger && e.severity && e.severity !== act.severity) {
+        // Still triggering: the level follows the current magnitude (a fall that deepens becomes critical).
+        run(db, "UPDATE senyal SET severity = ? WHERE id = ?", e.severity, act.id);
       }
       return;
     }
     if (!e.trigger) return;
     const last = latest.get(k);
     if (last && toMs(nowSql) - toMs(last.created_at) < t.cooldownDays * 86_400_000) return;
-    insert.run(type, e.description, c, tn, d, current, e.n, e.confidence, ALARM_SEVERITY[type], d === null ? "hr" : audienceFor(type, c, d, leadershipId), nowSql);
+    insert.run(type, e.description, c, tn, d, current, e.n, e.confidence, e.severity ?? ALARM_SEVERITY[type], d === null ? "hr" : audienceFor(type, c, d, leadershipId), nowSql);
     report.opened++;
   };
 
