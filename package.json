@@ -9,6 +9,7 @@
     "dev": "pnpm --filter web dev",
     "build": "pnpm --filter web build",
     "lint": "pnpm --filter web lint",
-    "check:anonymity": "node scripts/check-anonymity.mjs"
+    "check:anonymity": "node scripts/check-anonymity.mjs",
+    "demo-db": "node --experimental-strip-types --experimental-sqlite --no-warnings scripts/build-demo-db.mts"
   }
 }

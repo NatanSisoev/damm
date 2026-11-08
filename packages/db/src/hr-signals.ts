@@ -1,9 +1,10 @@
 // HR-side read functions for the signal drilldown page (task 16).
 // Aggregates, analysis outputs and the analytics view only; no account ids, no per-person rows.
 // Every figure re-applies the minimum group size on read.
-import { MIN_GROUP_SIZE } from "@damm/shared";
+import { MIN_GROUP_SIZE, type Lang } from "@damm/shared";
 import { getDb } from "./connection";
 import { RECOMMENDATION_COLUMNS, getShiftTrend, getTrends, type TrendCell } from "./hr-repository";
+import { overlayTranslations, RECOMMENDATION_FIELDS } from "./hr-i18n";
 import type { Change } from "./hr-rigour";
 
 // Snippets: stored redacted text only, no metadata returned next to them, never from themes under the minimum size.
@@ -96,7 +97,7 @@ export interface SignalDetail {
 const norm = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 
 /** One signal with its trend, themes, recommendations and follow-up. Null when missing or under the minimum group size (same filter as listSignals). */
-export function getSignalDetail(id: number): SignalDetail | null {
+export function getSignalDetail(id: number, lang?: Lang): SignalDetail | null {
   const db = getDb();
   const row = db
     .prepare(
@@ -156,6 +157,7 @@ export function getSignalDetail(id: number): SignalDetail | null {
       .map((r) => (r.c.length > SNIPPET_MAX_CHARS ? `${r.c.slice(0, SNIPPET_MAX_CHARS - 1)}…` : r.c));
     themes.push({ id: t.id, etiqueta: t.etiqueta, resum: t.resum, emergent: !!t.emergent, n: t.cn, snippets });
   }
+  overlayTranslations(db, "tema", themes, { etiqueta: "etiqueta", resum: "resum" }, lang);
 
   // --- Recommendations and follow-up needs.
   const recommendations = db
@@ -163,6 +165,7 @@ export function getSignalDetail(id: number): SignalDetail | null {
       `SELECT ${RECOMMENDATION_COLUMNS} FROM recomanacio WHERE senyal_id = ? ORDER BY id`,
     )
     .all(id) as SignalRecommendation[];
+  overlayTranslations(db, "recomanacio", recommendations, RECOMMENDATION_FIELDS, lang);
 
   const followUps: SignalFollowUp[] = [];
   for (const r of recommendations) {
@@ -184,6 +187,7 @@ export function getSignalDetail(id: number): SignalDetail | null {
       // join accounts, so this needs a distinct-respondent column in the view or a precomputed aggregate (Natan).
       if (agg.n >= MIN_GROUP_SIZE) newResults = { n: agg.n, mitjana: agg.m };
     }
+    overlayTranslations(db, "necessitat", [need], { text_nl: "textNl" }, lang);
     followUps.push({ necessitatId: need.id, textNl: need.textNl, estat: need.estat, published, questions, newResults });
   }
 
@@ -221,13 +225,14 @@ export interface RecommendationDetail {
 }
 
 /** One recommendation with everything around it: originating signal (trend, themes), siblings and follow-up survey. Null when missing. */
-export function getRecommendationDetail(id: number): RecommendationDetail | null {
+export function getRecommendationDetail(id: number, lang?: Lang): RecommendationDetail | null {
   const row = getDb()
     .prepare(`SELECT senyal_id AS senyalId, creat, ${RECOMMENDATION_COLUMNS} FROM recomanacio WHERE id = ?`)
     .get(id) as (SignalRecommendation & { creat: string; senyalId: number | null }) | undefined;
   if (!row) return null;
+  overlayTranslations(getDb(), "recomanacio", [row], RECOMMENDATION_FIELDS, lang);
   const { senyalId, ...recommendation } = row;
-  const signal = senyalId ? getSignalDetail(senyalId) : null;
+  const signal = senyalId ? getSignalDetail(senyalId, lang) : null;
   return {
     recommendation,
     signal,

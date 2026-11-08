@@ -18,7 +18,7 @@ import { RecommendationBody } from "../recommendation-card";
 export default async function RecommendationsPage() {
   const { t, lang } = await getTL(hrDict);
   const signals = listSignals().sort(compareSignals);
-  const recs = listRecommendations();
+  const recs = listRecommendations(lang);
   return (
     <>
       <PageHeader

@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { notFound } from "next/navigation";
 import { MIN_GROUP_SIZE } from "@damm/shared";
 import { getRecommendationDetail } from "@damm/db/hr";
+import { getLang } from "@/lib/lang";
 import { hrInsights } from "@/lib/hr-engine";
 import { signalDetail, signalHeadline } from "@/lib/signal-text";
 import { Card, Empty, PageHeader } from "../../ui";
@@ -26,7 +27,8 @@ function Fact({ label, children }: { label: string; children: ReactNode }) {
 
 export default async function RecommendationPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const detail = Number.isInteger(Number(id)) ? getRecommendationDetail(Number(id)) : null;
+  const lang = await getLang();
+  const detail = Number.isInteger(Number(id)) ? getRecommendationDetail(Number(id), lang) : null;
   if (!detail) notFound();
   const { recommendation: r, signal: sd, siblings, followUp } = detail;
   const status = recommendationStatus(r.estat);

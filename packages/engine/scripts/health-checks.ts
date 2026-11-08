@@ -126,8 +126,8 @@ export function runHealth(db: SqlDatabase, opts: HealthOptions = {}): Check[] {
   const perDay = Number(JSON.parse(one<{ value: string }>(db, "SELECT value FROM engine_config WHERE key = 'questions_per_day'")?.value ?? "3"));
   check(
     "daily batches within limits",
-    count(`SELECT COUNT(*) AS n FROM (SELECT 1 FROM assignment GROUP BY compte_id, day HAVING COUNT(*) > ${Number.isFinite(perDay) && perDay > 0 ? perDay : 3} OR COUNT(DISTINCT pregunta_id) < COUNT(*))`),
-    `at most ${perDay} distinct questions per person per day`,
+    count(`SELECT COUNT(*) AS n FROM (SELECT 1 FROM assignment GROUP BY compte_id, day HAVING SUM(reason != 'need') > ${Number.isFinite(perDay) && perDay > 0 ? perDay : 3} OR COUNT(DISTINCT pregunta_id) < COUNT(*))`),
+    `at most ${perDay} monitoring/follow-up questions per person per day (published needs are served on top, C18), none repeated`,
     "some account has too many or repeated questions in one day",
   );
   check(

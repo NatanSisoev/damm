@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getLang } from "@/lib/lang";
 import { accountCounts, getDataBounds, getRepresentativeness, getWindowTrends, listCollectius, listNeedCards, listThemes, populationOf } from "@damm/db/hr";
 import { Card, Empty, PageHeader, Stat } from "./ui";
 import { People } from "./glyphs";
@@ -50,11 +51,12 @@ export default async function HrDashboard({ searchParams }: { searchParams: Prom
   const seriesVisible = visible(series);
   const everyone = col ? getWindowTrends({ ...win, bucket: "all" }, null) : whole;
 
-  const needs = listNeedCards();
+  const lang = await getLang();
+  const needs = listNeedCards(lang);
   const drafts = needs.filter((n) => n.state === "esborrany" || n.state === "llesta").length;
   const live = needs.filter((n) => n.state === "publicada").length;
   const rep = getRepresentativeness();
-  const themes = listThemes().filter((t) => !t.suprimit);
+  const themes = listThemes({ lang }).filter((t) => !t.suprimit);
   const heatmap = { ...getHeatmap(everyone), periode: `${fmtDay(range.from)} – ${fmtDay(range.to)}` };
 
   const overall = whole.series[0];
@@ -181,7 +183,7 @@ export default async function HrDashboard({ searchParams }: { searchParams: Prom
         {/* Story + profile */}
         <div className="grid gap-6 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
           <div className="space-y-6">
-            <NarrativeCard narrative={getNarrative(col?.nom ?? "All")} title={`Resum de l'anàlisi · ${col ? col.nom : "tota l'empresa"} · darrer període`} />
+            <NarrativeCard narrative={getNarrative(col?.nom ?? "All", lang)} title={`Resum de l'anàlisi · ${col ? col.nom : "tota l'empresa"} · darrer període`} />
             <HeadlineStrip headlines={getHeadlines()} />
           </div>
           <Card title="Perfil per domini" meta={<span className="num">{prevWin ? "ara vs abans" : "interval complet"}</span>}>
