@@ -181,6 +181,21 @@ const REC_TEXT: Record<string, Tri> = {
     es: "Publicar los cuadrantes con una antelación mínima acordada y explicar los cambios de turno y de pausas antes de que se apliquen.",
     en: "Publish the rotas with an agreed minimum notice and explain shift and break changes before they take effect.",
   },
+  "Publicar un mapa clar de formacions i rotacions disponibles per a {C} i obrir una convocatòria trimestral amb criteris transparents.": {
+    ca: "",
+    es: "Publicar un mapa claro de formaciones y rotaciones disponibles para {C} y abrir una convocatoria trimestral con criterios transparentes.",
+    en: "Publish a clear map of the training and rotations available to {C} and open a quarterly call with transparent criteria.",
+  },
+  "Avaluar ergonòmicament els llocs més repetitius, oferir estiraments guiats de 5 minuts a l'inici del torn i revisar el soroll i la il·luminació.": {
+    ca: "",
+    es: "Evaluar ergonómicamente los puestos más repetitivos, ofrecer estiramientos guiados de 5 minutos al inicio del turno y revisar el ruido y la iluminación.",
+    en: "Run an ergonomic assessment of the most repetitive workstations, offer guided 5-minute stretches at the start of the shift and review noise and lighting.",
+  },
+  "Pilotar 4 setmanes amb pauses curtes addicionals de 5 minuts cada 2 hores i un espai tranquil accessible, i revisar si la càrrega percebuda baixa en la propera enquesta.": {
+    ca: "",
+    es: "Pilotar 4 semanas con pausas cortas adicionales de 5 minutos cada 2 horas y un espacio tranquilo accesible, y revisar si la carga percibida baja en la próxima encuesta.",
+    en: "Pilot for 4 weeks with extra 5-minute short breaks every 2 hours and an accessible quiet space, and check whether perceived load drops in the next survey.",
+  },
   "Publicar un mapa clar de formacions i rotacions disponibles per a {C}, torn {T} i obrir una convocatòria trimestral amb criteris transparents.": {
     ca: "",
     es: "Publicar un mapa claro de formaciones y rotaciones disponibles para {C}, turno {T} y abrir una convocatoria trimestral con criterios transparentes.",
@@ -204,6 +219,8 @@ const REC_TEXT: Record<string, Tri> = {
 };
 
 const REC_TITLE: Record<string, Tri> = {
+  "Ergonomia i rotació de llocs a {C}": { ca: "", es: "Ergonomía y rotación de puestos en {C}", en: "Ergonomics and job rotation in {C}" },
+  "Pausa de microdescans a {C}, torn {T}": { ca: "", es: "Pausa de microdescansos en {C}, turno {T}", en: "Micro-break pause in {C}, {T} shift" },
   "Acompanyament entre iguals": { ca: "", es: "Acompañamiento entre iguales", en: "Peer support" },
   "Comunicar els torns amb més antelació": { ca: "", es: "Comunicar los turnos con más antelación", en: "Communicate shifts with more notice" },
   "Consolidar el que ha funcionat": { ca: "", es: "Consolidar lo que ha funcionado", en: "Consolidate what has worked" },
@@ -228,6 +245,7 @@ const REC_TITLE: Record<string, Tri> = {
 
 const INITIATIVE: Record<string, Tri> = {
   "Seguretat i salut": { ca: "", es: "Seguridad y salud", en: "Safety and health" },
+  "Salut i vida activa": { ca: "", es: "Salud y vida activa", en: "Health and active living" },
   "Conciliació i flexibilitat": { ca: "", es: "Conciliación y flexibilidad", en: "Work-life balance and flexibility" },
   "Comunicació i lideratge": { ca: "", es: "Comunicación y liderazgo", en: "Communication and leadership" },
   "Formació i desenvolupament": { ca: "", es: "Formación y desarrollo", en: "Training and development" },
@@ -241,6 +259,7 @@ const OWNER: Record<string, Tri> = {
 };
 const TIMEFRAME: Record<string, Tri> = {
   "Pilot de 4 setmanes": { ca: "", es: "Piloto de 4 semanas", en: "4-week pilot" },
+  "4 setmanes de pilot": { ca: "", es: "Piloto de 4 semanas", en: "4-week pilot" },
   "Propers 30 dies": { ca: "", es: "Próximos 30 días", en: "Next 30 days" },
   "Propers 15 dies": { ca: "", es: "Próximos 15 días", en: "Next 15 days" },
   "Propers 2 mesos": { ca: "", es: "Próximos 2 meses", en: "Next 2 months" },
@@ -340,7 +359,14 @@ export function translateRecText(ca: string, lang: Lang, misses: Misses): string
 
 const trCtx = (ca: string, lang: Lang, misses: Misses): string => {
   const es = lang === "es";
-  const m = /^el domini és (dels més importants per al col·lectiu i puntua baix|important i puntua bé|poc prioritari i puntua baix|poc prioritari i puntua bé|poc prioritari); (?:diferència de ([\d.]+) punts entre torns(?:, el més baix és (mati|tarda|nit))?|el consens ha caigut ([\d.]+) punts amb la puntuació gairebé estable)$/.exec(ca);
+  const g = /^diferència de (-?[\d.]+) punts entre torns(?:, el més baix és (mati|tarda|nit))?; diferència de (-?[\d.]+) punts entre torns$/.exec(ca);
+  if (g) {
+    const low = g[2] ? (es ? `, el más bajo es ${SHIFT[g[2]]!.es}` : `, lowest is ${SHIFT[g[2]]!.en}`) : "";
+    return es
+      ? `diferencia de ${g[1]} puntos entre turnos${low}; diferencia de ${g[3]} puntos entre turnos`
+      : `${g[1]} points gap between shifts${low}; ${g[3]} points gap between shifts`;
+  }
+  const m = /^el domini és (dels més importants per al col·lectiu i puntua baix|important i puntua bé|poc prioritari i puntua baix|poc prioritari i puntua bé|poc prioritari); (?:diferència de (-?[\d.]+) punts entre torns(?:, el més baix és (mati|tarda|nit))?(?:; diferència de (-?[\d.]+) punts entre torns)?|el consens ha caigut ([\d.]+) punts amb la puntuació gairebé estable)$/.exec(ca);
   if (!m) {
     misses.add("rec-context", ca);
     return ca;
@@ -356,7 +382,8 @@ const trCtx = (ca: string, lang: Lang, misses: Misses): string => {
   const head = es ? `el dominio ${imp}` : `the domain ${imp}`;
   if (m[4]) return es ? `${head}; el consenso ha caído ${m[4]} puntos con la puntuación casi estable` : `${head}; consensus has dropped ${m[4]} points while the score is almost stable`;
   const low = m[3] ? (es ? `, el más bajo es ${SHIFT[m[3]]!.es}` : `, lowest is ${SHIFT[m[3]]!.en}`) : "";
-  return es ? `${head}; diferencia de ${m[2]} puntos entre turnos${low}` : `${head}; ${m[2]} points gap between shifts${low}`;
+  const extra = m[5] ? (es ? `; diferencia de ${m[5]} puntos entre turnos` : `; ${m[5]} points gap between shifts`) : "";
+  return es ? `${head}; diferencia de ${m[2]} puntos entre turnos${low}${extra}` : `${head}; ${m[2]} points gap between shifts${low}${extra}`;
 };
 
 export function translateRecRationale(ca: string, lang: Lang, misses: Misses): string {
