@@ -39,6 +39,7 @@ export function PushToggle({ vapidKey, compact = false }: { vapidKey: string; co
 
   useEffect(() => {
     try {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- sessionStorage is client-only; reading it after mount avoids a hydration mismatch
       setDismissed(sessionStorage.getItem("push-popup-dismissed") === "1");
     } catch {
       setDismissed(false);
