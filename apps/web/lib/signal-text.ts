@@ -50,17 +50,27 @@ export function signalDetail(s: Pick<SignalLike, "tipus" | "descripcio">, lang: 
   const deNum = (x: string) => t(/^1([.,]|$)/.test(x) ? "sig_de1" : "sig_de", { x: D(x) });
   const d = s.descripcio;
   const ser = series(d);
-  const range = ser.length >= 2 ? ` (${ser.map(D).join(" → ")})` : "";
+  /** Start, end and total change of a series, one decimal, in the UI's decimal style. */
+  const span = (down: boolean) => {
+    const f = Number(ser[0]);
+    const l = Number(ser[ser.length - 1]);
+    const x = Math.abs(l - f).toFixed(1);
+    return { a: D(ser[0]), b: D(ser[ser.length - 1]), x: D(x), flat: Number(x) === 0 || (down ? l >= f : l <= f) };
+  };
   switch (s.tipus) {
     case "sustained_decline": {
       const wk = WORD_KEYS[ser.length as keyof typeof WORD_KEYS];
-      return ser.length >= 2
-        ? t("sig_sd_series", { count: wk ? t(wk) : String(ser.length), series: ser.map(D).join(" → ") })
-        : t("sig_sd_plain");
+      if (ser.length < 2) return t("sig_sd_plain");
+      const r = span(true);
+      return r.flat ? t("sig_sd_plain") : t("sig_sd_series", { count: wk ? t(wk) : String(ser.length), a: r.a, b: r.b, x: r.x });
     }
     case "sharp_drop": {
       const m = d.match(/fell\s+([\d.]+)\s+points?/i);
-      return m ? t("sig_sharp", { de: deNum(m[1]), range }) : t("sig_sharp_plain");
+      if (ser.length >= 2) {
+        const r = span(true);
+        if (!r.flat) return t("sig_sharp", { a: r.a, b: r.b, x: r.x });
+      }
+      return m ? t("sig_sharp_x", { de: deNum(m[1]) }) : t("sig_sharp_plain");
     }
     case "feble": {
       const m = d.match(/decline of\s+([\d.]+)\s+points?\s+over\s+(\d+)\s+periods?/i);
@@ -68,7 +78,7 @@ export function signalDetail(s: Pick<SignalLike, "tipus" | "descripcio">, lang: 
     }
     case "polarisation": {
       const m = d.match(/fell\s+(\d+)\s+points?\s*\((\d+)\s*→\s*(\d+)\)/i);
-      return m ? t("sig_polar", { x: m[1], a: m[2], b: m[3] }) : t("sig_polar_plain");
+      return m && Number(m[2]) > Number(m[3]) ? t("sig_polar", { x: String(Number(m[2]) - Number(m[3])), a: m[2], b: m[3] }) : t("sig_polar_plain");
     }
     case "changepoint_cluster": {
       const m = d.match(/^(\d+)\s+people.*?last\s+(\d+)\s+days/i);
@@ -80,7 +90,11 @@ export function signalDetail(s: Pick<SignalLike, "tipus" | "descripcio">, lang: 
     }
     case "improvement": {
       const m = d.match(/rose\s+([\d.]+)\s+points?/i);
-      return m ? t("sig_improve", { de: deNum(m[1]), range }) : t("sig_improve_plain");
+      if (ser.length >= 2) {
+        const r = span(false);
+        if (!r.flat) return t("sig_improve", { a: r.a, b: r.b, x: r.x });
+      }
+      return m ? t("sig_improve_x", { de: deNum(m[1]) }) : t("sig_improve_plain");
     }
     case "emergent":
       // Written by the analysis job: the theme label itself (data, kept as is).
