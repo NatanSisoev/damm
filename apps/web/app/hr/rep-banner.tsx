@@ -28,7 +28,7 @@ export async function RepBanner({ rep, max = 3 }: { rep: Representativeness; max
         })}
       </ul>
       <p className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
-        <Link href="/hr/needs?nova=1#nova" className="underline">{t("rb_need")}</Link>
+        <Link href="/hr/needs/new" className="underline">{t("rb_need")}</Link>
         <Link href="/hr/needs" className="underline">{t("rb_remind")}</Link>
         <Link href="/hr/methodology" className="underline">{t("rb_how")}</Link>
       </p>

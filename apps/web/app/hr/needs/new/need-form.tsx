@@ -2,7 +2,7 @@
 
 import { useActionState, useState } from "react";
 import { DEFAULT_QUESTION_COUNT, QUESTION_COUNT_OPTIONS, type QueryDelivery } from "@damm/shared";
-import { createNeedAction } from "../actions";
+import { createNeedAction } from "../../actions";
 import { useT } from "@/lib/i18n/client";
 import { hrDict, collectiveLabel, type HrKey } from "@/lib/i18n/hr";
 import { useLang } from "@/lib/i18n/client";
@@ -54,7 +54,7 @@ export function NeedForm({ collectius }: { collectius: Collectiu[] }) {
       <div>
         <label htmlFor="text_nl" className="label">{t("nf_objective")}</label>
         <textarea
-          id="text_nl" name="text_nl" required rows={3} className="input w-full resize-y"
+          id="text_nl" name="text_nl" required rows={7} className="input w-full resize-y"
           aria-invalid={state?.field === "text_nl"} aria-describedby={state ? "need-error" : undefined}
           value={objective} onChange={(e) => setObjective(e.target.value)}
           placeholder={t("nf_objective_ph")}
@@ -63,7 +63,7 @@ export function NeedForm({ collectius }: { collectius: Collectiu[] }) {
       <div>
         <label htmlFor="context" className="label">{t("nf_context")} <span className="text-subtle">{t("nf_optional")}</span></label>
         <textarea
-          id="context" name="context" rows={3} className="input w-full resize-y"
+          id="context" name="context" rows={4} className="input w-full resize-y"
           value={context} onChange={(e) => setContext(e.target.value)}
           placeholder={t("nf_context_ph")}
         />
