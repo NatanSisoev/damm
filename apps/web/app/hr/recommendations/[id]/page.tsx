@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { SubmitButton } from "@/app/hr/submit-button";
 import { ConfirmButton } from "../../confirm-button";
+import { DeliveryPicker } from "../../delivery-picker";
 import { ProposalBody } from "../proposal-body";
 import { Comments, People } from "../../glyphs";
 import { notFound } from "next/navigation";
@@ -90,7 +91,7 @@ export default async function RecommendationPage({ params }: { params: Promise<{
                   </>
                 )}
                 {r.estat === "aprovada" && (
-                  <form action={followUpFromDetailAction}><input type="hidden" name="id" value={r.id} /><SubmitButton className="btn btn-primary" busyLabel={t("rd_followup_busy")}>{t("rd_create_followup")}</SubmitButton></form>
+                  <form action={followUpFromDetailAction} className="flex flex-wrap items-end justify-end gap-3"><input type="hidden" name="id" value={r.id} /><DeliveryPicker /><SubmitButton className="btn btn-primary" busyLabel={t("rd_followup_busy")}>{t("rd_create_followup")}</SubmitButton></form>
                 )}
               </div>
             )}

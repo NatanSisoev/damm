@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { advanceSignalStatus, approveRecommendation, discardRecommendation } from "@damm/db/hr";
 import { createDraftedFollowUp } from "../../follow-up";
+import { parseDelivery } from "@/lib/delivery";
 import { ProbeError, hrStartProbe, hrStopProbe } from "@/lib/hr-engine";
 import { getT } from "@/lib/i18n/server";
 import { hrResultsDict } from "@/lib/i18n/hr-results";
@@ -65,6 +66,6 @@ export async function discardRecFromSignalAction(formData: FormData) {
 
 /** AI drafts the follow-up questions; a person still reviews them before anything is published. */
 export async function followUpFromSignalAction(formData: FormData) {
-  await createDraftedFollowUp(Number(formData.get("id")));
+  await createDraftedFollowUp(Number(formData.get("id")), parseDelivery(formData.get("delivery")));
   refreshSignal(formData);
 }

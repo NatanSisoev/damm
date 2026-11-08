@@ -3,6 +3,8 @@
 import { useActionState, useState } from "react";
 import { DEFAULT_QUESTION_COUNT, QUESTION_COUNT_OPTIONS, type QueryDelivery } from "@damm/shared";
 import { createNeedAction } from "../../actions";
+import { DeliveryPicker } from "../../delivery-picker";
+import { DEFAULT_DELIVERY } from "@/lib/delivery";
 import { useT } from "@/lib/i18n/client";
 import { hrDict, collectiveLabel, type HrKey } from "@/lib/i18n/hr";
 import { useLang } from "@/lib/i18n/client";
@@ -17,8 +19,6 @@ const EXAMPLES = [
   { key: "c", collectiu: "", count: 6, delivery: "daily" },
 ] as const;
 
-const DELIVERIES: QueryDelivery[] = ["daily", "campaign"];
-
 export function NeedForm({ collectius }: { collectius: Collectiu[] }) {
   const t = useT(hrDict);
   const lang = useLang();
@@ -27,7 +27,7 @@ export function NeedForm({ collectius }: { collectius: Collectiu[] }) {
   const [exclusions, setExclusions] = useState("");
   const [collectiu, setCollectiu] = useState("0");
   const [count, setCount] = useState<number>(DEFAULT_QUESTION_COUNT);
-  const [delivery, setDelivery] = useState<QueryDelivery>("daily");
+  const [delivery, setDelivery] = useState<QueryDelivery>(DEFAULT_DELIVERY);
   const [state, formAction, pending] = useActionState(createNeedAction, null);
 
   const fill = (e: (typeof EXAMPLES)[number]) => {
@@ -103,22 +103,7 @@ export function NeedForm({ collectius }: { collectius: Collectiu[] }) {
           </div>
           <p id="count-hint" className="mt-1 text-xs text-subtle">{t("nf_count_hint")}</p>
         </div>
-        <div>
-          <span id="delivery-label" className="label">{t("nf_delivery")}</span>
-          <input type="hidden" name="delivery" value={delivery} />
-          <div role="radiogroup" aria-labelledby="delivery-label" aria-describedby="delivery-hint" className="flex gap-2">
-            {DELIVERIES.map((d) => (
-              <button
-                key={d} type="button" role="radio" aria-checked={delivery === d}
-                className={`btn flex-1 ${delivery === d ? "btn-primary" : "btn-ghost"}`}
-                onClick={() => setDelivery(d)}
-              >
-                {t(`nf_delivery_${d}` as HrKey)}
-              </button>
-            ))}
-          </div>
-          <p id="delivery-hint" className="mt-1 text-xs text-subtle" aria-live="polite">{t(`nf_delivery_${delivery}_hint` as HrKey)}</p>
-        </div>
+        <DeliveryPicker value={delivery} onChange={setDelivery} />
       </div>
       {state && (
         <div id="need-error" role="alert" className="flex items-start justify-between gap-3 rounded-lg border border-warn bg-warn-soft px-3 py-2 text-sm text-warn">

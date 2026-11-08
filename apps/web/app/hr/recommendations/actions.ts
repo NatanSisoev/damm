@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { approveRecommendation, discardRecommendation } from "@damm/db/hr";
 import { createDraftedFollowUp } from "../follow-up";
+import { parseDelivery } from "@/lib/delivery";
 
 // Same human decisions as the list page, but they stay on the recommendation's own page.
 function refresh(id: number) {
@@ -25,6 +26,6 @@ export async function discardFromDetailAction(formData: FormData) {
 
 export async function followUpFromDetailAction(formData: FormData) {
   const id = Number(formData.get("id"));
-  await createDraftedFollowUp(id);
+  await createDraftedFollowUp(id, parseDelivery(formData.get("delivery")));
   refresh(id);
 }

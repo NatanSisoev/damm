@@ -3,13 +3,14 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { draftSurvey, redraftQuestion, translateQuestionTexts } from "@damm/ai";
-import { DEFAULT_QUESTION_COUNT, QUESTION_COUNT_OPTIONS, type QueryDelivery } from "@damm/shared";
+import { DEFAULT_QUESTION_COUNT, QUESTION_COUNT_OPTIONS } from "@damm/shared";
 import {
   approveQuestion, fillQuestionTranslations, getDraftFollowup, removeDraftFollowup, getQuestionWording, getRedraftContext, listCollectius, listNeedCards, moveDraft, replaceDraft, saveDraftSurvey, updateNeedHeader, approveRecommendation, createNecessitat, discardQuestion,
   discardRecommendation, publishNecessitat, updateDraftText, closeNecessitat, setSignalStatus, setAlarmArchived, reopenClosedAlarm,
   recordDecision, alarmInfo, questionInfo,
 } from "@damm/db/hr";
 import { createDraftedFollowUp } from "./follow-up";
+import { parseDelivery } from "@/lib/delivery";
 import { changeAlarmStatus, hrSetQuestionActive, invalidateHrPool, type AlarmStatus } from "@/lib/hr-engine";
 import { notifyNeedPublished } from "@/lib/push";
 import { invalidateHrMemo } from "@/lib/hr-memo";
@@ -30,7 +31,7 @@ export async function createNeedAction(_prev: NeedFormState, formData: FormData)
   // Number of questions per person and delivery mode (daily set or one-off campaign); anything else falls back to the defaults.
   const qc = Number(formData.get("question_count"));
   const questionCount = (QUESTION_COUNT_OPTIONS as readonly number[]).includes(qc) ? qc : DEFAULT_QUESTION_COUNT;
-  const delivery: QueryDelivery = formData.get("delivery") === "campaign" ? "campaign" : "daily";
+  const delivery = parseDelivery(formData.get("delivery"));
   const context = String(formData.get("context") ?? "").trim();
   const exclusions = String(formData.get("exclusions") ?? "").trim();
   const collectiuId = c > 0 ? c : null;
@@ -165,7 +166,7 @@ export async function discardRecommendationAction(formData: FormData) {
 }
 
 export async function followUpAction(formData: FormData) {
-  await createDraftedFollowUp(Number(formData.get("id")));
+  await createDraftedFollowUp(Number(formData.get("id")), parseDelivery(formData.get("delivery")));
   revalidatePath("/hr/recommendations");
   redirect("/hr/review");
 }

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { SubmitButton } from "@/app/hr/submit-button";
 import { ConfirmButton } from "../../confirm-button";
+import { DeliveryPicker } from "../../delivery-picker";
 import { RouteModal } from "../../modal";
 import { ProposalBody } from "../../recommendations/proposal-body";
 import { alarmReason } from "@/lib/alarm-reason";
@@ -136,7 +137,7 @@ function RecActions({ r, signalId, t }: { r: SignalRecommendation; signalId: num
         </>
       )}
       {r.estat === "aprovada" && !r.seguimentNecessitatId && (
-        <form action={followUpFromSignalAction}>{hidden}<SubmitButton className="btn btn-primary" busyLabel={t("sd_rec_followup_busy")}>{t("sd_rec_followup")}</SubmitButton></form>
+        <form action={followUpFromSignalAction} className="flex flex-wrap items-center gap-2">{hidden}<DeliveryPicker compact /><SubmitButton className="btn btn-primary" busyLabel={t("sd_rec_followup_busy")}>{t("sd_rec_followup")}</SubmitButton></form>
       )}
       {r.estat === "aprovada" && r.seguimentNecessitatId && <Link href="/hr/needs" className="btn">{t("sd_rec_review")}</Link>}
     </>
