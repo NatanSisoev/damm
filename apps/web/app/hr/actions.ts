@@ -9,7 +9,7 @@ import {
   discardRecommendation, publishNecessitat, updateDraftText, closeNecessitat, setSignalStatus, setAlarmArchived, reopenClosedAlarm,
 } from "@damm/db/hr";
 import { createDraftedFollowUp } from "./follow-up";
-import { changeAlarmStatus, hrSetQuestionActive, type AlarmStatus } from "@/lib/hr-engine";
+import { changeAlarmStatus, hrSetQuestionActive, invalidateHrPool, type AlarmStatus } from "@/lib/hr-engine";
 import { notifyNeedPublished } from "@/lib/push";
 import { getT } from "@/lib/i18n/server";
 import { panelDict } from "@/lib/i18n/hr-panel";
@@ -71,12 +71,14 @@ export async function editNeedHeaderAction(formData: FormData) {
 
 export async function approveQuestionAction(formData: FormData) {
   approveQuestion(Number(formData.get("id")), HR_USER);
+  invalidateHrPool();
   revalidatePath("/hr/review");
   revalidatePath("/hr/needs");
 }
 
 export async function discardQuestionAction(formData: FormData) {
   discardQuestion(Number(formData.get("id")));
+  invalidateHrPool();
   revalidatePath("/hr/review");
   revalidatePath("/hr/needs");
 }
@@ -97,6 +99,7 @@ export async function editQuestionAction(formData: FormData) {
 export async function publishAction(formData: FormData) {
   const id = Number(formData.get("id"));
   if (!publishNecessitat(id)) redirect("/hr/needs");
+  invalidateHrPool();
   const outcome = await notifyNeedPublished(id);
   revalidatePath("/hr/needs");
   revalidatePath("/hr/review");

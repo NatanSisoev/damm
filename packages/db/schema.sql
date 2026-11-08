@@ -273,6 +273,7 @@ CREATE TABLE assignment (
   UNIQUE (compte_id, day, slot)
 );
 CREATE INDEX idx_assignment_compte ON assignment(compte_id, day);
+CREATE INDEX IF NOT EXISTS idx_assignment_pregunta ON assignment(pregunta_id, day);
 
 -- Personal trajectory per account x domain (Kalman local level). Never leaves the engine.
 CREATE TABLE person_domain_state (

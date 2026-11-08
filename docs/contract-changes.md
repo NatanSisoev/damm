@@ -19,7 +19,15 @@ What changed and why.
 
 ---
 
-## 2026-11-08: `TrendCell.confidence` for chart metric panels (Jan)
+## 2026-11-08: index `idx_assignment_pregunta` (Jan)
+
+`packages/db`: new index `CREATE INDEX IF NOT EXISTS idx_assignment_pregunta ON assignment(pregunta_id, day)` in `schema.sql`, and created idempotently by `listPool` (`packages/engine/src/pool.ts`) for existing databases. It speeds up the HR pool inspector (`listPool`, which groups assignments by question). No table or column change, no API change.
+
+Action items:
+- [x] Jan: schema, index creation in listPool. (done 2026-11-08)
+- [ ] Natan: nothing required. If you rebuild the demo DB with your own schema path, the index comes from `schema.sql` or from `listPool` on first call.
+
+## 2026-11-08: `TrendCell.confidence' for chart metric panels (Jan)
 
 `@damm/db/hr`: `TrendCell` gains `confidence: number | null` (0-100 from `agregat.confidence`, null when suppressed). `getTrends` and `getShiftTrend` fill it. `TrendChart` uses it, with `consensus`, for its optional Consensus and Confidence panels; a polarisation alarm opens the consensus panel by default and a low-confidence alarm opens the confidence panel. No schema change.
 
