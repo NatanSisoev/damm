@@ -377,3 +377,14 @@ The employee app now shows scale10 questions as 1 to 10 (two rows of 5). It neve
 Action items:
 - [x] Jan: answer UI, HR type label. (done 2026-11-08)
 - [ ] Natan: in `packages/engine` set `SCALES.scale10` to `{ min: 1, max: 10 }` and score scale10 as `(v - 1) / 9` in `normalize.ts` (keep accepting 0 for old rows, clamped to 0), and generate 1..10 in the demo/sim answers.
+
+## 2026-11-08: HR comment browser, `/hr/comments` (Jan)
+
+Additive, no schema or `@damm/shared` change. New HR repository API in `@damm/db/hr` (`packages/db/src/hr-comments.ts`): `getCommentThemes(lang?)` and `searchComments(filters, page, lang?)`. They read only `tema`, `comentari_tema` and `v_resposta_analitica`.
+
+- Counts are comments, not distinct people (the view has no account id). Cells under 10 are hidden, with complementary suppression; themes under 10 are counted, never named. A filter combination under 10 returns no text and no count. Order is a fixed shuffle, so it carries no time signal.
+- Theme text goes through one function, `overlayThemeText`. After merging the `traduccio` work, replace its body with `overlayTranslations(db, "tema", rows, { etiqueta: "etiqueta", resum: "resum" }, lang)` from `./hr-i18n`.
+
+Action items:
+- [x] Jan: page, nav entry, dictionaries. (done 2026-11-08)
+- [ ] Jan: after merging `jan/demo-db`, swap the `overlayThemeText` body as above.

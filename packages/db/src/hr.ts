@@ -2,3 +2,5 @@
 export * from "./hr-repository";
 export * from "./hr-rigour";
 export * from "./hr-signals";
+
+export * from "./hr-comments";
