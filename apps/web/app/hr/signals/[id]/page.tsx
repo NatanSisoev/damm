@@ -281,17 +281,14 @@ export default async function SignalPage({ params, searchParams }: { params: Pro
           <Card id="recomanacions" title={t("sd_recs")} meta={<span className="num">{recommendations.length}</span>}>
             {recommendations.length === 0 ? (
               signal.dominiId != null ? (
-                <div className="gen-panel">
-                  <span className="gen-panel-mark" aria-hidden>
-                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" strokeLinecap="round"><path d="M8 1.5 9.6 6.4 14.5 8 9.6 9.6 8 14.5 6.4 9.6 1.5 8 6.4 6.4Z" /></svg>
-                  </span>
-                  <h3>{ts("no_recs_title")}</h3>
-                  <p>{ts("no_recs_text")}</p>
-                  <form action={generateRecommendationsAction}>
+                <div>
+                  <p className="text-[13px] font-medium">{ts("no_recs_title")}</p>
+                  <p className="mt-1 text-[13px] text-muted">{ts("no_recs_text")}</p>
+                  <form action={generateRecommendationsAction} className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2">
                     <input type="hidden" name="signal" value={signal.id} />
                     <GenerateButton variant="panel" />
+                    <span className="text-xs text-subtle">{ts("no_recs_note")}</span>
                   </form>
-                  <small>{ts("no_recs_note")}</small>
                 </div>
               ) : (
                 <Empty>{ts("no_recs_domain")}</Empty>
