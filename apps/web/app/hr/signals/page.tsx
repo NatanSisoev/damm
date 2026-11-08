@@ -18,7 +18,7 @@ import type { Lang } from "@damm/shared";
 
 import { recomputeAction, setAlarmStatusAction } from "../actions";
 import { ALARM_NEXT } from "./transitions";
-import { NON_ACTIONABLE, alarmHint } from "./alarm-text";
+import { NON_ACTIONABLE } from "./alarm-text";
 import { signalDetail, signalDrop, signalSegment } from "@/lib/signal-text";
 import { generateRecommendationsAction, proposeFollowUpAction } from "./actions";
 import { pageTitle } from "@/lib/i18n/titles";
@@ -295,11 +295,6 @@ function AlarmItem({ t, lang, r, rec, drafted }: { t: HrResultsT; lang: Lang; r:
             {r.shift && <span className="font-normal text-muted"> · {t("sig_shift", { shift: shiftLabel(r.shift, lang) })}</span>}
           </p>
           <p className="text-[13px] text-muted">{r.detail}</p>
-          <p className="mt-0.5 text-xs text-subtle">
-            <span className="num">{r.periode} · <People n={r.n} scoped={r.collectiuId !== null || r.tornId !== null} /></span>
-            {alarmHint(r.type, lang) && <> · {alarmHint(r.type, lang)}</>}
-
-          </p>
         </div>
       </div>
       <div className="mt-2 flex flex-wrap items-center justify-end gap-2">
