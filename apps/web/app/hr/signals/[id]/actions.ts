@@ -45,7 +45,9 @@ export async function startProbeAction(formData: FormData) {
     error = (await getT(hrResultsDict))("sd_err_probe");
   } else {
     try {
-      hrStartProbe({ senyalId: signalId, collectiuId, tornId: idOrNull(formData.get("torn")), dominiId, boost: 2, days: 14 });
+      const boost = Number(formData.get("boost") ?? 2);
+      const days = Math.round(Number(formData.get("days") ?? 14));
+      hrStartProbe({ senyalId: signalId, collectiuId, tornId: idOrNull(formData.get("torn")), dominiId, boost, days });
     } catch (e) {
       if (!(e instanceof ProbeError)) throw e;
       error = e.message;
