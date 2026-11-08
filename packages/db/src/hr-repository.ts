@@ -1,6 +1,6 @@
 // HR-side data access. The only repository HR routes may import.
 // Reads aggregate outputs and the analytics view; never `resposta` or `compte`.
-import type { Agregat, Lang, Recomanacio, Senyal } from "@damm/shared";
+import type { Agregat, Lang, QueryDelivery, Recomanacio, Senyal } from "@damm/shared";
 import { MIN_GROUP_SIZE } from "@damm/shared";
 import { getDb } from "./connection";
 import { overlayTranslations, RECOMMENDATION_FIELDS } from "./hr-i18n";
@@ -22,13 +22,17 @@ export interface DraftQuestion {
 export function createNecessitat(input: {
   textNl: string;
   collectiuId: number | null;
-  duradaMaxS: number | null;
+  duradaMaxS?: number | null;
+  /** Questions per person; NULL keeps the old "as the AI sees fit" behaviour. */
+  questionCount?: number | null;
+  /** 'daily' (default) joins the daily set; 'campaign' is a one-off extra set. */
+  delivery?: QueryDelivery;
   context?: string | null;
   exclusions?: string | null;
 }): number {
   const r = getDb()
-    .prepare("INSERT INTO necessitat (text_nl, collectiu_id, durada_max_s, context, exclusions) VALUES (?, ?, ?, ?, ?)")
-    .run(input.textNl, input.collectiuId, input.duradaMaxS, input.context || null, input.exclusions || null);
+    .prepare("INSERT INTO necessitat (text_nl, collectiu_id, durada_max_s, question_count, delivery, context, exclusions) VALUES (?, ?, ?, ?, ?, ?, ?)")
+    .run(input.textNl, input.collectiuId, input.duradaMaxS ?? null, input.questionCount ?? null, input.delivery ?? "daily", input.context || null, input.exclusions || null);
   return Number(r.lastInsertRowid);
 }
 
@@ -91,6 +95,8 @@ export interface NeedDraftGroup {
   titol: string | null;
   intro: string | null;
   duradaMaxS: number | null;
+  questionCount: number | null;
+  delivery: QueryDelivery;
   draftFont: "llm" | "fallback" | null;
   collectiu: string | null;
   /** Topics the need says must not be asked about (free text), for the wording check. */
@@ -103,7 +109,7 @@ export function listNeedDrafts(): NeedDraftGroup[] {
   const db = getDb();
   const needs = db
     .prepare(
-      `SELECT n.id, n.text_nl AS textNl, n.titol, n.intro, n.durada_max_s AS duradaMaxS, n.draft_font AS draftFont, n.exclusions, c.nom AS collectiu
+      `SELECT n.id, n.text_nl AS textNl, n.titol, n.intro, n.durada_max_s AS duradaMaxS, n.question_count AS questionCount, n.delivery, n.draft_font AS draftFont, n.exclusions, c.nom AS collectiu
        FROM necessitat n LEFT JOIN collectiu c ON c.id = n.collectiu_id
        WHERE EXISTS (SELECT 1 FROM pregunta p WHERE p.necessitat_id = n.id AND p.estat = 'draft')
        ORDER BY n.id DESC`,
@@ -151,7 +157,7 @@ export function getRedraftContext(id: number) {
   const row = db
     .prepare(
       `SELECT p.id, p.text, p.tipus, d.nom AS domini, p.motiu, p.necessitat_id AS nid,
-              n.text_nl AS objective, n.context, n.exclusions, n.durada_max_s AS maxSeconds, c.nom AS collective
+              n.text_nl AS objective, n.context, n.exclusions, n.durada_max_s AS maxSeconds, n.question_count AS questionCount, c.nom AS collective
        FROM pregunta p JOIN domini d ON d.id = p.domini_id
        JOIN necessitat n ON n.id = p.necessitat_id LEFT JOIN collectiu c ON c.id = n.collectiu_id
        WHERE p.id = ? AND p.estat = 'draft'`,
@@ -165,7 +171,7 @@ export function getRedraftContext(id: number) {
     )
     .all(row.nid, id) as any[]).map((o) => ({ text: o.text, type: TIPUS_TO_AI[o.tipus] ?? o.tipus, domain: o.domini, reason: o.motiu ?? "" }));
   return {
-    need: { objective: row.objective, context: row.context, exclusions: row.exclusions, collective: row.collective, maxSeconds: row.maxSeconds },
+    need: { objective: row.objective, context: row.context, exclusions: row.exclusions, collective: row.collective, maxSeconds: row.maxSeconds, questionCount: row.questionCount },
     current: { text: row.text, type: TIPUS_TO_AI[row.tipus] ?? row.tipus, domain: row.domini, reason: row.motiu ?? "" },
     others,
   };
@@ -460,6 +466,8 @@ export interface NeedCard {
   intro: string | null;
   collectiu: string | null;
   duradaMaxS: number | null;
+  questionCount: number | null;
+  delivery: QueryDelivery;
   draftFont: "llm" | "fallback" | null;
   creat: string;
   /** Card state shown on the Necessitats page, derived from necessitat.estat and the question states. */
@@ -484,7 +492,7 @@ export function listNeedCards(lang?: Lang): NeedCard[] {
   const db = getDb();
   const needs = db
     .prepare(
-      `SELECT n.id, n.text_nl AS textNl, n.titol, n.intro, n.durada_max_s AS duradaMaxS, n.draft_font AS draftFont,
+      `SELECT n.id, n.text_nl AS textNl, n.titol, n.intro, n.durada_max_s AS duradaMaxS, n.question_count AS questionCount, n.delivery, n.draft_font AS draftFont,
               n.creat, n.estat, c.nom AS collectiu,
               (SELECT COUNT(*) FROM pregunta p WHERE p.necessitat_id = n.id AND p.estat = 'draft') AS nDraft
        FROM necessitat n LEFT JOIN collectiu c ON c.id = n.collectiu_id
