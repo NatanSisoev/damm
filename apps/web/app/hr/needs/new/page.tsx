@@ -20,7 +20,7 @@ export default async function NewNeedPage() {
         subtitle={t("needs_new_intro")}
         actions={<Link href="/hr/needs" className="btn btn-ghost">&larr; {t("needs_new_back")}</Link>}
       />
-      <section className="card mb-6 max-w-3xl">
+      <section className="card mb-6">
         <div className="card-header">
           <span className="text-xs text-subtle">{t("needs_new_note")}</span>
         </div>
