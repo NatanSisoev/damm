@@ -20,7 +20,7 @@ import { STATUS_ORDER, SignalBadges, statusLabel } from "../../signal-labels";
 import { signalDetail, signalHeadline } from "@/lib/signal-text";
 import { getT, getTL } from "@/lib/i18n/server";
 import { hrResultsDict, type HrResultsKey, type HrResultsT } from "@/lib/i18n/hr-results";
-import { collectiveLabel, domainLabel, shiftLabel } from "@/lib/i18n/names";
+import { domainLabel } from "@/lib/i18n/names";
 import { numD } from "@/lib/i18n/num";
 import { signalsDict } from "@/lib/i18n/hr-signals";
 import { rich } from "@/lib/i18n/rich";
@@ -173,7 +173,7 @@ export default async function SignalPage({ params, searchParams }: { params: Pro
   const { probeError } = await searchParams;
   const detail = Number.isInteger(Number(id)) ? getSignalDetail(Number(id), lang) : null;
   if (!detail) notFound();
-  const { signal, periodes, trend, trendScope, themes, hiddenThemes, recommendations, followUps, timeline } = detail;
+  const { signal, periodes, trend, themes, hiddenThemes, recommendations, followUps, timeline } = detail;
   // A signal about one domain shows only that domain's line; the other domains are noise here.
   const related = trend.filter((r) => r.related);
   const shownTrend = related.length > 0 ? related : trend;
@@ -215,10 +215,7 @@ export default async function SignalPage({ params, searchParams }: { params: Pro
       <div className="grid gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
         <div className="space-y-6">
           <Card
-            title={(() => {
-              const scope = trendScope.split(" · ").map((x) => (x === "Tots" ? t("sd_all") : collectiveLabel(x, lang) !== x ? collectiveLabel(x, lang) : shiftLabel(x, lang))).join(" · ");
-              return shownTrend.length === 1 && shownTrend !== trend ? t("sd_evo_one", { domain: domainLabel(shownTrend[0].domini, lang), scope }) : t("sd_evo", { scope });
-            })()}
+            title={t("sd_tl_senyal")}
             meta={t("sd_score010")}
             flush
           >
