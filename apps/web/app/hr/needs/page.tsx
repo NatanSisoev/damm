@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { SubmitButton } from "@/app/hr/submit-button";
 import Link from "next/link";
 import { MIN_GROUP_SIZE, type Lang } from "@damm/shared";
 import { listCollectius, listDecisions, listDomains, listNeedCards, listNeedDrafts, type NeedCard, type NeedState } from "@damm/db/hr";
@@ -179,7 +180,7 @@ function NeedItem({ n, draft, domainIdx, t, lang, regenError }: { n: NeedCard; d
               </div>
               <form action={remindNeedAction}>
                 <input type="hidden" name="id" value={n.id} />
-                <button className="btn">{t("remind_btn")}</button>
+                <SubmitButton className="btn">{t("remind_btn")}</SubmitButton>
               </form>
             </div>
           );
@@ -231,7 +232,7 @@ function NeedItem({ n, draft, domainIdx, t, lang, regenError }: { n: NeedCard; d
           {(n.state === "esborrany" && n.approved.length > 0 || n.state === "llesta") && (
             <form action={publishAction}>
               <input type="hidden" name="id" value={n.id} />
-              <button className="btn btn-primary">{t("need_publish")}</button>
+              <SubmitButton className="btn btn-primary">{t("need_publish")}</SubmitButton>
             </form>
           )}
           {n.state !== "tancada" && (

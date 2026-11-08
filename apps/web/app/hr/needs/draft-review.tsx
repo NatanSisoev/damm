@@ -1,4 +1,5 @@
 import { estimateSeconds, questionWarnings, wordLimit } from "@damm/ai";
+import { SubmitButton } from "@/app/hr/submit-button";
 import type { NeedDraftGroup } from "@damm/db/hr";
 import { getTL } from "@/lib/i18n/server";
 import { hrDict } from "@/lib/i18n/hr";
@@ -48,7 +49,7 @@ export async function DraftReview({ g, regenError = null }: { g: NeedDraftGroup;
         <input type="hidden" name="id" value={g.id} />
         <input name="titol" defaultValue={g.titol ?? ""} aria-label={t("title_label")} placeholder={t("title_label")} className="input w-full" />
         <textarea name="intro" defaultValue={g.intro ?? ""} aria-label={t("intro_label")} placeholder={t("intro_label")} rows={2} className="input w-full resize-y" />
-        <button className="btn btn-ghost">{t("save_header")}</button>
+        <SubmitButton className="btn btn-ghost">{t("save_header")}</SubmitButton>
       </form>
       <p className="mt-3 text-xs text-subtle">{t("translations_hint")}</p>
       <ul className="mt-4 divide-y divide-line border-t border-line">
@@ -83,7 +84,7 @@ export async function DraftReview({ g, regenError = null }: { g: NeedDraftGroup;
                 <span className="text-xs text-subtle">{t(q.tipus === "yes_no" ? "followup_when_no" : "followup_when_low")}</span>
                 <form action={removeFollowupAction}>
                   <input type="hidden" name="id" value={q.id} />
-                  <button className="btn btn-ghost">{t("followup_remove")}</button>
+                  <SubmitButton className="btn btn-ghost">{t("followup_remove")}</SubmitButton>
                 </form>
               </div>
             )}
@@ -103,30 +104,30 @@ export async function DraftReview({ g, regenError = null }: { g: NeedDraftGroup;
                   <input name="text_en" defaultValue={q.textEn ?? ""} lang="en" aria-label={`${t("text_label")} (${t("text_en")})`} className="input mt-1 w-full" />
                 </label>
                 {(!q.textEs || !q.textEn) && <p className="text-xs text-subtle">{t("translations_missing")}</p>}
-                <button className="btn btn-ghost">{t("save_text")}</button>
+                <SubmitButton className="btn btn-ghost">{t("save_text")}</SubmitButton>
               </form>
               <form action={moveDraftAction}>
                 <input type="hidden" name="id" value={q.id} />
                 <input type="hidden" name="dir" value="up" />
-                <button className="btn btn-ghost" disabled={i === 0} aria-label={t("move_up")}>↑</button>
+                <SubmitButton className="btn btn-ghost" disabled={i === 0} aria-label={t("move_up")}>↑</SubmitButton>
               </form>
               <form action={moveDraftAction}>
                 <input type="hidden" name="id" value={q.id} />
                 <input type="hidden" name="dir" value="down" />
-                <button className="btn btn-ghost" disabled={i === g.questions.length - 1} aria-label={t("move_down")}>↓</button>
+                <SubmitButton className="btn btn-ghost" disabled={i === g.questions.length - 1} aria-label={t("move_down")}>↓</SubmitButton>
               </form>
               <form action={regenerateQuestionAction}>
                 <input type="hidden" name="id" value={q.id} />
-                <button className="btn btn-ghost">{t("regenerate")}</button>
+                <SubmitButton className="btn btn-ghost">{t("regenerate")}</SubmitButton>
                 {regenError === q.id && <p role="alert" className="mt-1 text-xs font-semibold text-warn">{t("regenerate_failed")}</p>}
               </form>
               <form action={discardQuestionAction}>
                 <input type="hidden" name="id" value={q.id} />
-                <button className="btn">{t("discard")}</button>
+                <SubmitButton className="btn">{t("discard")}</SubmitButton>
               </form>
               <form action={approveQuestionAction}>
                 <input type="hidden" name="id" value={q.id} />
-                <button className="btn btn-primary">{t("approve")}</button>
+                <SubmitButton className="btn btn-primary">{t("approve")}</SubmitButton>
               </form>
             </div>
           </li>

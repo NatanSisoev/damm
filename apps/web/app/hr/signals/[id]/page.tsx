@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { SubmitButton } from "@/app/hr/submit-button";
 import { alarmReason } from "@/lib/alarm-reason";
 import { Comments, People } from "../../glyphs";
 import { notFound } from "next/navigation";
@@ -135,7 +136,7 @@ function ProbeCard({ t, probes, signal, error }: { t: HrResultsT; probes: ProbeV
             {t("sd_probe_days")}
             <input type="number" name="days" defaultValue={14} min={1} max={90} step={1} required disabled={!canProbe} className="input num mt-1 block w-24" />
           </label>
-          <button className="btn btn-primary" disabled={!canProbe}>{t("sd_probe_btn")}</button>
+          <SubmitButton className="btn btn-primary" disabled={!canProbe}>{t("sd_probe_btn")}</SubmitButton>
         </form>
       )}
       {active.length === 0 && !canProbe && <p className="mt-2 text-xs text-subtle">{t("sd_probe_need")}</p>}
@@ -162,7 +163,7 @@ function ProbeCard({ t, probes, signal, error }: { t: HrResultsT; probes: ProbeV
                 <form action={stopProbeAction} className="mt-3 flex justify-end">
                   <input type="hidden" name="id" value={p.id} />
                   <input type="hidden" name="signal" value={signal.id} />
-                  <button className="btn">{t("sd_probe_stop")}</button>
+                  <SubmitButton className="btn">{t("sd_probe_stop")}</SubmitButton>
                 </form>
               )}
             </li>
@@ -223,19 +224,19 @@ export default async function SignalPage({ params, searchParams }: { params: Pro
           <form action={setSignalStatusAction}>
             <input type="hidden" name="id" value={signal.id} />
             <input type="hidden" name="status" value="acknowledged" />
-            <button className="btn">{t("sd_st_reopen")}</button>
+            <SubmitButton className="btn">{t("sd_st_reopen")}</SubmitButton>
           </form>
         ) : (
           <>
             <form action={setSignalStatusAction}>
               <input type="hidden" name="id" value={signal.id} />
               <input type="hidden" name="status" value="resolved" />
-              <button className="btn btn-primary" disabled={signal.status !== "action_linked"} title={signal.status !== "action_linked" ? t("sd_st_resolve_hint") : undefined}>{t("sd_st_resolve")}</button>
+              <SubmitButton className="btn btn-primary" disabled={signal.status !== "action_linked"} title={signal.status !== "action_linked" ? t("sd_st_resolve_hint") : undefined}>{t("sd_st_resolve")}</SubmitButton>
             </form>
             <form action={setSignalStatusAction}>
               <input type="hidden" name="id" value={signal.id} />
               <input type="hidden" name="status" value="dismissed" />
-              <button className="btn">{t("sd_st_dismiss")}</button>
+              <SubmitButton className="btn">{t("sd_st_dismiss")}</SubmitButton>
             </form>
           </>
         )}
