@@ -75,6 +75,14 @@ railway variables --set DEMO_RESET_ENABLED=1
 railway variables --set DEMO_LIVE_JOB=1
 ```
 
+## Quick join for the jury
+
+`DEMO_QUICK_JOIN=1` adds an "Enter the demo" button under the onboarding form (after scanning a collective QR). It creates a throwaway account (random `demo-xxxxxxxx` username, random password nobody sees, no recovery code) in that collective, signs in and opens the app. The flag is checked again on the server, so the action does nothing without it. Unset it after the demo.
+
+```bash
+railway variables --set DEMO_QUICK_JOIN=1
+```
+
 With the flag on, any answer opens an alarm: the engine's own when it finds one, otherwise the staged "Demo:" one on Logística · Condicions i organització. Read `railway logs` after one answer; the first line that is missing is where it broke:
 
 | Log line | If missing or odd |
