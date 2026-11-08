@@ -11,7 +11,7 @@ Requires Node and pnpm 10.
 ```bash
 pnpm install
 cp .env.example .env   # fill in values; never commit .env
-pnpm --filter @damm/db run init   # creates data/app.db (override with DB_PATH)
+pnpm demo-db   # builds the demo database data/app.db (about 90 s; trilingual, 99 days of synthetic answers)
 pnpm dev
 ```
 
