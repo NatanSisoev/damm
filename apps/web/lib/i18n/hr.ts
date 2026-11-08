@@ -9,6 +9,7 @@ export const hrDict = defineDict({
     // Shell
     shell_subtitle: "Recursos Humans",
     manager_view: "Vista de responsables",
+    full_detail: "Veure tot el detall",
     sections: "Seccions",
     logo_aria: "Escolta activa, inici",
     footer: "Dades sintètiques. Cap resposta individual. Grups de menys de {n} persones suprimits. La IA proposa, una persona decideix.",
@@ -350,6 +351,7 @@ export const hrDict = defineDict({
   es: {
     shell_subtitle: "Recursos Humanos",
     manager_view: "Vista de responsables",
+    full_detail: "Ver todo el detalle",
     sections: "Secciones",
     logo_aria: "Escolta activa, inicio",
     footer: "Datos sintéticos. Ninguna respuesta individual. Grupos de menos de {n} personas suprimidos. La IA propone, una persona decide.",
@@ -676,6 +678,7 @@ export const hrDict = defineDict({
   en: {
     shell_subtitle: "HR",
     manager_view: "Manager view",
+    full_detail: "See the full detail",
     sections: "Sections",
     logo_aria: "Escolta activa, home",
     footer: "Synthetic data. No individual answers. Groups of fewer than {n} people are suppressed. AI proposes, a person decides.",
