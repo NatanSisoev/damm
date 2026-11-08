@@ -19,10 +19,11 @@ import { ChangeBadge, Sparkline } from "../../trend";
 import { TrendChart } from "../../trend-chart";
 import { STATUS_ORDER, SignalBadges, statusLabel } from "../../signal-labels";
 import { signalDetail, signalHeadline } from "@/lib/signal-text";
-import { getTL } from "@/lib/i18n/server";
+import { getT, getTL } from "@/lib/i18n/server";
 import { hrResultsDict, type HrResultsKey, type HrResultsT } from "@/lib/i18n/hr-results";
 import { collectiveLabel, domainLabel } from "@/lib/i18n/names";
 import { numD } from "@/lib/i18n/num";
+import { signalsDict } from "@/lib/i18n/hr-signals";
 import { rich } from "@/lib/i18n/rich";
 
 const NEXT: Partial<Record<SignalTimelineStep["key"], { href: string; label: HrResultsKey }>> = {
@@ -118,6 +119,7 @@ function ProbeCard({ t, lang, probes, signal, error }: { t: HrResultsT; lang: La
 export default async function SignalPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ probeError?: string }> }) {
   const { id } = await params;
   const { t, lang } = await getTL(hrResultsDict);
+  const ts = await getT(signalsDict);
   const { probeError } = await searchParams;
   const detail = Number.isInteger(Number(id)) ? getSignalDetail(Number(id)) : null;
   if (!detail) notFound();
@@ -258,16 +260,16 @@ export default async function SignalPage({ params, searchParams }: { params: Pro
                   <span className="gen-panel-mark" aria-hidden>
                     <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" strokeLinecap="round"><path d="M8 1.5 9.6 6.4 14.5 8 9.6 9.6 8 14.5 6.4 9.6 1.5 8 6.4 6.4Z" /></svg>
                   </span>
-                  <h3>Encara no hi ha cap recomanació</h3>
-                  <p>Proposa fins a 3 accions concretes per a aquest senyal, amb responsable i termini suggerits.</p>
+                  <h3>{ts("no_recs_title")}</h3>
+                  <p>{ts("no_recs_text")}</p>
                   <form action={generateRecommendationsAction}>
                     <input type="hidden" name="signal" value={signal.id} />
                     <GenerateButton variant="panel" />
                   </form>
-                  <small>Una persona les aprova o les descarta.</small>
+                  <small>{ts("no_recs_note")}</small>
                 </div>
               ) : (
-                <Empty>Aquest senyal no té un domini concret, així que no es poden proposar recomanacions.</Empty>
+                <Empty>{ts("no_recs_domain")}</Empty>
               )
             ) : (
               <ul className="space-y-3">
