@@ -20,7 +20,7 @@ Flow: need in natural language, AI drafts, human approval, publish (push to the 
 
 ### 1. The need (1:05 to 1:25)
 
-Who: P1 (HR). URL: `/hr/needs` (sidebar "Consultar", page "Consultes"). If the page already lists needs, click "+ Nova consulta"; otherwise the form is shown directly.
+Who: P1 (HR). URL: `/hr/needs` (sidebar "Consultar", page "Consultes"). Click "+ Nova consulta" in the header to open the form at `/hr/needs/new`.
 
 Fill in:
 
