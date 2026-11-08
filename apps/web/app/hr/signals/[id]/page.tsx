@@ -283,10 +283,7 @@ export default async function SignalPage({ params, searchParams }: { params: Pro
               signal.dominiId != null ? (
                 <form action={generateRecommendationsAction}>
                   <input type="hidden" name="signal" value={signal.id} />
-                  <p className="text-[13px] text-muted">{ts("no_recs_text")} {ts("no_recs_note")}</p>
-                  <div className="mt-3 flex justify-end">
-                    <GenerateButton variant="panel" />
-                  </div>
+                  <GenerateButton variant="panel" />
                 </form>
               ) : (
                 <Empty>{ts("no_recs_domain")}</Empty>
