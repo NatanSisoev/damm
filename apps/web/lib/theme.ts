@@ -1,4 +1,4 @@
-// Theme preference: `damm_theme` cookie ("light" | "dark"). No cookie means follow the OS.
+// Theme preference: `damm_theme` cookie ("light" | "dark"). No cookie means light (only the toggle writes it).
 // The root layout reads it to set data-theme on <html>; the toggle writes it client-side (components/theme-toggle.tsx).
 import { cookies } from "next/headers";
 
