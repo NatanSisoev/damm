@@ -20,6 +20,7 @@ Status: `running`, `ready` (can start now), `blocked` (waiting on a dependency),
 | 6 | Security demo | `jan/security-demo` | done | light |
 | 7 | Demo script and slide notes | `jan/demo-script` | done | light |
 | 8 | HR CSV export with suppression | `jan/hr-export` | done | light |
+| 28 | HR web push for new alarms (toggle on `/hr/settings`, sent from the job only, link to the alarm; R-FLOW-7e) | `jan/alarm-push` | done on the branch, not merged; real-device test needs HTTPS | light |
 | 10 | `jan/dev` → `main` PR | coordinating session | ready | light |
 | 12 | HR home overview | `jan/hr-home` | done | light |
 | 13 | Publish page: join link, QR and print poster | `jan/publish-qr` | done | light |

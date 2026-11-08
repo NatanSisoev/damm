@@ -3,25 +3,31 @@
 // alarm text only (aggregate outputs above the minimum group size), never a person or an answer.
 import webpush from "web-push";
 import type { Lang } from "@damm/shared";
-import { deleteHrPushSubscription, listHrPushSubscriptions, listNewAlarms, type HrPushSubscription } from "@damm/db/hr";
+import { deleteHrPushSubscription, listHrPushSubscriptions, listNewAlarms, type HrPushSubscription, type NewAlarm } from "@damm/db/hr";
 import { makeT } from "@/lib/i18n/core";
-import { hrDict } from "@/lib/i18n/hr";
+import { hrDict, hrLookup } from "@/lib/i18n/hr";
 import { pushEnabled } from "@/lib/push";
-import { signalTrend } from "@/lib/signal-text";
+import { signalHeadline } from "@/lib/signal-text";
 
 export type HrPushOutcome = { status: "off" } | { status: "none" } | { status: "sent"; alarms: number; browsers: number };
 
-const BODY_MAX = 160;
-
-function payload(lang: Lang, afterId: number): string | null {
-  const alarms = listNewAlarms(afterId, lang);
+/**
+ * One notification per browser for a run. One alarm: "Critical: Leadership · Logistics, morning shift" opening that
+ * alarm. Several: a count, the most severe one named, opening the list. Domain, segment, type and severity only,
+ * no figures and no counts; `listNewAlarms` already left out groups under the minimum group size.
+ */
+export function alarmPayload(alarms: NewAlarm[], lang: Lang): string | null {
   if (!alarms.length) return null;
   const t = makeT(hrDict, lang);
-  const text = signalTrend(alarms[0], lang)?.plain ?? alarms[0].descripcio;
-  const first = text.length > BODY_MAX ? `${text.slice(0, BODY_MAX - 1)}…` : text;
-  const body = alarms.length > 1 ? `${first} (${t("hr_push_more", { n: alarms.length - 1 })})` : first;
-  const title = alarms.length === 1 ? t("hr_push_title_one") : t("hr_push_title_many", { n: alarms.length });
-  return JSON.stringify({ title, body, url: "/hr/signals" });
+  const top = alarms[0];
+  const headline = `${hrLookup("sev_", top.severity, lang)}: ${signalHeadline(top, lang)}`;
+  const type = hrLookup("sig_", top.tipus, lang);
+  if (alarms.length === 1) return JSON.stringify({ title: headline, body: type, url: `/hr/signals/${top.id}` });
+  return JSON.stringify({
+    title: t("hr_push_title_many", { n: alarms.length }),
+    body: `${headline} (${t("hr_push_more", { n: alarms.length - 1 })})`,
+    url: "/hr/signals",
+  });
 }
 
 async function send(subs: HrPushSubscription[], bodyFor: (lang: Lang) => string | null): Promise<number> {
@@ -45,10 +51,10 @@ async function send(subs: HrPushSubscription[], bodyFor: (lang: Lang) => string 
 /** Notifies HR browsers about the alarms created after `afterId` (taken before the job ran). */
 export async function notifyNewAlarms(afterId: number): Promise<HrPushOutcome> {
   if (!pushEnabled()) return { status: "off" };
-  const count = listNewAlarms(afterId).length;
-  if (!count) return { status: "none" };
-  const browsers = await send(listHrPushSubscriptions(), (lang) => payload(lang, afterId));
-  return { status: "sent", alarms: count, browsers };
+  const alarms = listNewAlarms(afterId);
+  if (!alarms.length) return { status: "none" };
+  const browsers = await send(listHrPushSubscriptions(), (lang) => alarmPayload(alarms, lang));
+  return { status: "sent", alarms: alarms.length, browsers };
 }
 
 /** A test notification to one HR browser. */

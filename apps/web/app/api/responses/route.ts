@@ -2,6 +2,7 @@ import { z } from "zod";
 import { getCompteId } from "@/lib/session";
 import { getEngine } from "@/lib/engine";
 import { EngineError } from "@damm/engine";
+import { maybeFireDemoAlarm } from "@/lib/demo-tripwire";
 import { getLang } from "@/lib/lang";
 import { getQuestionTranslations } from "@damm/db/employee";
 import { pickText, type PoolFollowup, type PostResponsesRequest, type PostResponsesResult } from "@damm/shared";
@@ -56,6 +57,7 @@ export async function POST(request: Request) {
   }
   const bad = result.rejected[0];
   if (bad) return Response.json({ error: bad.reason, preguntaId: bad.questionId }, { status: STATUS[bad.reason] });
+  maybeFireDemoAlarm(parsed.data.respostes); // demo only, off unless DEMO_TRIPWIRE=1
   if (result.followups.length === 0) return new Response(null, { status: 204 });
   // A low scale answer or a "no" triggers its linked open follow-up: returned here, shown right after, skippable.
   const lang = await getLang();
