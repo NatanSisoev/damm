@@ -19,6 +19,13 @@ What changed and why.
 
 ---
 
+## 2026-11-08: `TrendCell.confidence` for chart metric panels (Jan)
+
+`@damm/db/hr`: `TrendCell` gains `confidence: number | null` (0-100 from `agregat.confidence`, null when suppressed). `getTrends` and `getShiftTrend` fill it. `TrendChart` uses it, with `consensus`, for its optional Consensus and Confidence panels; a polarisation alarm opens the consensus panel by default and a low-confidence alarm opens the confidence panel. No schema change.
+
+Action items:
+- [x] Jan: repository field, chart panels and toggles, alarm defaults, copy. (done 2026-11-08)
+
 ## 2026-11-08: HR alarm push, `hr_push_subscription` (Jan)
 
 HR browsers can subscribe to web push on `/hr/settings`. When the analysis job (`POST /api/jobs/run`) creates new open warning or critical alarms for HR, every subscribed HR browser gets one notification in its saved language, linking to `/hr/signals`.

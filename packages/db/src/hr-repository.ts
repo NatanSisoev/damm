@@ -732,6 +732,7 @@ export interface TrendCell {
   suprimit: boolean;
   motiu: HideReason;
   consensus: number | null; // 0-100 (engine), higher = answers more alike; null when suppressed
+  confidence: number | null; // 0-100 (engine), how sure the score is; null when suppressed
   sd: number | null; // population SD of the 1-5 scale answers; null when suppressed
 }
 export interface TrendRow { domini: string; cells: TrendCell[]; canvi: Change }
@@ -774,10 +775,10 @@ export function getTrends(): Trends {
   const doms = db.prepare("SELECT id, nom FROM domini ORDER BY id").all() as { id: number; nom: string }[];
   const rows = db
     .prepare(
-      `SELECT periode, collectiu_id AS c, domini_id AS d, n, mitjana, consensus, suprimit FROM agregat
+      `SELECT periode, collectiu_id AS c, domini_id AS d, n, mitjana, consensus, confidence, suprimit FROM agregat
        WHERE torn_id IS NULL AND domini_id IS NOT NULL`,
     )
-    .all() as { periode: string; c: number | null; d: number; n: number; mitjana: number | null; consensus: number | null; suprimit: number }[];
+    .all() as { periode: string; c: number | null; d: number; n: number; mitjana: number | null; consensus: number | null; confidence: number | null; suprimit: number }[];
   const spread = scaleSpread();
   const cols = listCollectius();
   const scopes: { id: number | null; nom: string }[] = [{ id: null, nom: "Tots" }, ...cols.map((c) => ({ id: c.id, nom: c.nom }))];
@@ -803,13 +804,13 @@ export function getTrends(): Trends {
       const trendRows = doms.map((d): TrendRow => {
         const cells = periodes.map((per): TrendCell => {
           const r = find(per, s.id, d.id);
-          if (!r) return { mitjana: null, n: null, precisio: null, suprimit: false, motiu: null, consensus: null, sd: null };
+          if (!r) return { mitjana: null, n: null, precisio: null, suprimit: false, motiu: null, consensus: null, confidence: null, sd: null };
           const motiu = reasonOf.get(`${per}|${s.id}|${d.id}`) ?? null;
-          if (motiu) return { mitjana: null, n: null, precisio: null, suprimit: true, motiu, consensus: null, sd: null };
+          if (motiu) return { mitjana: null, n: null, precisio: null, suprimit: true, motiu, consensus: null, confidence: null, sd: null };
           const sd = spread.get(`${per}|${s.id}|${d.id}`);
           return {
             mitjana: r.mitjana, n: r.n, precisio: precisionBand(r.n), suprimit: false, motiu: null,
-            consensus: r.consensus, sd: sd === undefined || r.n < MIN_GROUP_SIZE ? null : +sd.toFixed(2),
+            consensus: r.consensus, confidence: r.confidence, sd: sd === undefined || r.n < MIN_GROUP_SIZE ? null : +sd.toFixed(2),
           };
         });
         const last = cells.length - 1;
@@ -844,10 +845,10 @@ export function getShiftTrend(collectiuId: number, tornId: number): { periodes: 
   const doms = db.prepare("SELECT id, nom FROM domini ORDER BY id").all() as { id: number; nom: string }[];
   const rows = db
     .prepare(
-      `SELECT periode, torn_id AS t, domini_id AS d, n, mitjana, consensus, suprimit FROM agregat
+      `SELECT periode, torn_id AS t, domini_id AS d, n, mitjana, consensus, confidence, suprimit FROM agregat
        WHERE collectiu_id = ? AND torn_id IS NOT NULL AND domini_id IS NOT NULL`,
     )
-    .all(collectiuId) as { periode: string; t: number; d: number; n: number; mitjana: number | null; consensus: number | null; suprimit: number }[];
+    .all(collectiuId) as { periode: string; t: number; d: number; n: number; mitjana: number | null; consensus: number | null; confidence: number | null; suprimit: number }[];
   if (!rows.some((r) => r.t === tornId)) return null;
   const shifts = [...new Set(rows.map((r) => r.t))];
   const find = (per: string, t: number, d: number) => rows.find((x) => x.periode === per && x.t === t && x.d === d);
@@ -855,18 +856,18 @@ export function getShiftTrend(collectiuId: number, tornId: number): { periodes: 
   const trendRows = doms.map((d): TrendRow => {
     const cells = periodes.map((per): TrendCell => {
       const r = find(per, tornId, d.id);
-      if (!r) return { mitjana: null, n: null, precisio: null, suprimit: false, motiu: null, consensus: null, sd: null };
+      if (!r) return { mitjana: null, n: null, precisio: null, suprimit: false, motiu: null, consensus: null, confidence: null, sd: null };
       const present = shifts.filter((t) => find(per, t, d.id));
       const res = complementarySuppression(present.map((t) => {
         const x = find(per, t, d.id)!;
         return { n: x.n, primary: !!x.suprimit };
       }));
       const motiu = res[present.indexOf(tornId)] ?? null;
-      if (motiu) return { mitjana: null, n: null, precisio: null, suprimit: true, motiu, consensus: null, sd: null };
+      if (motiu) return { mitjana: null, n: null, precisio: null, suprimit: true, motiu, consensus: null, confidence: null, sd: null };
       const sd = spread.get(`${per}|${tornId}|${d.id}`);
       return {
         mitjana: r.mitjana, n: r.n, precisio: precisionBand(r.n), suprimit: false, motiu: null,
-        consensus: r.consensus, sd: sd === undefined || r.n < MIN_GROUP_SIZE ? null : +sd.toFixed(2),
+        consensus: r.consensus, confidence: r.confidence, sd: sd === undefined || r.n < MIN_GROUP_SIZE ? null : +sd.toFixed(2),
       };
     });
     const last = cells.length - 1;
@@ -1221,10 +1222,10 @@ export function getWindowTrends(w: DateWindow, collectiuId: number | null = null
       rows: doms.map((d): TrendRow => {
         const cells = keys.map((b): TrendCell => {
           const r = cell(b, s.id, d.id);
-          if (!r) return { mitjana: null, n: null, precisio: null, suprimit: false, motiu: null, consensus: null, sd: null };
+          if (!r) return { mitjana: null, n: null, precisio: null, suprimit: false, motiu: null, consensus: null, confidence: null, sd: null };
           const motiu = reasonOf.get(`${b}|${s.id}|${d.id}`) ?? null;
-          if (motiu) return { mitjana: null, n: null, precisio: null, suprimit: true, motiu, consensus: null, sd: null };
-          return { mitjana: r.mean, n: r.n, precisio: precisionBand(r.n), suprimit: false, motiu: null, consensus: null, sd: null };
+          if (motiu) return { mitjana: null, n: null, precisio: null, suprimit: true, motiu, consensus: null, confidence: null, sd: null };
+          return { mitjana: r.mean, n: r.n, precisio: precisionBand(r.n), suprimit: false, motiu: null, consensus: null, confidence: null, sd: null };
         });
         const last = cells.length - 1;
         return { domini: d.nom, cells, canvi: classifyChange(cells[last - 1], cells[last]) };
