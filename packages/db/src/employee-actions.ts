@@ -3,7 +3,7 @@
 // signal. No account data, no answers, no comments. Anything under the minimum group size, or
 // flagged as suppressed, is never returned.
 import { MIN_GROUP_SIZE } from "@damm/shared";
-import { getDb } from "./connection";
+import { getDb } from "./employee-db";
 
 export type ApprovedAction = {
   id: number;

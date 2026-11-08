@@ -6,10 +6,11 @@ import { getDb, type Db } from "./connection";
 
 /** Additive i18n columns for databases built before they existed (schema.sql has them for new ones). Employee-side: run at server start, before the backfill. */
 export function ensureI18nColumns(db: Db): void {
-  const has = (table: string, col: string) =>
-    (db.prepare(`PRAGMA table_info(${table})`).all() as { name: string }[]).some((c) => c.name === col);
-  if (!has("pregunta", "text_i18n")) db.exec("ALTER TABLE pregunta ADD COLUMN text_i18n TEXT");
-  if (!has("compte", "lang"))
+  const cols = (table: string) => (db.prepare(`PRAGMA table_info(${table})`).all() as { name: string }[]).map((c) => c.name);
+  const pregunta = cols("pregunta");
+  if (pregunta.length && !pregunta.includes("text_i18n")) db.exec("ALTER TABLE pregunta ADD COLUMN text_i18n TEXT");
+  const compte = cols("compte");
+  if (compte.length && !compte.includes("lang"))
     db.exec("ALTER TABLE compte ADD COLUMN lang TEXT NOT NULL DEFAULT 'ca' CHECK (lang IN ('ca','es','en'))");
 }
 
