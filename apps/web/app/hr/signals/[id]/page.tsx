@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Comments, People } from "../../glyphs";
 import { notFound } from "next/navigation";
 import { MIN_GROUP_SIZE } from "@damm/shared";
-import { getSignalDetail, type SignalTimelineStep } from "@damm/db/hr";
+import { advanceSignalStatus, getSignalDetail, type SignalTimelineStep } from "@damm/db/hr";
 
 import { hrListProbes, type ProbeView } from "@/lib/hr-engine";
 import { Card, Empty, PageHeader } from "../../ui";
@@ -16,7 +16,7 @@ import { startProbeAction, stopProbeAction } from "./actions";
 import { recommendationStatus } from "../../labels";
 import { ChangeBadge, Sparkline } from "../../trend";
 import { TrendChart } from "../../trend-chart";
-import { STATUS_ORDER, SignalBadges, statusLabel } from "../../signal-labels";
+import { SignalBadges, statusLabel } from "../../signal-labels";
 import { signalDetail, signalHeadline } from "@/lib/signal-text";
 import { getT, getTL } from "@/lib/i18n/server";
 import { hrResultsDict, type HrResultsKey, type HrResultsT } from "@/lib/i18n/hr-results";
@@ -176,8 +176,12 @@ export default async function SignalPage({ params, searchParams }: { params: Pro
   const { t, lang } = await getTL(hrResultsDict);
   const ts = await getT(signalsDict);
   const { probeError } = await searchParams;
-  const detail = Number.isInteger(Number(id)) ? getSignalDetail(Number(id), lang) : null;
+  let detail = Number.isInteger(Number(id)) ? getSignalDetail(Number(id), lang) : null;
   if (!detail) notFound();
+  // First view by HR: an open signal becomes acknowledged (forward only).
+  if (detail.signal.status === "open" && advanceSignalStatus(detail.signal.id, "acknowledged")) {
+    detail = getSignalDetail(detail.signal.id, lang) ?? detail;
+  }
   const { signal, periodes, trend, themes, hiddenThemes, recommendations, followUps, timeline } = detail;
   // A signal about one domain shows only that domain's line; the other domains are noise here.
   const related = trend.filter((r) => r.related);
@@ -208,15 +212,27 @@ export default async function SignalPage({ params, searchParams }: { params: Pro
 
       <div className="mb-6 flex flex-wrap items-center gap-2">
         <span className="text-xs font-semibold text-subtle">{t("sd_status_lbl")}</span>
-        {STATUS_ORDER.map((st) => (
-          <form key={st} action={setSignalStatusAction}>
+        <span className="badge badge-accent">{statusLabel(signal.status ?? "open", lang)}</span>
+        {signal.status === "resolved" || signal.status === "dismissed" ? (
+          <form action={setSignalStatusAction}>
             <input type="hidden" name="id" value={signal.id} />
-            <input type="hidden" name="status" value={st} />
-            <button className={`btn ${signal.status === st ? "btn-primary" : ""}`} disabled={signal.status === st} aria-pressed={signal.status === st}>
-              {statusLabel(st, lang)}
-            </button>
+            <input type="hidden" name="status" value="acknowledged" />
+            <button className="btn">{t("sd_st_reopen")}</button>
           </form>
-        ))}
+        ) : (
+          <>
+            <form action={setSignalStatusAction}>
+              <input type="hidden" name="id" value={signal.id} />
+              <input type="hidden" name="status" value="resolved" />
+              <button className="btn btn-primary" disabled={signal.status !== "action_linked"} title={signal.status !== "action_linked" ? t("sd_st_resolve_hint") : undefined}>{t("sd_st_resolve")}</button>
+            </form>
+            <form action={setSignalStatusAction}>
+              <input type="hidden" name="id" value={signal.id} />
+              <input type="hidden" name="status" value="dismissed" />
+              <button className="btn">{t("sd_st_dismiss")}</button>
+            </form>
+          </>
+        )}
       </div>
 
       <Card className="mb-6">

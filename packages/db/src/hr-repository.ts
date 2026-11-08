@@ -399,6 +399,7 @@ export function approveRecommendation(id: number, approvedBy?: string): void {
   getDb()
     .prepare("UPDATE recomanacio SET estat = 'aprovada', aprovada_el = datetime('now'), aprovada_per = ? WHERE id = ? AND estat = 'proposada'")
     .run(approverLabel(approvedBy), id);
+  linkSignalOfRecommendation(id);
 }
 
 export interface ContextEvent {
@@ -441,6 +442,27 @@ export type SignalStatus = (typeof SIGNAL_STATUSES)[number];
 export function setSignalStatus(id: number, status: string): boolean {
   if (!(SIGNAL_STATUSES as readonly string[]).includes(status)) return false;
   return getDb().prepare("UPDATE senyal SET status = ? WHERE id = ?").run(status, id).changes > 0;
+}
+
+const AUTO_ORDER = ["open", "acknowledged", "action_linked"] as const;
+
+/**
+ * Automatic status step: only moves a signal forward along open → acknowledged → action_linked.
+ * Never moves backwards and never touches a resolved or dismissed signal. Returns true when it changed.
+ */
+export function advanceSignalStatus(id: number, target: "acknowledged" | "action_linked"): boolean {
+  const db = getDb();
+  const row = db.prepare("SELECT status FROM senyal WHERE id = ?").get(id) as { status: string } | undefined;
+  if (!row) return false;
+  const cur = (AUTO_ORDER as readonly string[]).indexOf(row.status);
+  if (cur < 0 || cur >= (AUTO_ORDER as readonly string[]).indexOf(target)) return false;
+  return db.prepare("UPDATE senyal SET status = ? WHERE id = ?").run(target, id).changes > 0;
+}
+
+/** A recommendation was approved or got a follow-up: its signal now has an action linked. */
+export function linkSignalOfRecommendation(recId: number): void {
+  const r = getDb().prepare("SELECT senyal_id AS s FROM recomanacio WHERE id = ?").get(recId) as { s: number | null } | undefined;
+  if (r?.s) advanceSignalStatus(r.s, "action_linked");
 }
 
 /** Human action: close a need (necessitat.estat = 'tancada'). Its published questions stay in the DB; no new publication. */
