@@ -1,6 +1,7 @@
 // HR-safe bindings of the engine read API to the shared DB connection.
 // HR pages import this instead of getDb: only @damm/engine/hr functions (aggregate insights and alarms) are exposed.
 import { getDb } from "@damm/db";
+import { invalidateHrMemo } from "./hr-memo";
 import { readingPeriod } from "@damm/db/hr";
 import {
   alarmCounts,
@@ -76,12 +77,23 @@ export const hrPool = () => {
   poolMemo = { at: now, value: listPool(db()) };
   return poolMemo.value;
 };
+const questionMemo = new Map<string, { at: number; value: ReturnType<typeof getPoolQuestion> }>();
 export const invalidateHrPool = () => {
   poolMemo = null;
+  questionMemo.clear();
+  invalidateHrMemo();
 };
 export const hrSetQuestionActive = (id: number, active: boolean, by: string) => {
   const r = setQuestionActive(db(), id, active, by);
   invalidateHrPool();
   return r;
 };
-export const hrPoolQuestion = (id: number, grain: "week" | "day" = "week") => getPoolQuestion(db(), id, { grain });
+export const hrPoolQuestion = (id: number, grain: "week" | "day" = "week") => {
+  const key = `${id}|${grain}`;
+  const hit = questionMemo.get(key);
+  if (hit && Date.now() - hit.at < 15_000) return hit.value;
+  const value = getPoolQuestion(db(), id, { grain });
+  if (questionMemo.size > 100) questionMemo.clear();
+  questionMemo.set(key, { at: Date.now(), value });
+  return value;
+};

@@ -12,6 +12,7 @@ import {
 import { createDraftedFollowUp } from "./follow-up";
 import { changeAlarmStatus, hrSetQuestionActive, invalidateHrPool, type AlarmStatus } from "@/lib/hr-engine";
 import { notifyNeedPublished } from "@/lib/push";
+import { invalidateHrMemo } from "@/lib/hr-memo";
 import { getT } from "@/lib/i18n/server";
 import { panelDict } from "@/lib/i18n/hr-panel";
 
@@ -222,6 +223,7 @@ export async function setQuestionActiveAction(formData: FormData) {
 export async function refreshDashboardAction(formData: FormData) {
   const { getScheduler } = await import("@/lib/engine");
   const s = getScheduler();
+  invalidateHrMemo();
   s.runNow();
   let status = "ok";
   if (!process.env.LLM_API_KEY) status = "sense-llm";
@@ -229,6 +231,7 @@ export async function refreshDashboardAction(formData: FormData) {
     const r = await s.runNarrativeNow();
     status = r === null ? "ocupat" : r.segments.some((x) => x.status === "failed") ? "fallada" : "ok";
   }
+  invalidateHrMemo();
   revalidatePath("/hr", "layout");
   const q = new URLSearchParams();
   for (const k of ["r", "from", "to", "c"]) {
