@@ -6,6 +6,7 @@ import { getDb } from "@damm/db";
 import { maxAlarmId } from "@damm/db/hr";
 import { MIN_GROUP_SIZE } from "@damm/shared";
 import { notifyNewAlarms } from "@/lib/hr-push";
+import { invalidateHrMemo } from "@/lib/hr-memo";
 
 const DEMO_PREFIX = "Demo: ";
 const COOLDOWN_MS = 20_000;
@@ -57,5 +58,6 @@ async function fire(answers: { preguntaId: number; valorNum?: number | null }[])
     `INSERT INTO senyal (tipus, descripcio, collectiu_id, torn_id, domini_id, periode, n, confianca, severity, status, audience, suprimit)
      VALUES ('sharp_drop', ?, ?, NULL, ?, ?, ?, ?, 'critical', 'open', 'hr', 0)`,
   ).run(`${DEMO_PREFIX}alarma de demostració activada des del mòbil, sobre dades agregades de ${collective} (n=${seg.n}).`, seg.c, seg.d, seg.periode, seg.n, seg.confidence);
+  invalidateHrMemo();
   await notifyNewAlarms(before);
 }

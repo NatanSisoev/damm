@@ -8,6 +8,7 @@ import { listNewAlarms, maxAlarmId, reinstateAlarmsForReadingPeriod } from "@dam
 import { runEngineJob, runRecommendations } from "@damm/engine/job";
 import { templateRecommendations } from "@damm/ai";
 import { alarmPayload, notifyNewAlarms } from "@/lib/hr-push";
+import { invalidateHrMemo } from "@/lib/hr-memo";
 
 const DEBOUNCE_MS = Number(process.env.DEMO_LIVE_JOB_DEBOUNCE_MS ?? 1500);
 
@@ -46,6 +47,7 @@ async function run(): Promise<void> {
       reinstateAlarmsForReadingPeriod();
       // Template proposals only: no LLM call, so the run stays a couple of seconds.
       await runRecommendations(db, { now, draft: async (ctx) => templateRecommendations(ctx) });
+      invalidateHrMemo();
       // Log what HR browsers get (alarm text only, aggregate): lets a rehearsal without push keys see the payload.
       const payload = alarmPayload(listNewAlarms(before), "en");
       const push = await notifyNewAlarms(before);
