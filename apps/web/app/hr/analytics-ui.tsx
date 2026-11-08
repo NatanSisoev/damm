@@ -57,11 +57,11 @@ function reachText(t: HrResultsT, lang: Lang, g: ReachGap): string {
 
 // ---------- narrative ----------
 
-export async function NarrativeCard({ narrative, title }: { narrative: NarrativeView | null; title?: string }) {
+export async function NarrativeCard({ narrative, title, fold }: { narrative: NarrativeView | null; title?: string; fold?: boolean }) {
   const { t } = await getTL(hrResultsDict);
   const d = narrative?.detail;
   return (
-    <Card title={title ?? t("an_summary")} meta={narrative ? <span className="num">{narrative.periode}</span> : undefined}>
+    <Card fold={fold} title={title ?? t("an_summary")} meta={narrative ? <span className="num">{narrative.periode}</span> : undefined}>
       {!d ? (
         <Empty>{t("an_nosummary", { min: MIN_GROUP_SIZE })} <Link href="/hr/methodology" className="text-accent-ink hover:underline">{t("an_how")}</Link></Empty>
       ) : (
@@ -123,10 +123,10 @@ export async function ReviewedButton({ alarmId }: { alarmId: number }) {
 
 // ---------- proposals ----------
 
-export async function ProposalsCard({ proposals }: { proposals: (Parameters<typeof RecommendationBody>[0]["r"] & { id: number })[] }) {
+export async function ProposalsCard({ proposals, fold }: { proposals: (Parameters<typeof RecommendationBody>[0]["r"] & { id: number })[]; fold?: boolean }) {
   const { t } = await getTL(hrResultsDict);
   return (
-    <Card title={t("an_props")} meta={<span className="num">{proposals.length}</span>}>
+    <Card fold={fold} title={t("an_props")} meta={<span className="num">{proposals.length}</span>}>
       {proposals.length === 0 ? (
         <Empty>{t("an_props_empty")}</Empty>
       ) : (
@@ -157,10 +157,10 @@ export async function ProposalsCard({ proposals }: { proposals: (Parameters<type
 const TONE_ICON: Record<Headline["tone"], string> = { up: "↑", down: "↓", warn: "!", neutral: "•" };
 const TONE_CLS: Record<Headline["tone"], string> = { up: "text-good", down: "text-warn", warn: "text-warn", neutral: "text-subtle" };
 
-export async function HeadlineStrip({ headlines }: { headlines: Headline[] }) {
+export async function HeadlineStrip({ headlines, fold }: { headlines: Headline[]; fold?: boolean }) {
   const { t, lang } = await getTL(hrResultsDict);
   return (
-    <Card title={t("an_know")} meta={t("an_know_meta")}>
+    <Card fold={fold} title={t("an_know")} meta={t("an_know_meta")}>
       {headlines.length === 0 ? (
         <Empty>{t("an_know_empty", { min: MIN_GROUP_SIZE })}</Empty>
       ) : (
@@ -374,10 +374,10 @@ export async function ThemesCard({ groups }: { groups: ThemesByDomain }) {
 
 // ---------- who to reach ----------
 
-export async function ReachCard({ gaps }: { gaps: ReachGap[] }) {
+export async function ReachCard({ gaps, fold }: { gaps: ReachGap[]; fold?: boolean }) {
   const { t, lang } = await getTL(hrResultsDict);
   return (
-    <Card title={t("an_reach")} meta={<Link href="/hr/methodology" className="underline">{t("an_how")}</Link>}>
+    <Card fold={fold} title={t("an_reach")} meta={<Link href="/hr/methodology" className="underline">{t("an_how")}</Link>}>
       {gaps.length === 0 ? (
         <Empty>{t("an_reach_empty")}</Empty>
       ) : (

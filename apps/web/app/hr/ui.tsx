@@ -13,8 +13,23 @@ export function PageHeader({ title, subtitle, actions }: { title: string; subtit
 }
 
 export function Card({
-  title, meta, children, className = "", flush = false, id,
-}: { id?: string; title?: ReactNode; meta?: ReactNode; children: ReactNode; className?: string; flush?: boolean }) {
+  title, meta, children, className = "", flush = false, id, fold = false,
+}: { id?: string; title?: ReactNode; meta?: ReactNode; children: ReactNode; className?: string; flush?: boolean; fold?: boolean }) {
+  // Folded: native details, closed by default; the summary is the heading, the meta moves into the body (links stay out of the summary).
+  if (fold && title) {
+    return (
+      <details id={id} className={`card hr-card-fold ${className}`}>
+        <summary className="card-header">
+          <span aria-hidden className="hr-card-fold-chev">›</span>
+          <h2 className="section-title">{title}</h2>
+        </summary>
+        <div className="card-body">
+          {meta && <div className="mb-3 text-xs text-subtle">{meta}</div>}
+          {children}
+        </div>
+      </details>
+    );
+  }
   return (
     <section id={id} className={`card ${className}`}>
       {(title || meta) && (

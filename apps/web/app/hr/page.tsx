@@ -1,20 +1,19 @@
 import Link from "next/link";
 import { MIN_GROUP_SIZE } from "@damm/shared";
 import {
-  accountCounts,
   getDataBounds,
   getRepresentativeness,
   getWindowTrends,
   listCollectius,
   listNeedCards,
-  listThemes,
   getParticipation,
+  getAnswersPerDay,
   CHANGE_MIN_DELTA,
   CHANGE_MIN_N,
   PRECISION_MODERADA_MIN_N,
   PRECISION_SOLIDA_MIN_N,
 } from "@damm/db/hr";
-import { hrInsights } from "@/lib/hr-engine";
+import { hrAlarms, hrInsights } from "@/lib/hr-engine";
 import { getTL } from "@/lib/i18n/server";
 import { hrResultsDict } from "@/lib/i18n/hr-results";
 import { hrDashboardDict } from "@/lib/i18n/hr-dashboard";
@@ -26,10 +25,11 @@ import { TrendChart } from "./trend-chart";
 import { Radar, type RadarSeries } from "./radar";
 import { RepTable, TrendTable } from "./tables";
 import { InsightCards } from "./insight-cards";
-import { getHeadlines, getHeatmap, getNarrative, getProposals, getReachGaps, getSegmentTrend, getThemesByDomain } from "./analytics";
-import { HeadlineStrip, HeatmapCard, NarrativeCard, ProposalsCard, ReachCard, SegmentTrendCard, ThemesCard } from "./analytics-ui";
+import { getHeadlines, getHeatmap, getNarrative, getProposals, getReachGaps, getSegmentTrend } from "./analytics";
+import { HeadlineStrip, HeatmapCard, NarrativeCard, ProposalsCard, ReachCard, SegmentTrendCard } from "./analytics-ui";
 import { PRESETS, bucketFor, fmtDay, previousWindow, resolveRange } from "./range";
 import { refreshDashboardAction } from "./actions";
+import { AnswersSpark } from "./answers-spark";
 import { RefreshButton } from "./refresh-button";
 import { RangeSelect } from "./range-select";
 import { NavSelect } from "./nav-select";
@@ -75,7 +75,6 @@ export default async function HrDashboard({ searchParams }: { searchParams: Prom
   const drafts = needs.filter((n) => n.state === "esborrany" || n.state === "llesta").length;
   const live = needs.filter((n) => n.state === "publicada").length;
   const rep = getRepresentativeness();
-  const themes = listThemes({ lang }).filter((th) => !th.suprimit);
   const heatmap = { ...getHeatmap(everyone), periode: `${fmtDay(range.from)} – ${fmtDay(range.to)}` };
 
   const overall = whole.series[0];
@@ -106,9 +105,14 @@ export default async function HrDashboard({ searchParams }: { searchParams: Prom
 
   // People, not answers: read from the job-written aggregates for the period(s) the window overlaps (never above the population).
   const { respondents, population, pct } = getParticipation(win, col?.id ?? null);
-  const counts = accountCounts();
-  const accountsRaw = col ? (counts.find((c) => c.collectiu === col.nom)?.comptes ?? null) : counts.every((c) => c.comptes !== null) ? counts.reduce((a, c) => a + (c.comptes ?? 0), 0) : null;
-  const suppressed = heatmap.cells.flat().filter((c) => c.suppressed).length;
+  // Answers per day: counts by day from the analytics view; thin days are dropped from the sparkline, the average stays.
+  const apd = getAnswersPerDay(win, col?.id ?? null);
+  const fmtTip = (p: { from: string; to: string; value: number }) =>
+    apd.bucket === "day"
+      ? t("kpi_apd_tip_day", { date: fmtDay(p.from), n: numD(p.value, lang, 0) })
+      : t("kpi_apd_tip_week", { from: fmtDay(p.from), to: fmtDay(p.to), n: numD(p.value, lang, 1) });
+  // Open alarms for the scope, same source and minimum group size as the alarms page's "open" tab.
+  const openAlarms = hrAlarms({ role: "hr" }, { status: ["open"], ...(col ? { collectiuId: col.id } : {}) }).filter((a) => a.n >= MIN_GROUP_SIZE).length;
 
   const domValid = q.dom && heatmap.domains.includes(q.dom) ? q.dom : undefined;
   const segmentTrend = getSegmentTrend(col?.nom, domValid);
@@ -197,24 +201,33 @@ export default async function HrDashboard({ searchParams }: { searchParams: Prom
             value={score === null ? "—" : <>{f1(score)}<span className="text-base font-normal text-subtle"> / 5</span></>}
             hint={delta === null ? (enough ? t("kpi_score_avg") : t("kpi_score_need3")) : <span className={delta < -0.05 ? "text-warn" : delta > 0.05 ? "text-good" : ""}>{t("kpi_vs", { arrow: delta > 0.05 ? "↑" : delta < -0.05 ? "↓" : "→", d: f1(Math.abs(delta)) })}</span>}
           />
-          <Stat label={t("kpi_best")} value={best ? f1(best.now) : "—"} hint={best ? domainLabel(best.d, lang) : "—"} />
-          <Stat label={t("kpi_worst")} value={worst ? f1(worst.now) : "—"} hint={worst ? domainLabel(worst.d, lang) : "—"} />
-          <Stat label={tr("rs_stat_accounts")} value={accountsRaw === null ? "—" : numD(accountsRaw, lang, 0)} hint={col ? collectiveLabel(col.nom, lang) : tr("rs_stat_collectives", { n: counts.length })} />
-          <Stat label={t("kpi_themes")} value={themes.length} hint={t("kpi_themes_hint", { n: themes.filter((th) => th.emergent).length })} />
-          <Stat label={tr("rs_stat_supp")} value={suppressed} hint={tr("hint_small", { min: MIN_GROUP_SIZE })} />
+          <Stat label={t("kpi_best")} value={best ? <>{f1(best.now)}<span className="text-base font-normal text-subtle"> / 5</span></> : "—"} hint={best ? domainLabel(best.d, lang) : "—"} />
+          <Stat label={t("kpi_worst")} value={worst ? <>{f1(worst.now)}<span className="text-base font-normal text-subtle"> / 5</span></> : "—"} hint={worst ? domainLabel(worst.d, lang) : "—"} />
+          <Stat
+            label={t("kpi_apd")}
+            value={apd.perDay === null ? "—" : numD(apd.perDay, lang, apd.perDay < 10 ? 1 : 0)}
+            hint={
+              apd.perDay === null ? (
+                t("kpi_apd_none", { min: MIN_GROUP_SIZE })
+              ) : (
+                <>
+                  {t("kpi_apd_hint")}
+                  <AnswersSpark points={apd.points.map((p) => ({ tip: fmtTip(p), value: p.value }))} aria={t("kpi_apd_aria")} />
+                </>
+              )
+            }
+          />
+          <Link href={col ? `/hr/signals?collectiu=${col.id}` : "/hr/signals"} className="block h-full">
+            <Stat label={t("kpi_alarms")} value={openAlarms} hint={col ? collectiveLabel(col.nom, lang) : t("kpi_alarms_hint")} />
+          </Link>
         </div>
 
-        {/* Story + profile */}
-        <div className="grid gap-6 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
-          <div className="space-y-6">
-            <NarrativeCard narrative={getNarrative(col?.nom ?? "All", lang)} title={t("dash_narr", { scope: col ? collectiveLabel(col.nom, lang) : t("dash_scope_all") })} />
-            <HeadlineStrip headlines={getHeadlines()} />
-          </div>
-          <Card title={tr("rs_profile")} meta={<span className="num">{prevWin ? t("dash_prof_vs") : t("dash_prof_full")}</span>}>
-            {radarSeries.length && hasData ? <Radar axes={axes} series={radarSeries} /> : <Empty>{tr("rs_nodata")}</Empty>}
-          </Card>
-        </div>
+        {/* 1. Profile by domain */}
+        <Card title={tr("rs_profile")} meta={<span className="num">{prevWin ? t("dash_prof_vs") : t("dash_prof_full")}</span>}>
+          {radarSeries.length && hasData ? <Radar axes={axes} series={radarSeries} /> : <Empty>{tr("rs_nodata")}</Empty>}
+        </Card>
 
+        {/* 2. Collectives x domains map */}
         <HeatmapCard
           map={heatmap}
           selected={{ seg: col?.nom, dom: domValid }}
@@ -255,35 +268,31 @@ export default async function HrDashboard({ searchParams }: { searchParams: Prom
           )}
         </Card>
 
-        <div className="grid gap-6 xl:grid-cols-2">
-          <Card title={t("dash_rep")} meta={<Link href="/hr/methodology" className="underline">{tr("rs_rep_how")}</Link>} flush={rep.collectius.length > 0}>
-            {rep.collectius.length === 0 ? (
-              <Empty>{tr("rs_nodata")}</Empty>
-            ) : (
-              <>
-                <RepTable rows={rep.collectius} byShift={false} />
-                <details className="group border-t border-line">
-                  <summary className="flex cursor-pointer list-none items-center gap-2 px-5 py-3 font-medium hover:bg-surface-muted">
-                    <span aria-hidden className="text-subtle transition-transform group-open:rotate-90">›</span>
-                    {tr("rs_by_shift")}
-                  </summary>
-                  <RepTable rows={rep.torns} byShift />
-                </details>
-              </>
-            )}
-          </Card>
-          <ReachCard gaps={getReachGaps(4)} />
-        </div>
-
-        {/* Engine insights, comment themes and proposed actions */}
-        <Card title={tr("rs_engine")} meta={<span className="num">{insights.length}</span>}>
-          <InsightCards insights={insights} empty={tr("rs_engine_empty", { min: MIN_GROUP_SIZE })} />
+        <Card title={t("dash_rep")} meta={<Link href="/hr/methodology" className="underline">{tr("rs_rep_how")}</Link>} flush={rep.collectius.length > 0}>
+          {rep.collectius.length === 0 ? (
+            <Empty>{tr("rs_nodata")}</Empty>
+          ) : (
+            <>
+              <RepTable rows={rep.collectius} byShift={false} />
+              <details className="group border-t border-line">
+                <summary className="flex cursor-pointer list-none items-center gap-2 px-5 py-3 font-medium hover:bg-surface-muted">
+                  <span aria-hidden className="text-subtle transition-transform group-open:rotate-90">›</span>
+                  {tr("rs_by_shift")}
+                </summary>
+                <RepTable rows={rep.torns} byShift />
+              </details>
+            </>
+          )}
         </Card>
 
-        <div className="grid gap-6 xl:grid-cols-2">
-          <ThemesCard groups={getThemesByDomain(heatmap.domains)} />
-          <ProposalsCard proposals={getProposals()} />
-        </div>
+        {/* Everything else: collapsed by default */}
+        <NarrativeCard fold narrative={getNarrative(col?.nom ?? "All", lang)} title={t("dash_narr", { scope: col ? collectiveLabel(col.nom, lang) : t("dash_scope_all") })} />
+        <HeadlineStrip fold headlines={getHeadlines()} />
+        <ReachCard fold gaps={getReachGaps(4)} />
+        <Card fold title={tr("rs_engine")} meta={<span className="num">{insights.length}</span>}>
+          <InsightCards insights={insights} empty={tr("rs_engine_empty", { min: MIN_GROUP_SIZE })} />
+        </Card>
+        <ProposalsCard fold proposals={getProposals()} />
       </div>
     </>
   );
