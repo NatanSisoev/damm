@@ -33,25 +33,26 @@ const icons = {
   settings: svg(<><path d="M4 7h10M18 7h2M4 17h4M12 17h8" /><circle cx="16" cy="7" r="2" /><circle cx="10" cy="17" r="2" /></>),
 };
 
+const home: Item = { href: "/hr", label: "nav_home", icon: icons.home };
+
 const groups: { title: HrKey; items: Item[] }[] = [
   {
     title: "nav_ask",
-    items: [
-      { href: "/hr/brain", label: "nav_brain", icon: icons.brain },
-      { href: "/hr/publish", label: "nav_publish", icon: icons.publish },
-    ],
-  },
-  {
-    title: "nav_listen",
     items: [
       { href: "/hr/pool", label: "nav_pool", icon: icons.pool },
       { href: "/hr/needs", label: "nav_needs", icon: icons.needs },
     ],
   },
   {
+    title: "nav_listen",
+    items: [
+      { href: "/hr/brain", label: "nav_brain", icon: icons.brain },
+      { href: "/hr/publish", label: "nav_publish", icon: icons.publish },
+    ],
+  },
+  {
     title: "nav_understand",
     items: [
-      { href: "/hr", label: "nav_home", icon: icons.home },
       { href: "/hr/signals", label: "nav_alarms", icon: icons.alarms },
       { href: "/hr/comments", label: "nav_comments", icon: icons.comments },
     ],
@@ -182,9 +183,9 @@ export function HrSidebar({ badges, subtitle, logo, role = "hr" }: { badges?: Na
   const body = (compact: boolean) => (
     <>
       <div className="hr-side-scroll">
-        {role === "manager"
-          ? groups.flatMap((g) => g.items).filter((l) => l.href === "/hr").map((l) => renderItem(l, compact))
-          : groups.map((g) => (
+        <div className="hr-side-group">{renderItem(home, compact)}</div>
+        {role !== "manager" &&
+          groups.map((g) => (
               <div key={g.title} className="hr-side-group">
                 <p className="hr-side-title">{t(g.title)}</p>
                 {g.items.map((l) => renderItem(l, compact))}
